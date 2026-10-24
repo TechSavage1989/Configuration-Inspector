@@ -2,7 +2,7 @@
 #include "../webview/native_updates.h"
 using namespace ci_update;
 int wmain(int argc,wchar_t** argv){try{
- if(argc==4&&std::wstring(argv[1])==L"--apply-update")return apply(full(argv[2]),utf8(argv[3]));
+ if(argc==4&&std::wstring(argv[1])==L"--apply-update")return ci_update::apply(full(argv[2]),utf8(argv[3]));
  if(argc==4&&(std::wstring(argv[1])==L"--update-resume"||std::wstring(argv[1])==L"--update-rollback")){
   auto p=readPlan(full(argv[2]),utf8(argv[3]));bool rollback=std::wstring(argv[1])==L"--update-rollback";
   if(!rollback&&exists(parent(p.dir)+L"\\fail-startup"))return 2;
