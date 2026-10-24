@@ -1,0 +1,8 @@
+<config version="11.1.0"><devices><entry name="localhost.localdomain">
+  <deviceconfig><system><hostname>Review-PAN</hostname></system></deviceconfig>
+  <network><interface><ethernet><entry name="ethernet1/1"><layer3><ip><entry name="192.0.2.1/24"/></ip></layer3></entry></ethernet></interface><virtual-router><entry name="default"><interface><member>ethernet1/1</member></interface></entry></virtual-router></network>
+  <vsys><entry name="vsys1"><server-profile><ldap><entry name="Clear-LDAP"><server><entry name="directory"><address>192.0.2.20</address><port>389</port></entry></server><ssl>no</ssl><verify-server-certificate>no</verify-server-certificate><bind-password>NEVER_EXPORT_PAN_PASSWORD</bind-password></entry></ldap></server-profile>
+    <ssl-tls-service-profile><entry name="Legacy-TLS"><certificate>Old-Certificate</certificate><protocol-settings><min-version>tls1-0</min-version><max-version>tls1-2</max-version></protocol-settings></entry></ssl-tls-service-profile>
+    <certificate><entry name="Old-Certificate"><subject>CN=test.example.test</subject><not-valid-after>2020-01-01T00:00:00Z</not-valid-after></entry><entry name="Future-Certificate"><not-valid-before>2030-01-01T00:00:00Z</not-valid-before><not-valid-after>2031-01-01T00:00:00Z</not-valid-after></entry><entry name="Renew-Certificate"><not-valid-after>2026-11-10T12:00:00Z</not-valid-after></entry></certificate>
+  </entry></vsys>
+</entry></devices></config>

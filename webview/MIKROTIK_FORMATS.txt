@@ -1,0 +1,101 @@
+CONFIG INSPECTOR 5.14.0: MIKROTIK ROUTEROS
+
+Inputs
+Unencrypted RouterOS .backup containers using magic 0xB1A1AC88, with paired
+IDX/DAT tables and typed M2 records. The file is decoded locally. RC4 and AES
+encrypted headers are recognized and explained; password decryption is not
+implemented. Import an unencrypted backup or a RouterOS .rsc export instead.
+The file extension does not override content detection for other vendors.
+
+Binary interpretation
+The container length, member bounds, table names, indexes, record lengths,
+recursion, field counts and supported types are checked. Deleted records and
+internal metadata are retained outside the main networking lists. A record with
+an unrecognized encoding retains its original table bytes and an import note.
+All IDX/DAT bytes are retained as sensitive original fields, including empty
+tables, deleted records and fields not assigned a networking meaning. An
+unredacted JSON snapshot preserves these bytes. Redacted snapshots intentionally
+remove these raw table payloads and known credential fields.
+
+Known binary mappings cover Ethernet/pluggable ports, bridges, VLAN interfaces,
+bridge ports and bridge VLAN tables, device IPv4 addresses, interface lists and
+members, DHCP clients, device identity, user/group names, non-default VRF
+membership, NTP state and explicit remote logging destinations. Other tables,
+including formats whose field meanings have not been verified, remain available
+in original fields. This is partial semantic coverage, not a general binary to
+RouterOS command converter. No firmware version is inferred from database
+version flags, Linux kernel strings or the schema used for verification.
+
+Network relationships
+Interface IDs are resolved before bridge/VLAN/address membership is built.
+Addressing belongs to its interface, not a duplicate general network item.
+Bridge-port settings belong with the port and the bridge group. Disabled
+memberships do not establish configured use. Bridge PVID membership contributes
+to untagged VLAN membership where VLAN filtering and accepted frame types permit
+it. Explicit tagged and untagged entries are retained even when they conflict.
+The app does not derive connected or DHCP-learned routes from a backup.
+
+Ports
+An explicit RouterOS pluggable-port flag and recognizable interface identity are
+used for connector forms. SFP+, SFP28, QSFP+ and QSFP28 identities are separated
+from configured speed and advertised speeds. Advertised speeds do not establish
+maximum hardware capacity. An auto-negotiated port does not expose its inactive
+stored speed enum as a configured forced speed. Unknown or renamed ports without
+an identifying default name remain qualified. QSFP lane identities are preserved
+and identified in details. Without an exact hardware model, the app labels the
+at-a-glance view as an inventory with unverified physical positions. It does not
+claim the logical lanes are independent physical cages. Short inventory labels
+keep names within their port blocks; full names remain in tooltips and details.
+
+Text exports
+RouterOS .rsc sections and fully qualified commands are accepted. Quoted names,
+hex escapes, continuations and simple find/default-name selectors are supported.
+Settings on the same named item are combined in export order. Common mappings
+include interfaces and groups, VLANs, IPv4/IPv6, pools, DHCP servers/networks/
+reservations/relays/clients, DNS servers and records, routes and routing contexts,
+firewall and NAT rules with linked original/translated services, address lists,
+WireGuard peers, IPsec peers/policies, device accounts/groups, RADIUS, management
+access, time, logging, SNMP, discovery and Dynamic DNS. Related settings use the
+existing subsection model. Scripts, variables and unresolved selectors are never
+executed and remain in source inspection. Missing defaults are not invented.
+Original source text is retained; redaction masks complete sensitive commands.
+Snapshots retain source commands and interpreted summaries but not original text
+formatting or line-span metadata.
+
+Decoding limits
+A decoded field inventory is an inspection format. It is not a deployable .rsc
+export and must not be restored as one. Device model, serial and RouterOS version
+are shown only when explicitly present or identified by the user. Absence from a
+recognized list does not certify that a feature is absent from an unknown table.
+
+Implementation references
+MikroTik backup and configuration-management documentation:
+https://manual.mikrotik.com/docs/getting-started/configuration-management/backup/
+https://help.mikrotik.com/docs/spaces/ROS/pages/328155/Configuration+Management
+
+MikroTik bridge/PVID/VLAN semantics:
+https://help.mikrotik.com/docs/spaces/ROS/pages/28606465/Bridge+VLAN+Table
+https://help.mikrotik.com/docs/spaces/ROS/pages/328068/Bridging+and+Switching
+
+Field identifiers and enum meanings were checked against MikroTik's own WebFig
+schema in the official RouterOS 7.20.6 MIPSBE distribution. The distribution and
+its proprietary JavaScript/schema assets are not included in this source archive.
+https://download.mikrotik.com/routeros/7.20.6/routeros-7.20.6-mipsbe.npk
+
+Container and M2 wire structure, independently implemented:
+https://github.com/BigNerd95/RouterOS-Backup-Tools/blob/master/README.md
+https://github.com/0ki/mikrotik-tools/blob/master/mt_dat_decoder.py
+
+The vendor schema verification is a reference for mappings, not evidence that
+an uploaded backup was created with that RouterOS release. No external decoder
+code, password extraction, device restore or router connection is used.
+
+Validation
+Synthetic .rsc and binary fixtures cover known field meanings, deleted and
+unknown records, malformed/encrypted inputs, addressing and memberships, linked
+services, source redaction and snapshot round trips. Existing vendor fixtures
+are checked against the 5.13.0 baseline for source keys, values and ownership.
+Private validation of the supplied backup verifies all decoded leaf fields and
+reconstructs its complete container bytes from retained table payloads. Supplied
+client configuration and private screenshots are not included in this archive.
+Windows launch has not been tested in this Linux build environment.

@@ -1,0 +1,20 @@
+<config version="11.1.0">
+  <devices><entry name="localhost.localdomain">
+    <deviceconfig><system>
+      <hostname>Example-DNS-Firewall</hostname>
+      <dns-setting><servers><primary>192.0.2.53</primary><secondary>2001:db8::53</secondary></servers></dns-setting>
+    </system></deviceconfig>
+    <network>
+      <interface><ethernet><entry name="ethernet1/1"><layer3><ip><entry name="192.0.2.1/24"/></ip></layer3></entry></ethernet></interface>
+      <dns-proxy><entry name="Branch DNS relay">
+        <enabled>yes</enabled><interface><member>ethernet1/1</member></interface>
+        <default><primary>192.0.2.54</primary><secondary>2001:db8::54</secondary></default>
+        <domain-servers><entry name="Internal domain"><domain-name><member>branch.example.test</member></domain-name><primary>198.51.100.53</primary><secondary>2001:db8:1::53</secondary></entry></domain-servers>
+        <static-entries><entry name="printer"><domain>printer.example.test</domain><address><member>192.0.2.25</member></address></entry></static-entries>
+      </entry><entry name="Inherited resolver">
+        <interface><member>ethernet1/1</member></interface>
+        <default><primary>inherited</primary><inheritance><source>ethernet1/1</source></inheritance></default>
+      </entry></dns-proxy>
+    </network>
+  </entry></devices>
+</config>

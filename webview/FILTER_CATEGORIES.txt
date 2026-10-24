@@ -1,0 +1,31 @@
+Config Inspector 5.13.0 - web and security category actions
+
+Presentation
+Category names and actions appear within the relevant Web & URL filtering, DNS security or Application control profile. A compact summary belongs in the profile list. Details show an aligned category/action table. Applicable protocol, schedule, user and rule conditions share a separate column. Independent allow entries start collapsed. Ordered rule sets preserve configured order and keep allow entries in place. Disabled rules retain their disabled state. Search matches names, IDs, actions and conditions, opens matching allowed entries and shows a no-match state. Source configuration remains the first block.
+
+Configured custom categories link to their definitions and are linked from applicable profile or policy references. Unknown or ambiguous references stay text. Built-in vendor catalog entries are not added as hundreds of standalone configuration objects. Unrelated configuration types do not acquire empty category sections.
+
+Vendor interpretation
+Fortinet: the documented FortiGuard web/DNS ID dictionary supplies category names. Configuration-defined local categories take priority and use their VDOM context. Local URL rating overrides remain category assignments, not filtering decisions. Web and DNS profiles retain category/action pairs, including unknown IDs and missing actions. Application category IDs use a separate namespace and are never translated with the web dictionary. Unrecognized application IDs retain their exported identifiers. No omitted default action is invented.
+
+SonicWall: CFS profile vectors are decoded using one-based category positions and the cfsCategoryStr dictionary in that export. Known CFS 4.x action values 0 and 1 represent Allow and Block. Other action codes remain explicit. Empty dictionary slots and unused zero-filled vector capacity do not become artificial categories. Nonzero unknown entries remain visible by ID. No fixed modern taxonomy is imposed on an older export. The supplied 6.5 export contains eleven profiles and 627 interpreted category actions; each retains its Malware entry.
+
+Sophos: WebFilterPolicy and ApplicationFilterPolicy RuleList entries stay separate and ordered. CategoryList/Category/ID and category type identify the match. HTTPAction and HTTPSAction remain independent unless FollowHTTPAction explicitly makes HTTPS follow HTTP. Schedules, user conditions and PolicyRuleEnabled are retained. Configured category/URL definitions are linked. DefaultAction is distinct from per-rule decisions.
+
+Palo Alto: URL profile block, allow, alert, continue and override category lists retain their decisions. Custom URL categories retain URL members as escaped text. Policy category selectors are shown as Match, not as category filtering allow/block decisions. Shared category definitions resolve through the existing scope hierarchy.
+
+Juniper: named UTM categories retain their explicit action, including quoted category names. Effective merged policy, inheritance and runtime URL ratings are not calculated.
+
+Data and exports
+filter_categories.js installs after security.js in the page and background parser. It enriches derived summaries and references without rewriting original fields, field ownership or text exports. JSON snapshots regenerate category rules from their retained source entries. HTML reports append a category/action section while retaining original report content. Unknown category IDs, action codes and unspecified actions are not silently converted to an allow or block decision.
+
+Primary sources reviewed
+https://community.fortinet.com/fortigate-3/technical-tip-how-to-check-the-web-filtering-categories-corresponding-to-the-category-id-104877
+https://www.fortiguard.com/webfilter/categories
+https://www.sonicwall.com/techdocs/pdf/management-services-firewall-setup.pdf
+https://www.sonicwall.com/zh-cn/support/knowledge-base/content-filtering-service-cfs-4-0-overview/kA1VN0000000DgW0AU
+https://docs.sophos.com/nsg/sophos-firewall/22.0/api/protect/web/webfilterpolicy/operations/addpolicy&updatepolicy&updatepolicyfromapi.html
+https://docs.sophos.com/nsg/sophos-firewall/19.0/api/protect/applications/applicationfilterpolicy/operations/appfilterpolicyaddfromapi&appfilterpolicyedit.html
+
+Limits
+Coverage follows recognized source structures. Missing category catalogs or undocumented enum values remain identifiable source values. The app does not download configurations or query firewall appliances. Current subscription status, live URL classification and effective enforcement are outside this configuration view.

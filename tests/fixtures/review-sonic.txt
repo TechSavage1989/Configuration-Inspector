@@ -1,0 +1,13 @@
+firewallName=Review-Sonic
+iface_ifnum_0=0
+iface_name_0=X0
+iface_static_ip_0=192.0.2.1
+iface_static_mask_0=255.255.255.0
+iface_mode_0=1
+iface_http_0=1
+iface_https_0=1
+ntp_useNtp=0
+snmpEnabled=1
+snmpReadCommunity=public
+certName_0=Old-Sonic-Certificate
+certExpiry_0=2020-01-01T00:00:00Z

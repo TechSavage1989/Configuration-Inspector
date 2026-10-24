@@ -1,0 +1,49 @@
+Config Inspector 5.6.0 - readable fundamental configuration
+
+The feature model adds source-backed views without moving, deleting or changing
+the imported fields or their original ownership. Each feature has stable IDs,
+original source field keys, readable facts and links. The model is installed in
+both the main page and the background import worker. Config Studio JSON
+snapshots regenerate the views from their retained original fields.
+
+Named areas:
+System & management: time zone, NTP/SNTP, management access and service ports.
+Monitoring & logging: syslog, SNMP, sFlow, NetFlow/IPFIX collectors and sources.
+Switching: multicast snooping, discovery, QoS and port protection.
+Routing: forwarding settings, routing contexts, multicast and routing policy.
+WAN & failover: WAN order, load balancing and link-monitor probes.
+High availability: cluster settings, monitored interfaces and gateway redundancy.
+DNS/DHCP: Dynamic DNS, DHCP options, exclusions and provisioning values.
+Voice & VoIP: explicit voice VLANs, addressing, port membership, SIP/H.323 handling.
+Authentication: method order and port authentication.
+Network services: recognized IPv6 advertisements, static neighbors and wireless definitions.
+
+Adapters recognize supported feature fields in SonicWall EXP/decoded text,
+FortiOS CLI, Aruba AOS-S/AOS-CX/Instant On and Cisco CLI, normalized Junos
+statements, PAN-OS/Sophos XML and structured JSON settings. Recognition varies
+by the fields included in the export. Missing values are omitted, not treated
+as disabled. Disabled values are retained for meaningful configured services.
+Voice networks require an explicit voice setting, not just a suggestive name.
+Provisioning options preserve the exact configured code and value.
+
+Only documented or directly recognized values are translated. Unknown vendor
+enum values remain identified as vendor IDs. In particular, a numeric SonicOS
+time-zone ID is retained when no time-zone name is supplied. Service and
+profile settings are displayed separately rather than inferred as one effective
+state. Fundamental summaries never contain community strings or credentials.
+Derived presentation records do not change existing interface-use classification.
+
+Build: Python 3 embeds features.js in index.html before MinGW compiles the host.
+The delivered HTML and executable do not require features.js beside them.
+
+Primary references used during implementation:
+https://docs.fortinet.com/document/fortigate/7.4.1/cli-reference/001620/config-system-global
+https://docs.fortinet.com/document/fortigate/7.4.11/cli-reference/130421147/config-system-settings
+https://docs.fortinet.com/document/fortigate/7.6.4/administration-guide/147933/sip-alg-and-sip-session-helper
+https://www.sonicwall.com/techdocs/pdf/sonicos-7-1-voip.pdf
+https://www.sonicwall.com/support/knowledge-base/navigating-the-voip-settings/kA1VN0000000HfE0AU
+https://arubanetworking.hpe.com/techdocs/AOS-CX/help_portal/Content/ArubaTopics/Switches/guide-descr.htm
+https://arubanetworking.hpe.com/techdocs/AOS-CX/10.06/PDF/8400/IP%20Services%208400.pdf
+https://arubanetworking.hpe.com/techdocs/AOS-CX/10.17/HTML/fundamentals_8100-83xx-93xx-100xx/Content/Chp_Dev_disc/LLDP_cmds/lld-med-10.htm
+https://www.juniper.net/documentation/us/en/software/junos/network-mgmt/topics/concept/overview-of-sflow-monitoring.html
+https://www.cisco.com/c/en/us/td/docs/switches/lan/catalyst9300/software/release/17-15/configuration_guide/ip/b_1715_ip_9300_cg.html

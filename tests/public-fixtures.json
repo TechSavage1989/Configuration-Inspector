@@ -1,0 +1,272 @@
+{
+  "schema": 1,
+  "purpose": "Public, synthetic regression inputs. No customer configuration exports.",
+  "credentials": "Credential-looking values are explicit TEST, EXAMPLE, NEVER_EXPORT markers or the intentionally insecure standard community name public. No private keys.",
+  "generated_binary": "MikroTik backup generated entirely from literal data by tests/mikrotik-tests.cjs; not published in source.",
+  "files": {
+    "tests/fixtures/alignment-forti.conf": {
+      "sha256": "266dab3a2b085dc26d2560f81a33c8a3ca481cb56dc73f3462f299b1c9b76c6f",
+      "origin": "Synthetic regression fixture"
+    },
+    "tests/fixtures/catalog-FG-100F.yaml": {
+      "sha256": "35b4b01003ad2040929d96710e0ce3ac323d75842af866ed5d3602f6cefeeb4d",
+      "origin": "Public NetBox CC0 model definition"
+    },
+    "tests/fixtures/catalog-FG-120G.yaml": {
+      "sha256": "a956faae088d8d27f49bfc416f9f11d2135f5dbfed61782e1399f2c7a20fd1ee",
+      "origin": "Public NetBox CC0 model definition"
+    },
+    "tests/fixtures/catalog-JL809A.yaml": {
+      "sha256": "ff896a286dd501e697076888d34cd1e18d762d76638352b9999f3f6b0efd5b4d",
+      "origin": "Public NetBox CC0 model definition"
+    },
+    "tests/fixtures/categories-forti.conf": {
+      "sha256": "6d0570e6d22117ddecc7efdb3a9c83085bdc87bb186067cdbdc4a39f92024d5c",
+      "origin": "Synthetic regression fixture"
+    },
+    "tests/fixtures/categories-junos.conf": {
+      "sha256": "ad8f699329ad0efff831eabbe1af81c817eb3e3a0809b7f0f331d81b8e317f36",
+      "origin": "Synthetic regression fixture"
+    },
+    "tests/fixtures/categories-palo.xml": {
+      "sha256": "077fbefbeccf7f59e2a201871f3c410f8e64a6641d536c8cb2aa0462b0826997",
+      "origin": "Synthetic regression fixture"
+    },
+    "tests/fixtures/categories-sonic.txt": {
+      "sha256": "e2fb4017b53dce449a3c737427655ca3a618c5e1b1fd31d1c1e833456033df43",
+      "origin": "Synthetic regression fixture"
+    },
+    "tests/fixtures/categories-sophos.xml": {
+      "sha256": "86fe6247f5ff4c570ed9f3121f5a5cd05cad1cfd88aeab644f129363d54361f2",
+      "origin": "Synthetic regression fixture"
+    },
+    "tests/fixtures/compact-2920.conf": {
+      "sha256": "66e5a2fa2ea6520648620779925b67abf08c12285e0265027bf274f3e3d73fbc",
+      "origin": "Synthetic regression fixture"
+    },
+    "tests/fixtures/compact-cx.conf": {
+      "sha256": "80a1951793370b5508394ed8972839843f502ae21698191e0034b8fc981ad906",
+      "origin": "Synthetic regression fixture"
+    },
+    "tests/fixtures/dns-cisco.conf": {
+      "sha256": "0de863e79c65b22adf0dbff0dfa2d020c01f56d1b633288163745259cd37616c",
+      "origin": "Synthetic regression fixture"
+    },
+    "tests/fixtures/dns-palo.xml": {
+      "sha256": "917c9cc3d835808942ee993e9a93dd7650e1b29233d9637ac75f147deac688d9",
+      "origin": "Synthetic regression fixture"
+    },
+    "tests/fixtures/features-cisco.conf": {
+      "sha256": "f88e4f7954c8e99e8a4a92e5a05b85dcf603cc873604492797bec87298272ced",
+      "origin": "Synthetic regression fixture"
+    },
+    "tests/fixtures/features-forti.conf": {
+      "sha256": "05b55b8c043da2eec6f40a429d8f83d989f8b735858709e2f69f51c2f5cc18d8",
+      "origin": "Synthetic regression fixture"
+    },
+    "tests/fixtures/features-junos.conf": {
+      "sha256": "da84718442845abadf32092be3b1bc684499270fbd58874c4d088a7547c58a8a",
+      "origin": "Synthetic regression fixture"
+    },
+    "tests/fixtures/features-meraki.json": {
+      "sha256": "2047d0c6d842afffdae09ad8d5071db7627b80f6df6f9aee563e219e7008e664",
+      "origin": "Synthetic regression fixture"
+    },
+    "tests/fixtures/features-palo.xml": {
+      "sha256": "e04927ff502f2a5da87daef0d9753175c180a0a755df92c9fb7b16c6584d4200",
+      "origin": "Synthetic regression fixture"
+    },
+    "tests/fixtures/features-sonic.txt": {
+      "sha256": "7c67123ee05872e31e025571286e4233619757090b77dc981a41ec5f35bacd7b",
+      "origin": "Synthetic regression fixture"
+    },
+    "tests/fixtures/features-sophos.xml": {
+      "sha256": "a9c761a9d1735080dba0875e4fac70c964a626e031c200c0bfda520adfa332af",
+      "origin": "Synthetic regression fixture"
+    },
+    "tests/fixtures/fundamentals-aos.conf": {
+      "sha256": "f8642f8870e366e45b007dde7ab01a7de9932b24a7d63bd5207b252898087682",
+      "origin": "Synthetic regression fixture"
+    },
+    "tests/fixtures/fundamentals-cisco.conf": {
+      "sha256": "0e8957b81a3200e9eba8cec87be301e8b2b46580aa700a4ec90119f2ecdf65f4",
+      "origin": "Synthetic regression fixture"
+    },
+    "tests/fixtures/fundamentals-forti.conf": {
+      "sha256": "fdbf47a5560d40ed2dc4794310786273548a28fc92c7fd2007b0ac68e3d333ce",
+      "origin": "Synthetic regression fixture"
+    },
+    "tests/fixtures/fundamentals-junos.conf": {
+      "sha256": "2fce4e0e1a601f1e22693849fa73d17e58200bff6453929bcfa4cd9b353eaa39",
+      "origin": "Synthetic regression fixture"
+    },
+    "tests/fixtures/fundamentals-meraki.json": {
+      "sha256": "87cd15199e154ce79c5c272dc36cecbe68be4eb7bfae6b7b5a8499b35402a508",
+      "origin": "Synthetic regression fixture"
+    },
+    "tests/fixtures/fundamentals-palo.xml": {
+      "sha256": "5ee11c4b7ffda097d133a0ff40696c02a0ad5a6ec0004e958b907bfdfff19438",
+      "origin": "Synthetic regression fixture"
+    },
+    "tests/fixtures/fundamentals-sonic.txt": {
+      "sha256": "f34063a6056c712c13012355b67746ad3054411265e0cafb154662a73aea9187",
+      "origin": "Synthetic regression fixture"
+    },
+    "tests/fixtures/fundamentals-sophos.xml": {
+      "sha256": "71af3eb68d0c0c54a9da4508ffaefdf46bc8d626ec536aa9526848468cb403aa",
+      "origin": "Synthetic regression fixture"
+    },
+    "tests/fixtures/hardware-forti.conf": {
+      "sha256": "0ce3f616537c5e1c27bfbcfe237115199fcb42ebe0057f384e5b0041857d223b",
+      "origin": "Synthetic regression fixture"
+    },
+    "tests/fixtures/hardware-modules.conf": {
+      "sha256": "e7249bd3644c349da0d37417530a61f5d919a9c1cba6c348aca2cd7663d7cbd8",
+      "origin": "Synthetic regression fixture"
+    },
+    "tests/fixtures/hardware-stack.conf": {
+      "sha256": "17b80113f92d1e0a695747164b35e2e34278f1172beeab59187674740b63b374",
+      "origin": "Synthetic regression fixture"
+    },
+    "tests/fixtures/layout-6200.conf": {
+      "sha256": "2faaeaf1dc6523df24eaeef75b7bf106a01362fc9ab376cf259b2fc315807d6d",
+      "origin": "Synthetic regression fixture"
+    },
+    "tests/fixtures/layout-cisco.conf": {
+      "sha256": "bf65daec6006e7461f0c21ee305d7dd66bc4b24bcd5ac1cf2bb82a49bb9726d3",
+      "origin": "Synthetic regression fixture"
+    },
+    "tests/fixtures/layout-forti60.conf": {
+      "sha256": "f05920c4c4232a132a5edc2e30152bbaa36701bf522408060cac1def994e4964",
+      "origin": "Synthetic regression fixture"
+    },
+    "tests/fixtures/layout-junos.conf": {
+      "sha256": "cdcda7e2f0ebd8b8cfcfff6151c5aecf057afc5b2d8fcadbed9215bc90999dfa",
+      "origin": "Synthetic regression fixture"
+    },
+    "tests/fixtures/layout-sophos.xml": {
+      "sha256": "7b27c966c879ef211827d1979226553ffd863ba920a7647f5c91467c1da836c1",
+      "origin": "Synthetic regression fixture"
+    },
+    "tests/fixtures/layout-unknown-cx.conf": {
+      "sha256": "20af4b37a3f8f5a1347b1ef676a44cba7af2c535547d89419c868120f12e5403",
+      "origin": "Synthetic regression fixture"
+    },
+    "tests/fixtures/mikrotik.rsc": {
+      "sha256": "cb596e70fe1ccfd49a497b3a713df9399a3eaae1784fa73f7f02381a6c7bd87d",
+      "origin": "Synthetic regression fixture"
+    },
+    "tests/fixtures/nat-services-forti.conf": {
+      "sha256": "aae5a598d29df4840e68c3a1972ecfcb3b60abbec88165fd6bbf9a02b40d9382",
+      "origin": "Synthetic regression fixture"
+    },
+    "tests/fixtures/network-cisco.conf": {
+      "sha256": "15e398802f135a27e22cc8461fc4c12dc88d2fb82bcc5db4e1cf3baabe52b1e5",
+      "origin": "Synthetic regression fixture"
+    },
+    "tests/fixtures/network-forti.conf": {
+      "sha256": "bb073da86fbaed99f44d95fff7d4f884393273b9b5cfb4bbcf8c2163c20f614c",
+      "origin": "Synthetic regression fixture"
+    },
+    "tests/fixtures/network-junos.conf": {
+      "sha256": "e37a6dd2135572debfa7b7f1c5586925e7068b83741b3c09b6be1a6f06026bb5",
+      "origin": "Synthetic regression fixture"
+    },
+    "tests/fixtures/network-meraki.json": {
+      "sha256": "05918c31531ca89c673f976da818a64312fb6af503ca5be113ee1496a71b2307",
+      "origin": "Synthetic regression fixture"
+    },
+    "tests/fixtures/network-palo.xml": {
+      "sha256": "446738f7744c0b860da4a1b86d81b1fadd6a5ce6eeaa9d7de9b326d91225f9a8",
+      "origin": "Synthetic regression fixture"
+    },
+    "tests/fixtures/network-sophos.xml": {
+      "sha256": "2ca45025da91a4e0570aa0b0dfaf3cac98ac440e90401307125a44cde95aaa69",
+      "origin": "Synthetic regression fixture"
+    },
+    "tests/fixtures/review-aruba.conf": {
+      "sha256": "0b32d1d8e15bc6569a15047f1d00880d6d63bbf70940761304f18d409633a1a0",
+      "origin": "Synthetic regression fixture"
+    },
+    "tests/fixtures/review-certificate-future.pem": {
+      "sha256": "153df570a57394bf9dceeaf27ceb1c04f8dd1254fff975345d5c2dedb9a7c2d1",
+      "origin": "Synthetic regression fixture"
+    },
+    "tests/fixtures/review-certificate.pem": {
+      "sha256": "9a552c799785148c969c05e9582a50388296f409311c1d7b1696ddecba35ffcd",
+      "origin": "Synthetic regression fixture"
+    },
+    "tests/fixtures/review-cisco.conf": {
+      "sha256": "d0cc4c76452138b82302a24f4bdc1a3f37525b5c0a50870a9d6502273e22882e",
+      "origin": "Synthetic regression fixture"
+    },
+    "tests/fixtures/review-forti.conf": {
+      "sha256": "27d695dafe71492ced49ff85d520ca95b0437a140fc5a2f93feffe10c6a6af63",
+      "origin": "Synthetic regression fixture"
+    },
+    "tests/fixtures/review-junos.conf": {
+      "sha256": "e1c1b8c013253c056158fdad65082418c071a576ab6dc8a726a9b2c5db50d10f",
+      "origin": "Synthetic regression fixture"
+    },
+    "tests/fixtures/review-mikrotik.rsc": {
+      "sha256": "9302041232cb26ef3852409a96a6e66a58e7b422d686fc7f23fb89fd0e335cdc",
+      "origin": "Synthetic regression fixture"
+    },
+    "tests/fixtures/review-multicontext.conf": {
+      "sha256": "f3add0edbc5a790d0b16c18482d28a21d726061001b96a512f9b5132ecb807cb",
+      "origin": "Synthetic regression fixture"
+    },
+    "tests/fixtures/review-palo.xml": {
+      "sha256": "0499c2092de6cc7b8aac05eb6b51b596c01b50a676522d3f6475453515717779",
+      "origin": "Synthetic regression fixture"
+    },
+    "tests/fixtures/review-sonic.txt": {
+      "sha256": "06be248e19d613c42a18688432429057cd412f4085bec46563e36e88a942f32a",
+      "origin": "Synthetic regression fixture"
+    },
+    "tests/fixtures/review-sophos.xml": {
+      "sha256": "a6242f13f2a072682739d23f2fdc4e57fc0e4ec3be154ab129d4787acdedbfe3",
+      "origin": "Synthetic regression fixture"
+    },
+    "tests/fixtures/review-switch.conf": {
+      "sha256": "920c695c406d9717b21cc8840d0b667aada9d7008e1e7a1f2c8a19fbcf70b1c0",
+      "origin": "Synthetic regression fixture"
+    },
+    "tests/fixtures/sections-forti.conf": {
+      "sha256": "3aa6b334ada00acb06845af6ccdd8e84d9e69c1e52e4820d21dc6192c6cbbc37",
+      "origin": "Synthetic regression fixture"
+    },
+    "tests/fixtures/sections-only-junos.conf": {
+      "sha256": "6dfa76c6074e1f613cc0f6078d3caf66141c329ee62ca4a346c38c63e7b25945",
+      "origin": "Synthetic regression fixture"
+    },
+    "tests/fixtures/security-cisco.conf": {
+      "sha256": "41e68495feea1b6691f5476a718278df35383c976e6f8ceea007393a9cf6ec2f",
+      "origin": "Synthetic regression fixture"
+    },
+    "tests/fixtures/security-forti.conf": {
+      "sha256": "cc2873f64af30f79b60d5f82eb7a4f86f370ea27edaff09eb11091ab300ffcbb",
+      "origin": "Synthetic regression fixture"
+    },
+    "tests/fixtures/security-junos.conf": {
+      "sha256": "69db774b5f3c5b47f9334170e21fe2f51c3a4b4d2c560f99f13922fc903c0802",
+      "origin": "Synthetic regression fixture"
+    },
+    "tests/fixtures/security-palo.xml": {
+      "sha256": "d8a6f87b74d20ede7729ca272583fb0d6567764afb9062ff80bb4fff100b1236",
+      "origin": "Synthetic regression fixture"
+    },
+    "tests/fixtures/security-sonic.txt": {
+      "sha256": "f8fba7dd00a7f0ee353acb3932da0169227107d942fd8c836a15ff429c961882",
+      "origin": "Synthetic regression fixture"
+    },
+    "tests/fixtures/security-sophos.xml": {
+      "sha256": "70124be607b3318758d959f5e7217adb18172210f61add3bc45a463496d12e48",
+      "origin": "Synthetic regression fixture"
+    },
+    "tests/fixtures/specifications-forti.conf": {
+      "sha256": "00d5e03173befb9c30d94ca76c819a85914d1f85d10b3f367b8b6e22a16f34ad",
+      "origin": "Synthetic regression fixture"
+    }
+  }
+}

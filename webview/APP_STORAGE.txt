@@ -1,0 +1,32 @@
+Config Inspector app data
+
+Open App settings from the sidebar or the desktop File menu.
+
+Desktop location
+- Default: %LOCALAPPDATA%\ConfigInspectorWebView. If this is inside the executable folder, use the per-user RoamingAppData\ConfigInspectorData fallback. Data folders within the executable folder are rejected.
+- Choose folder opens a native folder picker. A ConfigInspector subfolder is created unless an existing application-owned folder or the default folder is selected.
+- Use default location schedules the default folder.
+- Location changes take effect the next time the app opens. The current and pending locations are displayed separately.
+- When the new folder has no Profile, the existing app profile is copied through Profile.migrating and renamed after successful completion. An existing destination Profile is retained. No profile is overwritten. The old folder is retained, and a failed copy falls back to the original data for that launch.
+- A ConfigInspector.storage marker identifies an application-owned folder. Migration refuses reparse entries and uses bounded recursion. Deletion is limited to the application Profile and placement file under a marked folder; it never deletes the selected parent folder.
+- Only a small bootstrap record in HKCU\Software\ConfigInspector tracks the selected folder and pending migration/cleanup. Preferences and window placement are stored under the selected app data folder.
+- The embedded host loader is extracted under Host-5.13.0. Host runtime files and the ownership marker remain when user data is cleared.
+
+Delete stored data
+- Clear specifications removes the downloaded model cache, clears its in-memory hardware results and cancels pending requests. Late responses cannot repopulate it. The current configurations are retained. Refresh manually, import another configuration, or reopen the app to download again.
+- Delete stored data has a confirmation dialog. It resets the theme to light, restores the automatic download preference, removes specifications, clears window placement, and requests WebView2 ClearBrowsingDataAll. The UI reports the completion result. Remaining profile files are queued for deletion on the next launch before any location migration.
+- The selected data location is retained. The app stops saving window placement for the remainder of the reset session. Close other copies of the app if data is still in use. The current folder and previously retained storage folders are independent; the reset operates on the location used by the current app instance.
+- Configuration files and exports are never deleted. Imported configs remain in memory only; this app does not autosave them into the app profile.
+
+HTML edition
+- Data location is controlled by the browser. A standalone HTML file cannot choose or move its browser storage folder.
+- The same cache/reset controls clear only Config Inspector's three storage keys: config-studio.theme, config-inspector-auto-specs and config-inspector-device-specs-v1. Other data on the origin is unaffected.
+
+Validation limitations
+- The Windows host is cross-compiled and its WebView2 interface signatures and executable resources are checked. Native folder migration, folder selection, startup and actual WebView2 profile clearing require Windows runtime validation. Browser tests use a simulated native message bridge for these UI paths.
+
+Primary API reference
+https://learn.microsoft.com/en-us/microsoft-edge/webview2/reference/win32/icorewebview2profile2?view=webview2-1.0.4129.50
+
+Native storage commands are dispatched through the window message loop after the WebView2 event completes, so the folder picker does not run a nested message loop inside a WebView2 callback.
+https://learn.microsoft.com/en-us/microsoft-edge/webview2/concepts/threading-model

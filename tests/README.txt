@@ -1,0 +1,7 @@
+Run node tests/semantic-tests.cjs, node tests/section-layout-tests.cjs node tests/fundamentals-tests.cjs node tests/security-tests.cjs node tests/network-tests.cjs node tests/specifications-tests.cjs node tests/nat-services-tests.cjs node tests/storage-tests.cjs node tests/hardware-tests.cjs node tests/compact-tests.cjs node tests/layout-tests.cjs and node tests/category-tests.cjs from the archive root. Optional native request-policy check: g++ -std=c++17 tests/spec-network-policy-test.cpp -o tests/policy-test, then run tests/policy-test. The catalog test fixtures are public NetBox community definitions under CC0 1.0; see webview/NETBOX_CC0_LICENSE.txt. Node.js 20 or later is sufficient. Fixtures use example-only addresses and identities. Browser and Windows resource checks were run separately during release validation.
+
+Run node tests/mikrotik-tests.cjs for MikroTik .backup/.rsc and existing-vendor source-retention checks. This test also regenerates its synthetic tests/fixtures/mikrotik.backup. No supplied client backup is included.
+
+Run node tests/dns-tests.cjs for DNS list/detail parity, resolver and relay addressing, forwarding rules, inherited sources and cross-vendor source preservation.
+
+Run node tests/review-tests.cjs for evidence-based configuration review, all 55 positive check cases, vendor adapters, negative/exception cases, read-only and snapshot preservation, secret-safe exports, scope/filter behavior, certificate validity and deep group graphs. Review certificates are self-signed public example certificates; no private key is included.

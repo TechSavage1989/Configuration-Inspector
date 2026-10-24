@@ -1,0 +1,170 @@
+{
+  "responses": [
+    {
+      "operationId": "getNetworkApplianceFirewallPortForwardingRules",
+      "networkId": "N_1",
+      "data": {
+        "rules": [
+          {
+            "name": "Web",
+            "lanIp": "192.0.2.20",
+            "allowedIps": [
+              "198.51.100.0/24"
+            ],
+            "protocol": "tcp",
+            "publicPort": "8443",
+            "localPort": "443",
+            "uplink": "internet1"
+          }
+        ]
+      }
+    },
+    {
+      "operationId": "getNetworkApplianceFirewallOneToOneNatRules",
+      "networkId": "N_1",
+      "data": {
+        "rules": [
+          {
+            "name": "Mail",
+            "publicIp": "203.0.113.21",
+            "lanIp": "192.0.2.21",
+            "uplink": "internet1",
+            "allowedInbound": [
+              {
+                "protocol": "tcp",
+                "destinationPorts": [
+                  "25",
+                  "587"
+                ],
+                "allowedIps": [
+                  "any"
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "operationId": "getNetworkApplianceFirewallOneToManyNatRules",
+      "networkId": "N_1",
+      "data": {
+        "rules": [
+          {
+            "publicIp": "203.0.113.22",
+            "uplink": "internet1",
+            "portRules": [
+              {
+                "name": "SSH",
+                "protocol": "tcp",
+                "publicPort": "2222",
+                "localIp": "192.0.2.22",
+                "localPort": "22",
+                "allowedIps": [
+                  "198.51.100.5/32"
+                ]
+              },
+              {
+                "name": "Web2",
+                "protocol": "tcp",
+                "publicPort": "443",
+                "localIp": "192.0.2.23",
+                "localPort": "443",
+                "allowedIps": [
+                  "any"
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "operationId": "getNetworkApplianceVlans",
+      "networkId": "N_1",
+      "data": [
+        {
+          "id": "10",
+          "name": "Office",
+          "subnet": "192.0.2.0/24",
+          "applianceIp": "192.0.2.1",
+          "dhcpHandling": "Run a DHCP server",
+          "dnsNameservers": "192.0.2.53",
+          "fixedIpAssignments": {
+            "02:00:00:00:00:01": {
+              "ip": "192.0.2.50",
+              "name": "Printer"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "operationId": "getNetworkApplianceStaticRoutes",
+      "networkId": "N_1",
+      "data": [
+        {
+          "id": "route1",
+          "name": "Branch",
+          "subnet": "198.51.100.0/24",
+          "gatewayIp": "192.0.2.254",
+          "enabled": true
+        }
+      ]
+    },
+    {
+      "operationId": "getNetworkApplianceFirewallL3FirewallRules",
+      "networkId": "N_1",
+      "data": {
+        "rules": [
+          {
+            "comment": "Office web",
+            "policy": "allow",
+            "protocol": "tcp",
+            "srcCidr": "192.0.2.0/24",
+            "destCidr": "any",
+            "srcPort": "any",
+            "destPort": "443"
+          }
+        ]
+      }
+    },
+    {
+      "operationId": "getNetworkApplianceVpnSiteToSiteVpn",
+      "networkId": "N_1",
+      "data": {
+        "mode": "spoke",
+        "hubs": [
+          {
+            "hubId": "N_2",
+            "useDefaultRoute": false
+          }
+        ],
+        "subnets": [
+          {
+            "localSubnet": "192.0.2.0/24",
+            "useVpn": true,
+            "nat": {
+              "enabled": true,
+              "remoteSubnet": "10.20.0.0/24"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "operationId": "getNetworkApplianceWarmSpare",
+      "networkId": "N_1",
+      "data": {
+        "enabled": true,
+        "primarySerial": "Q234-EXAM-0001",
+        "spareSerial": "Q234-EXAM-0002",
+        "uplinkMode": "virtual",
+        "wan1": {
+          "ip": "203.0.113.1",
+          "subnet": "203.0.113.0/24"
+        }
+      }
+    }
+  ]
+}

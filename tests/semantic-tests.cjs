@@ -1,0 +1,17 @@
+const fs=require('fs'),assert=require('assert'),{boot}=require('./harness.cjs');const {ctx,load}=boot();let checks=0;function ok(value,message){checks++;assert(value,message)}
+const expected={cisco:{interfaces:2,routes:1,dns:1,deviceusers:1},forti:{interfaces:1,vpn:2,routes:3,dhcp:2,dns:3,authentication:1,security:2},junos:{interfaces:2,routes:2,dns:1,deviceusers:1},meraki:{interfaces:2,routes:1},palo:{interfaces:1,vpn:2,routes:1,dns:1,authentication:2},sophos:{interfaces:1,vpn:1,routes:1,dns:1,identities:2},sonic:{interfaces:1,vpn:2,routes:1,dns:1,dhcp:2,authentication:2,policies:1,nat:1}};
+for(const [key,counts] of Object.entries(expected)){
+ const name=fs.readdirSync('tests/fixtures').find(n=>n.startsWith('features-'+key+'.')),m=load('tests/fixtures/'+name),a=ctx.audit;
+ for(const [tab,count] of Object.entries(counts))ok(a.records(tab).length===count,key+' '+tab+' expected '+count+' got '+a.records(tab).length);
+ const snapshot=ctx.SWImporters.exportJSON(m,false);if(m.meta.vendorId!=='sonicwall'){const reopened=ctx.SWCore.parse(snapshot,{});ok(reopened.entries.length===m.entries.length,key+' snapshot field count');ok(reopened.records.length===m.records.length,key+' snapshot records');}
+ ok(m.records.every(r=>a.recordById(r.id)),key+' all original records remain linkable');
+ if(key==='forti'){
+  ok(a.records('routes').some(r=>r.summary.destination==='0.0.0.0/0'),'Default route retained');ok(a.records('routes').some(r=>r.summary.gateway==='Discard traffic'&&r.summary.status==='Disabled'),'Disabled discard route retained');ok(a.records('addresses').some(r=>r.name==='none'),'Named none object retained');ok(a.records('addresses').some(r=>r.name==='Empty address group'),'Empty named group retained');ok(a.records('dhcp').some(r=>r.summary.status==='Disabled'),'Disabled pool retained');
+  const tunnel=a.records('vpn')[0];ok(tunnel.summary.local.includes('192.0.2.0')&&tunnel.summary.remote.includes('198.51.100.0'),'Phase 2 selectors consolidated');ok(tunnel.fields.some(e=>e.base==='phase1name'),'Phase 2 source retained');
+  a.state.view='identities';a.state.categoryTabs.identities='users';ok(a.tableSpec().rows.every(r=>a.recordTab(r)==='users'),'Users tab excludes groups');a.state.categoryTabs.identities='groups';ok(a.tableSpec().rows.every(r=>a.recordTab(r)==='groups'),'Groups tab excludes users');
+  a.state.view='dns';a.state.categoryTabs.dns='hosts';ok(a.tableSpec().rows.length===1&&a.tableSpec().rows[0].summary.ip==='192.0.2.1','DNS host tab has host address');
+ }
+ if(key==='palo'){const tunnel=a.records('vpn').find(r=>r.summary.featureSection==='feature-network-ipsec'),gateway=m.records.find(r=>r.family==='ike-gateway');ok(!a.primaryRecord(gateway),'IKE support hidden from VPN list');ok(tunnel.references.ikeGateways.includes(gateway.id),'Tunnel retains exact IKE gateway link');}
+ if(key==='sonic'){ok(a.records('vpn')[0].summary.status==='Disabled','Disabled tunnel retained');ok(a.records('dhcp').find(r=>r.family==='dhcpreservation').summary.ip==='192.0.2.10','Reservation has usable IP');ok(a.supportingRecords(a.records('vpn')[0]).some(r=>r.family==='ipsec-global'),'Shared VPN settings attached');ok(a.records('addresses').some(r=>r.name==='none'),'Sonic named none retained');}
+}
+fs.writeFileSync('tests/semantic-results.json',JSON.stringify({checks,formats:Object.keys(expected)},null,2));console.log(checks+' semantic checks passed across '+Object.keys(expected).length+' formats');

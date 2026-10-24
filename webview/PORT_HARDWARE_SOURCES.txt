@@ -1,0 +1,25 @@
+Port hardware reference sources for 5.4.17
+
+SonicWall NSa 6700 port ranges:
+https://www.sonicwall.com/support/knowledge-base/how-to-set-up-a-nsa-6700-out-of-box/kA1VN0000000FBy0AM
+SonicWall NSa 4700 / 6700 capacities:
+https://www.sonicwall.com/medialibrary/en/datasheet/sonicwall-gen-7-nsa-series.pdf
+SonicWall NSA 3600/4600/5600:
+https://www.sonicwall.com/techdocs/pdf/guide-getting-started-nsa-2600-3600-4600-560.pdf
+SonicWall TZ Gen 7:
+https://www.sonicwall.com/medialibrary/en/datasheet/sonicwall-tz-series-gen-7.pdf
+FortiGate 90G/91G shared media:
+https://community.fortinet.com/fortigate-3/technical-tip-understanding-shared-media-interfaces-on-the-fortigate-178744
+FortiGate 90G/91G hardware revision naming:
+https://community.fortinet.com/fortigate-3/troubleshooting-tip-ha-out-of-sync-in-fortigate-90g-and-91g-due-to-hardware-revision-generation-incompatibility-215989
+
+FortiGate 120G/121G official quick start:
+https://fortinetweb.s3.amazonaws.com/docs.fortinet.com/v2/attachments/f9fb064a-a672-11ee-8673-fa163e15d75b/FG-120G-SERIES-QSG.pdf
+
+5.8.0: Automatic community hardware enrichment and verified source corrections are documented in DEVICE_SPECIFICATIONS.txt. The community TZ470/TZ570 uplink types conflict with the SonicWall SFP compatibility reference; the vendor SFP+ and 2.5G/5G values take precedence in hardware summaries and reports. TZ270 X0-X7 is recognized, consistent with its exact community model template.
+
+5.10.0: See HARDWARE_LAYOUTS.txt and hardware.js for the expanded manufacturer registry, source links, physical bank ordering, FortiOS model aliases, stack/member and module isolation, and bounded layout coverage.
+
+5.11.0: Added Aruba 2920 backplane inventories, shared connectors, exact and unspecified rear modules, and CX 6000/6100 geometry. Manufacturer links were removed from the UI and hardware report appendix; sources remain in HARDWARE_LAYOUTS.txt.
+
+5.12.0: Registry expanded to 91 profiles / 195 identifiers, with CX6200/6300, legacy ProCurve zl, 2530/2540/2930M, EX2300/EX4300, C9300L, SonicWall gen6, FortiGate60F, Sophos XGS and Palo Alto additions. Exact diagrams, limits and source URLs are in HARDWARE_LAYOUTS.txt.

@@ -1,0 +1,97 @@
+Config Inspector 5.13.0 - hardware layouts and device-owned addressing
+
+The app includes 91 hardware profiles covering 195 exact model/module identifiers, including 81 verified physical layouts and ten qualified model port-group profiles. The registry is in hardware.js. It complements explicit configuration fields and automatic exact-model community catalog downloads. Manufacturer sources are documented here and in the source registry. Hardware cards, interface details and the hardware report appendix omit manufacturer links.
+
+Port types and rated capacity are separate from configured speed, interface use and fitted transceivers. The app never assumes that speed alone establishes RJ45 versus an optical cage. SFP/SFP+/SFP28 identify cage types; a fitted copper transceiver or DAC is not inferred from the cage. Shared RJ45/SFP interfaces use a combined symbol. Unknown hardware retains a neutral physical-port symbol and a layout-availability note.
+
+Profiles and sources
+- FortiGate 200G/201G, including the FortiOS FG2H0G/FG2H1G model codes: front-panel groups for HA/MGMT, ports 1-8, ports 9-16, X1-X8 and ports 17-20, with odd/even vertical numbering. Sources:
+  https://jp.forticloud.com/help/supportedmodels.html
+  https://fortinetweb.s3.amazonaws.com/docs.fortinet.com/v2/attachments/ff9309bd-92ed-11ef-a705-1222899fa4e9/FG-200G-Series-QSG.pdf
+  https://docs.fortinet.com/document/fortigate/7.6.5/hardware-acceleration/793766/fortigate-200g-and-201g-fast-path-architecture
+- FortiGate 120G/121G:
+  https://fortinetweb.s3.amazonaws.com/docs.fortinet.com/v2/attachments/f9fb064a-a672-11ee-8673-fa163e15d75b/FG-120G-SERIES-QSG.pdf
+- FortiGate 90G/91G shared interfaces and 100F/101F shared interfaces are presented as model port groups where exact revision-specific positioning is not established:
+  https://community.fortinet.com/fortigate-3/technical-tip-understanding-shared-media-interfaces-on-the-fortigate-178744
+  https://docs.fortinet.com/document/fortigate/7.6.5/hardware-acceleration/47902/fortigate-100f-and-101f-fast-path-architecture
+- Aruba 2930F 24/48-port models JL253A, JL254A, JL255A, JL256A, JL259A, JL260A, JL261A, JL262A, JL263A, JL264A, JL557A, JL558A and JL559A. The uplinks are at the left of the front panel. Mixed member models retain their own port capabilities:
+  https://www.hpe.com/psnow/doc/c05052929
+  https://www.arubanetworks.com/techdocs/hardware/switches/2930/IGSG/Aruba_2930_IGSG.pdf
+- HPE/Aruba 5400R zl2 modules J9986A, J9987A, J9988A, J9989A, J9990A, J9991A, J9992A, J9993A, J9995A and J9996A. Module slots are taken from the configuration; module capabilities never establish that a module is installed:
+  https://www.hpe.com/psnow/doc/c04293383
+  https://support.hpe.com/hpesc/public/docDisplay?docId=c04334041&docLocale=en_US&page=GUID-11226C8F-22DD-49A6-9C18-64BC9842ED6D.html
+  https://arubanetworking.hpe.com/techdocs/AOS-S/16.10/MCG/KB/content/kb/int-nam-con.htm
+- Aruba Instant On 1960 JL805A, JL806A, JL807A, JL808A and JL809A:
+  https://arubanetworking.hpe.com/techdocs/InstantOn_1960_Switch/igsg_1960.pdf
+- Cisco Catalyst C9200L 24T, 24P, 48T and 48P with fixed 4G or 4X uplinks. Explicit provisioned members establish member models; modular C9200 and C9300 uplink modules are not assumed from a family name:
+  https://www.cisco.com/c/en/us/td/docs/switches/lan/catalyst9200/hardware/install/b-c9200-hig/product_overview.html
+- Juniper EX3400-24T, EX3400-24P, EX3400-48T and EX3400-48P. Network uplinks and rear QSFP+ ports remain separately labeled. VCP capability does not establish a configured peer or cable:
+  https://www.juniper.net/documentation/us/en/hardware/ex3400/topics/topic-map/ex3400-chassis.html
+  https://www.juniper.net/documentation/us/en/hardware/ex3400/topics/topic-map/ex3400-system-overview.html
+- SonicWall NSa 4700, including SFP28 cages limited to the documented 10G capacity in this model:
+  https://www.sonicwall.com/techdocs/pdf/nsa-4700-quick-start-guide.pdf
+- Palo Alto PA-440, PA-450 and PA-460:
+  https://docs.paloaltonetworks.com/hardware/pa-400-hardware-reference/pa-400-firewall-overview/pa-400-front-panel
+
+- Aruba 2920 J9726A, J9727A, J9728A, J9729A and J9836A. The final four logical ports have separate RJ45 and SFP connector positions on the front panel. Explicit J9731A and J9732A modules identify rear SFP+ and RJ45 ports respectively; a rear A/B port name alone does not establish the connector type. Backplane stack members are identified from the bounded stacking block; dedicated stacking cable connections are not included in these exports:
+  https://support.hpe.com/hpesc/public/api/document/c03898362
+  https://arubanetworking.hpe.com/techdocs/AOS-S/16.10/ATMG/WB/content/wb/add-swi-sta-as-new-mem.htm
+- Aruba CX 6000/6100 24/48-port layouts, including JL675A/JL676A/JL677A/JL678A/R9Y04A and R8N85A/B, R8N86A/B, R8N87A/B, R8N88A/B, R9Y03A/B. The uplink bank is on the left. Exact SKU identifies 1G SFP or 10G SFP+ capacity. A complete 28/52-port PL inventory without a model uses only the common physical layout and marks uplink capacity unspecified:
+  https://arubanetworking.hpe.com/techdocs/hardware/switches/6100/IGSG/igsg_6000-6100.pdf
+  https://arubanetworking.hpe.com/techdocs/AOS-CX/Consolidated_RNs/6100%20Release%20Notes/GUID-D37E58AE-1783-4D00-9D6A-DD3B583955C8_21.html
+
+5.12.0 additions and corrections
+- Aruba CX 6200F/6200M: 24/48-port 1G RJ45 models with 1G SFP or 10G SFP+ uplinks, and the mixed 36G/12 Smart Rate model. Exact JL727A recognition fixes the supplied three-member stack. The 48 RJ45 ports occupy 24 paired columns, with four SFP+ ports in two paired columns at the right. No arbitrary third row is introduced.
+  https://arubanetworking.hpe.com/techdocs/hardware/switches/6200/IGSG/Aruba_6200_IGSG.pdf
+- Aruba CX 6300 classic F/M 24/48-port profiles, including JL658A SFP+ access ports, 5G Smart Rate models and 50G SFP56 uplinks. Newer mixed-uplink variants require their own exact profiles and do not inherit these mappings.
+  https://arubanetworking.hpe.com/techdocs/hardware/switches/6300/IGSG/igsg_6300.pdf
+- ProCurve/Aruba 2530 24/48G models have their SFP bank on the right. Aruba 2540 24/48G models have SFP+ uplinks on the left. Classic 2930M 24/48G models retain dual-personality RJ45/SFP positions. Optional rear modules are not inferred.
+  https://support.hpe.com/hpesc/public/api/document/c04623600
+  https://support.hpe.com/hpesc/public/api/document/c05325081
+  https://arubanetworking.hpe.com/techdocs/hardware/switches/2930/IGSG/igsg_2930M.pdf
+- Legacy ProCurve zl modules J8702A, J8705A, J8706A, J8707A and J8708A. X2 and CX4 modules have one physical row; CX4 is a copper connector distinct from RJ45.
+  https://ftp.hp.com/pub/networking/software/5400zl-ModuleInstall-Apr2006-59914714.pdf
+- Juniper EX2300 24/48T/P and EX4300 24/48T/P. EX2300/EX3400 front uplinks occupy one horizontal row, aligned with the lower copper row. EX4300 optional front uplinks appear only when those interfaces are represented. Rear QSFP+ and management banks stay separate.
+  https://www.juniper.net/documentation/us/en/hardware/ex2300/topics/topic-map/ex2300-system-overview.html
+  https://www.juniper.net/documentation/us/en/hardware/ex4300/ex4300.pdf
+- Cisco Catalyst C9300L 24/48T/P and 48PF with fixed 4G/4X uplinks. Slot 0 data interfaces and slot 1 uplinks retain distinct connector mappings. Unsupported modular uplinks are not guessed from a TenGigabitEthernet name. These C9300L connector banks remain qualified model port groups until revision-specific front-panel geometry is visually verified.
+  https://www.cisco.com/c/en/us/td/docs/switches/lan/catalyst9300/hardware/install/b_c9300_hig/Product-overview.html
+- SonicWall NSA 3600/4600/5600 and NSA 6600 front panels, preserving descending physical pairs, separate SFP/SFP+ banks and management. U0/U1 modem interfaces are excluded from physical Ethernet banks. An M0 activity indicator is not treated as a management port.
+  https://www.sonicwall.com/techdocs/pdf/guide-getting-started-nsa-2600-3600-4600-560.pdf
+- FortiGate 60F/61F rear ports use one row in physical left-to-right order: WAN2, WAN1, DMZ, B, A, 5, 4, 3, 2, 1.
+  https://fortinetweb.s3.amazonaws.com/docs.fortinet.com/v2/attachments/333714d7-df0d-11e9-8977-00505692583a/FG-60F-QSG-Online.pdf
+- Sophos XGS 116/116w, 126/126w, 136/136w, 2100, 2300, 3100, 3300, 4300 and 4500. Desktop network ports are on the rear. Rack models retain even-above-odd numbering, single-row SFP positions and model-specific 1G/2.5G/10G types. All four fixed XGS 4300/4500 SFP cages are SFP+ 10G, correcting conflicting community entries. Optional modules are not inferred. These profiles do not apply to second-generation XGS 118/138 appliances.
+  https://docs.sophos.com/nsg/hardware/operatinginstructions/xgs/sophos-operating-instructions-xgs-116-116w-126-126w-136-136w.pdf
+  https://docs.sophos.com/nsg/hardware/operatinginstructions/xgs/sophos-operating-instructions-xgs-2100-2300-3100-3300.pdf
+  https://docs.sophos.com/nsg/hardware/operatinginstructions/xgs/sophos-operating-instructions-xgs-4300-4500.pdf
+- Palo Alto PA-410, PA-1410 and PA-1420, with model-specific mixed RJ45/SFP/SFP+ capacity, management and HA banks. PA-440/450/460 management placement uses the lower row.
+  https://docs.paloaltonetworks.com/hardware/pa-400-hardware-reference/pa-400-firewall-overview/pa-400-front-panel
+  https://docs.paloaltonetworks.com/hardware/pa-1400-hardware-reference/pa-1400-series-overview/front-panel-1400-series
+
+Hardware identification
+The Model / Identify model action accepts an exact model or SKU for a device, member or module. It is an explicit user annotation, separate from source configuration. Matching profiles activate connector and geometry mappings; exact-model catalog lookups use annotated device/member identities. JSON snapshots preserve annotations, including SonicWall snapshots. Reset restores the configuration identity. An unknown model retains a clearly qualified two-row port inventory and neutral connector symbols where there is no explicit or catalog media evidence. Model selection does not manufacture an installed module, fitted transceiver or network assignment.
+
+Automatic future-device coverage
+The existing NetBox Community exact-model catalog can supply connector type, capacity and public device specifications for models without an embedded layout. It does not define port coordinates and cannot prove physical geometry. No complete config-format-independent database establishes every manufacturer's chassis layout. Exact geometry remains bounded to verified models; omitted model/module identity or an unsupported hardware revision is reported, rather than guessed. Adding a new profile requires checking its manufacturer diagram and port numbering.
+
+Rendering and limits
+- Boards fit their container by default. CSS grid and proportional tracks retain bank alignment and port order; compact labels avoid repeating chassis/member/slot prefixes. Enlarge opts into a larger scrollable view, and Fit width restores containment. Full names, port capacity and connector information remain accessible. Small appliances stop expanding at their natural tile size. One-row banks can retain upper/lower row alignment beside two-row banks.
+- Physical views are schematic port layouts rather than dimensioned chassis replicas. Bank order and physical port positions are retained in the complete view. Logical interfaces remain in separate functional groups.
+- Hiding unused ports compacts visible port positions and removes connector banks with no visible ports. Connector groups retain their order and port labels. This filtered view closes gaps. Showing unused ports restores the complete physical arrangement, including row alignment and known positions.
+- Chassis modules have distinct slot cards. Stack members have distinct device cards, their own models and member IDs. A management interface is outside the module-slot grid.
+- Stacking sections expose individual members, their model, source fields and linked stacking ports.
+- Configured VSF ports are assigned for stacking even without an IP address or VLAN. Their local member/link assignment is shown in the tile and primary details. Unknown remote peer wiring is not invented.
+- For complete exports, an explicitly installed supported module or supported stack-member model can establish omitted ports. Such ports have no assumed administrative or VLAN defaults and are hidden as unconfigured unless the user chooses Show unused. Partial command files do not create omitted hardware ports.
+- Exact model recognition is intentionally bounded. New models can be added to the source registry; explicit media and the existing catalog path continue to cover models without a verified geometric layout. Installed optics, chassis dimensions and empty/unreported modules are not invented.
+
+Device IP addresses
+Only addresses assigned to interface, VLAN interface or management records are listed. Primary, secondary and IPv6 addresses retain their owner and mask/prefix. Duplicate VLAN/SVI projections are consolidated. ACL matches, address objects, DNS servers, routes and remote networks are excluded. A file with no device-owned addresses stays empty. No fallback to the general IP inventory occurs.
+
+Switch ACLs
+ACL definitions have their own root and maintain ordered entries, direction and interface/VLAN links. Quoted names and VLAN attachments are interpreted. The original match expressions remain available. A definition does not establish that an ACL is attached.
+
+Importer recovery
+Unmatched quotes in unrecognized fragments can occur in sanitized files. The switch importer preserves their original fields and resumes at a recognized root section. Legitimate quoted banner/location/description fields retain multiline behavior. A wrapped port list with a leading-comma continuation remains in its original VLAN context. A slash continuation joins the original member/port expression without creating a false port. Repeated terminal captures are bounded to one hardware inventory, with duplicate VSF links removed. A single fixed member with bare port numbers never generates an additional prefixed copy of those ports. Recovery is recorded in the import notes.
+
+Validation
+Synthetic fixtures cover FortiOS model aliases, connector/capacity mappings, mixed stacks, module inventories, VSF roles, model-based omitted ports, source/snapshot retention, ACL links and device-only addresses. Browser checks verify physical positions, unused-port toggles, drawer links, reports, mobile containment and both themes. Ten supplied files were audited separately; private configuration contents and screenshots are not included in this source package. Native Windows startup and WebView2 runtime behavior remain untested in the Linux build environment.

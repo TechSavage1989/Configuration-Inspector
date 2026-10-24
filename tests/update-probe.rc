@@ -1,0 +1,27 @@
+#include <windows.h>
+1 VERSIONINFO
+#ifdef TEST_NEW
+ FILEVERSION 5,17,0,0
+ PRODUCTVERSION 5,17,0,0
+#else
+ FILEVERSION 5,16,0,0
+ PRODUCTVERSION 5,16,0,0
+#endif
+ FILEFLAGSMASK 0x3fL
+ FILEFLAGS 0
+ FILEOS 0x40004L
+ FILETYPE 1
+BEGIN
+ BLOCK "StringFileInfo"
+ BEGIN
+  BLOCK "040904b0"
+  BEGIN
+   VALUE "ProductName", "Config Inspector"
+   VALUE "FileDescription", "Config Inspector updater test fixture"
+  END
+ END
+ BLOCK "VarFileInfo"
+ BEGIN
+  VALUE "Translation", 0x0409, 1200
+ END
+END

@@ -1,0 +1,81 @@
+name: Build, test and release
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: build-${{ github.ref }}
+  cancel-in-progress: false
+jobs:
+  checks:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci --ignore-scripts
+      - run: python3 scripts/version.py --check && python3 webview/embed_features.py
+      - run: git diff --exit-code -- webview/index.html webview/version.h webview/app.manifest
+      - run: python3 scripts/check-public-source.py
+      - run: npm test
+      - run: g++ -std=c++17 -O2 -Wall -Wextra tests/update-protocol-tests.cpp -o /tmp/update-tests && /tmp/update-tests
+      - run: g++ -std=c++17 tests/spec-network-policy-test.cpp -o /tmp/spec-policy && /tmp/spec-policy
+      - name: Prepare browser
+        shell: bash
+        run: |
+          if command -v google-chrome >/dev/null; then
+            echo "CI_CHROME_PATH=$(command -v google-chrome)" >> "$GITHUB_ENV"
+          else
+            npx playwright install --with-deps chromium
+          fi
+      - run: npm run test:browser
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: failure()
+        with:
+          name: browser-diagnostics
+          path: test-results/
+  windows:
+    runs-on: windows-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+      - run: scripts\build-windows.cmd
+        shell: cmd
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: windows-release
+          path: dist/*
+          if-no-files-found: error
+  publish:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    needs: [checks, windows]
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
+        with:
+          name: windows-release
+          path: dist
+      - name: Publish a new version after all checks pass
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          version=$(tr -d '\r\n' < VERSION)
+          tag="v$version"
+          if gh release view "$tag" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            echo "Version $version is already released. Bump VERSION to publish an update."
+            exit 0
+          fi
+          test -s "releases/$version.md"
+          gh release create "$tag" --repo "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" --title "Config Inspector $version" --notes-file "releases/$version.md" --draft dist/*
+          gh release edit "$tag" --repo "$GITHUB_REPOSITORY" --draft=false --latest

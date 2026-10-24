@@ -1,0 +1,66 @@
+Device specifications and interface hardware, 5.8.0
+
+Implemented source
+
+NetBox Community Device Type Library:
+https://github.com/netbox-community/devicetype-library
+https://github.com/netbox-community/devicetype-library/blob/master/README.md
+https://github.com/netbox-community/devicetype-library/blob/master/LICENSE.txt
+
+This is a community-maintained, model-specific hardware catalog, not a vendor-certified inventory. It contains manufacturer/model/part-number identifiers, interface templates and physical attributes. Its CC0 1.0 text is included as NETBOX_CC0_LICENSE.txt. The application downloads public catalog data directly from GitHub without an account or token.
+
+Automatic behavior
+
+Opening a configuration that identifies a model starts a background check. The interface renders immediately. The application caches the manufacturer index, immutable vendor tree and matching model definition locally. Definitions younger than seven days avoid downloads. Older definitions are refreshed when opened; failed refreshes retain the last valid model and original retrieval date. Manual Refresh and Automatic downloads On/Off are in Device information. Unknown models, offline failures and rate limits do not block configuration imports or ordinary use.
+
+The Windows host permits GET only to the fixed repository's manufacturer index and immutable git tree/blob endpoints at api.github.com. Other network requests remain blocked in the embedded application. Requests omit credentials and referrers and have no request body. Configuration contents, hostnames, serial numbers, interface names, addresses and secrets are not sent. A normal HTTPS connection still exposes the client's public IP address to GitHub. HTML reports contain static data and do not download anything when opened.
+
+Exact matching and limits
+
+Manufacturer and complete model/SKU must match before a definition is accepted. Known FortiGate model spellings normalize to the same exact model. Verified Aruba 1960 SKU aliases JL805A through JL809A map to their individually checked catalog filenames. Family-only or ambiguous matches are refused. Other models require an exact normalized catalog filename plus a matching model or part number inside its definition. This deliberately leaves unmatched devices unresolved rather than selecting a similar chassis.
+
+Manufacturer directories use the Git Trees API, avoiding the Contents API's 1,000-file directory cap. Cisco's 1,030-file tree was checked during this release. Truncated indexes, invalid identities, malformed/oversized responses, duplicate ports, unsupported critical YAML syntax and mismatched blob identities are rejected. Only a small, non-executing scalar/list subset of the catalog YAML is interpreted. YAML tags, aliases, object construction and arbitrary scripts are not executed. Size/time limits and request deduplication keep downloads bounded. Unauthenticated GitHub rate limits apply; no token is required or stored.
+
+Individual interfaces require an exact or unambiguous normalized name match. Recognized Ethernet name abbreviations and bounded port ranges are supported. Virtual-chassis placeholders require a known member number. Unknown module positions are never expanded. The 1960 primary-unit naming conversion applies only to its identified first unit. Device context and known stack-member models prevent one device's hardware from being applied to a different device/member. Installed expansion modules, selected optics and negotiated speeds cannot be established from a model template alone and are not inferred.
+
+Configuration and source priority
+
+Explicit media configuration takes priority. Existing model layouts remain available offline. Catalog data supplements missing hardware facts. Verified vendor corrections override known conflicting community values. Rated capacity is separate from configured speed; neither makes an interface functionally configured or in use. Connector type is not guessed from speed, a description or a general port name. SFP cages do not establish whether a fiber or copper transceiver is installed.
+
+Known source discrepancies checked in this release:
+- Community TZ470/TZ570 templates describe X8/X9 as 1G SFP. SonicWall's compatibility article specifies SFP+ at 2.5G and 5G respectively. App hardware summaries, port details and HTML report hardware rows retain the vendor values and a correction link.
+- FortiGate 90G/91G shared RJ45/SFP+ interfaces have different WAN1/WAN2 versus X1/X2 names across hardware revisions. Existing verified layouts preserve the shared connector semantics. No additional logical interfaces are invented from these pairs.
+- TZ270's full X0-X7 layout is recognized; the previous offline layout stopped at X4.
+
+Primary vendor references:
+https://www.sonicwall.com/support/knowledge-base/supported-sonicwall-and-3rd-party-sfp-and-sfp-modules-that-can-be-used-with-sonicwall-tz-series/kA1VN0000000Iza0AE
+https://www.sonicwall.com/support/knowledge-base/faq-tz-gen-7/kA1VN0000000Jys0AE
+https://community.fortinet.com/fortigate-3/technical-tip-understanding-shared-media-interfaces-on-the-fortigate-178744
+
+Reports and configuration retention
+
+HTML reports include available downloaded/cached model hardware, retrieval date, source URL, immutable catalog blob SHA, source status and applicable vendor correction links. A report exported before a first successful lookup may contain only the original configuration. Reopened structured configurations can use the same local cache or trigger another lookup. Original entries, ownership, order and source payload exports are unchanged. Hardware facts are enrichment, not new configured settings.
+
+Interface symbols
+
+The shared renderer recognizes Ethernet, management, aggregation/redundancy, bridge, VLAN/subinterface, loopback, tunnel/overlay, wireless, cellular/modem, serial, coaxial and virtual families. Common RJ45, SFP, SFP+, SFP28/56/112, QSFP+/28/56/112/DD, OSFP, CFP, XFP, GBIC and shared cages are recognized where identified. Single-pair Ethernet and DAC remain distinct. Compact tiles show the connector symbol and speed only. Details and tooltips retain the readable type and evidence. Unspecified physical connectors use a neutral port symbol. Unfamiliar vendor-specific types use a labeled general interface symbol; future or undocumented types cannot be guaranteed to have an exact hardware classification.
+
+Other sources reviewed
+
+NetBox Labs Data Exchange:
+https://netboxlabs.com/docs/ndx/
+https://netboxlabs.com/ndx/about/
+NDX has broader curated types and optional enrichment such as lifecycle and environmental data. Its documented integrated experience is a Cloud/Enterprise feature, with paid enrichment. This release uses the openly licensed community definitions rather than assuming access or redistribution rights to paid catalog fields. It does not scrape vendor PDFs or authenticated NDX endpoints automatically.
+
+LibreNMS detection definitions:
+https://docs.librenms.org/Developing/os/Initial-Detection/
+These identify device operating systems/hardware using SNMP identifiers. Configuration exports do not reliably provide the required SNMP identity or installed-module evidence, so they are not used as an automatic hardware source.
+
+API and template references:
+https://docs.github.com/en/rest/repos/contents
+https://docs.github.com/en/rest/git/trees
+https://docs.github.com/en/rest/git/blobs
+https://docs.github.com/en/rest/using-the-rest-api/using-cors-and-jsonp-to-make-cross-origin-requests
+https://netboxlabs.com/docs/netbox/models/dcim/devicetype/
+
+Research and implementation were checked on 2026-10-20. Public catalog contents can change; source status and retrieval dates remain visible. Definitions do not establish firmware compatibility, enabled licenses or actual device performance.

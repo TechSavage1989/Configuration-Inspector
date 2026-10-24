@@ -1,0 +1,164 @@
+Config Inspector 5.7.0: virtual IPs, NAT and protocol-specific navigation
+
+Presentation
+The Virtual IPs & NAT root contains separate sidebar pages for virtual IPs and
+port forwarding, virtual IP groups, source NAT, NAT address pools, load balancers,
+backend servers, health monitors, NAT exemptions and other recognized NAT rules.
+Only populated pages appear by default. IPv4 and IPv6 addresses, original and
+translated addresses, ports and member definitions take priority. Advanced
+methods, timers and transport details remain lower priority. A disabled or
+inactive definition retains its explicit configured state.
+
+VPN has separate IPsec VPN, SSL VPN and GlobalProtect pages. IPsec gateway and
+shared settings have a separate supporting page. SSL client settings remain
+separate from IPsec settings. Recognized L2TP, PPTP and WireGuard record families
+have distinct pages; that classification does not imply a parser for every
+vendor's syntax. GlobalProtect has its own page because its transport may use
+both IPsec and SSL. Protocol comes from explicit vendor paths and fields, not
+an object's chosen name. LDAP, RADIUS, TACACS+, SAML and SSO follow the same
+separation. Recognized OSPF, OSPFv3, BGP, RIP, RIPng, EIGRP and IS-IS definitions
+remain child pages beneath Routing. Existing monitoring and voice pages already
+separate syslog, SNMP, sFlow, NetFlow, SIP and H.323.
+
+Source configuration is the first block and stays collapsed by default. No
+horizontal subsection tabs are added. Links retain original device, VDOM, VSYS,
+network or logical-system context where exported. Duplicate ambiguous names
+remain unresolved rather than selecting a different device's object.
+
+Mappings added or reviewed
+FortiOS CLI:
+  VIP and VIP6 address/port mappings; VIP46 and VIP64 translation definitions;
+  VIP groups and group members; virtual servers with individual real-server
+  IPs, ports, weights and state; load-balancer monitors; IPv4/IPv6 NAT pools;
+  policy-derived source NAT, central source NAT and exemptions; policy routes;
+  recurring, one-time and grouped schedules; SSL VPN settings and portals.
+  Policies link to their VIP/group, NAT pool and schedule definitions.
+  Quoted object names remain intact. Group memberships are not whitespace-split.
+
+SonicWall EXP and decoded fields:
+  Existing original/translated source, destination and service mappings,
+  interfaces and configured state are presented on the relevant NAT page.
+  Real NAT rules are distinguished from internal global flag collections.
+  Existing IPsec, SSL VPN, L2TP and authentication-server summaries receive
+  protocol-specific pages. Useful shared settings retain their protocol.
+  Unrecognized numeric load-balancing modes are not translated by guesswork.
+
+PAN-OS XML and normalized set-command imports:
+  Existing static/dynamic source NAT, destination NAT and port translation
+  retain host/service references. Added policy-based forwarding with next hop,
+  egress interface and traffic selectors; recurring/nonrecurring schedules;
+  GlobalProtect gateway/portal listener, client-pool and tunnel information.
+  IPsec tunnels and IKE gateways remain separate and linked.
+
+Sophos SFOS Entities.xml:
+  Existing NAT rules retain original and translated host/service references.
+  Added explicit NAT load-balancing methods, backend IP-list members and probe
+  definitions. SSLTunnelAccessSettings supplies client pools, DNS, listener and
+  certificate details. SSLVPNPolicy supplies tunnel/web access policies,
+  permitted networks and users/groups. IPsec definitions keep their own page.
+
+Junos SRX security NAT hierarchy:
+  Source, destination and static rule sets; pool addresses and ports; source
+  and destination selectors; zone/interface context; interface source NAT;
+  explicit NAT-off exemptions; static translated prefixes and proxy ARP.
+  Source and destination pools with the same name keep distinct identities.
+  Added explicit IKE gateway and IPsec VPN endpoint/selector definitions.
+  VRRP virtual addresses belong under High availability, distinct from NAT VIPs.
+
+Cisco IOS/IOS XE and recognized NX-OS CLI syntax:
+  Static IPv4 one-to-one NAT and TCP/UDP PAT, including interface-address PAT;
+  dynamic source NAT using an ACL or route map, pool or interface, and overload;
+  NAT address pools and interface roles; attached policy route maps with match
+  lists and next hops; time-range schedules. Specialized NAT syntax is not
+  interpreted as a generic static rule when its addresses do not match.
+
+Meraki Dashboard API JSON:
+  Explicit appliance endpoint identities recognize port forwarding, one-to-one
+  and one-to-many NAT, preserving external/internal ports, allowed inbound
+  protocol/port/source tuples and network context. Supported appliance bundles
+  also map VLAN interfaces, DHCP pools/reservations, static routes, L3 access
+  rules, AutoVPN, organization third-party IPsec peers, VPN subnet translation
+  and warm-spare virtual addresses. Switch endpoints retain their prior views.
+  Missing API responses are not treated as empty configuration. Include the
+  operationId or API endpoint and networkId/organizationId with each response.
+
+Aruba AOS-S/AOS-CX/Instant On and switch-only configurations:
+  Existing VLANs, interfaces, routes, aggregation, DHCP relay, authentication,
+  management, monitoring, voice and redundancy mappings remain available.
+  A gateway redundancy virtual address is shown in High availability. NAT
+  objects are not invented for a switch that does not export NAT definitions.
+
+Fundamental feature audit
+Reviewed families: interfaces/addressing, VLANs and group membership, zones,
+address/service objects and groups, access policies, NAT/VIPs and pools, static
+and policy routing, dynamic routing, DHCP and DNS, VPN endpoints and pools,
+authentication and device accounts, security and certificate inspection,
+certificates, HA/WAN failover, management/time, logging/flow collectors,
+multicast and voice/SIP. This review added the missing mappings listed above.
+It is a scoped parser audit, not a claim that every product version or vendor
+feature is fully decoded. Encrypted/proprietary backups, inherited effective
+configuration and unrecognized extensions require their documented export
+format or original-source inspection. Junos services NAT uses a different
+hierarchy from SRX security NAT and is not normalized by this module. Cisco ASA
+object/twice NAT is not an IOS export and is not claimed as supported.
+
+Model and export guarantees
+network.js builds readable projections from original source fields and never
+moves, deletes or changes those fields or their native ownership. Native rows
+are hidden only when a readable projection exists. Referenced native IDs remain
+resolvable. VIPs and pools resolve from policy address fields without changing
+their type into ordinary address objects. Source exports retain original vendor
+syntax. Snapshot files regenerate projections with stable IDs. The embedded
+HTML and background parser worker include the same module; no companion JS
+files are needed by the HTML or executable.
+
+For newly identified Meraki appliance bundles, native adapter ownership changes
+from generic JSON metadata to the identified vendor entities. Original values,
+order and complete JSON source are preserved. Regression checks separately
+cover this intentional adapter change.
+
+Validation
+The editable source includes example-only fixtures and Node.js assertions for
+field preservation, readable source/report exports, snapshots, stable identities,
+protocol isolation, numeric mappings, disabled definitions, links and ambiguous
+contexts. Browser checks cover the same import worker, source order/collapse,
+member and rule links, page isolation, CSV, theme/mobile layouts and sidebar
+scroll position. Five supplied exports retained all 127,427 original fields,
+values, order and native ownership. Real configuration files are not distributed.
+The Windows PE contains the exact HTML, official WebView2 loader and compiled
+icon. A native Windows launch has not been tested in the Linux build environment.
+
+Primary implementation references, reviewed October 2026
+https://docs.fortinet.com/document/fortigate/7.4.10/cli-reference/939799654/config-firewall-vip
+https://docs.fortinet.com/document/fortigate/7.2.4/cli-reference/308620/config-firewall-vipgrp
+https://docs.fortinet.com/document/fortigate/6.4.13/cli-reference/294620/config-firewall-vip46
+https://docs.fortinet.com/document/fortigate/6.4.16/cli-reference/252619290/config-firewall-vip64
+https://docs.paloaltonetworks.com/ngfw/networking/nat/nat-policy-rules
+https://docs.paloaltonetworks.com/ngfw/help/12-1/globalprotect/network-globalprotect-gateways/globalprotect-gateways-agent-tab/tunnel-settings-tab
+https://docs.sophos.com/nsg/sophos-firewall/22.0/api/protect/firewall/natrule/operations/addnatpolicy%26editnatpolicy.html
+https://docs.sophos.com/nsg/sophos-firewall/22.0/api/CONFIGURE/VPN/SSLVPNPolicy/operations/addsslvpnpolicy%26editsslvpnpolicy.html
+https://docs.sophos.com/nsg/sophos-firewall/20.0/api/configure/vpn/sslvpntunnel/operations/configuresslvpntunnelaccess.html
+https://www.juniper.net/documentation/us/en/software/junos/nat/topics/topic-map/nat-security-source-and-source-pool.html
+https://www.juniper.net/documentation/us/en/software/junos/nat/topics/topic-map/security-nat-destination.html
+https://www.juniper.net/documentation/us/en/software/junos/nat/topics/topic-map/security-nat-static.html
+https://www.cisco.com/c/en/us/td/docs/routers/ios/config/17-x/ip-addressing/b-ip-addressing/m_iadnat-addr-consv-xe.html
+https://developer.cisco.com/meraki/api-v1/get-network-appliance-firewall-port-forwarding-rules/
+https://developer.cisco.com/meraki/api-v1/get-network-appliance-firewall-one-to-one-nat-rules/
+https://developer.cisco.com/meraki/api-v1/get-network-appliance-firewall-one-to-many-nat-rules/
+https://developer.cisco.com/meraki/api-v1/get-network-appliance-vlans/
+https://developer.cisco.com/meraki/api-v1/get-network-appliance-static-routes/
+https://developer.cisco.com/meraki/api-v1/get-network-appliance-firewall-l-3-firewall-rules/
+https://developer.cisco.com/meraki/api-v1/get-network-appliance-vpn-site-to-site-vpn/
+https://developer.cisco.com/meraki/api-v1/get-organization-appliance-vpn-third-party-vpn-peers/
+https://developer.cisco.com/meraki/api-v1/get-network-appliance-warm-spare/
+
+5.9.0 service presentation
+VIPs accept explicit named service objects and groups where the format provides them. Related access rule services are shown with rule provenance, including separate labels for disabled rules and service exclusions. Group references propagate to nested VIP members with cycle guards; nested service summaries do not infer a named service from a port. Backend entries show named listener services or the listener protocol/type. Service values remain individually linked, use configuration context, and retain links back from service details. Missing service definitions stay readable without fabricated object links.
+
+NAT original and translated service objects, Junos protocol/port matches, Cisco PAT and Meraki forwarding protocols/ports are primary facts. Protocol and port roles are grouped in an aligned column, retaining each role. PAN-OS translated-port is a numeric port, not a service object. Forti central source NAT protocol numbers are rendered as IP protocols. Forti port forwarding uses the documented TCP default when protocol is omitted, provided no named service selector is present.
+
+Additional primary references reviewed for 5.9.0:
+https://docs.fortinet.com/document/fortigate/7.4.10/cli-reference/939799654/config-firewall-vip
+https://docs.fortinet.com/document/fortigate/7.4.6/administration-guide/446182/virtual-ip-with-services
+https://docs.paloaltonetworks.com/ngfw/help/10-1/policies/policies-nat/nat-original-packet-tab
+https://docs.paloaltonetworks.com/ngfw/networking/nat/destination-nat

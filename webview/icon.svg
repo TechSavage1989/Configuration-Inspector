@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512" fill="none" role="img" aria-labelledby="title description">
+  <title id="title">Config Inspector</title>
+  <desc id="description">Flat configuration document with a network diagram and an inspection lens. Solid colors, no gradients or shadows. All elements are editable vector paths and shapes.</desc>
+  <!-- Palette: navy #24344B, blue #5375D8, paper #F7F9FC, muted blue #BDCAE8 -->
+  <!-- Remove this group for a transparent symbol without the application tile. -->
+  <g id="app-tile">
+    <rect x="16" y="16" width="480" height="480" rx="108" fill="#24344B"/>
+  </g>
+  <g id="configuration-document">
+    <path id="document-sheet" d="M132 88H292L352 148V368C352 385.673 337.673 400 320 400H132C114.327 400 100 385.673 100 368V120C100 102.327 114.327 88 132 88Z" fill="#F7F9FC"/>
+    <path id="document-fold" d="M292 88V128C292 139.046 300.954 148 312 148H352L292 88Z" fill="#BDCAE8"/>
+    <rect id="configuration-line-one" x="136" y="128" width="100" height="16" rx="8" fill="#5375D8"/>
+    <rect id="configuration-line-two" x="136" y="164" width="132" height="16" rx="8" fill="#BDCAE8"/>
+  </g>
+  <g id="network-connections">
+    <path id="network-links" d="M224 235V276M160 310V276H288V310" stroke="#24344B" stroke-width="16" stroke-linecap="round" stroke-linejoin="round"/>
+    <rect id="network-parent" x="204" y="210" width="40" height="40" rx="10" fill="#5375D8"/>
+    <rect id="network-node-left" x="140" y="304" width="40" height="40" rx="10" fill="#5375D8"/>
+    <rect id="network-node-right" x="268" y="304" width="40" height="40" rx="10" fill="#5375D8"/>
+  </g>
+  <g id="inspection-lens">
+    <path id="lens-handle" d="M367 366L422 421" stroke="#24344B" stroke-width="48" stroke-linecap="round"/>
+    <path id="lens-handle-color" d="M367 366L422 421" stroke="#5375D8" stroke-width="28" stroke-linecap="round"/>
+    <circle id="lens-outline" cx="326" cy="325" r="72" fill="#24344B"/>
+    <circle id="lens-ring" cx="326" cy="325" r="62" fill="#5375D8"/>
+    <circle id="lens-face" cx="326" cy="325" r="40" fill="#F7F9FC"/>
+    <path id="inspected-connection" d="M306 325H346M326 305V345" stroke="#BDCAE8" stroke-width="10" stroke-linecap="round"/>
+    <rect id="inspected-node" x="314" y="313" width="24" height="24" rx="6" fill="#24344B"/>
+  </g>
+</svg>

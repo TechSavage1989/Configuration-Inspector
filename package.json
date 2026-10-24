@@ -1,0 +1,10 @@
+{
+  "name": "configuration-inspector",
+  "version": "5.16.0",
+  "private": true,
+  "scripts": {
+    "test": "node tests/run-tests.cjs",
+    "test:browser": "node tests/updates-browser.cjs"
+  },
+  "devDependencies": { "playwright": "1.62.1" }
+}

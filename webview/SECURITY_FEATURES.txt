@@ -1,0 +1,61 @@
+Config Inspector 5.6.1: functional security pages
+
+Navigation
+Every configuration root has separate child pages selected through the sidebar. There is no horizontal subsection tab strip. Page headings identify the parent and selected subsection. Only populated child pages appear by default. View options can include empty native sections. Sidebar scrolling is retained, while the selected content page starts at its heading. Source configuration remains the first content block and starts collapsed.
+
+Security
+Web & URL filtering: web profiles, URL lists and web filtering rules.
+Application control: application policies, profiles and custom application objects.
+Files & malware: file filtering, antivirus, anti-spyware and sandbox settings.
+Intrusion prevention: IPS sensors, policies and signatures.
+SSL/TLS & certificate inspection: inspection modes, decryption rules, certificate checks, selected inspection certificates and SSH inspection settings.
+Email security: mail scanning and spam protection.
+DNS security: domain filtering and botnet DNS protection. Name-server and DNS record configuration remains under DNS.
+Data protection: DLP and data filtering profiles.
+Web application protection: web application firewall profiles.
+Network protection: botnet blocking, spoofing/flood protection and configured default-rule overrides.
+Profile groups: explicit bundles of security profiles.
+Network ACLs: native switch ACL definitions, ordered entries and interface attachments.
+
+Certificates
+Certificate objects, certificate authorities and service TLS profiles have distinct child pages when their type is explicit in the export. Objects are not classified from their names. A profile called "certificate-inspection" in an antivirus table remains an antivirus profile. Certificate checks and inspection behavior are presented under Security rather than as certificate objects.
+
+Model and source
+security.js installs after features.js. It derives readable security records from recognized native fields and source paths. Each derived record retains its original entries and source keys. Native records, IDs, entry values, ordering and field ownership are preserved. Derived security facts use the existing feature presentation and native source renderer. The module is also installed in the background parser worker. JSON snapshots rebuild the derived views using stable IDs; source exports omit the duplicate derived records.
+
+FortiGate: recognizes named webfilter, application, antivirus, file-filter, IPS, firewall ssl-ssh-profile, ssh-filter, emailfilter, dnsfilter, DLP, WAF and firewall profile-group definitions. Rule matches and actions stay paired; nested web filter categories are included. The explicit HTTPS certificate-inspection mode is not described as payload decryption. Policy assignments and profile-group members resolve using profile type and VDOM.
+
+PAN-OS: recognizes profile definitions within profiles, custom application definitions, profile groups and decryption rules. Shared and device-group scopes remain distinct. Certificate-error actions retain their positive or negative meaning. Policy assignments link to the corresponding typed profile definitions.
+
+SonicWall: recognizes named CFS policies, profiles, action profiles and URL lists, application rules and explicit core antivirus, anti-spyware, IPS, TLS/SSH inspection, OCSP, email, botnet, spoofing and flood settings. Indexed protection settings remain separate from global settings. Only recognized fields receive readable labels. Serialized lists, opaque masks and unknown enums remain available in source, without speculative translation.
+
+Sophos SFOS: recognizes the named security entities listed in security.js, including SSLTLSInspectionRule and DecryptionProfile. DecryptAction, Enable and nested source/destination zone, network and service lists use the API export field names. Malware, web, application, file, IPS, mail and WAF entities are routed by their explicit type.
+
+Junos: recognizes UTM feature profiles, UTM profile groups, services ssl proxy profiles, IDP policies and application firewall rule sets from normalized set statements. Known default/category/rule actions, file matches and certificate selections are shown. This is a source view; rule evaluation, template expansion and the effective merged policy are not computed.
+
+Interpretation limits
+Coverage depends on the fields present in the export. An omitted setting is not treated as disabled or enabled. A named definition remains available even when its export includes no other translated fields. Vendor-specific enums and signature/category IDs are labeled as exported identifiers rather than assigned a guessed meaning. Missing or ambiguous links remain text. Unknown configurations remain accessible in Configuration sections, Raw configuration, All original fields and source exports.
+
+Primary references reviewed for 5.6.1
+Fortinet security profile families:
+https://docs.fortinet.com/document/fortigate/7.6.2/administration-guide/680955/security-profiles
+FortiGate SSL/SSH profile CLI:
+https://docs.fortinet.com/document/fortigate/7.0.11/cli-reference/318620/config-firewall-ssl-ssh-profile
+PAN-OS security profiles:
+https://docs.paloaltonetworks.com/pan-os/11-1/pan-os-admin/policy/security-profiles
+PAN-OS decryption profiles:
+https://docs.paloaltonetworks.com/network-security/decryption/administration/decryption-overview/decryption-profiles
+SonicWall Server DPI-SSL:
+https://www.sonicwall.com/support/knowledge-base/kA1VN0000000Jh40AE
+Sophos SSL/TLS inspection rule export fields:
+https://docs.sophos.com/nsg/sophos-firewall/21.5/api/PROTECT/Firewall/TLSRule/operations/addssltlsinspectionrule&updatessltlsinspectionrule.html
+Sophos configuration export entity names:
+https://developer.sophos.com/reference/firewall-v1/firewall-config-import-export/export-firewall-config/
+Junos web filter profile syntax:
+https://www.juniper.net/documentation/us/en/software/junos/cli-reference/topics/ref/statement/security-edit-profile-web-filtering-juniper-local.html
+Junos services SSL proxy profile:
+https://www.juniper.net/documentation/us/en/software/junos/cli-reference/topics/ref/statement/profile-edit-services-ssl-proxy.html
+Junos IDP policy rules:
+https://www.juniper.net/documentation/us/en/software/junos/idp-policy/topics/topic-map/security-idp-policy-rules-and-rulebases.html
+
+5.13.0: filter_categories.js adds readable configured category/action tables and previews, exported SonicWall category dictionaries, FortiGuard web/DNS names, custom definition links, Sophos HTTP/HTTPS rule scope and order, PAN custom URL/policy links, Junos categories, local search and a report appendix. Category IDs with no known mapping remain explicit. See FILTER_CATEGORIES.txt.

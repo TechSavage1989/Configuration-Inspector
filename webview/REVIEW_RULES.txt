@@ -1,0 +1,112 @@
+CONFIGURATION REVIEW - CONFIG INSPECTOR 5.15.0
+
+Guidance revision: 2026.10.24
+
+Purpose
+Review recognized imported configuration locally and provide evidence, affected records, configuration locations, recommended changes and verification steps. No device is contacted and no settings are changed.
+
+Assessment categories
+Issue: a contradiction or invalid value confirmed by the recognized configuration.
+Recommendation: a security or design choice requiring administrator review.
+Retained setting: an inactive or explicitly disabled entity; omitted from the default findings list. Explicitly disabled time synchronization and remote logging remain recommendations because the disabled protective function is the setting being reviewed.
+
+Coverage
+Every registered check has a positive regression test. A check is assessed only where required recognized inputs are available. Not assessed is distinct from no issue found. No percentage, compliance score or certification is inferred. The review time and guidance revision accompany exports.
+
+Vendor handling
+Common normalized addressing, VLAN, route, DHCP, policy and object-group structures are reviewed across supported vendors. Explicit FortiOS, Cisco/HPE CLI, Junos, PAN-OS XML, Sophos XML, SonicOS fields and typed RouterOS data add vendor-specific checks. Individual checks can remain unassessed if an export omits the fields, the schema is unknown, or binary fields are not interpreted. Exact duplicate policy comparison is limited to recognized FortiOS and PAN-OS explicit rule fields. Cisco password storage types are interpreted only for Cisco imports.
+
+Exceptions and interpretation
+Routing contexts and VRFs are kept separate. IPv4 /31 and /32 interfaces and IPv6 link-local reuse are not treated as ordinary host/subnet conflicts. Known DHCP exclusions can suppress allocation conflicts. LDAP port 389 alone is not treated as plaintext: TLS/StartTLS settings are inspected. Deleted and deactivated Junos service statements are not revived. AEAD proposals do not require a separate integrity algorithm. Disabled profiles are kept separate. Rule comparisons include explicit conditions and profiles, and do not claim general firewall shadowing. Explicit DNS recursion does not establish internet exposure. Logging over UDP/TCP may be protected by a tunnel or management network.
+
+Certificates
+Reads unambiguous ISO date metadata and bounded DER validity fields from PEM X.509 certificates, supporting UTCTime and GeneralizedTime. Flags expired, future-dated and 30-day renewal cases using the displayed review time. Certificate consumers are resolved in context when possible. Signature, trust-chain, revocation and hostname validity are not certified. Ambiguous calendar formats, malformed DER and unknown metadata are not assigned guessed dates.
+
+Privacy and exports
+The imported model, original entries, ownership and record IDs are not changed. Credentials are omitted from review evidence and HTML/TXT/JSON exports, including source command evidence that may contain secrets. Exports include the selected context and filters, coverage, resolution steps, verification and source references. Review data is held in memory and cleared with the workspace. The original source remains accessible through existing record links.
+
+Boundaries
+This is a configuration rules review, not a network reachability test, firmware CVE feed, CIS certification or substitute for platform-specific change validation. A configuration can intentionally use HA/anycast, recursive next hops, coordinated DHCP, inherited settings or external MFA. Those possibilities are stated where relevant. Test required access and recovery paths before applying changes.
+
+CHECK CATALOG (55)
+address-mask | Addressing | Address and subnet validity
+host-address | Addressing | Network or broadcast host addresses
+duplicate-ip | Addressing | Duplicate interface addresses
+overlap | Addressing | Overlapping interface subnets
+gateway-self | Routing | Gateway points to this device
+gateway-subnet | Routing | Gateway outside its interface subnet
+route-disabled | Routing | Routes using disabled interfaces
+route-interface | Routing | Route interface references
+vlan-membership | Switching | Contradictory VLAN membership
+native-vlan | Switching | Native VLAN excluded from trunk
+lag-settings | Switching | Aggregation member inconsistencies
+wire-pair | Switching | Virtual wire pair membership
+stp-disabled | Switching | Explicit spanning-tree disablement
+edge-guard | Switching | Explicitly disabled edge-port BPDU guard
+dhcp-range | DHCP | DHCP range order and subnet
+dhcp-local | DHCP | DHCP range includes a device address
+dhcp-overlap | DHCP | Overlapping DHCP ranges
+broad-allow | Policies | Broad allow policies
+policy-conflict | Policies | Opposing decisions with matching main selectors
+disabled-rule | Policies | Disabled access policies
+management-cleartext | Management | HTTP or Telnet management
+snmp-community | Management | Community-based SNMP configuration
+inactive-settings | Configuration | Retained inactive interface settings
+ssh-version | Management | Legacy SSH protocol version
+management-source | Management | Explicit unrestricted management sources
+management-timeout | Management | Disabled management session timeout
+credential-storage | Authentication | Weak Cisco login password storage
+snmp-default | Management | Default SNMP community names
+snmp-write | Management | Community-based SNMP write access
+snmp-v3-security | Management | SNMPv3 without authentication or privacy
+tls-legacy | Security | SSL/TLS protocol version settings
+ldap-cleartext | Authentication | Explicit unprotected LDAP authentication
+ldap-verification | Authentication | Disabled LDAP server certificate verification
+vpn-ike-version | VPN | Explicit IKEv1 selection
+vpn-weak-crypto | VPN | Weak VPN cryptographic proposals
+vpn-weak-dh | VPN | Weak VPN Diffie-Hellman groups
+ntp-disabled | Monitoring | Explicitly disabled network time synchronization
+logging-disabled | Monitoring | Explicitly disabled remote logging
+logging-transport | Monitoring | Explicit unencrypted remote log transport
+dns-recursion | DNS | DNS recursion and client access review
+route-prefix | Routing | Static route destination and mask validity
+route-next-hop | Routing | Invalid next-hop address types
+dhcp-boundary | DHCP | DHCP network and broadcast addresses
+dhcp-gateway | DHCP | DHCP router option outside the client subnet
+dhcp-reservation | DHCP | Conflicting reservations in one DHCP server
+group-cycle | Objects | Circular object-group membership
+object-reference | Objects | Unresolved explicit object-group members
+policy-duplicate | Policies | Exact duplicate firewall rule definitions
+nat-range | NAT | Reversed NAT address and port ranges
+certificate-validity | Certificates | Certificate validity and renewal dates
+source-routing | Routing | Explicit IP source-routing enablement
+directed-broadcast | Routing | Explicit IP directed-broadcast forwarding
+bpdu-filter | Switching | Explicit BPDU filtering
+admin-mfa | Authentication | Explicitly disabled administrator MFA
+root-ssh | Authentication | Explicit SSH root password login
+
+PRIMARY REFERENCES
+cisa | CISA: Communications infrastructure hardening | https://www.cisa.gov/resources-tools/resources/enhanced-visibility-and-hardening-guidance-communications-infrastructure
+tls | RFC 9325 / BCP 195: Secure TLS use | https://www.rfc-editor.org/rfc/rfc9325.html
+certificates | RFC 5280: X.509 certificate validity | https://www.rfc-editor.org/rfc/rfc5280.html
+ike | RFC 9395: IKEv1 deprecation | https://www.rfc-editor.org/rfc/rfc9395.html
+algorithms | RFC 8247: IKEv2 algorithm guidance | https://www.rfc-editor.org/rfc/rfc8247.html
+snmp | RFC 3414: SNMPv3 authentication and privacy | https://www.rfc-editor.org/rfc/rfc3414.html
+dhcp | RFC 2131: DHCP address allocation | https://www.rfc-editor.org/rfc/rfc2131.html
+options | RFC 2132: DHCP subnet and router options | https://www.rfc-editor.org/rfc/rfc2132.html
+routing | RFC 1812: IPv4 router requirements | https://www.rfc-editor.org/rfc/rfc1812.html
+point | RFC 3021: IPv4 /31 point-to-point links | https://www.rfc-editor.org/rfc/rfc3021.html
+dns | RFC 5358 / BCP 140: Restrict recursive DNS | https://www.rfc-editor.org/rfc/rfc5358.html
+cisco | Cisco IOS XE hardening guide | https://sec.cloudapps.cisco.com/security/center/resources/IOS_XE_hardening
+fortigate | FortiOS hardening recommendations | https://docs.fortinet.com/document/fortigate/7.4.0/best-practices/555436
+aruba | AOS-CX management hardening | https://arubanetworking.hpe.com/techdocs/AOS-CX/10.15/HTML/hardening/Content/Chp_hard-mgmt/summary.htm
+stp | AOS-CX spanning-tree protection | https://arubanetworking.hpe.com/techdocs/AOS-CX/10.14/HTML/hardening/Content/Chp_hard-ctrl/sec-span-tree.htm
+juniper | Junos SSH service configuration | https://www.juniper.net/documentation/us/en/software/junos/cli-reference/topics/ref/statement/ssh-edit-system.html
+paloalto | PAN-OS administrative access best practices | https://docs.paloaltonetworks.com/best-practices/10-1/administrative-access-best-practices/administrative-access-best-practices/deploy-administrative-access-best-practices
+ldap | PAN-OS LDAP TLS and certificate verification | https://docs.paloaltonetworks.com/ngfw/help/12-2/configure-ldap-authentication
+ldapstandard | RFC 4513: LDAP authentication and TLS identity checks | https://www.rfc-editor.org/rfc/rfc4513.html
+sophos | Sophos Firewall security hardening | https://docs.sophos.com/nsg/sophos-firewall/21.5/help/en-us/webhelp/onlinehelp/StartupHelp/SecurityBestPractices/SecurityHardening/index.html
+sophosldap | Sophos LDAP transport and certificate validation | https://docs.sophos.com/nsg/sophos-firewall/20.0/Help/en-us/webhelp/onlinehelp/AdministratorHelp/Authentication/Servers/LDAP/AuthenticationLDAPServerAdd/index.html
+mikrotik | RouterOS security recommendations | https://manual.mikrotik.com/docs/getting-started/securing-your-router/
+mikrotikdns | RouterOS DNS service and client access | https://manual.mikrotik.com/docs/network-management/dns/
+sonicwall | SonicOS administrative access restrictions | https://www.sonicwall.com/support/knowledge-base/kA1VN0000000IwV0AU
