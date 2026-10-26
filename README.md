@@ -75,7 +75,7 @@ During an update, loaded configurations and the comparison are encrypted using W
 
 Close additional copies of the same executable before installing and keep the application folder writable. A failed download leaves the current executable unchanged. Update checks do not send configuration contents or require GitHub credentials.
 
-See [UPDATING.md](UPDATING.md) for installation, rollback, storage and trust details.
+See [UPDATING.md](docs/UPDATING.md) for installation, rollback, storage and trust details.
 
 ## Development
 
@@ -109,7 +109,7 @@ This produces `dist/Config_Inspector.exe` and runs Windows update replacement/ro
 For an authorized application release:
 
 1. Change `VERSION`, then run `python scripts/version.py` and `python webview/embed_features.py`.
-2. Add release notes in `releases/VERSION.md` using the actual version number and commit the changes to `main`.
+2. Add release notes in `docs/releases/VERSION.md` using the actual version number and commit the changes to `main`.
 3. The [build workflow](.github/workflows/build-release.yml) runs regression, browser and Windows installation tests, then publishes only after checks pass.
 
 Keep the public download name `Config_Inspector.exe`. Installation preserves the user's chosen filename and folder. Existing published versions are not overwritten; documentation-only updates must not bump `VERSION`. GitHub source archives provide versioned source downloads. No separate publishing credential or update service is needed.

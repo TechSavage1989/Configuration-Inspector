@@ -1,4 +1,4 @@
-For current development, builds and update instructions, see ../README.md and ../UPDATING.md.
+For current development, builds and update instructions, see ../README.md and ../docs/UPDATING.md.
 
 Config Inspector 5.13.0 - compact Windows x64 desktop edition
 
