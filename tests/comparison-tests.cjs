@@ -6,7 +6,7 @@ const end=html.indexOf('  function preserveInput(',start);
 assert.ok(start>=0&&end>start,'renderContent source is present');
 const classes=new Set(),content={innerHTML:'',classList:{add:name=>classes.add(name),remove:(...names)=>names.forEach(name=>classes.delete(name))}};
 const state={model:{},view:'compare',comparison:null,compareMode:'records'};
-const ctx={state,el:{content},mapObserver:null,workspaceCompare:()=>'',comparePage:()=>'<comparison>',tablePage:()=>'<table>',welcome:()=>'<welcome>'};
+const ctx={mountObjectComparisonScroll:()=>{},state,el:{content},mapObserver:null,workspaceCompare:()=>'',comparePage:()=>'<comparison>',tablePage:()=>'<table>',welcome:()=>'<welcome>'};
 vm.createContext(ctx);vm.runInContext(html.slice(start,end),ctx);
 let checks=0;
 for(const comparison of [null,{}])for(const mode of ['records','fields']){
@@ -23,9 +23,22 @@ state.view='overview';ctx.renderContent();assert.ok(!classes.has('comparison-vie
 // Replacing the current input preserves review state, but not a context missing
 // from the new source (the visible context selector must match the filter).
 ctx.setModel=model=>{state.model=model;state.scope='';state.query='';state.filter='all';state.comparison=null;};
-vm.runInContext(html.slice(html.indexOf('  function activateComparisonLeft('),html.indexOf('  function comparisonModeControls(')),ctx);
+vm.runInContext(html.slice(html.indexOf('  function activateComparisonLeft('),html.indexOf('  function mountObjectComparisonScroll(')),ctx);
 Object.assign(state,{scope:'old-context',filter:'Changed',query:'port',comparison:{id:'right'}});
 ctx.activateComparisonLeft({meta:{contexts:['new-context']}});
 assert.equal(state.scope,'');assert.equal(state.filter,'Changed');assert.equal(state.query,'port');assert.equal(state.comparison.id,'right');checks+=4;
 state.scope='new-context';ctx.activateComparisonLeft({meta:{contexts:['new-context']}});assert.equal(state.scope,'new-context');assert.equal(state.compareLeftCleared,false);checks+=2;
+// Fractional nested boundaries forward only vertical movement to results;
+// genuine nested scrolling, horizontal gestures and zoom keep native handling.
+vm.runInContext(html.slice(html.indexOf('  function mountObjectComparisonScroll('),html.indexOf('  function comparisonModeControls(')),ctx);
+let wheel;const results={scrollTop:100,clientHeight:200,scrollHeight:2000,contains:()=>true,addEventListener:(name,fn,options)=>{assert.equal(name,'wheel');assert.equal(options.passive,false);wheel=fn;}};
+ctx.mountObjectComparisonScroll({querySelector:()=>results});
+const nested={scrollTop:760,clientHeight:300,scrollHeight:1061};
+function gesture(overrides={}){let prevented=false;wheel({target:{closest:()=>nested},deltaY:100,deltaX:0,deltaMode:0,preventDefault:()=>{prevented=true;},...overrides});return prevented;}
+assert.ok(gesture());assert.equal(results.scrollTop,200);checks+=2;
+nested.scrollTop=300;assert.equal(gesture(),false);assert.equal(results.scrollTop,200);checks+=2;
+nested.scrollTop=0;assert.ok(gesture({deltaY:-50}));assert.equal(results.scrollTop,150);checks+=2;
+assert.equal(gesture({deltaY:-50,ctrlKey:true}),false);assert.equal(gesture({deltaY:-50,shiftKey:true}),false);assert.equal(gesture({deltaY:-50,deltaX:100}),false);checks+=3;
+results.scrollTop=0;assert.equal(gesture({deltaY:-50}),false);checks++;
+nested.scrollTop=761;assert.ok(gesture({deltaMode:1,deltaY:2}));assert.equal(results.scrollTop,48);checks+=2;
 console.log(checks+' comparison view checks passed (browser scrolling checked separately)');

@@ -5424,7 +5424,7 @@ function pJ(L,pan){const d=E(),I={},R={},T={};
     // Each comparison mode owns a bounded results viewport; the outer workspace never scrolls.
     if(state.model&&!['overview','deviceinfo','topology','matrix','exports','findings','compare'].includes(state.view))el.content.classList.add('list-view');
     if(state.view==='matrix')el.content.classList.add('matrix-view');
-    if(state.view==='compare'){el.content.innerHTML=comparePage();if(state.compareMode==='text'&&window.SWTextComparison)window.SWTextComparison.mount(el.content,state.compareText,renderContent);return;}
+    if(state.view==='compare'){el.content.innerHTML=comparePage();if(state.compareMode==='text'&&window.SWTextComparison)window.SWTextComparison.mount(el.content,state.compareText,renderContent);else mountObjectComparisonScroll(el.content);return;}
     if(!state.model){el.content.innerHTML=welcome();return;}
     if(state.view==='findings'){el.content.innerHTML=findingsPage();return;}
     if(state.view==='deviceinfo'){el.content.innerHTML=deviceInformationPage();return;}
@@ -6255,6 +6255,19 @@ function pJ(L,pan){const d=E(),I={},R={},T={};
   function activateComparisonLeft(model){
     var saved={comparison:state.comparison,compareMode:state.compareMode,query:state.query,filter:state.filter,compareCategory:state.compareCategory,page:state.page,sortKey:state.sortKey,sortDir:state.sortDir,scope:state.scope,hideSensitive:state.hideSensitive};
     setModel(model);Object.assign(state,saved);if(state.scope&&!(model.meta.contexts||[]).includes(state.scope))state.scope='';state.compareLeftCleared=false;state.view='compare';
+  }
+  function mountObjectComparisonScroll(container){
+    var results=container.querySelector('.comparison-object-results');if(!results)return;
+    results.addEventListener('wheel',function(event){
+      if(event.ctrlKey||event.shiftKey||!event.deltaY||Math.abs(event.deltaX)>Math.abs(event.deltaY))return;
+      var nested=event.target.closest&&event.target.closest('.comparison-scroll');if(!nested||!results.contains(nested))return;
+      var delta=event.deltaY*(event.deltaMode===1?24:event.deltaMode===2?results.clientHeight:1);
+      // Chromium can clamp a fractional table boundary one pixel short and eat
+      // the next gesture. Hand off only at that boundary, never inside the table.
+      var edge=delta<0?nested.scrollTop<=2:nested.scrollTop+nested.clientHeight>=nested.scrollHeight-2;
+      var room=delta<0?results.scrollTop>0:results.scrollTop+results.clientHeight<results.scrollHeight-1;
+      if(edge&&room){results.scrollTop+=delta;event.preventDefault();}
+    },{passive:false});
   }
   function comparisonModeControls(){
     return '<div class="compare-mode-toolbar" role="group" aria-label="Comparison mode"><button class="button'+(state.compareMode==='records'?' primary':'')+'" data-compare-mode="records" aria-pressed="'+(state.compareMode==='records')+'">'+icon('layers')+'Config objects</button><button class="button'+(state.compareMode==='text'?' primary':'')+'" data-compare-mode="text" aria-pressed="'+(state.compareMode==='text')+'">'+icon('code')+'Config text / files</button><button class="button small" data-compare-mode="fields" aria-pressed="'+(state.compareMode==='fields')+'" title="All original field changes">Original fields</button><span class="chip">Read-only</span>'+(state.compareMode!=='text'?'<button class="icon-button" data-action="compare-swap" aria-label="Swap configurations" title="Swap configurations"'+(!comparisonLeftModel()&&!state.comparison?' disabled':'')+'>'+icon('compare')+'</button>':'')+'<button class="button small" data-action="compare-loaders-toggle" aria-expanded="'+(!state.compareLoadersCollapsed)+'">'+(state.compareLoadersCollapsed?'Show inputs':'Hide inputs')+'</button></div>';
