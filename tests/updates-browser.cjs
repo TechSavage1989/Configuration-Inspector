@@ -1,12 +1,38 @@
 const assert=require('node:assert/strict'),path=require('node:path'),fs=require('node:fs');
 let playwright;try{playwright=require('playwright');}catch{playwright=require(process.env.CODEX_PRIMARY_RUNTIME_NODE_MODULES+'/playwright');}
 const currentVersion=fs.readFileSync('VERSION','utf8').trim(),parts=currentVersion.split('.').map(Number),nextVersion=parts[0]+'.'+(parts[1]+1)+'.0';
+const nativeMenuMessage=JSON.parse(fs.readFileSync('webview/update_protocol.h','utf8').match(/updateMenuMessage=R"\((.*?)\)"/)[1]);
 let checks=0;function ok(value,message){checks++;assert.ok(value,message)}
 async function setup(page){await page.addInitScript(()=>{const handlers=[];window.ciCommands=[];window.chrome={webview:{postMessage:value=>{window.ciCommands.push(value);if(value==='storage-info')queueMicrotask(()=>handlers.forEach(handler=>handler({data:{type:'config-inspector-storage',action:value,ok:true,canceled:false,currentPath:'C:\\ExampleAppData',message:''}})));},addEventListener:(type,handler)=>handlers.push(handler)}};window.ciMessage=async data=>{for(const handler of handlers)await handler({data});};});await page.goto('file://'+path.resolve('webview/index.html'));await page.waitForFunction(()=>window.ciCommands.includes('update-ui-ready'));}
 (async()=>{
 fs.mkdirSync('test-results',{recursive:true});const browser=await playwright.chromium.launch({headless:true,args:['--no-sandbox'],...(process.env.CI_CHROME_PATH?{executablePath:process.env.CI_CHROME_PATH}:{})});
 try{
  const page=await browser.newPage({viewport:{width:1440,height:960}});const errors=[];page.on('pageerror',e=>errors.push(e.message));await setup(page);
+ // An unsolicited native result must display without first opening settings or
+ // clicking Check. Native scheduler timing is covered by the Windows Updater test.
+ const automaticStatus={type:'config-inspector-updates',current:currentVersion,version:nextVersion,state:'available',message:'A newer version is available.',busy:false,automatic:true,ready:false,available:true,snoozed:false};
+ ok(await page.locator('[data-update-settings]').count()===0,'startup has no settings modal');
+ ok(await page.evaluate(()=>!window.ciCommands.includes('update-check')),'UI startup does not require a manual check');
+ await page.evaluate(v=>window.ciMessage(v),automaticStatus);
+ ok(await page.locator('#app-update-notice').isVisible(),'automatic result displays on untouched welcome screen');
+ ok(await page.locator('[data-update-settings]').count()===0,'automatic notice does not force a settings modal');
+ await page.evaluate(v=>window.ciMessage({...v,available:false,state:'current'}),automaticStatus);
+ ok(await page.locator('#app-update-notice').isHidden(),'current-version result hides the notice');
+ // The literal native Help payload opens the update section and starts a check.
+ await page.evaluate(v=>window.ciMessage(v),nativeMenuMessage);
+ ok(await page.locator('[data-update-settings]').isVisible(),'native Help opens updates without any update-settings DOM button');
+ ok(await page.evaluate(()=>window.ciCommands.filter(v=>v==='update-check').length)===1,'Help starts a manual check');
+ ok(await page.locator('[data-action="update-check"]').evaluate(e=>e===document.activeElement),'Help focuses the visible check control');
+ await page.evaluate(v=>window.ciMessage({...v,state:'checking',busy:true,message:'Checking GitHub Releases...'}),automaticStatus);
+ await page.evaluate(v=>window.ciMessage(v),nativeMenuMessage);
+ ok(await page.evaluate(()=>window.ciCommands.filter(v=>v==='update-check').length)===1,'repeated Help during a check does not start another request');
+ ok((await page.locator('[data-update-settings]').innerText()).includes('Checking GitHub Releases'),'busy Help still exposes progress');
+ await page.evaluate(v=>window.ciMessage({...v,state:'error',error:true,available:false,message:'Example network is unavailable.'}),automaticStatus);
+ ok((await page.locator('[data-update-settings]').innerText()).includes('Example network is unavailable.'),'manual errors are visible');
+ await page.locator('[data-action="close-modal"]').first().click();
+ await page.evaluate(v=>window.ciMessage(v),nativeMenuMessage);
+ ok(await page.evaluate(()=>window.ciCommands.filter(v=>v==='update-check').length)===2,'Help works again after dismissal/error');
+ await page.locator('[data-action="close-modal"]').first().click();
  await page.locator('[data-action="app-settings"]').first().click();ok(await page.locator('[data-update-settings]').isVisible(),'updater appears in app settings');ok(await page.locator('#app-settings-auto-updates').isChecked());
  await page.locator('[data-action="update-check"]').click();ok(await page.evaluate(()=>window.ciCommands.includes('update-check')));
  const status={type:'config-inspector-updates',current:currentVersion,version:nextVersion,state:'available',message:'A newer version is available.',busy:false,automatic:true,ready:false,available:true,snoozed:false,notes:'Example update\n<img src=x onerror=alert(1)>',size:1700000,bytes:0,lastCheck:1700000000,nextCheck:1700000001};
@@ -20,6 +46,13 @@ try{
  await page.locator('#app-update-notice [data-action="update-review"]').click();ok(await page.locator('#modal').innerText().then(t=>t.includes('Install Config Inspector '+nextVersion+'?')));ok(await page.locator('#modal img').count()===0,'release notes cannot inject HTML');ok((await page.locator('.app-update-notes').innerText()).includes('<img'));
  await page.locator('[data-action="update-install"]').click();await page.waitForFunction(()=>window.ciCommands.some(c=>c.startsWith('update-install\n')));const data=await page.evaluate(()=>JSON.parse(window.ciCommands.find(c=>c.startsWith('update-install\n')).slice(15)));ok(data.schema===1&&data.count===1&&data.models.length===1,'loaded config included in restart handoff');ok(data.models[0].decodedText.includes('firewallName'));
  await page.evaluate(v=>window.ciMessage({...v,state:'error',error:true,ready:true,message:'Close other copies before updating.'}),status);ok((await page.locator('#update-install-error').innerText()).includes('Close other copies'));ok(await page.locator('[data-action="update-install"]').isEnabled(),'install failure allows retry');
+ // Help remains reachable from a loaded workspace and at the minimum window.
+ await page.locator('[data-action="close-modal"]').first().click();
+ await page.setViewportSize({width:800,height:600});
+ await page.evaluate(v=>window.ciMessage(v),nativeMenuMessage);
+ const checkBox=await page.locator('[data-action="update-check"]').boundingBox();
+ ok(checkBox&&checkBox.y>=0&&checkBox.y+checkBox.height<=600,'native Help scrolls its check action into the small viewport');
+ ok((await page.locator('#content').innerText()).includes('Interfaces at a glance'),'opening updates preserves loaded workspace');
  const restored=await browser.newPage({viewport:{width:1100,height:800}});await setup(restored);await restored.evaluate(data=>window.ciMessage({type:'config-inspector-update-workspace',workspace:data}),data);await restored.waitForFunction(()=>window.ciCommands.includes('update-restored'));ok((await restored.locator('#content').innerText()).includes('Interfaces at a glance'));ok(await restored.evaluate(()=>!window.ciCommands.includes('update-restore-failed')));
  await restored.evaluate(v=>window.ciMessage({...v,state:'ready',ready:true}),status);await restored.locator('#app-update-notice [data-action="update-later"]').click();ok(await restored.evaluate(()=>window.ciCommands.includes('update-later')));await restored.evaluate(v=>window.ciMessage({...v,state:'ready',ready:true,snoozed:true}),status);ok(await restored.locator('#app-update-notice').isHidden());
  await restored.locator('[data-action="app-settings"]').first().click();ok(await restored.locator('[data-update-settings] [data-action="update-review"]').isVisible(),'snooze retains settings access');

@@ -1,5 +1,75 @@
 # Configuration Inspector development handoff
 
+## 5.17.3 candidate — review validation pending
+
+Based on verified main `08d2cdb565e8a4204bf0a467295c7313c9191695` after 5.17.2.
+Started from local checkpoint `c1ba7af02bc967e523462e7e3e286b5cad35ab0e` on
+`fix/update-notices-menu`; release candidate is 5.17.3. On 2026-10-27 the user
+explicitly approved pushing the prompt's changes, hosted validation, safe main
+promotion and publication after passing checks. Main and latest release were
+rechecked before resuming; both still match the 5.17.2 baseline.
+The user reported missing automatic update notices and a broken native Help action,
+then requested all-three-mode maps, drag-anywhere, aligned loaders/swaps, neutral
+unchanged markers and collapsible object sections. All six parts of the final
+prompt are implemented. Do not promote a failing or untested candidate; preserve
+existing tags/assets, repository access and the fast-forward-only release flow.
+
+### Findings and implementation
+
+- Confirmed Help bug: native command 11 searched for a nonexistent
+  `data-action="update-settings"` element. It now sends a typed native message;
+  a small gate retains/coalesces requests until the UI-ready handshake. The UI
+  opens/focuses the update section and checks, exposing busy/error results without
+  depending on a rendered button. Repeated requests do not overlap an active check.
+- The public 5.17.2 feed passes the application's strict C++ release parser and
+  advertises the already-verified executable digest. The user's exact automatic
+  notification cause remains unconfirmed: running version, whether left open and
+  automatic/Later preferences were not available. Existing six-hour polling and
+  global 24-hour snooze could explain delayed/missing notices; do not claim an
+  observed failure on the user's desktop.
+- Checks remain about 15 seconds after UI readiness, now every five minutes while
+  open. Disabled checks remain disabled. Later is release-specific, survives
+  reopening, and expires without awaiting another network request. Legacy global
+  delays cannot identify a version and do not suppress unrelated newer releases.
+  Download/install consent, verification, encryption and rollback are unchanged.
+- `UpdateServices` injects only clock, release-feed and preference boundaries into
+  the real native Updater for deterministic tests, without registry/network side
+  effects. `tests/updater-scheduler-tests.cpp` is wired into the Windows build;
+  it covers startup readiness, polling, retries, busy suppression, disabled state,
+  manual checks and persisted/version-specific/expired reminders. It is not yet run.
+- All original fields now has a measured current-filtered-page row map. Text,
+  object and field maps accept track/marker/viewport press-and-drag, with capture,
+  cleanup and click suppression. Text track/marker movement is anchored after the
+  initial jump; 1px regressions prevent an extra first-movement jump.
+- Text masking remains parent-owned and moves into its results toolbar, not a row
+  above inputs. Loaders and the center swap design are consistent across modes.
+- Object sections use native details/summary controls and retain collapsed category
+  state across filtering/mode changes, including cleanup before a queued toggle.
+  Open rows use real geometry; collapsed sections use labeled per-kind aggregates
+  at the actual heading, with neutral unchanged counts when included by filters.
+  Map/bookmark selection expands and remeasures before navigating. Aggregates stay
+  actionable even when all collapsed content fits beneath a full-height viewport.
+- The old generic details scroll rule is narrowed to technical-details only; new
+  collapsible category wrappers must not turn ordinary property tables into nested
+  300px scroll traps. Keep this regression guard and the original wheel handoff.
+
+### Validation and remaining work
+
+Passed locally: 5,329 Node checks (including 134 geometry/events, 202 text UI,
+43 comparison view, 82 object comparison and 62 updater bridge/workspace checks),
+91 C++ protocol/menu-gate checks, native catalog policy, 3 repository-layout guards,
+version/embedding consistency, JavaScript syntax and whitespace checks. Public
+source audit passed for 169 files (167 text, 66 reviewed fixtures). The live
+latest-release feed was separately parsed by the production C++ metadata parser.
+
+Prepared but **not run**: updated comparison/updater browser suites, the new real
+native Updater scheduler suite, Windows build and existing replacement/rollback
+fixtures. Full interactive WebView2 and a real installed-app upgrade are also unrun.
+Local Chromium remains unavailable under the previously documented sandbox
+restriction; do not retry that restricted route. Hosted review-branch CI is the
+next validation step on the authorized review branch. No parser or private-fixture changes,
+private data, access changes or force push are part of this implementation.
+
 ## 5.17.2 published and verified
 
 Release: https://github.com/TechSavage1989/Configuration-Inspector/releases/tag/v5.17.2

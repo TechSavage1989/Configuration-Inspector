@@ -7,6 +7,10 @@ void ok(bool b){++checks;if(!b)throw Error("Test failed at check "+std::to_strin
 void rejects(const std::function<void()>& f){bool threw=false;try{f();}catch(const Error&){threw=true;}ok(threw);}
 Json fixture(){Json a=Json::obj();a.fields={{"name",Json(assetName)},{"browser_download_url",Json(std::string(repositoryURL)+"/releases/download/v5.17.0/Config_Inspector.exe")},{"size",Json::num(2000000)},{"digest",Json("sha256:"+std::string(64,'a'))}};Json list=Json::list();list.items={a};Json j=Json::obj();j.fields={{"tag_name",Json("v5.17.0")},{"draft",Json(false)},{"prerelease",Json(false)},{"body",Json("Example notes")},{"assets",list}};return j;}
 int main(){try{
+ UpdateMenuGate menu;ok(!menu.request());ok(!menu.request());ok(menu.ready());ok(!menu.ready());ok(menu.request());ok(menu.request());
+ ok(parse(updateMenuMessage).at("type").str()=="config-inspector-update-open");
+ ok(updateCheckInterval==300);
+
  ok(newer("5.17.0","5.16.99"));ok(!newer("5.16.0","5.16.0"));ok(newer("10.0.0","9.99.99"));ok(!newer("5.9.0","5.10.0"));
  for(auto s:{"","v5.16.0","5.16","5.16.0.0","5.16.0-beta","05.16.0","5.-1.0","65536.0.0","5.16.0 ","5.16.0\n","5.16.+1"})rejects([&]{version(s);});
  ok(version("65535.0.0")[0]==65535);ok(parse("{\"x\":[true,false,null,1,-1,1.5,1e3]}").at("x").items.size()==7);

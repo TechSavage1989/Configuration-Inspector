@@ -3,8 +3,17 @@ const {boot}=require('./harness.cjs');let checks=0;function ok(value,message){ch
 function moduleUnderTest(){const ctx={TextEncoder,Map,JSON,console};ctx.window=ctx;vm.createContext(ctx);vm.runInContext(fs.readFileSync('webview/updates.js','utf8'),ctx);return ctx.SWUpdates;}
 (async()=>{
 const U=moduleUnderTest();ok(!U.manager.native);assert.throws(()=>U.manager.request('update-check'));checks++;
-const sent=[],listeners=[],bridge={postMessage:x=>sent.push(x),addEventListener:(name,f)=>listeners.push(f)},u=U.create({bridge});let status,restored,error;
-u.start({change:v=>status=v,restore:async data=>{restored=data;},error:e=>error=e});ok(sent[0]==='update-ui-ready');u.request('update-check');ok(sent.at(-1)==='update-check');assert.throws(()=>u.request('shell-execute'));checks++;
+const sent=[],listeners=[],bridge={postMessage:x=>sent.push(x),addEventListener:(name,f)=>listeners.push(f)},u=U.create({bridge});let status,restored,error,opened=0;
+u.start({open:()=>{opened++;u.request('update-check');},change:v=>status=v,restore:async data=>{restored=data;},error:e=>error=e});ok(sent[0]==='update-ui-ready');u.request('update-check');ok(sent.at(-1)==='update-check');assert.throws(()=>u.request('shell-execute'));checks++;
+// Deliver the exact native Help payload, not a simulated click on a settings button.
+const nativeProtocol=fs.readFileSync('webview/update_protocol.h','utf8'),menuMessage=JSON.parse(nativeProtocol.match(/updateMenuMessage=R"\((.*?)\)"/)[1]);
+await listeners[0]({data:menuMessage});ok(opened===1);ok(sent.at(-1)==='update-check');
+await listeners[0]({data:menuMessage});ok(opened===2,'native menu remains reusable');
+await listeners[0]({data:{type:'config-inspector-update-open-unknown'}});ok(opened===2,'unknown messages do not open updates');
+const nativeHost=fs.readFileSync('webview/app.cpp','utf8'),html=fs.readFileSync('webview/index.html','utf8');
+ok(nativeHost.includes('case 11:if(updateMenu.request())openUpdateSettings();break;'),'Help dispatch uses the queued native message, not an absent DOM selector');
+ok(nativeHost.includes('updateMenu.ready())openUpdateSettings()'),'startup menu request is delivered after UI handshake');
+ok(html.includes('open:showUpdateSettings'),'the app installs the native menu handler');
 await listeners[0]({data:{type:'config-inspector-updates',state:'evil',message:'x',busy:false,automatic:true}});ok(!status);
 await listeners[0]({data:{type:'config-inspector-updates',state:'ready',message:'Ready',busy:false,automatic:true,ready:true,available:true,version:'5.17.0'}});ok(status.ready);ok(u.state().version==='5.17.0');
 u.install('{"schema":1,"models":[]}');ok(sent.at(-1).startsWith('update-install\n'));assert.throws(()=>u.install('{}'));checks++;

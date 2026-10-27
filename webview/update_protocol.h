@@ -19,6 +19,17 @@ inline constexpr const char* assetName="Config_Inspector.exe";
 inline constexpr uint64_t maxBinary=64ull*1024*1024;
 inline constexpr uint64_t maxWorkspace=96ull*1024*1024;
 
+// Native Help menu requests do not depend on a currently rendered DOM button.
+inline constexpr const char* updateMenuMessage=R"({"type":"config-inspector-update-open"})";
+struct UpdateMenuGate {
+ bool uiReady=false,pending=false;
+ bool flush(){if(!uiReady||!pending)return false;pending=false;return true;}
+ bool request(){pending=true;return flush();}
+ bool ready(){uiReady=true;return flush();}
+};
+inline constexpr uint64_t updateCheckInterval=5*60;
+
+
 struct Error:std::runtime_error { using std::runtime_error::runtime_error; };
 inline void require(bool ok,const char* message){if(!ok)throw Error(message);}
 struct Json {

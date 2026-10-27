@@ -81,19 +81,31 @@ continue into the result list at their boundary.
 The text mode's vertical **change map** shows added, removed and changed lines
 across the entire aligned comparison, with an outline for the visible area. Click
 the map to jump both panes, or focus it and use arrows, Page Up/Down and Home/End.
-Drag the map's viewport outline to scroll both panes smoothly, including across
-500-row pages; release or cancel the pointer to stop. Click/keyboard navigation
-and ordinary synchronized scrolling remain available.
+Press and drag anywhere on the map—track, marker or viewport outline—to scroll
+both panes, including across 500-row pages; release or cancel the pointer to stop.
+Click/keyboard navigation and ordinary synchronized scrolling remain available.
 
 Config Objects has a **Sections** sidebar and a geometry-based change map. Click a
 section to jump within the results; the active section follows scrolling. The
 object map reflects real card heights and expanded details, with colors for added,
-removed, changed and unchanged objects. Click markers, drag its viewport or use
-keyboard navigation. Both the bookmarks and object map describe **this results
-page only** and refresh with filters, pagination, resizing or input changes.
+removed, changed and unchanged objects. Click markers, press and drag anywhere on
+the map, or use keyboard navigation. Object sections can be collapsed from their
+headings; that choice is retained while switching modes or filters. Collapsed sections show
+labeled, per-state counts at the actual heading rather than pretending hidden
+cards occupy scroll space. A section bookmark or collapsed map marker expands
+the section before navigating. Unchanged objects use neutral markers when the
+active filters include them. Both bookmarks and maps describe **this results page
+only** and refresh with filters, pagination, resizing or input changes.
 
-The original-field comparison remains available. Direct text inputs are limited
-to 5 MB each and require acknowledgment before displaying unmasked contents.
+The **All original fields** mode also has a change map based on the actual visible
+field rows and their added/removed/changed state. Its map is limited to the current
+filtered results page and supports click, press-and-drag anywhere and keyboard
+navigation. All three modes share the same loader position and centered Swap sides
+button. The text mode’s loaded-source secrets control stays in the results toolbar;
+it does not shift the loaders or change direct-text acknowledgment rules.
+
+Direct text inputs are limited to 5 MB each and require acknowledgment before
+displaying unmasked contents.
 Loaded sources follow the sensitive-value setting; masking can hide secret-only
 text differences, while object comparison still reports the change. CRLF/LF line
 endings compare equivalently; a missing final newline remains visible. These are
@@ -114,7 +126,7 @@ Open **App settings** from the sidebar or native File menu to choose the desktop
 
 Open **App settings → App updates**. Choose **Download update**, then **Review install and restart** and confirm installation after saving your work.
 
-Automatic checks run after startup and every six hours. They can be disabled; **Later** hides a notice for 24 hours. Nothing downloads or restarts automatically.
+Automatic checks run after startup and every five minutes while the app is open. They can be disabled; **Later** hides that release’s notice for 24 hours without hiding a newer release. **Help → Check for updates** opens the update controls and checks immediately. Nothing downloads or restarts automatically.
 
 Updates come from this repository's stable GitHub Releases. The downloaded executable must match the release's SHA-256 digest, size, product identity, architecture and version. These builds are **not Authenticode signed**: hashes detect corruption and mismatched files, not a compromised publisher.
 

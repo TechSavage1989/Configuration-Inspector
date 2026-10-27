@@ -31,6 +31,10 @@ cl /nologo /std:c++17 /O1 /MT /EHsc /DUNICODE /D_UNICODE /D_CRT_SECURE_NO_WARNIN
 if errorlevel 1 exit /b 1
 build\updater-windows-tests.exe build\probe-old.exe build\probe-new.exe
 if errorlevel 1 exit /b 1
+cl /nologo /std:c++17 /O1 /MT /EHsc /DUNICODE /D_UNICODE /D_CRT_SECURE_NO_WARNINGS tests\updater-scheduler-tests.cpp /Fobuild\scheduler-tests.obj /Febuild\updater-scheduler-tests.exe /link advapi32.lib shell32.lib ole32.lib winhttp.lib bcrypt.lib crypt32.lib version.lib user32.lib
+if errorlevel 1 exit /b 1
+build\updater-scheduler-tests.exe
+if errorlevel 1 exit /b 1
 copy /y webview\index.html dist\Config_Inspector.html >nul
 copy /y webview\icon.svg dist\Config_Inspector_Icon.svg >nul
 python scripts\checksums.py
