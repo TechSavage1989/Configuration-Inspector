@@ -6,6 +6,7 @@
 #include <vector>
 #include <cstring>
 #include <stdexcept>
+#include <string>
 static int checks=0;
 static void ok(bool v){++checks;if(!v)throw std::runtime_error("Icon check failed "+std::to_string(checks));}
 static unsigned u16(const unsigned char* p){return p[0]|(p[1]<<8);}
