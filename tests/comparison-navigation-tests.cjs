@@ -46,7 +46,13 @@ map.emit('pointermove',{clientY:120});const dragged=results.scrollTop;ok(dragged
 map.emit('pointerdown',{target:map,clientY:40});map.emit('click',{clientY:40});eq(results.scrollTop,140);
 event=map.emit('pointerdown',{target:thumb,clientY:20+parseFloat(thumb.style.top)+1});ok(map.hasPointerCapture(7));map.emit('pointercancel');ok(!map.hasPointerCapture(7));eq(map.getAttribute('data-object-map-dragging'),null);const canceled=results.scrollTop;map.emit('pointermove',{clientY:900});eq(results.scrollTop,canceled);
 // Expanding content and resizing recomputes actual variable-height map geometry.
-cards[0].height=700;cards[1].top=1430;groups[1].contentTop=1400;results.scrollHeight=2800;results.emit('toggle');flush();eq(layer.children[1].getAttribute('data-object-map-top'),'1430');near(parseFloat(layer.children[0].style.height),700/2800*100);
+cards[0].height=700;cards[1].top=1430;groups[1].contentTop=1400;results.scrollHeight=2800;
+// A scroll-anchoring update may precede both toggle and ResizeObserver delivery.
+// The first frame must not advertise a new total with stale marker offsets.
+const oldThumbHeight=thumb.style.height;results.emit('scroll');const scrollFrame=Array.from(frames.values());frames.clear();scrollFrame.forEach(fn=>fn());
+eq(map.getAttribute('data-object-map-total'),'2400','extent is committed only with measured markers');eq(layer.children[1].getAttribute('data-object-map-top'),'1030');eq(thumb.style.height,oldThumbHeight,'thumb retains the same measured snapshot');eq(frames.size,1,'scroll extent change schedules a geometry frame');
+flush();eq(map.getAttribute('data-object-map-total'),'2800');eq(layer.children[1].getAttribute('data-object-map-top'),'1430');near(parseFloat(layer.children[0].style.height),700/2800*100);
+results.emit('toggle');flush();eq(layer.children[1].getAttribute('data-object-map-top'),'1430');
 map.clientHeight=300;results.clientHeight=400;resize.fn();flush();near(parseFloat(thumb.style.height),300*400/2800);eq(map.getAttribute('aria-valuemax'),'2400');
 // Resize bursts coalesce, and externally lost capture cannot leave a drag armed.
 for(let i=0;i<8;i++)resize.fn();eq(frames.size,1,'resize work is bounded to one frame');flush();

@@ -21,9 +21,12 @@ publication on 2026-10-27. No private input/screenshot content is committed.
 - Preserve parsers, original source, secret masking, settings, updater snapshots,
   release gates, root allowlist and single-file feature embedding paths.
 
-Local validation passed: 5,227 Node checks, 3 repository-layout guards,
+Local validation passed: 5,233 Node checks, 3 repository-layout guards,
 version/embedding and public-source audits, 83 protocol checks and native catalog
 policy. Hosted browser/Windows validation and release verification are pending.
+A main-run geometry-refresh race was reproduced and fixed: publish the measured
+map extent only after marker remeasurement, retaining a consistent viewport and
+marker snapshot if a scroll event arrives before ResizeObserver.
 Local Chromium
 remains unavailable under the established sandbox restriction; do not retry it.
 Full interactive native WebView2 and a real installed app update are not claimed.
