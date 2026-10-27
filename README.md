@@ -74,7 +74,12 @@ works with a single loaded side.
 Both modes keep their controls visible while results scroll within the window.
 Use **Hide inputs** to reclaim review space without losing either configuration;
 the compact summary keeps Current/Comparison identities and filenames visible.
-Both sides always support replace, paste and clear. Object results are grouped by
+Both sides always support replace, paste and clear. **Use imported** selects any
+compatible configuration already open in the workspace, without reopening or
+reparsing its file. It is available on both sides in all three views, including
+the compact summary when inputs are hidden. Loaded-source masking is preserved;
+the picker displays only filenames and configuration identity metadata.
+Object results are grouped by
 actual categories; expanded original-setting tables scroll independently and
 continue into the result list at their boundary.
 

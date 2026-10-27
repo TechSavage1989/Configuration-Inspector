@@ -19,7 +19,7 @@
     return {compareText:compareText,compareMode:['records','text','fields'].includes(data.compareMode)?data.compareMode:'records',models:models.slice(0,data.count),model:data.selected<0?null:models[data.selected],comparison:data.comparison<0?null:models[data.comparison],view:typeof data.view==='string'?data.view:'overview',scope:typeof data.scope==='string'?data.scope:'',categoryTabs:data.categoryTabs&&typeof data.categoryTabs==='object'&&!Array.isArray(data.categoryTabs)?data.categoryTabs:{},showUnassigned:!!data.showUnassigned,showEmpty:!!data.showEmpty};
   }
   function create(options){
-    options=options||{};var bridge=options.bridge||root.chrome&&root.chrome.webview,native=!!(bridge&&typeof bridge.postMessage==='function'&&typeof bridge.addEventListener==='function'),state={current:'5.17.3',state:'idle',message:'',automatic:true,busy:false,ready:false,available:false},handlers={},restoring=false,installing=false;
+    options=options||{};var bridge=options.bridge||root.chrome&&root.chrome.webview,native=!!(bridge&&typeof bridge.postMessage==='function'&&typeof bridge.addEventListener==='function'),state={current:'5.17.4',state:'idle',message:'',automatic:true,busy:false,ready:false,available:false},handlers={},restoring=false,installing=false;
     var commands=['update-ui-ready','update-status','update-check','update-download','update-later','update-auto-on','update-auto-off','update-restored','update-restore-failed'];
     function request(command){if(!native)throw new Error('Built-in updates are available in the Windows desktop edition.');if(!commands.includes(command))throw new Error('Unknown update action.');bridge.postMessage(command);}
     if(native)bridge.addEventListener('message',async function(event){

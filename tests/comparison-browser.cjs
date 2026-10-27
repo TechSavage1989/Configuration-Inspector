@@ -291,6 +291,39 @@ async function unifiedComparisonInputs(browser){
  }
  ok(errors.length===0,errors.join('\n'));await page.close();
 }
+async function importedComparisonInputs(browser){
+ const page=await browser.newPage({viewport:{width:1000,height:650}}),errors=[];page.on('pageerror',error=>errors.push(error.message));await page.goto('file://'+path.resolve('webview/index.html'));
+ await page.locator('[data-view="compare"]').first().click();
+ for(const mode of ['records','fields','text']){await page.locator('[data-compare-mode="'+mode+'"]').click();ok(await page.locator('[data-action="compare-use-imported"]:visible:disabled').count()===2,mode+' has disabled imported controls before any workspace inputs exist');}
+ const sources=['A','B','C'].map((name,i)=>upload('imported-'+name+'.conf',stateConfiguration(i%2===1).replace('Example-States','Example-Imported-'+name)));
+ await page.locator('#import-file').setInputFiles(sources);await page.waitForFunction(()=>document.querySelectorAll('#workspace-tabs [data-workspace]').length===3,null,timeout);await page.locator('#modal').waitFor({state:'hidden'});await page.locator('[data-view="compare"]').first().click();
+ async function identities(){return page.locator('.comparison-loaders .compare-file > strong').allTextContents();}
+ async function choose(side,name,keyboard=false){
+  const button=page.locator('[data-action="compare-use-imported"][data-comparison-side="'+side+'"]:visible');ok(await button.count()===1,'exactly one imported selector is visible on '+side);await visibleControl(page,'[data-action="compare-use-imported"][data-comparison-side="'+side+'"]:visible','imported '+side);await button.click();
+  ok(await page.locator('.comparison-imported-choice').count()===3,'picker lists the three already imported models without duplicating current inputs');ok(!(await page.locator('#modal').innerHTML()).includes('TEST_SECRET_ONLY_'),'picker shows identity metadata, never raw source secrets');
+  const choice=page.locator('.comparison-imported-choice').filter({has:page.locator('strong',{hasText:'imported-'+name+'.conf'})});if(keyboard){await choice.focus();await choice.press('Enter');}else await choice.click();await page.locator('#modal').waitFor({state:'hidden'});
+ }
+ for(const mode of ['records','fields','text']){
+  await page.locator('[data-compare-mode="'+mode+'"]').click();await expandLoaders(page);await choose('left','A',true);await choose('right','B');ok(JSON.stringify(await identities())===JSON.stringify(['imported-A.conf','imported-B.conf']),mode+' selects both inputs from the existing workspace');
+  ok(await page.locator('#workspace-comparison').count()===0&&await page.locator('[data-stc-action="default"]').count()===0,'no obsolete or competing loaded-config selectors');
+  if(mode!=='text'){await page.selectOption('#table-filter','Changed');await page.locator('#table-query').fill('port');}
+  await page.locator('[data-action="compare-loaders-toggle"]').click();await choose('left','C');ok(JSON.stringify(await identities())===JSON.stringify(['imported-C.conf','imported-B.conf']),mode+' collapsed left replacement preserves the right input');
+  ok(await page.locator('#content').evaluate(el=>el.classList.contains('compare-loaders-collapsed')),mode+' imported selection retains collapsed inputs');ok(await page.locator('[data-compare-mode="'+mode+'"]').getAttribute('aria-pressed')==='true',mode+' imported selection retains active mode');
+  if(mode!=='text'){ok(await page.locator('#table-filter').inputValue()==='Changed'&&await page.locator('#table-query').inputValue()==='port','imported selection retains status and search filters');await page.locator('#table-query').fill('');}
+  await choose('right','A');ok(JSON.stringify(await identities())===JSON.stringify(['imported-C.conf','imported-A.conf']),mode+' collapsed right replacement preserves the left input');
+  await page.locator('[data-action="compare-use-imported"][data-comparison-side="right"]:visible').click();await page.locator('#modal [data-action="close-modal"]').last().click();ok(JSON.stringify(await identities())===JSON.stringify(['imported-C.conf','imported-A.conf']),'Cancel keeps both selections');
+  await page.locator(mode==='text'?'[data-stc-action="swap"]:visible':'[data-action="compare-swap"]:visible').click();ok(JSON.stringify(await identities())===JSON.stringify(['imported-A.conf','imported-C.conf']),mode+' swap exchanges imported identities');await choose('right','B');
+  await expandLoaders(page);await page.locator(mode==='text'?'[data-stc-action="clear"][data-stc-side="left"]':'[data-action="compare-clear-left"]').click();await choose('left','C');ok(JSON.stringify(await identities())===JSON.stringify(['imported-C.conf','imported-B.conf']),mode+' cleared side can reuse a previous import without another file read');
+  ok(!(await page.locator('#content').innerHTML()).includes('TEST_SECRET_ONLY_'),mode+' selecting imported data preserves default masking');
+  await page.setViewportSize({width:800,height:600});await layout(page,'imported '+mode+' expanded',mode==='text'?'[data-stc-pane="left"]':mode==='fields'?'.comparison-field-results .data-wrap':'.comparison-object-results');await swapControl(page,'imported '+mode+' expanded');
+  await page.locator('[data-action="compare-loaders-toggle"]').click();await choose('left','A');await layout(page,'imported '+mode+' collapsed',mode==='text'?'[data-stc-pane="left"]':mode==='fields'?'.comparison-field-results .data-wrap':'.comparison-object-results');await swapControl(page,'imported '+mode+' collapsed');await page.screenshot({path:'test-results/comparison-imported-'+mode+'.png'});await page.setViewportSize({width:1000,height:650});
+ }
+ await pasteText(page,'right','Example direct text retained\n','Direct comparison');await choose('left','C');ok((await page.locator('.stc-pane-title').last().innerText()).includes('Direct comparison')&&(await page.locator('[data-stc-pane="right"]').innerText()).includes('Example direct text retained'),'imported left selection preserves an unrelated pasted right text source');
+ await choose('right','B');ok((await identities())[1]==='imported-B.conf','explicit imported selection replaces a direct text input');
+ await page.locator('.stc-mask-toggle').click();ok((await page.locator('#content').innerHTML()).includes('TEST_SECRET_ONLY_'),'existing reveal control still reveals loaded source after picker use');await page.locator('.stc-mask-toggle').click();ok(!(await page.locator('#content').innerHTML()).includes('TEST_SECRET_ONLY_'),'existing hide control masks selected source again');
+ await choose('right','C');ok((await page.locator('.sw-text-comparison').innerText()).includes('No text differences'),'the same imported model may be selected on both sides');
+ ok(await page.locator('#workspace-tabs [data-workspace]').count()===3,'repeated selections never duplicate workspace models');ok(errors.length===0,errors.join('\n'));await page.close();
+}
 async function textComparison(browser){
  const page=await browser.newPage({viewport:{width:1000,height:650}}),errors=[];page.on('pageerror',e=>errors.push(e.message));await page.goto('file://'+path.resolve('webview/index.html'));
  await page.locator('[data-view="compare"]').first().click();await page.locator('[data-compare-mode="text"]').click();
@@ -343,7 +376,7 @@ async function textComparison(browser){
 (async()=>{
  fs.mkdirSync('test-results',{recursive:true});const browser=await playwright.chromium.launch({headless:true,args:['--no-sandbox'],...(process.env.CI_CHROME_PATH?{executablePath:process.env.CI_CHROME_PATH}:{})}),failures=[];
  try{
-  for(const [name,run] of [['objects-scrolling',objectsAndScrolling],['object-states',objectStates],['object-navigation',objectNavigation],['field-navigation',fieldNavigation],['unified-inputs',unifiedComparisonInputs],['text-comparison',textComparison]]){
+  for(const [name,run] of [['objects-scrolling',objectsAndScrolling],['object-states',objectStates],['object-navigation',objectNavigation],['field-navigation',fieldNavigation],['unified-inputs',unifiedComparisonInputs],['imported-inputs',importedComparisonInputs],['text-comparison',textComparison]]){
    try{await run(browser);console.log('comparison-scenario '+name+' passed');}
    catch(error){
     failures.push({name,error});console.error('comparison-scenario '+name+' failed: '+(error.stack||error));

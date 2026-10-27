@@ -1,5 +1,28 @@
 # Configuration Inspector development handoff
 
+## 5.17.4 imported-selection correction — validation pending
+
+Prepared from main `520f43145a0c41ac8b167be8006dc38c3b872c13`. The user
+explicitly approved pushing, hosted validation, main promotion and publication.
+The regression was not a 5.17.3 deletion: text mode bypassed the old right-only
+workspace selector in 5.17.0; 5.17.1 hid the global current-config tabs and placed
+the remaining selector inside collapsible loaders. An explicit Use imported
+picker now serves both sides in every mode, expanded and collapsed. It reuses
+model references, preserves comparison state and masking, and removes the old
+right-only selector rather than presenting duplicate controls. Text may compare
+different vendors; parsed modes retain the existing compatibility guard.
+
+New controller tests cover three preloaded models, selection/replacement on both
+sides, direct-text preservation, clear/restore, same-model comparison, escaped
+metadata, secret masking, compatibility and stale/invalid choices. A dedicated
+browser scenario exercises actual multi-file import and visible controls across
+all modes, collapsed/expanded layouts, keyboard selection, Cancel, swap, filters,
+small windows and source masking. Local validation passed: 5,405 Node checks,
+91 C++ update-protocol checks, native catalog policy, version/embed consistency
+and 3 repository-layout guards. Hosted browser/Windows checks and public
+download/feed verification are pending; do not claim a published build yet.
+
+
 ## 5.17.3 published and verified
 
 Release: https://github.com/TechSavage1989/Configuration-Inspector/releases/tag/v5.17.3
