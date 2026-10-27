@@ -1,6 +1,6 @@
 # Configuration Inspector development handoff
 
-## Portable ZIP packaging — validation/publication pending
+## Portable ZIP packaging — published and verified (5.18.0 additive assets)
 
 Baseline main `951375efe595c0c38e74f2ce2a796c6653f9f8e6`, release 5.18.0.
 No application/version/updater changes. `scripts/package_portable.py` builds the
@@ -15,7 +15,24 @@ Future new releases include ZIP and sidecar in SHA256SUMS.
 Local checks passed: 12 packaging/publication regressions plus 3 layout guards,
 5,862 Node checks, 93 C++ updater protocol checks, catalog policy, version/embed
 consistency and public-source audit (185 files, 183 text, 66 reviewed fixtures).
-Hosted browser/Windows checks and remote publication have not run yet.
+Packaging source/main: `e446c75e47a5cedde98e5e5be52aacbec15b5f19`.
+Review run `40559419736` and main run `40559860003` passed all jobs.
+Hosted checks also passed 933 comparison, 110 search and 40 updater browser
+checks, 43 native scheduler and 28 Windows replacement/rollback checks. The
+Windows artifact ZIP was downloaded and its contents/CRCs/checksums/EXE identity
+verified. The public backfill contains the original published EXE, not that
+newly compiled CI executable. All four original release asset IDs, sizes, digests
+and URLs remain unchanged; release/tag source stays `2d52ae4506e89e1ea230376db3de01ba37e181aa`.
+
+Public ZIP: `Config_Inspector_Portable.zip` (664,418 bytes), SHA-256
+`4068a6edfbc8db2803eccf6e857e79106fd07ecd8ee3eb44028b118828905269`.
+Sidecar: `Config_Inspector_Portable.zip.sha256` (96 bytes), SHA-256
+`f75a78be7c59e5a8060997d1389ecc320276000cf6e96d80c1e0e4f53507ff54`.
+Both public downloads match metadata; archive CRCs, internal/sidecar hashes and
+exact original EXE bytes were checked. The production updater release parser
+still selects the unchanged raw EXE with the two additional assets present.
+No app version bump, binary replacement, force push or access change occurred.
+Interactive Explorer/extraction launch was not run in this cloud environment.
 
 ## 5.18.0 published and verified — global configuration search
 
