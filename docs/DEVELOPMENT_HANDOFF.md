@@ -1,5 +1,19 @@
 # Configuration Inspector development handoff
 
+## 5.18.1 canonical supplied icon — validation/publication pending
+
+Baseline `7e7bd81463f6ac7c6baa8dcffcd4c59c54de7bf4` includes the verified
+additive 5.18.0 portable ZIP. The Library SVG was materialized and its actual
+rendered pixels inspected before integration. `webview/icon.svg` preserves its
+4,152 bytes and SHA-256 `e9c16716ab14a7936c009e42cd935e1c66b7715ee503d51576c893b035947549`.
+See docs/ICONS.md for the source/derivative pipeline. Browser branding/favicon
+and Windows small/large icon resources now share that source. No application
+behavior changed beyond native icon selection; other native/updater changes are
+release version literals only. A new patch release preserves all 5.18.0 assets.
+Local checks passed: 5,925 Node checks (63 canonical-icon checks added), 15
+packaging/layout tests, version/embed consistency and public-source audit
+(192 files, 189 text, 66 reviewed fixtures). Hosted/native validation pending.
+
 ## Portable ZIP packaging — published and verified (5.18.0 additive assets)
 
 Baseline main `951375efe595c0c38e74f2ce2a796c6653f9f8e6`, release 5.18.0.

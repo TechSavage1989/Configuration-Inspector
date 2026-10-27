@@ -1,6 +1,7 @@
 #!/bin/sh
 set -eu
 cd "$(dirname "$0")"
+node ../scripts/build-icons.cjs --check
 python3 embed_features.py
 CC=${CC:-x86_64-w64-mingw32-gcc-posix}
 CXX=${CXX:-x86_64-w64-mingw32-g++-posix}

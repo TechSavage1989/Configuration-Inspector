@@ -3,6 +3,8 @@ setlocal
 cd /d "%~dp0.."
 for /f "usebackq tokens=*" %%i in (`"%ProgramFiles(x86)%\Microsoft Visual Studio\Installer\vswhere.exe" -latest -products * -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 -property installationPath`) do call "%%i\Common7\Tools\VsDevCmd.bat" -arch=x64 >nul
 if errorlevel 1 exit /b 1
+node scripts\build-icons.cjs --check
+if errorlevel 1 exit /b 1
 python scripts\version.py --check
 if errorlevel 1 exit /b 1
 python webview\embed_features.py
@@ -15,6 +17,10 @@ if errorlevel 1 exit /b 1
 cl /nologo /std:c++17 /O1 /GL /Gy /Gw /MT /EHsc /DUNICODE /D_UNICODE /D_CRT_SECURE_NO_WARNINGS app.cpp ..\build\app.res /Fo..\build\app.obj /Fe..\dist\Config_Inspector.exe /link /LTCG /OPT:REF /OPT:ICF /MANIFEST:NO /SUBSYSTEM:WINDOWS ole32.lib uuid.lib shlwapi.lib shell32.lib comdlg32.lib advapi32.lib winhttp.lib bcrypt.lib crypt32.lib version.lib user32.lib gdi32.lib
 if errorlevel 1 exit /b 1
 popd
+cl /nologo /std:c++17 /O1 /MT /EHsc /DUNICODE /D_UNICODE tests\icon-resource-tests.cpp /Fobuild\icon-tests.obj /Febuild\icon-resource-tests.exe /link user32.lib gdi32.lib
+if errorlevel 1 exit /b 1
+build\icon-resource-tests.exe dist\Config_Inspector.exe webview\icon.ico
+if errorlevel 1 exit /b 1
 cl /nologo /std:c++17 /O1 /MT /EHsc tests\update-protocol-tests.cpp /Fobuild\protocol.obj /Febuild\update-protocol-tests.exe
 if errorlevel 1 exit /b 1
 build\update-protocol-tests.exe
@@ -36,7 +42,8 @@ if errorlevel 1 exit /b 1
 build\updater-scheduler-tests.exe
 if errorlevel 1 exit /b 1
 copy /y webview\index.html dist\Config_Inspector.html >nul
-copy /y webview\icon.svg dist\Config_Inspector_Icon.svg >nul
+python -c "from pathlib import Path; Path('dist/Config_Inspector_Icon.svg').write_bytes(Path('webview/icon.svg').read_text(encoding='utf-8').encode('utf-8'))"
+if errorlevel 1 exit /b 1
 python scripts\package_portable.py
 if errorlevel 1 exit /b 1
 python scripts\checksums.py

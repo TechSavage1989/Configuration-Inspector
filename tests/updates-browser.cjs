@@ -8,6 +8,12 @@ async function setup(page){await page.addInitScript(()=>{const handlers=[];windo
 fs.mkdirSync('test-results',{recursive:true});const browser=await playwright.chromium.launch({headless:true,args:['--no-sandbox'],...(process.env.CI_CHROME_PATH?{executablePath:process.env.CI_CHROME_PATH}:{})});
 try{
  const page=await browser.newPage({viewport:{width:1440,height:960}});const errors=[];page.on('pageerror',e=>errors.push(e.message));await setup(page);
+ const iconSource=fs.readFileSync('webview/icon.svg','utf8').replace(/\r\n/g,'\n');
+ ok(await page.locator('link[rel="icon"]').count()===1,'one canonical favicon');
+ ok(await page.locator('link[rel="icon"]').evaluate(e=>atob(e.href.split(',')[1]))===iconSource,'favicon preserves supplied SVG');
+ ok(await page.locator('.brand-app-icon').evaluate(e=>atob(e.src.split(',')[1]))===iconSource,'app brand preserves supplied SVG');
+ ok(await page.locator('.brand-app-icon').evaluate(e=>e.complete&&e.naturalWidth===512&&e.naturalHeight===512),'canonical icon renders');
+ await page.locator('.brand').screenshot({path:'test-results/canonical-app-icon.png'});
  // An unsolicited native result must display without first opening settings or
  // clicking Check. Native scheduler timing is covered by the Windows Updater test.
  const automaticStatus={type:'config-inspector-updates',current:currentVersion,version:nextVersion,state:'available',message:'A newer version is available.',busy:false,automatic:true,ready:false,available:true,snoozed:false};

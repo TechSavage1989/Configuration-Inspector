@@ -20,7 +20,7 @@ for name in tracked:
     try:
         text = data.decode('utf-8')
     except UnicodeDecodeError:
-        assert name in ['webview/WebView2Loader.dll', 'webview/icon.ico'], 'Unexpected binary source file: ' + name
+        assert name in ['webview/WebView2Loader.dll', 'webview/icon.ico', 'webview/icon.png'], 'Unexpected binary source file: ' + name
         continue
     text_count += 1
     for pattern in patterns:

@@ -1,31 +1,32 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512" fill="none" role="img" aria-labelledby="title description">
-  <title id="title">Config Inspector</title>
-  <desc id="description">Flat configuration document with a network diagram and an inspection lens. Solid colors, no gradients or shadows. All elements are editable vector paths and shapes.</desc>
-  <!-- Palette: navy #24344B, blue #5375D8, paper #F7F9FC, muted blue #BDCAE8 -->
-  <!-- Remove this group for a transparent symbol without the application tile. -->
-  <g id="app-tile">
-    <rect x="16" y="16" width="480" height="480" rx="108" fill="#24344B"/>
-  </g>
-  <g id="configuration-document">
-    <path id="document-sheet" d="M132 88H292L352 148V368C352 385.673 337.673 400 320 400H132C114.327 400 100 385.673 100 368V120C100 102.327 114.327 88 132 88Z" fill="#F7F9FC"/>
-    <path id="document-fold" d="M292 88V128C292 139.046 300.954 148 312 148H352L292 88Z" fill="#BDCAE8"/>
-    <rect id="configuration-line-one" x="136" y="128" width="100" height="16" rx="8" fill="#5375D8"/>
-    <rect id="configuration-line-two" x="136" y="164" width="132" height="16" rx="8" fill="#BDCAE8"/>
-  </g>
-  <g id="network-connections">
-    <path id="network-links" d="M224 235V276M160 310V276H288V310" stroke="#24344B" stroke-width="16" stroke-linecap="round" stroke-linejoin="round"/>
-    <rect id="network-parent" x="204" y="210" width="40" height="40" rx="10" fill="#5375D8"/>
-    <rect id="network-node-left" x="140" y="304" width="40" height="40" rx="10" fill="#5375D8"/>
-    <rect id="network-node-right" x="268" y="304" width="40" height="40" rx="10" fill="#5375D8"/>
-  </g>
-  <g id="inspection-lens">
-    <path id="lens-handle" d="M367 366L422 421" stroke="#24344B" stroke-width="48" stroke-linecap="round"/>
-    <path id="lens-handle-color" d="M367 366L422 421" stroke="#5375D8" stroke-width="28" stroke-linecap="round"/>
-    <circle id="lens-outline" cx="326" cy="325" r="72" fill="#24344B"/>
-    <circle id="lens-ring" cx="326" cy="325" r="62" fill="#5375D8"/>
-    <circle id="lens-face" cx="326" cy="325" r="40" fill="#F7F9FC"/>
-    <path id="inspected-connection" d="M306 325H346M326 305V345" stroke="#BDCAE8" stroke-width="10" stroke-linecap="round"/>
-    <rect id="inspected-node" x="314" y="313" width="24" height="24" rx="6" fill="#24344B"/>
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:i="http://ns.adobe.com/AdobeIllustrator/10.0/" width="512" height="512" viewBox="0 0 512 512">
+  <title>Config Inspector Icon.svg</title>
+  <g id="Layer_1">
+    <g i:extraneous="self">
+      <g id="app-tile">
+        <path id="Rounded_Background_Tile" data-name="Rounded Background Tile" d="M124 16 L388 16 C447.65 16 496 64.35 496 124 L496 388 C496 447.65 447.65 496 388 496 L124 496 C64.35 496 16 447.65 16 388 L16 124 C16 64.35 64.35 16 124 16 Z" fill="#24344b"/>
+      </g>
+      <g id="Configuration_Document" data-name="Configuration Document">
+        <path id="Document" d="M132 88 L292 88 L352 148 L352 368 C352 385.67 337.67 400 320 400 L132 400 C114.33 400 100 385.67 100 368 L100 120 C100 102.33 114.33 88 132 88 Z" fill="#f7f9fc"/>
+        <path id="Corner" d="M292 88 L292 128 C292 139.05 300.95 148 312 148 L352 148 Z" fill="#bdcae8"/>
+        <path id="Second_Configuration_Line" data-name="Second Configuration Line" d="M144 164 L260 164 C264.42 164 268 167.58 268 172 L268 172 C268 176.42 264.42 180 260 180 L144 180 C139.58 180 136 176.42 136 172 L136 172 C136 167.58 139.58 164 144 164 Z" fill="#bdcae8"/>
+        <path id="First_Configuration_Line" data-name="First Configuration Line" d="M144 128 L228 128 C232.42 128 236 131.58 236 136 L236 136 C236 140.42 232.42 144 228 144 L144 144 C139.58 144 136 140.42 136 136 L136 136 C136 131.58 139.58 128 144 128 Z" fill="#5375d8"/>
+      </g>
+      <g id="Network_Diagram" data-name="Network Diagram">
+        <path id="Network_Connection_Lines" data-name="Network Connection Lines" d="M224 235 L224 276 M160 310 L160 276 L288 276 L288 310" fill="none" stroke="#24344b" stroke-width="16" stroke-linecap="round" stroke-linejoin="round"/>
+        <path id="Top_Network_Device" data-name="Top Network Device" d="M214 210 L234 210 C239.52 210 244 214.48 244 220 L244 240 C244 245.52 239.52 250 234 250 L214 250 C208.48 250 204 245.52 204 240 L204 220 C204 214.48 208.48 210 214 210 Z" fill="#5375d8"/>
+        <path id="Left_Network_Device" data-name="Left Network Device" d="M150 304 L170 304 C175.52 304 180 308.48 180 314 L180 334 C180 339.52 175.52 344 170 344 L150 344 C144.48 344 140 339.52 140 334 L140 314 C140 308.48 144.48 304 150 304 Z" fill="#5375d8"/>
+        <path id="Right_Network_Device" data-name="Right Network Device" d="M278 304 L298 304 C303.52 304 308 308.48 308 314 L308 334 C308 339.52 303.52 344 298 344 L278 344 C272.48 344 268 339.52 268 334 L268 314 C268 308.48 272.48 304 278 304 Z" fill="#5375d8"/>
+      </g>
+      <g id="Magnifying_Glass" data-name="Magnifying Glass">
+        <path id="Handle_Outline" data-name="Handle Outline" d="M367 366 L422 421" fill="none" stroke="#24344b" stroke-width="48" stroke-linecap="round"/>
+        <path id="Blue_Handle" data-name="Blue Handle" d="M367 366 L422 421" fill="none" stroke="#5375d8" stroke-width="28" stroke-linecap="round"/>
+        <path id="Outer_Lens_Ring" data-name="Outer Lens Ring" d="M398 325 C398 364.764 365.764 397 326 397 C286.236 397 254 364.764 254 325 C254 285.236 286.236 253 326 253 C365.764 253 398 285.236 398 325 Z" fill="#24344b"/>
+        <path id="Blue_Lens_Ring" data-name="Blue Lens Ring" d="M388 325 C388 359.242 360.242 387 326 387 C291.758 387 264 359.242 264 325 C264 290.758 291.758 263 326 263 C360.242 263 388 290.758 388 325 Z" fill="#5375d8"/>
+        <path id="Lens_Center" data-name="Lens Center" d="M366 325 C366 347.091 348.091 365 326 365 C303.909 365 286 347.091 286 325 C286 302.909 303.909 285 326 285 C348.091 285 366 302.909 366 325 Z" fill="#f7f9fc"/>
+        <path id="Connection_Inside_Lens" data-name="Connection Inside Lens" d="M306 325 L346 325 M326 305 L326 345" fill="none" stroke="#bdcae8" stroke-width="10" stroke-linecap="round"/>
+        <path id="Device_Inside_Lens" data-name="Device Inside Lens" d="M320 313 L332 313 C335.31 313 338 315.69 338 319 L338 331 C338 334.31 335.31 337 332 337 L320 337 C316.69 337 314 334.31 314 331 L314 319 C314 315.69 316.69 313 320 313 Z" fill="#24344b"/>
+      </g>
+    </g>
   </g>
 </svg>

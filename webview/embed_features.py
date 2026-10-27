@@ -1,4 +1,6 @@
 from pathlib import Path
+import base64
+import re
 
 root = Path(__file__).resolve().parent
 page = root / 'index.html'
@@ -86,4 +88,10 @@ for script_id, filename in [('comparison-engine', 'comparison.js'), ('comparison
     start = source.index(marker)
     end = source.index('</script>', start)
     source = source[:start] + marker + '\n' + (root / filename).read_text() + '\n' + source[end:]
+# One canonical icon for the browser favicon and rendered app identity.
+icon = base64.b64encode((root / 'icon.svg').read_text(encoding='utf-8').encode('utf-8')).decode('ascii')
+source = re.sub(r'<link\b[^>]*\brel=["\']icon["\'][^>]*>', '', source, flags=re.IGNORECASE)
+source = source.replace('</head>', '<link id="app-icon" rel="icon" type="image/svg+xml" href="data:image/svg+xml;base64,' + icon + '"></head>', 1)
+source, count = re.subn(r'(<img class="brand-app-icon" src=")[^"]*(")', lambda m: m[1] + 'data:image/svg+xml;base64,' + icon + m[2], source)
+assert count == 1, 'Expected exactly one application brand icon'
 page.write_text(source)

@@ -1,12 +1,13 @@
 {
   "name": "configuration-inspector",
-  "version": "5.18.0",
+  "version": "5.18.1",
   "private": true,
   "scripts": {
     "test": "node tests/run-tests.cjs",
     "test:browser": "node tests/updates-browser.cjs && node tests/comparison-browser.cjs && node tests/search-browser.cjs"
   },
   "devDependencies": {
+    "@resvg/resvg-js": "2.6.2",
     "playwright": "1.62.1"
   }
 }

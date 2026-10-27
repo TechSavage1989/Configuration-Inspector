@@ -1,0 +1,19 @@
+{
+  "source": "icon.svg",
+  "sourceSha256": "e9c16716ab14a7936c009e42cd935e1c66b7715ee503d51576c893b035947549",
+  "renderer": "@resvg/resvg-js@2.6.2",
+  "pngSize": 512,
+  "icoSizes": [
+    16,
+    20,
+    24,
+    32,
+    40,
+    48,
+    64,
+    128,
+    256
+  ],
+  "pngSha256": "f356f45f6afaa3ae434c10fa8e4eef95c90837b5a08e32d3ffd57386cae0e662",
+  "icoSha256": "4b7ee7adcd72d6863ef5112bc93830e782447990ebe6092118dea9e1697b41ff"
+}

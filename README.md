@@ -201,6 +201,7 @@ npm run test:browser
 On Windows, install Visual Studio Build Tools with the **C++ desktop workload and Windows SDK**, then run:
 
 ```bat
+npm ci --ignore-scripts
 scripts\build-windows.cmd
 ```
 
@@ -213,6 +214,8 @@ For an authorized application release:
 3. The [build workflow](.github/workflows/build-release.yml) runs regression, browser and Windows installation tests, then publishes only after checks pass.
 
 Keep the public download name `Config_Inspector.exe`. Installation preserves the user's chosen filename and folder. Existing published versions are not overwritten; documentation-only updates must not bump `VERSION`. For an existing version, the publish job only adds missing portable ZIP/sidecar assets from its downloaded, digest-verified published EXE, never the rebuilt CI binary. It refuses conflicting assets and never replaces `SHA256SUMS`. GitHub source archives provide versioned source downloads. No separate publishing credential or update service is needed.
+
+The supplied editable SVG is the [canonical application icon](docs/ICONS.md); pinned build tooling derives the PNG/Windows ICO and verifies the embedded browser/native artwork for future releases.
 
 Third-party WebView2 and public device-catalog notices are included in [webview](webview/). Native updater fixtures do not replace interactive WebView2 testing on Windows.
 

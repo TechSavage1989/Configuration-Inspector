@@ -19,6 +19,7 @@ jobs:
           node-version: '22'
           cache: npm
       - run: npm ci --ignore-scripts
+      - run: node scripts/build-icons.cjs --check
       - run: python3 scripts/version.py --check && python3 webview/embed_features.py
       - run: git diff --exit-code -- webview/index.html webview/version.h webview/app.manifest
       - run: python3 scripts/check-public-source.py
@@ -45,6 +46,11 @@ jobs:
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci --ignore-scripts
       - run: scripts\build-windows.cmd
         shell: cmd
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
