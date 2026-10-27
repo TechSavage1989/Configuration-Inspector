@@ -68,8 +68,8 @@ eq(changed.kind,'Changed');eq(changed.fieldChanges[0].before,'example unsupporte
 const html=fs.readFileSync('webview/index.html','utf8');
 let ui=[...html.matchAll(/<script[^>]*>([\s\S]*?)<\/script>/g)].map(match=>match[1]).find(script=>script.includes('var C=window.SWCore'));
 ui=ui.slice(0,ui.indexOf("  document.addEventListener('click'"));
-vm.runInContext(ui+'\nwindow.objectAudit={state,objectComparisonResult,recordComparisonPage,comparisonCard};})();',ctx);
-const audit=ctx.objectAudit,state=audit.state;
+vm.runInContext(ui+'\nwindow.objectAudit={state,objectComparisonResult,recordComparisonPage,comparisonCard,comparisonSources,comparisonModeControls};})();',ctx);
+const audit=ctx.objectAudit,state=audit.state;ctx.workspaceCompare=()=>'';
 Object.assign(state,{model:left,comparison:right,hideSensitive:true,query:'',filter:'all-items',scope:'',compareCategory:'all',page:1,pageSize:40});
 result=audit.objectComparisonResult();eq(result.items.length,4);ok(audit.objectComparisonResult()===result,'stable models reuse comparison result');
 let rendered=audit.recordComparisonPage();
@@ -99,9 +99,15 @@ ok(rendered.includes('Showing the first 200 of 205 settings'),'large object rend
 // Groups use real categories/sections, retain side-by-side cards and paginate
 // in category order instead of repeating arbitrary mixed sections.
 Object.assign(state,{model:model([]),comparison:model([record('Port','a'),record('Route','b',{category:'routes'}),record('Resolver','c',{category:'network',family:'dns',summary:{section:'dns'}})]),filter:'all-items',query:'',compareCategory:'all',page:1,pageSize:2,hideSensitive:true});
-rendered=audit.recordComparisonPage();ok(rendered.includes('data-comparison-category="dns"')&&rendered.includes('data-comparison-category="interfaces"'),'actual DNS and interface groups rendered');ok(!rendered.includes('data-comparison-category="routes"'),'later category remains on its own next page');
-state.page=2;rendered=audit.recordComparisonPage();ok(rendered.includes('data-comparison-category="routes"'),'route group remains reachable');ok(!rendered.includes('data-comparison-category="dns"'),'no invented empty group');
+rendered=audit.recordComparisonPage();ok(rendered.includes('data-comparison-category="dns"')&&rendered.includes('data-comparison-category="interfaces"'),'actual DNS and interface groups rendered');ok(!rendered.includes('data-comparison-category="routes"'),'later category remains on its own next page');eq([...rendered.matchAll(/data-comparison-section="([^"]+)"/g)].map(match=>match[1]),['dns','interfaces'],'bookmarks reflect only current-page headings');ok(rendered.includes('Map shows this page only'),'map scope is explicit');
+state.page=2;rendered=audit.recordComparisonPage();ok(rendered.includes('data-comparison-category="routes"'),'route group remains reachable');ok(!rendered.includes('data-comparison-category="dns"'),'no invented empty group');eq([...rendered.matchAll(/data-comparison-section="([^"]+)"/g)].map(match=>match[1]),['routes'],'later page bookmarks replace previous groups');
 state.compareCategory='dns';state.page=1;rendered=audit.recordComparisonPage();ok(rendered.includes('Resolver')&&!rendered.includes('data-comparison-category="interfaces"'),'section-based category filter preserved');
+
+state.query='no matching example';rendered=audit.recordComparisonPage();ok(!rendered.includes('data-comparison-section='),'empty results never invent bookmarks');
+Object.assign(state,{model:null,comparison:null,compareLeftCleared:false});
+rendered=audit.comparisonSources();eq((rendered.match(/data-action="compare-swap"/g)||[]).length,2,'expanded and collapsed identities each have a centered swap');ok(!audit.comparisonModeControls().includes('data-action="compare-swap"'),'no redundant toolbar swap');
+eq((rendered.match(/data-tooltip="Swap sides" disabled/g)||[]).length,2,'both empty slots disable swap safely');
+state.comparison=right;rendered=audit.comparisonSources();ok(!rendered.includes('data-tooltip="Swap sides" disabled'),'partial input remains swappable');
 
 // Real public fixture smoke: identical parsed objects expose complete unchanged
 // objects without altering their imported field values or record ownership.

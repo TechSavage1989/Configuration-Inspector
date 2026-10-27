@@ -4,6 +4,7 @@ let checks=0;const metrics=[];function ok(value,message){checks++;assert.ok(valu
 const timeout={timeout:5000};
 function configuration(revision){return 'version 15.2\nhostname Example-Comparison\n'+Array.from({length:65},(_,i)=>`interface GigabitEthernet1/0/${i+1}\n description Example ${revision} port ${i+1} ${'long-configuration-value-'.repeat(8)}\n switchport access vlan 10\n switchport mode access\n speed auto\n duplex auto\n mtu 1500\n spanning-tree portfast\n spanning-tree bpduguard enable\n storm-control broadcast level 10.00\n storm-control multicast level 10.00\n storm-control unicast level 10.00\n logging event link-status\n load-interval 30\n no shutdown\n exit\n`).join('');}
 function stateConfiguration(right){return `version 15.2\nhostname Example-States\nusername reader privilege 1 secret TEST_SECRET_ONLY_${right?'NEW':'OLD'}\ninterface GigabitEthernet1/0/1\n description unchanged port\n exit\ninterface GigabitEthernet1/0/2\n description ${right?'after':'before'} port\n exit\ninterface GigabitEthernet1/0/${right?4:3}\n description ${right?'added':'removed'} port\n exit\n`;}
+function navigationConfiguration(right){return stateConfiguration(right)+Array.from({length:12},(_,i)=>`interface GigabitEthernet1/0/${i+10}\n description ${right?'revised':'current'} navigation port ${i+10} ${'variable-long-value-'.repeat(i%4*6)}\n${i%2?' speed auto\n duplex auto\n mtu 1500\n switchport mode access\n switchport access vlan 10\n spanning-tree portfast\n':''} no shutdown\n exit\n`).join('');}
 function upload(name,text){return {name,mimeType:'text/plain',buffer:Buffer.from(text)};}
 async function openComparison(page,left,right){
  await page.goto('file://'+path.resolve('webview/index.html'));
@@ -28,13 +29,22 @@ async function visibleControl(page,selector,label){
  const r=await page.locator(selector).first().boundingBox(),viewport=page.viewportSize();ok(r&&r.y>=0&&r.y+r.height<=viewport.height&&r.x>=0&&r.x+r.width<=viewport.width,label+' remains inside the window');
 }
 async function expandLoaders(page){if(await page.locator('#content').evaluate(el=>el.classList.contains('compare-loaders-collapsed')))await page.locator('[data-action="compare-loaders-toggle"]').click();}
+async function swapControl(page,label){
+ const selector=await page.locator('.sw-text-comparison').count()?'[data-stc-action="swap"]':'[data-action="compare-swap"]',button=page.locator(selector+':visible');
+ ok(await button.count()===1,label+': exactly one swap control is visible');ok(await button.getAttribute('aria-label')==='Swap sides',label+': swap has a clear accessible name');
+ const collapsed=await page.locator('#content').evaluate(el=>el.classList.contains('compare-loaders-collapsed')),sides=page.locator(collapsed?'.comparison-loader-summary > span':'.comparison-loaders .compare-file');
+ const left=await sides.first().boundingBox(),right=await sides.last().boundingBox(),swap=await button.boundingBox();
+ ok(left&&right&&swap&&Math.abs(swap.x+swap.width/2-(left.x+left.width+right.x)/2)<=3,label+': swap arrow is centered between the two side identities');
+ await visibleControl(page,selector+':visible',label+' swap');
+}
 async function collapseCheck(page,resultSelector,label){
- await expandLoaders(page);const before=await layout(page,label+' expanded',resultSelector);
+ await expandLoaders(page);const before=await layout(page,label+' expanded',resultSelector);await swapControl(page,label+' expanded');
  await page.locator('[data-action="compare-loaders-toggle"]').click();
  ok(await page.locator('#content').evaluate(el=>el.classList.contains('compare-loaders-collapsed')),'shared loader collapse state is applied');
  ok(await page.locator('.comparison-loaders').first().isHidden(),'expanded loaders stop reserving space');
  const summary=page.locator('.comparison-loader-summary').first();ok(await summary.isVisible()&&/Current/i.test(await summary.innerText())&&/Comparison/i.test(await summary.innerText()),'compact summary retains both side identities');
  const after=await layout(page,label+' collapsed',resultSelector);ok(after.result.height>before.result.height+20,'collapse gives space back to results rather than leaving a blank panel');
+ await swapControl(page,label+' collapsed');
  await visibleControl(page,'[data-action="compare-loaders-toggle"]','loader toggle');
  return after;
 }
@@ -71,6 +81,41 @@ async function nestedBoundaryWheel(page){
 }
 async function panesSynchronized(page){
  await page.waitForFunction(()=>{const a=document.querySelector('[data-stc-pane="left"]'),b=document.querySelector('[data-stc-pane="right"]');return a&&b&&Math.abs(a.scrollTop-b.scrollTop)<2&&Math.abs(a.scrollLeft-b.scrollLeft)<2;},null,timeout);checks++;
+}
+async function mapDrag(page,mode){
+ const text=mode==='text',mapSelector=text?'.stc-minimap':'.comparison-object-minimap',thumbSelector=text?'.stc-map-viewport':'.comparison-object-map-viewport',scrollSelector=text?'[data-stc-pane="left"]':'.comparison-object-results',dragAttribute=text?'data-stc-dragging':'data-object-map-dragging',map=page.locator(mapSelector),handle=await map.elementHandle();
+ async function position(){return page.evaluate(({mapSelector,scrollSelector})=>{const map=document.querySelector(mapSelector),area=document.querySelector(scrollSelector);return {top:area.scrollTop,max:area.scrollHeight-area.clientHeight,page:Number(area.querySelector('[data-stc-row]')?.dataset.stcRow||0),value:map.getAttribute('aria-valuenow'),capture:map.hasPointerCapture(map.__comparisonTestPointerId||-1),dragging:map.hasAttribute('data-stc-dragging')||map.hasAttribute('data-object-map-dragging')};},{mapSelector,scrollSelector});}
+ async function begin(){
+  await map.evaluate(el=>el.addEventListener('pointerdown',event=>{el.__comparisonTestPointerId=event.pointerId;},{once:true,capture:true}));
+  const thumb=await page.locator(thumbSelector).boundingBox();ok(thumb&&thumb.height>0,mode+' map has a draggable viewport');await page.mouse.move(thumb.x+thumb.width/2,thumb.y+thumb.height/2);await page.mouse.down();
+  await page.waitForFunction(({mapSelector,dragAttribute})=>{const el=document.querySelector(mapSelector);return el.hasAttribute(dragAttribute)&&el.hasPointerCapture(el.__comparisonTestPointerId);},{mapSelector,dragAttribute},timeout);checks++;
+ }
+ await map.press('Home');await page.waitForFunction(({scrollSelector,text})=>{const el=document.querySelector(scrollSelector);return el.scrollTop<=2&&(!text||el.querySelector('[data-stc-row]')?.dataset.stcRow==='0');},{scrollSelector,text},timeout);
+ await begin();const box=await map.boundingBox(),outsideX=Math.max(1,box.x-35),lowerY=Math.min(page.viewportSize().height-1,box.y+box.height+20),upperY=Math.max(1,box.y-20),observations=[];
+ for(const [direction,y] of [['down',lowerY],['up',upperY],['down',lowerY]]){
+  await page.mouse.move(outsideX,y,{steps:6});
+  try{await page.waitForFunction(({scrollSelector,text,direction})=>{const el=document.querySelector(scrollSelector),first=Number(el.querySelector('[data-stc-row]')?.dataset.stcRow||0);return direction==='up'?el.scrollTop<=2&&(!text||first===0):el.scrollTop>=el.scrollHeight-el.clientHeight-2&&(!text||first>=500);},{scrollSelector,text,direction},timeout);}catch(error){const failed={label:mode+' map drag failed',direction,point:{x:outsideX,y},...await position()};metrics.push(failed);console.error('comparison-map-drag '+JSON.stringify(failed));throw error;}
+  ok(await handle.evaluate((el,selector)=>el.isConnected&&document.querySelector(selector)===el&&el.hasPointerCapture(el.__comparisonTestPointerId),mapSelector),mode+' drag keeps its map and pointer capture while moving '+direction+' beyond map bounds');
+  observations.push({direction,...await position()});if(text)await panesSynchronized(page);
+ }
+ await page.mouse.up();await page.waitForFunction(({mapSelector,dragAttribute})=>{const el=document.querySelector(mapSelector);return !el.hasAttribute(dragAttribute)&&!el.hasPointerCapture(el.__comparisonTestPointerId);},{mapSelector,dragAttribute},timeout);checks++;
+ await wheel(page,scrollSelector,350);if(text)await panesSynchronized(page);
+ await map.press('Home');await begin();await page.mouse.move(box.x+box.width/2,box.y+box.height*.45,{steps:4});await page.waitForFunction(selector=>document.querySelector(selector).scrollTop>0,scrollSelector,timeout);
+ const pointerId=await map.evaluate(el=>el.__comparisonTestPointerId);await map.dispatchEvent('pointercancel',{pointerId,pointerType:'mouse',isPrimary:true,bubbles:true});
+ ok(await map.evaluate((el,attribute)=>!el.hasAttribute(attribute)&&!el.hasPointerCapture(el.__comparisonTestPointerId),dragAttribute),mode+' pointer cancellation releases capture and drag state');
+ const cancelled=await position();await page.mouse.move(outsideX,upperY,{steps:3});await page.mouse.up();await page.evaluate(()=>new Promise(requestAnimationFrame));const released=await position();
+ ok(cancelled.page===released.page&&Math.abs(cancelled.top-released.top)<2,mode+' cancelled drag does not keep scrolling after pointer movement');
+ await wheel(page,scrollSelector,350);if(text)await panesSynchronized(page);await map.press('Home');
+ const report={label:mode+' map captured drag',observations,cancelled,released};metrics.push(report);console.log('comparison-map-drag '+JSON.stringify(report));await handle.dispose();
+}
+async function objectNavigationGeometry(page,label){
+ await page.waitForFunction(()=>{const map=document.querySelector('.comparison-object-minimap'),area=document.querySelector('.comparison-object-results');return map&&area&&Number(map.dataset.objectMapTotal)===area.scrollHeight&&map.querySelectorAll('.comparison-object-map-marker').length===area.querySelectorAll('.comparison-card').length;},null,timeout);
+ const data=await page.evaluate(label=>{
+  const area=document.querySelector('.comparison-object-results'),map=document.querySelector('.comparison-object-minimap'),rect=area.getBoundingClientRect(),thumb=map.querySelector('.comparison-object-map-viewport').getBoundingClientRect(),mapRect=map.getBoundingClientRect(),cards=[...area.querySelectorAll('.comparison-card')],markers=[...map.querySelectorAll('.comparison-object-map-marker')],groups=[...area.querySelectorAll('.comparison-object-group')],bookmarks=[...document.querySelectorAll('[data-comparison-section]')];
+  return {label,top:area.scrollTop,total:area.scrollHeight,clientHeight:area.clientHeight,mapHeight:mapRect.height,thumbHeight:thumb.height,thumbBounded:thumb.height>0&&thumb.top>=mapRect.top-1&&thumb.bottom<=mapRect.bottom+2,groups:groups.map(group=>group.dataset.comparisonCategory),bookmarks:bookmarks.map(button=>button.dataset.comparisonSection),active:bookmarks.filter(button=>button.getAttribute('aria-current')==='location').map(button=>button.dataset.comparisonSection),cards:cards.length,markers:markers.length,maxMarkerOffset:Math.max(0,...markers.map((marker,i)=>Math.abs(Number(marker.dataset.objectMapTop)-(cards[i].getBoundingClientRect().top-rect.top+area.scrollTop)))),kindsMatch:markers.every((marker,i)=>marker.dataset.objectMapKind===cards[i].dataset.objectKind.toLowerCase()),cardHeights:[...new Set(cards.map(card=>Math.round(card.getBoundingClientRect().height)))]};
+ },label);metrics.push(data);console.log('comparison-object-navigation '+JSON.stringify(data));
+ ok(JSON.stringify(data.bookmarks)===JSON.stringify(data.groups),label+': bookmarks represent exactly the current rendered category sections');ok(data.cards===data.markers&&data.cards<=40&&data.kindsMatch,label+': bounded object map markers represent current-page cards and change states');
+ ok(data.maxMarkerOffset<=2,label+': map positions use measured card heights');ok(data.thumbBounded,label+': map viewport remains bounded');ok(data.active.length===(data.groups.length?1:0),label+': one actual section is active when results exist');return data;
 }
 async function pasteText(page,side,text,name){
  await expandLoaders(page);await page.locator(`[data-stc-action="replace"][data-stc-side="${side}"]`).click();
@@ -116,7 +161,7 @@ async function objectsAndScrolling(browser){
   await page.waitForFunction(()=>document.querySelector('.comparison-field-results .data-wrap').scrollTop>0,null,timeout);checks++;
   await visibleControl(page,'[aria-label="Next page"]','field pagination');await page.locator('[aria-label="Next page"]').click();ok(await page.locator('[aria-label="Previous page"]').isEnabled(),'original field pagination reachable');
   await page.locator('[data-compare-mode="records"]').click();await wheel(page,'.comparison-object-results');
-  await page.locator('[data-action="compare-swap"]').first().click();await wheel(page,'.comparison-object-results');
+  await page.locator('[data-action="compare-swap"]:visible').click();await wheel(page,'.comparison-object-results');
   await expandLoaders(page);await layout(page,'objects expanded again '+viewport.width,'.comparison-object-results');
   ok(errors.length===0,errors.join('\n'));await page.close();
  }
@@ -149,10 +194,30 @@ async function objectStates(browser){
  await page.locator('#compare-left-file').setInputFiles(upload('many-left.conf',configuration('current')));await page.locator('#modal').waitFor({state:'hidden'});
  await page.locator('#compare-file').setInputFiles(upload('many-right.conf',configuration('revised')+'username example-reader privilege 1 secret TEST_SECRET_ONLY_ADDED\n'));await page.locator('#modal').waitFor({state:'hidden'});await page.selectOption('#table-filter','all-items');
  const categories=await page.locator('#compare-category option').evaluateAll(options=>options.map(option=>option.value).filter(value=>value!=='all')),seen=new Set();
- for(let pageIndex=0;pageIndex<5;pageIndex++){for(const category of await page.locator('.comparison-object-group').evaluateAll(groups=>groups.map(group=>group.dataset.comparisonCategory)))seen.add(category);if(!await page.locator('[aria-label="Next changes"]').isEnabled())break;await page.locator('[aria-label="Next changes"]').click();}
+ for(let pageIndex=0;pageIndex<5;pageIndex++){await objectNavigationGeometry(page,'object page '+(pageIndex+1));for(const category of await page.locator('.comparison-object-group').evaluateAll(groups=>groups.map(group=>group.dataset.comparisonCategory)))seen.add(category);if(!await page.locator('[aria-label="Next changes"]').isEnabled())break;await page.locator('[aria-label="Next changes"]').click();}
  ok(!await page.locator('[aria-label="Next changes"]').isEnabled()&&categories.every(category=>seen.has(category)),'every eligible category remains reachable across object pages');
- await page.selectOption('#compare-category','identities');await page.locator('[data-action="compare-loaders-toggle"]').click();ok(await page.locator('#compare-category').inputValue()==='identities','collapse preserves category filter');await page.locator('[data-action="compare-swap"]').click();await layout(page,'object swap filtered','.comparison-object-results');
+ await page.selectOption('#compare-category','identities');await page.locator('[data-action="compare-loaders-toggle"]').click();ok(await page.locator('#compare-category').inputValue()==='identities','collapse preserves category filter');await page.locator('[data-action="compare-swap"]:visible').click();await layout(page,'object swap filtered','.comparison-object-results');
  ok(errors.length===0,errors.join('\n'));await page.close();
+}
+async function objectNavigation(browser){
+ const page=await browser.newPage({viewport:{width:1440,height:960}}),errors=[];page.on('pageerror',error=>errors.push(error.message));await openComparison(page,navigationConfiguration(false),navigationConfiguration(true));await page.selectOption('#table-filter','all-items');
+ await collapseCheck(page,'.comparison-object-results','object navigation');const initial=await objectNavigationGeometry(page,'navigation initial');ok(initial.groups.length>=2&&initial.cardHeights.length>1,'navigation fixture has multiple real categories and variable-height cards');
+ const bookmarks=page.locator('[data-comparison-section]'),first=await bookmarks.first().getAttribute('data-comparison-section'),last=await bookmarks.last().getAttribute('data-comparison-section'),area=page.locator('.comparison-object-results'),map=page.locator('.comparison-object-minimap');
+ await bookmarks.last().click();await page.waitForFunction(category=>document.querySelector('[data-comparison-section="'+category+'"]').getAttribute('aria-current')==='location',last,timeout);checks++;
+ const heading=await page.locator('.comparison-object-group[data-comparison-category="'+last+'"] .comparison-group-heading').boundingBox(),result=await area.boundingBox();ok(heading&&heading.y>=result.y-2&&heading.y<result.y+result.height,'bookmark click scrolls to its real section heading');
+ await area.evaluate(el=>{el.scrollTop=0;});await page.waitForFunction(category=>document.querySelector('[data-comparison-section="'+category+'"]').getAttribute('aria-current')==='location',first,timeout);checks++;
+ await map.press('End');await page.waitForFunction(()=>{const el=document.querySelector('.comparison-object-results');return el.scrollTop>=el.scrollHeight-el.clientHeight-2;},null,timeout);ok(await bookmarks.last().getAttribute('aria-current')==='location','active section follows map/scroll navigation');
+ await map.press('Home');await map.press('PageDown');await page.waitForFunction(()=>document.querySelector('.comparison-object-results').scrollTop>0,null,timeout);const down=await area.evaluate(el=>el.scrollTop);await map.press('ArrowUp');await page.waitForFunction(before=>document.querySelector('.comparison-object-results').scrollTop<before,down,timeout);checks++;
+ await map.press('Home');const marker=page.locator('.comparison-object-map-marker').nth(Math.floor(initial.cards*.6)),index=Number(await marker.getAttribute('data-object-map-index'));await marker.click();
+ await page.waitForFunction(index=>{const area=document.querySelector('.comparison-object-results'),card=area.querySelectorAll('.comparison-card')[index],a=area.getBoundingClientRect(),b=card.getBoundingClientRect();return b.top>=a.top-2&&b.top<a.bottom;},index,timeout);checks++;
+ const beforeExpand=await area.evaluate(el=>el.scrollHeight);await page.locator('.comparison-card').nth(index).locator('details summary').click();const expanded=await objectNavigationGeometry(page,'expanded variable object');ok(expanded.total>beforeExpand,'expanding original settings updates actual minimap content geometry');
+ await mapDrag(page,'object');await objectNavigationGeometry(page,'object after captured drag');await page.screenshot({path:'test-results/comparison-object-navigation.png'});
+ for(const viewport of [{width:1000,height:650},{width:800,height:600}]){await page.setViewportSize(viewport);await collapseCheck(page,'.comparison-object-results','object navigation '+viewport.width);await objectNavigationGeometry(page,'object navigation resized '+viewport.width);await visibleControl(page,'.comparison-bookmarks','section sidebar');await visibleControl(page,'.comparison-object-minimap','object map');}
+ await page.locator('[data-action="compare-swap"]:visible').click();await objectNavigationGeometry(page,'object navigation swapped');ok((await page.locator('.comparison-loader-summary > span').first().innerText()).includes('example-right.conf'),'centered object swap changes side ownership');
+ await page.selectOption('#table-filter','Added');await objectNavigationGeometry(page,'added object filter');ok(await page.locator('.comparison-object-map-marker').evaluateAll(markers=>markers.length>0&&markers.every(marker=>marker.dataset.objectMapKind==='added')),'object filter refreshes map states');
+ await page.locator('#table-query').fill('no-synthetic-object-matches');await page.waitForFunction(()=>!document.querySelector('.comparison-card'),null,timeout);ok(await bookmarks.count()===0&&await page.locator('.comparison-object-map-marker').count()===0,'empty results leave no stale section bookmark or object marker');await layout(page,'navigation empty search','.comparison-object-results');
+ await page.locator('#table-query').fill('');await page.selectOption('#table-filter','all-items');await page.locator('#compare-file').setInputFiles(upload('matching-navigation.conf',navigationConfiguration(true)));await page.locator('#modal').waitFor({state:'hidden'});await objectNavigationGeometry(page,'object navigation replacement');ok(await page.locator('.comparison-object-map-marker').evaluateAll(markers=>markers.length>0&&markers.every(marker=>marker.dataset.objectMapKind==='unchanged')),'replacing the opposite side refreshes map to unchanged objects');
+ await expandLoaders(page);await page.locator('[data-action="compare-clear-right"]').click();ok(await bookmarks.count()===0&&await page.locator('.comparison-object-map-marker').count()===0,'clearing a side removes stale object navigation');ok(errors.length===0,errors.join('\n'));await page.close();
 }
 async function textComparison(browser){
  const page=await browser.newPage({viewport:{width:1000,height:650}}),errors=[];page.on('pageerror',e=>errors.push(e.message));await page.goto('file://'+path.resolve('webview/index.html'));
@@ -187,12 +252,15 @@ async function textComparison(browser){
  ok(Number(await page.locator('[data-stc-pane="left"] .stc-line').first().getAttribute('data-stc-row'))>=500,'clicking the map jumps both panes to a different page');
  await map.press('Home');ok(await page.locator('[data-stc-pane="left"] .stc-line').first().getAttribute('data-stc-row')==='0','map Home returns to first aligned row page');
  await map.press('End');ok(Number(await page.locator('[data-stc-pane="left"] .stc-line').first().getAttribute('data-stc-row'))>=500,'map End reaches last aligned page');await panesSynchronized(page);await map.press('Home');
- await page.locator('[data-stc-action="swap"]').click();ok((await page.locator('.stc-pane-title').first().innerText()).includes('example-right.txt'),'swap changes text side ownership');
+ await mapDrag(page,'text');
+ await map.press('F7');await map.press('F7');const keyboardRow=Number(await page.locator('[data-stc-pane="left"] .stc-active').first().getAttribute('data-stc-row'));await map.press('Shift+F7');ok(Number(await page.locator('[data-stc-pane="left"] .stc-active').first().getAttribute('data-stc-row'))<keyboardRow,'F7 and Shift+F7 still navigate differences after dragging');
+ await page.locator('[data-stc-action="swap"]:visible').click();ok((await page.locator('.stc-pane-title').first().innerText()).includes('example-right.txt'),'swap changes text side ownership');
  await page.locator('[data-compare-mode="records"]').click();await page.locator('[data-compare-mode="text"]').click();ok((await page.locator('.stc-pane-title').first().innerText()).includes('example-right.txt'),'direct text survives mode switching');
  for(const size of [{width:1440,height:960},{width:800,height:600}]){await page.setViewportSize(size);await collapseCheck(page,'[data-stc-pane="left"]','text '+size.width);await panesSynchronized(page);await visibleControl(page,'[data-stc-action="next"]','text difference controls');const m=await page.locator('.stc-map-viewport').boundingBox(),b=await map.boundingBox();ok(m&&b&&m.height>0&&m.y>=b.y-1&&m.y+m.height<=b.y+b.height+2,'minimap viewport marker remains bounded after resize');}
  await layout(page,'text compact final','[data-stc-pane="left"]');
  await page.locator('[data-stc-pane="left"]').scrollIntoViewIfNeeded();await page.screenshot({path:'test-results/comparison-text.png'});
  await pasteText(page,'left','same\n','Same left');await pasteText(page,'right','same\n','Same right');ok((await page.locator('.sw-text-comparison').innerText()).includes('No text differences'),'identical direct text reports no differences');
+ ok(await page.locator('.stc-map-marker').count()===0,'text replacement removes stale changed-line markers');
  ok(await page.locator('[data-stc-action="next"]').isDisabled(),'no next difference on identical text');
  await expandLoaders(page);await page.locator('[data-stc-action="replace"][data-stc-side="right"]').click();await page.locator('#stc-input-text').fill('never committed');await page.locator('[data-stc-action="save"]').click();ok((await page.locator('.stc-error').innerText()).includes('Confirm'),'unmasked direct text requires acknowledgment');await page.locator('.stc-editor').press('Escape');ok(await page.locator('.stc-editor').count()===0,'Escape cancels text editor');
  await page.locator('[data-stc-action="clear"][data-stc-side="left"]').click();ok((await page.locator('.comparison-loaders').innerText()).includes('Same right'),'clearing left text preserves right input');ok(await page.locator('[data-stc-action="replace"][data-stc-side="left"]').isEnabled(),'empty text side stays replaceable');
@@ -202,7 +270,7 @@ async function textComparison(browser){
 (async()=>{
  fs.mkdirSync('test-results',{recursive:true});const browser=await playwright.chromium.launch({headless:true,args:['--no-sandbox'],...(process.env.CI_CHROME_PATH?{executablePath:process.env.CI_CHROME_PATH}:{})}),failures=[];
  try{
-  for(const [name,run] of [['objects-scrolling',objectsAndScrolling],['object-states',objectStates],['text-comparison',textComparison]]){
+  for(const [name,run] of [['objects-scrolling',objectsAndScrolling],['object-states',objectStates],['object-navigation',objectNavigation],['text-comparison',textComparison]]){
    try{await run(browser);console.log('comparison-scenario '+name+' passed');}
    catch(error){
     failures.push({name,error});console.error('comparison-scenario '+name+' failed: '+(error.stack||error));

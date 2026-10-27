@@ -20,6 +20,10 @@ for(const comparison of [null,{}])for(const mode of ['records','fields']){
 state.compareLoadersCollapsed=true;ctx.renderContent();assert.ok(classes.has('compare-loaders-collapsed'));checks++;
 state.model=null;ctx.renderContent();assert.equal(content.innerHTML,'<comparison>','comparison opens without a parsed model');checks++;
 state.view='overview';ctx.renderContent();assert.ok(!classes.has('comparison-view')&&!classes.has('compare-loaders-collapsed'),'other views retain their own layout');checks++;assert.equal(content.innerHTML,'<welcome>');checks++;
+let mounted=0,cleaned=0;ctx.window={SWComparisonNavigation:{mount:()=>{mounted++;return ()=>{cleaned++;};}}};
+state.view='compare';state.compareMode='records';ctx.renderContent();assert.equal(mounted,1);checks++;
+ctx.renderContent();assert.equal(cleaned,1);assert.equal(mounted,2);checks+=2;
+state.view='overview';ctx.renderContent();assert.equal(cleaned,2);assert.equal(state.comparisonNavigationCleanup,null);checks+=2;
 // Replacing the current input preserves review state, but not a context missing
 // from the new source (the visible context selector must match the filter).
 ctx.setModel=model=>{state.model=model;state.scope='';state.query='';state.filter='all';state.comparison=null;};

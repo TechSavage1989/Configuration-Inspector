@@ -1,6 +1,34 @@
 # Configuration Inspector development handoff
 
-## 5.17.1 published and verified
+## 5.17.2 review candidate
+
+Based on verified main `3a1b53f8916ea829c436178a9fb5354173caa0c3`.
+The user supplied the navigation brief and explicitly approved implementation and
+publication on 2026-10-27. No private input/screenshot content is committed.
+
+- The centered double-arrow Swap sides action lives in expanded input cards and
+  collapsed identity summaries; CSS exposes only one at a time. Keep its keyboard
+  label and hover/focus tooltip, and preserve partial/empty-side behavior.
+- `webview/comparison_navigation.js` measures only currently rendered object cards
+  and groups. Its section bookmarks and map are explicitly current-page scope.
+  Variable geometry is refreshed after details expansion, resize and replacement;
+  clean up its observers and handlers before replacing comparison DOM.
+- Text-map dragging preserves the map/pointer owner across aligned-row page
+  changes. Retain capture, cancellation, click suppression, synchronized panes,
+  bounded rendering and ordinary map/keyboard/difference navigation.
+- The navigation UI sits beside results, preserving the fixed-height workspace,
+  input collapse height gain, object groups and fractional-boundary wheel handoff.
+- Preserve parsers, original source, secret masking, settings, updater snapshots,
+  release gates, root allowlist and single-file feature embedding paths.
+
+Local validation passed: 5,227 Node checks, 3 repository-layout guards,
+version/embedding and public-source audits, 83 protocol checks and native catalog
+policy. Hosted browser/Windows validation and release verification are pending.
+Local Chromium
+remains unavailable under the established sandbox restriction; do not retry it.
+Full interactive native WebView2 and a real installed app update are not claimed.
+
+## Previous 5.17.1 publication (verified)
 
 Release: https://github.com/TechSavage1989/Configuration-Inspector/releases/tag/v5.17.1
 Release ID: `425015916`; published 2026-10-27.

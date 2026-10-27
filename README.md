@@ -67,7 +67,10 @@ Open **Compare configs** in the sidebar and select one of the two primary modes:
   Large comparisons render 500 aligned rows per page; navigation crosses pages.
   Bounded alignment may use a clearly labeled approximate fallback.
 
-Both modes are **read-only** and offer explicit left/right inputs and swapping.
+Both modes are **read-only**. The double-arrow **Swap sides** button between the
+inputs swaps their contents and names; the same control remains between the
+compact identity summaries when inputs are hidden. It is keyboard accessible and
+works with a single loaded side.
 Both modes keep their controls visible while results scroll within the window.
 Use **Hide inputs** to reclaim review space without losing either configuration;
 the compact summary keeps Current/Comparison identities and filenames visible.
@@ -78,7 +81,16 @@ continue into the result list at their boundary.
 The text mode's vertical **change map** shows added, removed and changed lines
 across the entire aligned comparison, with an outline for the visible area. Click
 the map to jump both panes, or focus it and use arrows, Page Up/Down and Home/End.
-The map and difference navigation cross the 500-row page boundary automatically.
+Drag the map's viewport outline to scroll both panes smoothly, including across
+500-row pages; release or cancel the pointer to stop. Click/keyboard navigation
+and ordinary synchronized scrolling remain available.
+
+Config Objects has a **Sections** sidebar and a geometry-based change map. Click a
+section to jump within the results; the active section follows scrolling. The
+object map reflects real card heights and expanded details, with colors for added,
+removed, changed and unchanged objects. Click markers, drag its viewport or use
+keyboard navigation. Both the bookmarks and object map describe **this results
+page only** and refresh with filters, pagination, resizing or input changes.
 
 The original-field comparison remains available. Direct text inputs are limited
 to 5 MB each and require acknowledgment before displaying unmasked contents.
