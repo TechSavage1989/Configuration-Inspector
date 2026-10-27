@@ -1,27 +1,52 @@
 # Configuration Inspector development handoff
 
-## 5.17.4 imported-selection correction — validation pending
+## 5.17.4 published and verified — imported configuration selection
 
-Prepared from main `520f43145a0c41ac8b167be8006dc38c3b872c13`. The user
-explicitly approved pushing, hosted validation, main promotion and publication.
-The regression was not a 5.17.3 deletion: text mode bypassed the old right-only
-workspace selector in 5.17.0; 5.17.1 hid the global current-config tabs and placed
-the remaining selector inside collapsible loaders. An explicit Use imported
-picker now serves both sides in every mode, expanded and collapsed. It reuses
-model references, preserves comparison state and masking, and removes the old
-right-only selector rather than presenting duplicate controls. Text may compare
-different vendors; parsed modes retain the existing compatibility guard.
+Release: https://github.com/TechSavage1989/Configuration-Inspector/releases/tag/v5.17.4
+Release ID: `425071673`; published 2026-10-27 at 05:38:48 UTC.
+Published source/tag: `3267bfbc71c5e33859ff68c883434c9c22715488`.
+Source tree: `860ef61e31193919aa055e8c240f6bcf513d619f`.
+Review run `40456124638` and main release run `40456351393` passed all jobs
+on the first attempt. Baseline main was `520f43145a0c41ac8b167be8006dc38c3b872c13`;
+the user explicitly approved the correction, hosted checks, main and publication.
 
-New controller tests cover three preloaded models, selection/replacement on both
-sides, direct-text preservation, clear/restore, same-model comparison, escaped
-metadata, secret masking, compatibility and stale/invalid choices. A dedicated
-browser scenario exercises actual multi-file import and visible controls across
-all modes, collapsed/expanded layouts, keyboard selection, Cancel, swap, filters,
-small windows and source masking. Local validation passed: 5,405 Node checks,
-91 C++ update-protocol checks, native catalog policy, version/embed consistency
-and 3 repository-layout guards. Hosted browser/Windows checks and public
-download/feed verification are pending; do not claim a published build yet.
+Use imported now serves both sides in all three comparison modes, expanded or
+collapsed. It reuses imported model references without reopening or reparsing
+files, keeps the other input and comparison state, and preserves secret masking.
+The picker shows escaped filename/vendor/device identity metadata only. The old
+right-only dropdown is removed to avoid duplicate selection controls. Parsed
+comparisons retain the same-vendor guard; text can use different-vendor sources.
+Replace/paste, clear, swap, maps, navigation and fixed-height scrolling remain.
 
+Provenance: this was not a 5.17.3 deletion. Text mode bypassed the old right-only
+selector in 5.17.0; 5.17.1 hid global current-config workspace tabs and placed the
+remaining selector inside collapsible loaders. The explicit two-sided picker
+restores the selection route without bringing back outer workspace scrolling.
+
+Validation: 5,405 Node checks (69 new imported-selection checks), 933 comparison
+browser checks across seven scenarios, 40 updater browser checks, 91 C++ protocol
+checks, native catalog policy, 43 native Updater scheduler checks, 28 Windows
+replacement/rollback checks, 3 repository-layout guards, version/embed consistency
+and public-source audit (172 files, 170 text, 66 reviewed fixtures).
+The browser scenario preloads three real parsed workspace models and exercises
+both sides/all modes, collapsed/expanded and small-window controls, keyboard
+selection, Cancel, filters, clear/reuse, swap, repeated selection, same-model
+comparison, unrelated direct-text preservation and secret reveal/hide. Expanded
+and all three collapsed-mode screenshots were inspected; no test was weakened.
+
+All four public downloads match GitHub asset sizes/digests. EXE/HTML/icon also
+match SHA256SUMS; HTML/icon match reviewed source after newline normalization.
+The executable is AMD64 Windows GUI with top-level PE version 5.17.4.0. The tag
+points to tested source and the latest feed passes the production C++ updater
+parser. 5.17.3 assets remain unchanged. No force push or access change occurred.
+
+- EXE SHA-256: `77c166c76dc9c0efa66608d2f300fbed3c7c8cd17ff985e92395310a60d83b77`
+- HTML SHA-256: `9caa570c03625f52e26fdb4e31c163e0e3c9ef66b5064500f07deb9dd5d5264f`
+- Icon SHA-256: `0b7616221b64418c3f48f5a405f56dc54248aab0e5c44ba69a7dae76e874f1d5`
+- SHA256SUMS SHA-256: `4895683c856c34fb3b5d302562427bb96ec1601362a37aa374bcc2fd553a5570`
+
+Unrun: full interactive native WebView2 and updating a real installed application.
+This final documentation-only record does not rebuild the published application.
 
 ## 5.17.3 published and verified
 
