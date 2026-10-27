@@ -687,6 +687,9 @@ table.data th,table.data td{vertical-align:top}
 
 
 .app-update-status{font-size:12px;line-height:1.6;overflow-wrap:anywhere}.app-update-progress{width:100%;height:6px;margin:4px 0 16px;accent-color:var(--accent)}.app-update-details{margin-top:16px;font-size:11px;color:var(--muted)}.app-update-details summary{cursor:pointer}.app-update-notes{white-space:pre-wrap;overflow-wrap:anywhere;font:12px/1.7 inherit;max-height:300px;overflow:auto;padding:14px;background:var(--paper);border:1px solid var(--line);border-radius:6px}.app-update-notice{position:fixed;bottom:20px;right:20px;z-index:45;display:flex;align-items:center;gap:24px;background:var(--paper);color:var(--ink);border:1px solid var(--line);border-radius:8px;box-shadow:0 6px 24px #0002;padding:16px 18px;max-width:calc(100vw - 40px)}.app-update-notice[hidden]{display:none}.app-update-notice strong{font-size:12px}.app-update-notice p{font-size:11px;color:var(--muted);margin:6px 0 0}.app-update-notice .detail-actions{margin:0}@media(max-width:600px){.app-update-notice{left:12px;right:12px;bottom:12px;flex-wrap:wrap;gap:12px}}
+
+/* Read-only comparison workspace; outer content owns vertical overflow. */
+.compare-mode-toolbar{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:16px}.compare-mode-toolbar .chip{margin-left:auto}.compare-file strong{overflow-wrap:anywhere}.compare-files>.icon-button{justify-self:center}.object-pair{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:12px;margin:12px 0}.object-side{display:flex;flex-direction:column;gap:5px;padding:12px;border:1px solid var(--line);border-radius:6px;min-width:0;overflow-wrap:anywhere}.object-side small,.object-side span{font-size:10px;color:var(--muted)}.object-side strong{font-size:12px}.object-side .quiet-button{align-self:flex-start}.object-field-state{display:block;font-size:9px;font-weight:400;color:var(--muted)}.object-diff-added td:last-child{background:var(--green-soft)}.object-diff-removed td:nth-child(2){background:var(--red-soft)}.object-diff-changed td{background:var(--amber-soft)}.comparison-scroll:focus-visible{outline:2px solid var(--accent);outline-offset:2px}.comparison-settings th:first-child{width:30%}.object-comparison-panel>.toolbar{flex-wrap:wrap}.object-comparison-panel .select{max-width:100%}
 </style>
 <style>
 /* Unified Config Inspector visual system: ConfigLens clarity with Studio tools. */
@@ -788,10 +791,11 @@ body{font-size:14px}.brand-mark{background:linear-gradient(145deg,#287dc6,#15578
       <div id="page-heading"></div>
       <div id="workspace-tabs"></div><div id="workspace-notice"></div>
       <div id="content"></div>
-      <footer class="page-footer"><span id="version-label">Config Inspector 5.16.0</span></footer>
+      <footer class="page-footer"><span id="version-label">Config Inspector 5.17.0</span></footer>
     </main>
   </div>
   <input type="file" id="import-file" multiple accept=".exp,.txt,.json,.conf,.cfg,.xml,.tar,.set,.log,.backup,.rsc" hidden>
+  <input type="file" id="compare-left-file" accept=".exp,.txt,.json,.conf,.cfg,.xml,.tar,.set,.log,.backup,.rsc" hidden>
   <input type="file" id="compare-file" accept=".exp,.txt,.json,.conf,.cfg,.xml,.tar,.set,.log,.backup,.rsc" hidden>
   <dialog id="modal" aria-labelledby="modal-title"></dialog>
   <dialog id="drawer" aria-labelledby="drawer-title"></dialog>
@@ -1422,7 +1426,8 @@ body{font-size:14px}.brand-mark{background:linear-gradient(145deg,#287dc6,#15578
     });return result;
   }
   // Match only unique identities. Duplicate names are kept separate and flagged rather than guessed.
-  function compareRecords(before,after,redact) {
+  function compareRecords(before,after,redact,options) {
+    options=options||{};
     function identity(model,r){return JSON.stringify([model.meta.vendorId||'sonicwall',r.scope||'global',r.category,r.family,r.name]);}
     function index(model){var map=new Map();model.records.forEach(function(r){var key=identity(model,r);if(!map.has(key))map.set(key,[]);map.get(key).push(r);});return map;}
     function settings(r){
@@ -1434,7 +1439,7 @@ body{font-size:14px}.brand-mark{background:linear-gradient(145deg,#287dc6,#15578
         if(!map.has(key))map.set(key,[]);map.get(key).push({value:e.value,secret:secretKey(e.key)||secretKey(e.base)||/unrecognized-command/.test(e.base||'')&&secretKey(e.value)});
       });return map;
     }
-    function changes(a,b){var keys=Array.from(new Set(Array.from(a.keys()).concat(Array.from(b.keys())))).sort();return keys.filter(function(k){return JSON.stringify((a.get(k)||[]).map(function(v){return v.value;}))!==JSON.stringify((b.get(k)||[]).map(function(v){return v.value;}));}).map(function(k){var av=a.get(k),bv=b.get(k),privateValue=(av||[]).concat(bv||[]).some(function(v){return v.secret;});function value(items){return items?items.map(function(v){return redact&&privateValue&&v.value!==''?'[REDACTED]':v.value;}).join('\n'):'';}return {key:k,kind:!av?'Added':!bv?'Removed':'Changed',before:value(av),after:value(bv),sensitive:privateValue};});}
+    function changes(a,b,includeEqual){var keys=Array.from(new Set(Array.from(a.keys()).concat(Array.from(b.keys())))).sort();return keys.filter(function(k){return includeEqual||JSON.stringify((a.get(k)||[]).map(function(v){return v.value;}))!==JSON.stringify((b.get(k)||[]).map(function(v){return v.value;}));}).map(function(k){var av=a.get(k),bv=b.get(k),privateValue=(av||[]).concat(bv||[]).some(function(v){return v.secret;});function value(items){return items?items.map(function(v){return redact&&privateValue&&v.value!==''?'[REDACTED]':v.value;}).join('\n'):'';}return {key:k,kind:!av?'Added':!bv?'Removed':JSON.stringify(av.map(function(v){return v.value;}))===JSON.stringify(bv.map(function(v){return v.value;}))?'Unchanged':'Changed',before:value(av),after:value(bv),sensitive:privateValue};});}
     function summary(r){var map=new Map();Object.keys(r.summary||{}).filter(function(k){return !/^(fields|family|ipSource|maskSource)$/.test(k);}).forEach(function(k){var value=r.summary[k];map.set(k,[{value:typeof value==='object'?JSON.stringify(value):String(value==null?'':value),secret:secretKey(k)}]);});return map;}
     var a=index(before),b=index(after),result=[],unchanged=0,ambiguous=0;
     Array.from(new Set(Array.from(a.keys()).concat(Array.from(b.keys())))).forEach(function(key){var av=a.get(key)||[],bv=b.get(key)||[];
@@ -1442,13 +1447,13 @@ body{font-size:14px}.brand-mark{background:linear-gradient(145deg,#287dc6,#15578
         // Equal content is an unambiguous unchanged match even when names repeat.
         function fingerprint(r){function stable(map){return Array.from(map).sort(function(a,b){return a[0].localeCompare(b[0]);}).map(function(pair){return [pair[0],pair[1].map(function(v){return v.value;})];});}return JSON.stringify([stable(summary(r)),stable(settings(r))]);}
         var remaining=bv.map(function(r){return {record:r,fingerprint:fingerprint(r)};}),unmatched=[];
-        av.forEach(function(r){var signature=fingerprint(r),at=remaining.findIndex(function(item){return item.fingerprint===signature;});if(at>=0){remaining.splice(at,1);unchanged++;}else unmatched.push(r);});
+        av.forEach(function(r){var signature=fingerprint(r),at=remaining.findIndex(function(item){return item.fingerprint===signature;});if(at>=0){var matched=remaining.splice(at,1)[0].record;unchanged++;if(options.includeUnchanged)result.push({kind:'Unchanged',before:r,after:matched,ambiguous:false,summaryChanges:[],fieldChanges:[]});}else unmatched.push(r);});
         ambiguous+=unmatched.length+remaining.length;unmatched.forEach(function(r){result.push({kind:'Removed',before:r,after:null,ambiguous:true,summaryChanges:[],fieldChanges:[]});});remaining.forEach(function(item){result.push({kind:'Added',before:null,after:item.record,ambiguous:true,summaryChanges:[],fieldChanges:[]});});return;
       }
       var ar=av[0],br=bv[0],sc=ar&&br?changes(summary(ar),summary(br)):[],fc=ar&&br?changes(settings(ar),settings(br)):[];
-      if(ar&&br&&!sc.length&&!fc.length){unchanged++;return;}
+      if(ar&&br&&!sc.length&&!fc.length){unchanged++;if(options.includeUnchanged)result.push({kind:'Unchanged',before:ar,after:br,ambiguous:false,summaryChanges:[],fieldChanges:[]});return;}
       result.push({kind:!ar?'Added':!br?'Removed':'Changed',before:ar||null,after:br||null,ambiguous:false,summaryChanges:sc,fieldChanges:fc});
-    });return {items:result,unchanged:unchanged,ambiguous:ambiguous};
+    });if(options.includeValues)result.forEach(function(item){item.summaryRows=changes(item.before?summary(item.before):new Map(),item.after?summary(item.after):new Map(),true);item.fieldRows=changes(item.before?settings(item.before):new Map(),item.after?settings(item.after):new Map(),true);});return {items:result,unchanged:unchanged,ambiguous:ambiguous};
   }
   function resolve(model,type,value,ipVersion,scope) {
     if(type==='identities'&&(!model.meta.vendorId||model.meta.vendorId==='sonicwall')){var identities=(model.categories.identities||[]).filter(function(r){return r.name===value||r.id===value||r.fields.some(function(e){return /instanceId/i.test(e.base)&&e.value===value;});});return identities.length===1?identities[0]:null;}
@@ -4295,6 +4300,262 @@ function pJ(L,pan){const d=E(),I={},R={},T={};
 });
 
 </script>
+<script id="comparison-engine">
+(function(root,factory){
+ 'use strict';
+ var api=factory();
+ if(typeof module==='object'&&module.exports)module.exports=api;
+ if(root)root.SWComparison=api;
+})(typeof globalThis!=='undefined'?globalThis:this,function(){
+ 'use strict';
+
+ // Pure line comparison: never edits source and never inserts source as HTML.
+ // Work and trace budgets bound difficult/repetitive diffs; a positional fallback
+ // retains every line and is explicitly identified as approximate.
+ function limit(value,fallback,maximum){
+  return Number.isFinite(value)?Math.max(0,Math.min(maximum,Math.floor(value))):fallback;
+ }
+ function inspect(text,maxLines){
+  var endings={LF:0,CRLF:0,CR:0},breaks=0;
+  for(var i=0;i<text.length;i++){
+   if(text.charCodeAt(i)===13){breaks++;if(text.charCodeAt(i+1)===10){endings.CRLF++;i++;}else endings.CR++;}
+   else if(text.charCodeAt(i)===10){breaks++;endings.LF++;}
+  }
+  var finalNewline=/[\r\n]$/.test(text),lineCount=text.length?breaks+(finalNewline?0:1):0;
+  var types=Object.keys(endings).filter(function(key){return endings[key]>0;});
+  var metadata={characters:text.length,lineCount:lineCount,finalNewline:finalNewline,endings:endings,lineEnding:types.length>1?'mixed':types[0]||'none'};
+  if(lineCount>maxLines)return {metadata:metadata,lines:null};
+  var lines=[],start=0,pattern=/\r\n|\r|\n/g,match;
+  while((match=pattern.exec(text))!==null){lines.push({number:lines.length+1,text:text.slice(start,match.index),terminated:true});start=pattern.lastIndex;}
+  if(start<text.length)lines.push({number:lines.length+1,text:text.slice(start),terminated:false});
+  return {metadata:metadata,lines:lines};
+ }
+ function compareText(leftText,rightText,options){
+  options=options||{};
+  leftText=leftText==null?'':String(leftText);rightText=rightText==null?'':String(rightText);
+  var maxCharacters=limit(options.maxCharacters,25*1024*1024,25*1024*1024);
+  var maxLines=limit(options.maxLines,200000,200000);
+  var maxWork=limit(options.maxWork,2000000,4000000);
+  var maxEditDistance=limit(options.maxEditDistance,512,1024);
+  var maxTraceCells=limit(options.maxTraceCells,250000,1000000);
+  var maxMilliseconds=limit(options.maxMilliseconds,250,2000);
+  var result={rows:[],hunks:[],counts:{added:0,removed:0,changed:0,unchanged:0},approximate:false,rejected:false,notices:[],left:null,right:null};
+  if(leftText.length>maxCharacters||rightText.length>maxCharacters){
+   result.rejected=true;
+   result.left={characters:leftText.length,lineCount:null};result.right={characters:rightText.length,lineCount:null};
+   result.notices.push('Text comparison was not calculated: each input must be at most '+maxCharacters.toLocaleString()+' characters. No input was truncated.');return result;
+  }
+  var left=inspect(leftText,maxLines),right=inspect(rightText,maxLines),a=left.lines,b=right.lines;
+  result.left=left.metadata;result.right=right.metadata;
+  if(!a||!b){result.rejected=true;result.notices.push('Text comparison was not calculated: each input must be at most '+maxLines.toLocaleString()+' lines. No input was truncated.');return result;}
+  if(left.metadata.lineEnding!==right.metadata.lineEnding&&left.metadata.lineCount&&right.metadata.lineCount)
+   result.notices.push('Line-ending styles differ ('+left.metadata.lineEnding+' / '+right.metadata.lineEnding+'); CRLF, LF and CR are normalized for line matching. Final newline differences are still highlighted.');
+  var started=Date.now(),work=0,exhausted=false;
+  function spend(amount){
+   work+=amount||1;
+   if(work>maxWork||(work%1024===0&&Date.now()-started>maxMilliseconds))exhausted=true;
+   return !exhausted;
+  }
+  function equal(i,j){return a[i].text===b[j].text;}
+  function append(i,j){
+   var l=i==null?null:a[i],r=j==null?null:b[j];
+   var kind=!l?'added':!r?'removed':l.text===r.text&&l.terminated===r.terminated?'unchanged':'changed';
+   result.rows.push({left:l,right:r,kind:kind,hunk:null});result.counts[kind]++;
+  }
+  function positional(a0,a1,b0,b1){
+   result.approximate=true;
+   for(var i=0,n=Math.max(a1-a0,b1-b0);i<n;i++)append(a0+i<a1?a0+i:null,b0+i<b1?b0+i:null);
+  }
+  function emitOperations(operations){
+   var removed=[],added=[];
+   function flush(){for(var i=0,n=Math.max(removed.length,added.length);i<n;i++)append(i<removed.length?removed[i]:null,i<added.length?added[i]:null);removed=[];added=[];}
+   operations.forEach(function(op){if(op.type==='same'){flush();append(op.a,op.b);}else if(op.type==='delete')removed.push(op.a);else added.push(op.b);});flush();
+  }
+  function myers(a0,a1,b0,b1){
+   var n=a1-a0,m=b1-b0,cap=Math.min(n+m,maxEditDistance),v=new Map([[1,0]]),trace=[],cells=0;
+   function get(map,key){return map.has(key)?map.get(key):-Infinity;}
+   for(var d=0;d<=cap;d++){
+    cells+=v.size;if(cells>maxTraceCells||!spend(v.size))return null;
+    trace.push(new Map(v));
+    for(var k=-d;k<=d;k+=2){
+     if(!spend())return null;
+     var x=k===-d||(k!==d&&get(v,k-1)<get(v,k+1))?get(v,k+1):get(v,k-1)+1,y=x-k;
+     while(x<n&&y<m&&equal(a0+x,b0+y)){if(!spend())return null;x++;y++;}
+     v.set(k,x);
+     if(x>=n&&y>=m){
+      var operations=[];x=n;y=m;
+      for(var depth=d;depth>0;depth--){
+       var previous=trace[depth],diagonal=x-y;
+       var previousDiagonal=diagonal===-depth||(diagonal!==depth&&get(previous,diagonal-1)<get(previous,diagonal+1))?diagonal+1:diagonal-1;
+       var previousX=get(previous,previousDiagonal),previousY=previousX-previousDiagonal;
+       while(x>previousX&&y>previousY){operations.push({type:'same',a:a0+--x,b:b0+--y});}
+       if(x===previousX)operations.push({type:'insert',b:b0+--y});else operations.push({type:'delete',a:a0+--x});
+      }
+      while(x>0&&y>0)operations.push({type:'same',a:a0+--x,b:b0+--y});
+      while(x>0)operations.push({type:'delete',a:a0+--x});while(y>0)operations.push({type:'insert',b:b0+--y});
+      return operations.reverse();
+     }
+    }
+   }
+   return null;
+  }
+  function gap(a0,a1,b0,b1){
+   // Prefix/suffix matches cost linear work and also keep fallback boundaries useful.
+   while(a0<a1&&b0<b1&&equal(a0,b0)){append(a0++,b0++);spend();}
+   var suffix=0;
+   while(a0<a1&&b0<b1&&equal(a1-1,b1-1)){a1--;b1--;suffix++;spend();}
+   if(a0===a1){for(var j=b0;j<b1;j++)append(null,j);}
+   else if(b0===b1){for(var i=a0;i<a1;i++)append(i,null);}
+   else if(exhausted)positional(a0,a1,b0,b1);
+   else {var operations=myers(a0,a1,b0,b1);if(operations)emitOperations(operations);else positional(a0,a1,b0,b1);}
+   for(var s=0;s<suffix;s++)append(a1+s,b1+s);
+  }
+  // Unique common lines are safe anchors. Their longest increasing subsequence
+  // keeps order; repeated lines are handled by Myers inside the bounded gaps.
+  function anchors(a0,a1,b0,b1){
+   var positions=new Map(),rightPositions=new Map();
+   for(var i=a0;i<a1;i++){if(!spend())return [];positions.set(a[i].text,positions.has(a[i].text)?-1:i);}
+   for(var j=b0;j<b1;j++){if(!spend())return [];rightPositions.set(b[j].text,rightPositions.has(b[j].text)?-1:j);}
+   var candidates=[];
+   positions.forEach(function(i,text){var j=rightPositions.get(text);if(i>=0&&j>=0)candidates.push({a:i,b:j});});
+   var tails=[],previous=[];
+   for(var c=0;c<candidates.length;c++){
+    var lo=0,hi=tails.length;
+    while(lo<hi){if(!spend())return [];var mid=(lo+hi)>>1;if(candidates[tails[mid]].b<candidates[c].b)lo=mid+1;else hi=mid;}
+    previous[c]=lo?tails[lo-1]:-1;tails[lo]=c;
+   }
+   var out=[],cursor=tails.length?tails[tails.length-1]:-1;
+   while(cursor>=0){out.push(candidates[cursor]);cursor=previous[cursor];}
+   return out.reverse();
+  }
+  var a0=0,b0=0,a1=a.length,b1=b.length,suffix=0;
+  while(a0<a1&&b0<b1&&equal(a0,b0)){append(a0++,b0++);spend();}
+  while(a0<a1&&b0<b1&&equal(a1-1,b1-1)){a1--;b1--;suffix++;spend();}
+  var points=a0<a1&&b0<b1&&!exhausted?anchors(a0,a1,b0,b1):[];
+  points.forEach(function(point){gap(a0,point.a,b0,point.b);append(point.a,point.b);a0=point.a+1;b0=point.b+1;});
+  gap(a0,a1,b0,b1);for(var tail=0;tail<suffix;tail++)append(a1+tail,b1+tail);
+  var hunk=null;
+  result.rows.forEach(function(row,index){
+   if(row.kind==='unchanged'){hunk=null;return;}
+   if(!hunk){hunk={id:result.hunks.length,start:index,end:index};result.hunks.push(hunk);}
+   else hunk.end=index;
+   row.hunk=hunk.id;
+  });
+  if(result.approximate)result.notices.push('Some large or highly changed sections use bounded positional alignment. Every input line is retained; alignment in those sections is approximate.');
+  result.work=work;
+  return result;
+ }
+ return {compareText:compareText};
+});
+
+</script>
+<script id="comparison-ui">
+/* Local, read-only, bounded-DOM side-by-side configuration text comparison. */
+(function(root,factory){
+  if(typeof module==='object'&&module.exports)module.exports=factory(require('./comparison.js'));
+  else root.SWTextComparison=factory(root.SWComparison);
+})(typeof globalThis!=='undefined'?globalThis:this,function(engine){
+  'use strict';
+  var MAX_BYTES=5*1024*1024,PAGE_SIZE=500;
+  function escape(value){return String(value==null?'':value).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});}
+  function blank(){return {name:'No input selected',text:'',origin:'model',masked:true,provided:false};}
+  function validateText(text){
+    if(typeof text!=='string')throw new Error('Choose readable text, not a binary configuration backup.');
+    if(text.length>MAX_BYTES||new TextEncoder().encode(text).length>MAX_BYTES)throw new Error('Each text comparison input is limited to 5 MB. Choose a smaller text export.');
+    if(/[\x00-\x08\x0b\x0c\x0e-\x1f]/.test(text))throw new Error('This input contains binary control characters. Choose a decoded text export.');
+    return text;
+  }
+  function source(value,origin){
+    if(value==null)return blank();
+    return {name:String(value.name||'Pasted text').slice(0,300),text:validateText(value.text),origin:origin|| (value.origin==='direct'?'direct':'model'),masked:value.masked===true,provided:value.provided!==false};
+  }
+  function same(a,b){return a.text===b.text&&a.name===b.name&&a.origin===b.origin&&a.masked===b.masked&&a.provided===b.provided&&a.error===b.error;}
+  function create(){return {left:blank(),right:blank(),defaults:{left:blank(),right:blank()},page:0,hunk:-1,sync:true,result:null,editor:null,error:'',loadToken:0,scroll:{top:0,left:0}};}
+  function invalidate(state){state.result=null;state.page=0;state.hunk=-1;state.scroll={top:0,left:0};state.pendingRow=null;state.error='';}
+  function setSources(state,values,options){
+    ['left','right'].forEach(function(side){
+      if(!Object.prototype.hasOwnProperty.call(values||{},side))return;
+      var next;try{next=source(values[side],'model');}catch(error){next=blank();next.name=String(values[side]&&values[side].name||'Loaded configuration').slice(0,300);next.error=error.message+' The loaded configuration was not truncated; choose a smaller decoded text input for this mode.';}state.defaults[side]=next;
+      if((options&&options.force)||state[side].origin==='model'){
+        if(!same(state[side],next)){state[side]=Object.assign({},next);invalidate(state);}
+      }
+    });return state;
+  }
+  function sources(state){return {left:Object.assign({},state.left),right:Object.assign({},state.right)};}
+  function exportState(state){function saved(s){return {name:s.name,text:s.text,origin:s.origin,masked:s.masked,provided:s.provided};}return {schema:1,left:saved(state.left),right:saved(state.right)};}
+  function restoreState(data){
+    if(!data||data.schema!==1||!data.left||!data.right)throw new Error('Invalid text comparison workspace.');
+    var state=create();['left','right'].forEach(function(side){var s=data[side];if(typeof s.name!=='string'||typeof s.text!=='string'||!['model','direct'].includes(s.origin)||typeof s.masked!=='boolean'||typeof s.provided!=='boolean')throw new Error('Invalid text comparison source.');state[side]=source(s);});return state;
+  }
+  function build(state){
+    if(!state.left.provided||!state.right.provided)return null;
+    if(!state.result){try{state.result=engine.compareText(state.left.text,state.right.text);}catch(e){state.error=e.message||'The text comparison could not be calculated.';return null;}}
+    return state.result;
+  }
+  var css='.sw-text-comparison{--stc-line:24px;min-width:0;color:var(--ink)}.stc-inputs,.stc-viewers{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:12px}.stc-input{padding:14px;border:1px solid var(--line);border-radius:8px;min-width:0}.stc-input h3{font-size:12px;margin:0 0 6px}.stc-input strong{display:block;font-size:12px;overflow-wrap:anywhere}.stc-input small{display:block;margin:5px 0 10px;color:var(--muted)}.stc-actions,.stc-toolbar{display:flex;gap:8px;flex-wrap:wrap;align-items:center}.stc-toolbar{padding:12px 0}.stc-toolbar .stc-spacer{flex:1}.stc-note{font-size:11px;color:var(--muted);margin:10px 0;overflow-wrap:anywhere}.stc-notice{padding:10px;border:1px solid var(--line);border-radius:6px;font-size:12px;margin:10px 0}.stc-pane{min-width:0;border:1px solid var(--line);border-radius:7px;overflow:hidden;background:var(--surface,var(--theme-surface-ffffff,white))}.stc-pane-title{font-weight:600;font-size:11px;padding:9px 12px;border-bottom:1px solid var(--line);overflow-wrap:anywhere}.stc-scroll{height:360px;height:clamp(180px,48vh,560px);overflow:auto;scrollbar-gutter:stable;overscroll-behavior:contain;outline-offset:-3px}.stc-lines{width:max-content;min-width:100%}.stc-line{display:flex;align-items:stretch;height:var(--stc-line);min-height:var(--stc-line);font:12px/var(--stc-line) Consolas,"Courier New",monospace;white-space:pre;tab-size:4}.stc-number{width:50px;flex:0 0 50px;text-align:right;padding-right:8px;color:var(--muted);border-right:1px solid var(--line);user-select:none}.stc-marker{width:22px;flex:0 0 22px;text-align:center;user-select:none}.stc-code{padding-right:16px;white-space:pre}.stc-eof{color:var(--muted);font-size:10px;font-style:italic;padding:0 10px}.stc-added{background:var(--green-soft,#e6f5ec)}.stc-added .stc-marker{color:var(--green,#207745)}.stc-removed{background:var(--red-soft,#fae9ea)}.stc-removed .stc-marker{color:var(--red,#aa3444)}.stc-changed{background:var(--amber-soft,#fff3dc)}.stc-changed .stc-marker{color:var(--amber,#97620a)}.stc-ghost{background:var(--theme-surface-f1f3f8,#f1f3f8);color:var(--muted)}.stc-active{box-shadow:inset 3px 0 var(--accent);outline:1px solid var(--accent);outline-offset:-1px}.stc-pagination{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;padding:12px 0}.stc-legend{display:flex;gap:12px;flex-wrap:wrap;font-size:11px}.stc-legend span{padding:3px 7px;border-radius:4px}.stc-editor{width:min(720px,calc(100vw - 28px));max-height:calc(100vh - 30px);overflow:auto;border:1px solid var(--line);border-radius:10px;padding:20px;background:var(--theme-surface-ffffff,white);color:var(--ink)}.stc-editor::backdrop{background:#11182788}.stc-editor h3{margin:0 0 8px}.stc-editor label{display:block;margin:12px 0 5px;font-size:12px}.stc-editor input[type=text],.stc-editor textarea{width:100%;border:1px solid var(--line);background:var(--bg);color:var(--ink);border-radius:5px;padding:8px}.stc-editor textarea{height:220px;resize:vertical;font:12px/1.5 Consolas,monospace}.stc-editor .stc-ack{display:flex;gap:9px;align-items:flex-start;margin:12px 0}.stc-editor .stc-ack input{margin-top:3px}.stc-editor .stc-error{color:var(--red);font-size:12px;margin:10px 0}.stc-file{max-width:100%}@media(max-width:740px){.stc-inputs,.stc-viewers{gap:6px}.stc-input{padding:9px}.stc-input .button{padding:6px;font-size:10px}.stc-number{width:35px;flex-basis:35px}.stc-marker{width:17px;flex-basis:17px}.stc-pane-title{padding:7px;font-size:10px}.stc-toolbar{gap:6px}.stc-scroll{height:300px}.stc-editor{padding:14px}.stc-editor textarea{height:180px}}';
+  function button(action,label,extra){return '<button type="button" class="button small" data-stc-action="'+action+'"'+(extra||'')+'>'+label+'</button>';}
+  function input(state,side){var s=state[side],label=side==='left'?'Left':'Right';return '<section class="stc-input"><h3>'+label+' configuration text</h3><strong>'+escape(s.name)+'</strong><small>'+(s.provided?(s.origin==='model'?'Loaded configuration':'Direct text input')+' · '+(s.masked?'Sensitive values masked':'Unmasked text'):'Load a text file or paste text; an empty text is a valid input.')+'</small>'+(s.error?'<p class="stc-notice" role="alert">'+escape(s.error)+'</p>':'')+'<div class="stc-actions">'+button('file','Load file',' data-stc-side="'+side+'"')+button('paste','Paste text',' data-stc-side="'+side+'"')+(s.origin==='direct'&&state.defaults[side].provided?button('default','Use loaded config',' data-stc-side="'+side+'"'):'')+'</div></section>';}
+  function line(row,side,index,active){var value=row[side],kind=row.kind,marker=value?(kind==='added'?'+':kind==='removed'?'−':kind==='changed'?'~':' '):'·';return '<div class="stc-line stc-'+kind+(!value?' stc-ghost':'')+(row.hunk===active&&active>=0?' stc-active':'')+'" data-stc-row="'+index+'" data-stc-kind="'+kind+'" aria-label="'+escape((value?side+' line '+value.number+' '+kind:'No corresponding '+side+' line'))+'"><span class="stc-number" aria-hidden="true">'+(value?value.number:'')+'</span><span class="stc-marker" aria-hidden="true">'+marker+'</span><span class="stc-code">'+(value?escape(value.text):'')+'</span>'+(value&&!value.terminated?'<span class="stc-eof">No newline at end of file</span>':'')+'</div>';}
+  function editor(state){var e=state.editor;if(!e)return '';var label=e.side==='left'?'Left':'Right';return '<dialog class="stc-editor" aria-labelledby="stc-editor-title"><h3 id="stc-editor-title">'+label+' text input</h3><p class="stc-note">Local comparison only. Direct files and pasted text are not automatically redacted and may contain passwords or other sensitive values. Inputs are never written back to the original file.</p><label for="stc-input-name">Input name</label><input id="stc-input-name" type="text" maxlength="300" value="'+escape(e.name)+'">'+(e.mode==='file'?'<label for="stc-input-file">UTF-8 text file · maximum 5 MB</label><input class="stc-file" id="stc-input-file" type="file" accept=".txt,.conf,.cfg,.xml,.json,.set,.log,.rsc,text/*"><p class="stc-note" id="stc-file-status">'+escape(e.fileStatus||'No file selected.')+'</p>':'<label for="stc-input-text">Paste configuration text · maximum 5 MB</label><textarea id="stc-input-text" spellcheck="false">'+escape(e.text)+'</textarea>')+'<label class="stc-ack"><input id="stc-unmasked-ack" type="checkbox"'+(e.ack?' checked':'')+'><span>Show this unmasked text in my local comparison.</span></label><p class="stc-error" role="alert">'+escape(e.error||'')+'</p><div class="stc-actions">'+button('cancel','Cancel')+button('save','Use '+label.toLowerCase()+' text',(e.loading?' disabled':''))+'</div></dialog>';}
+  function render(state){
+    var result=build(state),output='<style>'+css+'</style><section class="sw-text-comparison" aria-label="Side-by-side configuration text comparison"><div class="stc-inputs">'+input(state,'left')+input(state,'right')+'</div><p class="stc-note">Read-only line comparison. CRLF and LF line endings are normalized; final-newline changes remain differences. Masked loaded configurations can hide secret-only differences: use object comparison for those changes.</p>';
+    if(state.error)output+='<p class="stc-notice" role="alert">'+escape(state.error)+'</p>';
+    output+='<div class="stc-toolbar">'+button('swap','Swap text sides')+'<label><input type="checkbox" data-stc-sync'+(state.sync?' checked':'')+'> Synchronized scrolling</label><span class="stc-spacer"></span>';
+    if(result&&!result.rejected){var total=result.hunks.length;output+=button('previous','Previous difference',state.hunk<=0?' disabled':'')+'<span class="stc-note" aria-live="polite">'+(state.hunk>=0?(state.hunk+1)+' / '+total:total+' difference blocks')+'</span>'+button('next','Next difference',!total||state.hunk>=total-1?' disabled':'');}
+    output+='</div>';
+    if(!result){output+='<div class="stc-notice">Choose a left and a right input to compare text. Loaded configuration sources are used when available.</div>';}
+    else if(result.rejected){output+='<div class="stc-notice" role="alert">Comparison could not be calculated. '+escape((result.notices||[]).join(' '))+'</div>';}
+    else{
+      var rows=result.rows,pages=Math.max(1,Math.ceil(rows.length/PAGE_SIZE));state.page=Math.max(0,Math.min(state.page,pages-1));var start=state.page*PAGE_SIZE,end=Math.min(rows.length,start+PAGE_SIZE);
+      output+='<div class="stc-legend" aria-label="Difference legend"><span class="stc-added">+ Added</span><span class="stc-removed">− Removed</span><span class="stc-changed">~ Changed</span><span>Unchanged</span></div>';
+      (result.notices||[]).forEach(function(note){output+='<p class="stc-notice" role="note">'+escape(note)+'</p>';});
+      if(!result.hunks.length)output+='<p class="stc-notice">No text differences were found'+(state.left.masked||state.right.masked?' in the displayed (possibly redacted) text':'')+'.</p>';
+      output+='<div class="stc-viewers">'+['left','right'].map(function(side){return '<section class="stc-pane"><div class="stc-pane-title">'+(side==='left'?'Left':'Right')+' · '+escape(state[side].name)+'</div><div class="stc-scroll" tabindex="0" role="region" aria-label="'+(side==='left'?'Left':'Right')+' configuration text" data-stc-pane="'+side+'"><div class="stc-lines">'+rows.slice(start,end).map(function(row,i){return line(row,side,start+i,state.hunk);}).join('')+(rows.length?'':'<p class="stc-note">Empty text</p>')+'</div></div></section>';}).join('')+'</div><div class="stc-pagination"><span>'+(rows.length?start+1:0)+'–'+end+' of '+rows.length.toLocaleString()+' aligned rows · '+(state.page+1)+' / '+pages+'</span><div class="stc-actions">'+button('page-previous','Previous rows',state.page===0?' disabled':'')+button('page-next','Next rows',state.page>=pages-1?' disabled':'')+'</div></div><p class="stc-note">Only '+PAGE_SIZE+' aligned rows are rendered per page. Difference navigation crosses pages. Use Page Up / Page Down inside either pane; F7 / Shift+F7 moves between difference blocks. '+result.left.lineCount.toLocaleString()+' left lines · '+result.right.lineCount.toLocaleString()+' right lines.</p>';
+    }
+    return output+editor(state)+'</section>';
+  }
+  function mount(container,state,onChange){
+    var root=container.querySelector('.sw-text-comparison');if(!root)return function(){};
+    var panes=Array.from(root.querySelectorAll('[data-stc-pane]')),dialog=root.querySelector('.stc-editor'),expectedScroll=new WeakMap();
+    var lines=panes.map(function(pane){return pane.querySelector&&pane.querySelector('.stc-lines');}).filter(Boolean),width=lines.reduce(function(max,line){return Math.max(max,line.scrollWidth);},0);lines.forEach(function(line){line.style.minWidth=width+'px';});
+    function movePane(pane,top,left){pane.scrollTop=top;pane.scrollLeft=left;expectedScroll.set(pane,{top:pane.scrollTop,left:pane.scrollLeft});}
+    function redraw(){if(root.isConnected!==false)onChange();}
+    function navigate(delta){var result=build(state);if(!result||result.rejected||!result.hunks.length)return;var next=Math.max(0,Math.min(result.hunks.length-1,state.hunk+delta));state.hunk=next;state.page=Math.floor(result.hunks[next].start/PAGE_SIZE);state.pendingRow=result.hunks[next].start;redraw();}
+    function saveDraft(){if(!state.editor)return;var name=root.querySelector('#stc-input-name'),text=root.querySelector('#stc-input-text'),ack=root.querySelector('#stc-unmasked-ack');if(name)state.editor.name=name.value;if(text)state.editor.text=text.value;if(ack)state.editor.ack=ack.checked;}
+    root.addEventListener('input',saveDraft);
+    root.addEventListener('change',function(event){
+      if(event.target.matches('[data-stc-sync]')){state.sync=event.target.checked;if(state.sync&&panes.length===2){movePane(panes[1],panes[0].scrollTop,panes[0].scrollLeft);}return;}
+      if(event.target.id!=='stc-input-file')return;
+      var file=event.target.files&&event.target.files[0],e=state.editor;if(!file||!e)return;
+      var token=++state.loadToken;saveDraft();e.loading=true;e.error='';e.fileStatus='Reading '+file.name+'…';
+      var status=root.querySelector('#stc-file-status'),save=root.querySelector('[data-stc-action="save"]');if(status)status.textContent=e.fileStatus;if(save)save.disabled=true;
+      Promise.resolve().then(function(){if(file.size>MAX_BYTES)throw new Error('Each text comparison input is limited to 5 MB.');return file.arrayBuffer();}).then(function(buffer){
+        var text;try{text=new TextDecoder('utf-8',{fatal:true}).decode(buffer);}catch(error){throw new Error('This file is not readable UTF-8 text. Export or save it as UTF-8 before comparing.');}
+        validateText(text);if(state.loadToken!==token||state.editor!==e)return;
+        e.text=text;e.name=file.name;e.fileLoaded=true;e.fileStatus=file.name+' · '+file.size.toLocaleString()+' bytes';
+      }).catch(function(error){if(state.loadToken===token&&state.editor===e){e.error=error.message||'The file could not be read.';e.fileLoaded=false;}}).finally(function(){if(state.loadToken===token&&state.editor===e){e.loading=false;redraw();}});
+    });
+    root.addEventListener('click',function(event){
+      var target=event.target.closest('[data-stc-action]');if(!target||!root.contains(target)||target.disabled)return;
+      var action=target.getAttribute('data-stc-action'),side=target.getAttribute('data-stc-side');
+      if(action==='previous'||action==='next'){navigate(action==='next'?1:-1);return;}
+      if(action==='page-previous'||action==='page-next'){state.page+=action==='page-next'?1:-1;state.pendingRow=null;state.scroll={top:0,left:0};redraw();return;}
+      if(action==='swap'){var before=state.left;state.left=Object.assign({},state.right,{origin:'direct'});state.right=Object.assign({},before,{origin:'direct'});invalidate(state);redraw();return;}
+      if(action==='default'&&(side==='left'||side==='right')){state[side]=Object.assign({},state.defaults[side]);invalidate(state);redraw();return;}
+      if((action==='paste'||action==='file')&&(side==='left'||side==='right')){state.editor={side:side,mode:action,name:action==='paste'&&state[side].provided?state[side].name:action==='paste'?'Pasted '+side+' text':'Text file',text:action==='paste'&&state[side].provided?state[side].text:'',ack:false,loading:false,fileLoaded:false};state.loadToken++;redraw();return;}
+      if(action==='cancel'){state.loadToken++;state.editor=null;redraw();return;}
+      if(action==='save'&&state.editor){saveDraft();var e=state.editor;try{if(e.loading)throw new Error('Wait for the file to finish loading.');if(e.mode==='file'&&!e.fileLoaded)throw new Error('Choose a readable UTF-8 text file first.');if(!e.ack)throw new Error('Confirm that you want to show this unmasked text locally.');state[e.side]=source({name:e.name,text:e.text,masked:false,provided:true},'direct');state.editor=null;state.loadToken++;invalidate(state);}catch(error){e.error=error.message;}redraw();}
+    });
+    root.addEventListener('keydown',function(event){if(event.key==='F7'&&!state.editor){event.preventDefault();navigate(event.shiftKey?-1:1);}});
+    panes.forEach(function(pane){pane.addEventListener('scroll',function(){var expected=expectedScroll.get(pane);expectedScroll.delete(pane);if(expected&&expected.top===pane.scrollTop&&expected.left===pane.scrollLeft)return;state.scroll={top:pane.scrollTop,left:pane.scrollLeft};if(!state.sync)return;panes.forEach(function(other){if(other!==pane&&(Math.abs(other.scrollTop-pane.scrollTop)>1||Math.abs(other.scrollLeft-pane.scrollLeft)>1))movePane(other,pane.scrollTop,pane.scrollLeft);});});});
+    panes.forEach(function(pane){movePane(pane,state.pendingRow==null?state.scroll.top:(state.pendingRow%PAGE_SIZE)*24,state.scroll.left);});state.pendingRow=null;
+    if(dialog){dialog.addEventListener('cancel',function(event){event.preventDefault();state.loadToken++;state.editor=null;redraw();});dialog.showModal();var field=root.querySelector(state.editor.mode==='file'?'#stc-input-file':'#stc-input-text');if(field)field.focus();}
+    return function(){state.loadToken++;};
+  }
+  return {create:create,setSources:setSources,sources:sources,exportState:exportState,restoreState:restoreState,render:render,mount:mount,validateText:validateText,PAGE_SIZE:PAGE_SIZE,MAX_BYTES:MAX_BYTES};
+});
+
+</script>
 <script id="app-updates">
 (function(root,factory){'use strict';root.SWUpdates=factory(root);})(typeof window!=='undefined'?window:globalThis,function(root){
   'use strict';
@@ -4304,6 +4565,8 @@ function pJ(L,pan){const d=E(),I={},R={},T={};
     function index(model){if(!model)return -1;var i=models.indexOf(model);if(i<0){i=models.length;models.push(model);}return i;}
     var selected=index(state.model),comparison=index(state.comparison);
     var result={schema:1,count:count,selected:selected,comparison:comparison,models:models.map(function(m){return {filename:m.meta.filename||'Configuration',snapshot:core.exportJSON(m,false),decodedText:m.decodedText||''};}),view:state.view,scope:state.scope||'',categoryTabs:state.categoryTabs||{},showUnassigned:!!state.showUnassigned,showEmpty:!!state.showEmpty};
+    result.compareMode=['records','text','fields'].includes(state.compareMode)?state.compareMode:'records';
+    if(state.compareText){if(!root.SWTextComparison)throw new Error('Text comparison cannot be preserved. Close it before updating.');if(state.compareText.editor)throw new Error('Save or cancel the pending text comparison input before updating.');result.textComparison=root.SWTextComparison.exportState(state.compareText);}
     var text=JSON.stringify(result);if(new TextEncoder().encode(text).length>maxWorkspace)throw new Error('The open workspace is too large to preserve during an update. Export and close configurations before restarting.');return text;
   }
   async function decodeWorkspace(data,parse){
@@ -4311,10 +4574,11 @@ function pJ(L,pan){const d=E(),I={},R={},T={};
     if(data.selected< -1||data.selected>=data.models.length||data.comparison< -1||data.comparison>=data.models.length||data.count&&data.selected<0)throw new Error('Invalid workspace selection.');
     var models=[];
     for(var item of data.models){if(!item||typeof item.snapshot!=='string'||typeof item.filename!=='string'||typeof item.decodedText!=='string')throw new Error('Invalid configuration in the update workspace.');var model=await parse(item.snapshot,{filename:item.filename});model.decodedText=item.decodedText;models.push(model);}
-    return {models:models.slice(0,data.count),model:data.selected<0?null:models[data.selected],comparison:data.comparison<0?null:models[data.comparison],view:typeof data.view==='string'?data.view:'overview',scope:typeof data.scope==='string'?data.scope:'',categoryTabs:data.categoryTabs&&typeof data.categoryTabs==='object'&&!Array.isArray(data.categoryTabs)?data.categoryTabs:{},showUnassigned:!!data.showUnassigned,showEmpty:!!data.showEmpty};
+    var compareText=null;if(data.textComparison!==undefined){if(!root.SWTextComparison)throw new Error('The text comparison restorer is unavailable.');compareText=root.SWTextComparison.restoreState(data.textComparison);}
+    return {compareText:compareText,compareMode:['records','text','fields'].includes(data.compareMode)?data.compareMode:'records',models:models.slice(0,data.count),model:data.selected<0?null:models[data.selected],comparison:data.comparison<0?null:models[data.comparison],view:typeof data.view==='string'?data.view:'overview',scope:typeof data.scope==='string'?data.scope:'',categoryTabs:data.categoryTabs&&typeof data.categoryTabs==='object'&&!Array.isArray(data.categoryTabs)?data.categoryTabs:{},showUnassigned:!!data.showUnassigned,showEmpty:!!data.showEmpty};
   }
   function create(options){
-    options=options||{};var bridge=options.bridge||root.chrome&&root.chrome.webview,native=!!(bridge&&typeof bridge.postMessage==='function'&&typeof bridge.addEventListener==='function'),state={current:'5.16.0',state:'idle',message:'',automatic:true,busy:false,ready:false,available:false},handlers={},restoring=false,installing=false;
+    options=options||{};var bridge=options.bridge||root.chrome&&root.chrome.webview,native=!!(bridge&&typeof bridge.postMessage==='function'&&typeof bridge.addEventListener==='function'),state={current:'5.17.0',state:'idle',message:'',automatic:true,busy:false,ready:false,available:false},handlers={},restoring=false,installing=false;
     var commands=['update-ui-ready','update-status','update-check','update-download','update-later','update-auto-on','update-auto-off','update-restored','update-restore-failed'];
     function request(command){if(!native)throw new Error('Built-in updates are available in the Windows desktop edition.');if(!commands.includes(command))throw new Error('Unknown update action.');bridge.postMessage(command);}
     if(native)bridge.addEventListener('message',async function(event){
@@ -4748,7 +5012,7 @@ function pJ(L,pan){const d=E(),I={},R={},T={};
   }
   var workspace=[];
   var state={review:null,findingsQuery:'',findingsSeverity:'all',findingsArea:'all',findingsLimit:40,model:null,comparison:null,ipRecords:[],view:'overview',query:'',globalQuery:'',filter:'all',page:1,pageSize:40,sortKey:'',sortDir:1,
-    hideSensitive:true,redactExport:true,overviewTab:'topology',activeRecord:null,drawerQuery:'',drawerLimit:200,compareFilter:'all',compareMode:'records',exportFormat:'json',importTarget:'primary',busy:false,
+    hideSensitive:true,redactExport:true,overviewTab:'topology',activeRecord:null,drawerQuery:'',drawerLimit:200,compareFilter:'all',compareMode:'records',compareCategory:'all',compareText:null,exportFormat:'json',importTarget:'primary',busy:false,
     nativeSection:'',nativeSourceOpen:false,nativeSections:[],rawQuery:'',rawPage:1,rawWrap:true,rawCache:null,
     collapsedInterfaces:new Set(),searchCollapsedInterfaces:new Set(),interfaceNodes:new Map(),ipVersionFilter:'all',ipMode:'configured',
     ruleFrom:'',ruleTo:'',mapQuery:'',mapZone:'',showUnassigned:false,unusedSections:new Set(),sourceSections:new Set(),overviewCollapsed:new Set(),mapCollapsed:new Set(),mapSearchCollapsed:new Set(),drawerHistory:[],technicalOpen:false,sourceOpen:false,scope:'',showEmpty:false,categoryTabs:{addresses:'objects',services:'objects',identities:'users'}};
@@ -5029,7 +5293,7 @@ function pJ(L,pan){const d=E(),I={},R={},T={};
       navItem('deviceinfo','Device information','ports')+navItem('findings','Config review','alert',configurationFindings().filter(function(f){return f.kind!=='Retained setting';}).length)+group('NETWORK',['topology','interfaces','vlans','zones','links','sdwan','routes','dns','dhcp','voice','network','ips'])+
       group('SWITCHING',['switching','acls'])+group('POLICIES & SECURITY',['policies','matrix','nat','vpn','security'])+
       group('OBJECTS',['addresses','services'])+group('USERS AND AUTHENTICATION',['identities','authentication','deviceusers'])+group('DEVICE & MANAGEMENT',['system','monitoring','availability','certificates'])+
-      '<div class="nav-section">TOOLS</div>'+navItem('sections','Configuration sections','layers')+navItem('plaintext','Raw configuration','file')+navItem('raw','All original fields','code',scopedFields().length)+navItem('compare','Compare configs','compare')+navItem('exports','Convert & export','download'):'')+sectionNavigation()+'</div>'+
+      '<div class="nav-section">TOOLS</div>'+navItem('sections','Configuration sections','layers')+navItem('plaintext','Raw configuration','file')+navItem('raw','All original fields','code',scopedFields().length)+navItem('exports','Convert & export','download'):'')+navItem('compare','Compare configs','compare')+sectionNavigation()+'</div>'+
       '<div class="sidebar-bottom">'+
       '<button class="nav-item subtle-nav" data-action="app-settings">'+icon('settings')+'App settings</button><button class="nav-item subtle-nav" data-action="help">'+icon('help')+'Help & format support</button><button class="nav-item subtle-nav" data-action="clear">'+icon('trash')+'Clear workspace</button></div>';
     var nextScroll=el.sidebar.querySelector('.nav-scroll');if(nextScroll)nextScroll.scrollTop=navScrollTop;
@@ -5097,15 +5361,16 @@ function pJ(L,pan){const d=E(),I={},R={},T={};
   function renderContent(){
     if(mapObserver)mapObserver.disconnect();
     el.content.classList.remove('list-view','with-related-settings','related-subsection-view');el.content.classList.remove('matrix-view');
-    if(state.model&&!['overview','deviceinfo','topology','matrix','exports','findings'].includes(state.view)&&!(state.view==='compare'&&!state.comparison))el.content.classList.add('list-view');
+    // Comparison cards and controls need page scrolling, not the fixed-table layout.
+    if(state.model&&!['overview','deviceinfo','topology','matrix','exports','findings','compare'].includes(state.view))el.content.classList.add('list-view');
     if(state.view==='matrix')el.content.classList.add('matrix-view');
+    if(state.view==='compare'){el.content.innerHTML=comparePage();if(state.compareMode==='text'&&window.SWTextComparison)window.SWTextComparison.mount(el.content,state.compareText,renderContent);return;}
     if(!state.model){el.content.innerHTML=welcome();return;}
     if(state.view==='findings'){el.content.innerHTML=findingsPage();return;}
     if(state.view==='deviceinfo'){el.content.innerHTML=deviceInformationPage();return;}
     if(state.view==='overview'){el.content.innerHTML=overview();queueMapConnections();return;}
     if(state.view==='topology'){el.content.innerHTML=sectionSourcePanel(contextSourceSpec())+mapModes()+(state.compactMap?compactNetworkMap():topologyPanel(true))+routeCards();queueMapConnections();return;}
     if(state.view==='matrix'){el.content.innerHTML=sectionSourcePanel(contextSourceSpec())+matrixPanel();return;}
-    if(state.view==='compare'){el.content.innerHTML=workspaceCompare()+comparePage();return;}
     if(state.view==='exports'){el.content.innerHTML=exportsPage();return;}
     if(state.view==='sections'){el.content.innerHTML=nativeSectionsPage();return;}
     if(state.view==='plaintext'){el.content.innerHTML=rawConfigurationPage();return;}
@@ -5926,29 +6191,52 @@ function pJ(L,pan){const d=E(),I={},R={},T={};
       '<p class="raw-config-note" role="note">'+h(note)+'</p><div class="raw-config-lines'+(state.rawWrap?' wrap-lines':'')+'" tabindex="0" role="region" aria-label="Plaintext configuration">'+(shown.length?shown.map(function(row){return '<div class="raw-text-line" data-line="'+row.number+'"><span class="raw-line-number" aria-hidden="true">'+row.number+'</span><span class="raw-line-text">'+h(row.line||' ')+'</span></div>';}).join(''):'<div class="empty-mini">No lines match this search.</div>')+'</div>'+
       '<div class="pagination"><span>'+(terms.length?matches.length.toLocaleString()+' matching lines / ':'')+(shown.length?start+1:0)+' - '+Math.min(start+pageSize,matches.length)+' of '+matches.length.toLocaleString()+' lines</span><div class="pagination-controls"><button data-raw-page="'+(state.rawPage-1)+'" aria-label="Previous configuration page"'+(state.rawPage<=1?' disabled':'')+'>'+icon('left')+'</button><span>'+state.rawPage+' / '+pages+'</span><button data-raw-page="'+(state.rawPage+1)+'" aria-label="Next configuration page"'+(state.rawPage>=pages?' disabled':'')+'>'+icon('chevron')+'</button></div></div></section>';
   }
-  function comparePage(){
-    var baseline='<div class="compare-file"><small>Current configuration</small><strong>'+h(state.model.meta.filename)+'</strong></div>';
-    if(!state.comparison)return '<section class="panel"><div class="compare-intro">'+icon('compare')+'<h2>See exactly what changed</h2><p>Choose another configuration file to compare every field with the current configuration. Added, removed, and changed values are grouped for review.</p><div class="compare-files">'+baseline+icon('compare')+'<div class="compare-file"><small>Comparison file</small><strong>No file selected</strong></div></div><button class="button primary" data-action="compare-import">'+icon('upload')+'Choose comparison file</button>'+(state.model.meta.demo?' <button class="button" data-action="demo-compare">Try example comparison</button>':'')+'<p class="support-note">Compare matched items by vendor, context, type and name, or inspect every original field key.</p></div></section>';
-    if(state.compareMode!=='fields')return recordComparisonPage(baseline);
-    var changes=C.compare(state.model,state.comparison,state.hideSensitive);
-    var top='<div class="compare-files">'+baseline+icon('compare')+'<div class="compare-file"><small>Comparison file</small><strong>'+h(state.comparison.meta.filename)+'</strong></div></div>';
-    var counts=['Added','Changed','Removed'].map(function(kind){return '<span class="summary-pill">'+h(kind)+'<strong>'+changes.filter(function(r){return r.kind===kind;}).length+'</strong></span>';}).join('');
-    return top+comparisonModeControls()+'<div class="summary-strip">'+counts+'<button class="button small" data-action="compare-import">'+icon('upload')+'Replace comparison</button></div><p class="section-explainer">'+icon('info')+'Original-key comparison. Changing a secret is reported even when its value is hidden. Unparsed fragments are excluded.</p>'+
-      (!changes.length?'<div class="notice neutral">'+icon('check')+'No differences were found in the parsed fields.</div>':'')+dataTable(tableSpec());
+  function comparisonModeControls(){
+    return '<div class="compare-mode-toolbar" role="group" aria-label="Comparison mode"><button class="button'+(state.compareMode==='records'?' primary':'')+'" data-compare-mode="records" aria-pressed="'+(state.compareMode==='records')+'">'+icon('layers')+'Config objects</button><button class="button'+(state.compareMode==='text'?' primary':'')+'" data-compare-mode="text" aria-pressed="'+(state.compareMode==='text')+'">'+icon('code')+'Config text / files</button><button class="button small" data-compare-mode="fields" aria-pressed="'+(state.compareMode==='fields')+'">All original field changes</button><span class="chip">Read-only</span></div>';
   }
-  function comparisonModeControls(){return '<div class="detail-actions"><button class="button small" data-compare-mode="records" aria-pressed="'+(state.compareMode==='records')+'">Item comparison</button><button class="button small" data-compare-mode="fields" aria-pressed="'+(state.compareMode==='fields')+'">All original field changes</button><button class="button small" data-action="compare-swap">Swap configurations</button></div>';}
-  function recordComparisonPage(baseline){
-    var result=C.compareRecords(state.model,state.comparison,state.hideSensitive),all=result.items.filter(function(item){return inScope(item.after||item.before);}),query=state.query.trim().toLowerCase(),rows=all.filter(function(item){var r=item.after||item.before;return (state.filter==='all'||state.filter===item.kind)&&(!query||[r.name,r.scope,r.category,r.family,JSON.stringify(item.summaryChanges),JSON.stringify(item.fieldChanges)].join(' ').toLowerCase().includes(query));});
+  function comparisonSources(){
+    function side(model,right){return '<div class="compare-file"><small>'+(right?'Right · comparison':'Left · current')+'</small><strong>'+h(model?model.meta.filename:'No configuration selected')+'</strong><p class="support-note">'+h(model?(model.meta.vendor||'Configuration')+' / '+model.records.length.toLocaleString()+' objects':'Choose a supported configuration file or paste settings.')+'</p><button class="button small" data-action="'+(right?'compare-import':'compare-left')+'"'+(right&&!state.model?' disabled':'')+'>'+icon('upload')+(model?'Replace / paste':'Choose file / paste')+'</button></div>';}
+    return '<div class="compare-files">'+side(state.model,false)+'<button class="icon-button" data-action="compare-swap" aria-label="Swap configurations" title="Swap configurations"'+(!state.comparison?' disabled':'')+'>'+icon('compare')+'</button>'+side(state.comparison,true)+'</div>';
+  }
+  function textComparisonSource(model){
+    if(!model)return {name:'',text:'',origin:'model',masked:true,provided:false};
+    var cache=state.compareSourceCache||(state.compareSourceCache=new WeakMap()),entry=cache.get(model);
+    if(!entry||entry.hidden!==state.hideSensitive){entry={hidden:state.hideSensitive,text:window.SWImporters.configurationText(model,state.hideSensitive)};cache.set(model,entry);}
+    return {name:model.meta.filename||'Loaded configuration',text:entry.text,origin:'model',masked:state.hideSensitive,provided:true};
+  }
+  function comparePage(){
+    if(!state.model&&state.compareMode!=='text')return comparisonModeControls()+comparisonSources()+'<section class="panel"><div class="compare-intro">'+icon('compare')+'<h2>Compare configurations side by side</h2><p>Choose the left configuration first, then the right. Use Config text / files to compare any plain text without importing or interpreting it.</p></div></section>';
+    var controls=comparisonModeControls();
+    if(state.compareMode==='text'){
+      if(!state.compareText)state.compareText=window.SWTextComparison.create();
+      window.SWTextComparison.setSources(state.compareText,{left:textComparisonSource(state.model),right:textComparisonSource(state.comparison)},{force:false});
+      return controls+'<div class="detail-actions"><button class="button small" data-action="toggle-sensitive">'+icon(state.hideSensitive?'eyeOff':'eye')+(state.hideSensitive?'Loaded config secrets hidden':'Loaded config secrets visible')+'</button></div>'+window.SWTextComparison.render(state.compareText);
+    }
+    var sources=controls+comparisonSources()+workspaceCompare();
+    if(!state.comparison)return sources+'<section class="panel"><div class="compare-intro">'+icon('compare')+'<h2>Choose the right configuration</h2><p>Match interfaces, VLANs, rules and other objects by supported vendor, context, type and name. Original settings remain available.</p><button class="button primary" data-action="compare-import">'+icon('upload')+'Choose comparison file</button>'+(state.model.meta.demo?' <button class="button" data-action="demo-compare">Try example comparison</button>':'')+'</div></section>';
+    if(state.compareMode!=='fields')return sources+recordComparisonPage();
+    var changes=C.compare(state.model,state.comparison,state.hideSensitive),counts=['Added','Changed','Removed'].map(function(kind){return '<span class="summary-pill">'+kind+'<strong>'+changes.filter(function(r){return r.kind===kind;}).length+'</strong></span>';}).join('');
+    return sources+'<div class="summary-strip">'+counts+'</div><p class="section-explainer">'+icon('info')+'Original-key comparison. A secret change is reported even while its value is hidden. Unparsed fragments are excluded. Use Config text / files for source-level comparison.</p>'+(!changes.length?'<div class="notice neutral">'+icon('check')+'No differences were found in the parsed fields.</div>':'')+dataTable(tableSpec());
+  }
+  function objectComparisonResult(){
+    var cache=state.objectComparisonCache;
+    if(!cache||cache.left!==state.model||cache.right!==state.comparison||cache.hidden!==state.hideSensitive){cache={left:state.model,right:state.comparison,hidden:state.hideSensitive,result:C.compareRecords(state.model,state.comparison,state.hideSensitive,{includeUnchanged:true,includeValues:true})};state.objectComparisonCache=cache;}
+    return cache.result;
+  }
+  function recordComparisonPage(){
+    var result=objectComparisonResult(),all=result.items.filter(function(item){return inScope(item.after||item.before);}),query=state.query.trim().toLowerCase();
+    var rows=all.filter(function(item){var r=item.after||item.before;return (state.filter==='all'?item.kind!=='Unchanged':state.filter==='all-items'||state.filter===item.kind)&&(state.compareCategory==='all'||state.compareCategory===r.category)&&(!query||[r.name,r.scope,r.category,r.family,JSON.stringify(item.summaryRows),JSON.stringify(item.fieldRows)].join(' ').toLowerCase().includes(query));});
     var pages=Math.max(1,Math.ceil(rows.length/state.pageSize));state.page=Math.max(1,Math.min(state.page,pages));var start=(state.page-1)*state.pageSize;
-    var counts=['Added','Changed','Removed'].map(function(kind){return '<span class="summary-pill">'+kind+'<strong>'+all.filter(function(item){return item.kind===kind;}).length+'</strong></span>';}).join('');
-    var categories=Array.from(new Set(all.map(function(item){return (item.after||item.before).category;})));
-    return '<div class="compare-files">'+baseline+icon('compare')+'<div class="compare-file"><small>Comparison file</small><strong>'+h(state.comparison.meta.filename)+'</strong></div></div>'+comparisonModeControls()+'<div class="summary-strip">'+counts+'<span class="summary-pill">Unchanged (all contexts)<strong>'+result.unchanged+'</strong></span><button class="button small" data-action="compare-import">Replace comparison</button></div><p class="section-explainer">Items match by vendor, context, type and unique name; identical duplicate-name items match by contents. Renamed items appear as added and removed. Original settings are also compared; missing settings are never treated as defaults. Rule order and reference IDs remain significant. Partial exports may show omitted items as removed.</p>'+(result.ambiguous?'<p class="notice neutral">'+result.ambiguous+' items have duplicate identities and are listed separately without guessing a match.</p>':'')+
-      '<section class="panel"><div class="panel-head"><h2 class="panel-title">Changes by category</h2></div><div class="summary-strip">'+categories.map(function(category){var items=all.filter(function(item){return (item.after||item.before).category===category;});return '<span class="summary-pill">'+h((categoryInfo(category)||{label:category}).label)+'<strong>'+items.length+'</strong></span>';}).join('')+'</div><div class="toolbar"><label class="table-search">'+icon('search')+'<input id="table-query" type="search" value="'+h(state.query)+'" placeholder="Search changed items or values" aria-label="Search changed items or values"></label><select class="select" id="table-filter" aria-label="Filter changes"><option value="all">All changes</option>'+['Added','Changed','Removed'].map(function(kind){return '<option value="'+kind+'"'+(state.filter===kind?' selected':'')+'>'+kind+'</option>';}).join('')+'</select></div><div class="record-comparisons">'+(rows.length?rows.slice(start,start+state.pageSize).map(comparisonCard).join(''):'<p class="empty-mini">No matching item changes.</p>')+'</div><div class="pagination"><span>'+rows.length+' changed items</span><div class="pagination-controls"><button data-page="'+(state.page-1)+'"'+(state.page<=1?' disabled':'')+' aria-label="Previous changes">'+icon('left')+'</button><span>'+state.page+' / '+pages+'</span><button data-page="'+(state.page+1)+'"'+(state.page>=pages?' disabled':'')+' aria-label="Next changes">'+icon('chevron')+'</button></div></div></section>';
+    var counts=['Added','Changed','Removed','Unchanged'].map(function(kind){return '<span class="summary-pill">'+kind+'<strong>'+all.filter(function(item){return item.kind===kind;}).length+'</strong></span>';}).join('');
+    var categories=Array.from(new Set(all.map(function(item){return (item.after||item.before).category;}))).sort();
+    return '<div class="summary-strip">'+counts+'</div><p class="section-explainer">Objects match by vendor, context, type and unique name. Renames appear as added/removed; ambiguous duplicate names are never guessed. Missing settings are not defaults, rule order remains significant, and partial exports may show omissions as removals.</p>'+(result.ambiguous?'<p class="notice neutral">'+result.ambiguous+' objects have ambiguous duplicate identities and remain separate.</p>':'')+
+      '<section class="panel object-comparison-panel"><div class="panel-head"><h2 class="panel-title">Side-by-side config objects</h2><button class="quiet-button" data-action="toggle-sensitive">'+icon(state.hideSensitive?'eyeOff':'eye')+(state.hideSensitive?'Sensitive values hidden':'Sensitive values visible')+'</button></div><div class="toolbar"><label class="table-search">'+icon('search')+'<input id="table-query" type="search" value="'+h(state.query)+'" placeholder="Search objects or values" aria-label="Search compared objects"></label><select class="select" id="table-filter" aria-label="Filter changes">'+[['all','All changes'],['all-items','All objects'],['Added','Added'],['Changed','Changed'],['Removed','Removed'],['Unchanged','Unchanged']].map(function(pair){return '<option value="'+pair[0]+'"'+(state.filter===pair[0]?' selected':'')+'>'+pair[1]+'</option>';}).join('')+'</select><select class="select" id="compare-category" aria-label="Object category"><option value="all">All categories</option>'+categories.map(function(category){return '<option value="'+h(category)+'"'+(state.compareCategory===category?' selected':'')+'>'+h((categoryInfo(category)||{label:category}).label)+'</option>';}).join('')+'</select></div><div class="record-comparisons">'+(rows.length?rows.slice(start,start+state.pageSize).map(comparisonCard).join(''):'<p class="empty-mini">No objects match these filters.</p>')+'</div><div class="pagination"><span>'+rows.length+' matching objects</span><div class="pagination-controls"><button data-page="'+(state.page-1)+'"'+(state.page<=1?' disabled':'')+' aria-label="Previous changes">'+icon('left')+'</button><span>'+state.page+' / '+pages+'</span><button data-page="'+(state.page+1)+'"'+(state.page>=pages?' disabled':'')+' aria-label="Next changes">'+icon('chevron')+'</button></div></div></section>';
   }
   function comparisonCard(item){
-    var r=item.after||item.before,fields=item.fieldChanges,facts=item.summaryChanges;
-    function table(changes,readable){return '<div class="comparison-scroll"><table class="comparison-settings"><thead><tr><th>Setting</th><th>Current configuration</th><th>Comparison file</th></tr></thead><tbody>'+changes.map(function(change){return '<tr><th>'+h(readable?readableKey(change.key):change.key)+'</th><td>'+copyValue(change.kind==='Added'?'[Absent]':change.before,'current value')+'</td><td>'+copyValue(change.kind==='Removed'?'[Absent]':change.after,'comparison value')+'</td></tr>';}).join('')+'</tbody></table></div>';}
-    return '<article class="comparison-card"><div class="detail-section-heading"><h3 class="detail-label">'+h(recName(r))+'</h3>'+statusChip(item.kind)+'</div><p class="support-note">'+h((categoryInfo(r.category)||{label:r.category}).label+' / '+(r.scope||'global')+' / '+r.family)+'</p>'+(item.ambiguous?'<p class="support-note">Duplicate name: automatic matching is ambiguous.</p>':'')+(item.kind==='Changed'?(facts.length?table(facts,true):'<p class="support-note">Original settings changed; the interpreted summary is unchanged.</p>')+(fields.length?'<details class="technical-details"><summary>'+fields.length+' original setting changes</summary>'+table(fields,false)+'</details>':''):'<p>'+h(item.kind==='Added'?'Present only in the comparison file.':'Present only in the current configuration.')+'</p><button class="button small" data-comparison-record="'+h(r.id)+'" data-comparison-side="'+(item.after?'after':'before')+'">View item details</button>')+'</article>';
+    var r=item.after||item.before,fields=item.fieldRows||[],facts=item.summaryRows||[];
+    function table(changes,readable){var limit=200;return '<div class="comparison-scroll" tabindex="0" role="region" aria-label="'+(readable?'Object properties':'Original object settings')+'"><table class="comparison-settings"><thead><tr><th scope="col">Setting</th><th scope="col">Left · current</th><th scope="col">Right · comparison</th></tr></thead><tbody>'+changes.slice(0,limit).map(function(change){return '<tr class="object-diff-'+change.kind.toLowerCase()+'"><th scope="row">'+h(readable?readableKey(change.key):change.key)+' <small class="object-field-state">'+h(change.kind)+'</small></th><td>'+copyValue(change.kind==='Added'?'[Absent]':change.before,'left value')+'</td><td>'+copyValue(change.kind==='Removed'?'[Absent]':change.after,'right value')+'</td></tr>';}).join('')+'</tbody></table></div>'+(changes.length>limit?'<p class="support-note">Showing the first '+limit+' of '+changes.length+' settings for this object. Open item details for all original settings; the original-field table includes all differences.</p>':'');}
+    function identity(record,right){return '<div class="object-side"><small>'+(right?'Right · comparison':'Left · current')+'</small><strong>'+h(record?recName(record):'[Not present]')+'</strong>'+(record?'<span>'+h((categoryInfo(record.category)||{label:record.category}).label+' / '+(record.scope||'global'))+'</span><button class="quiet-button" data-comparison-record="'+h(record.id)+'" data-comparison-side="'+(right?'after':'before')+'">View item details '+icon('chevron')+'</button>':'')+'</div>';}
+    return '<article class="comparison-card" data-object-kind="'+h(item.kind)+'"><div class="detail-section-heading"><h3 class="detail-label">'+h(recName(r))+'</h3>'+statusChip(item.kind)+'</div><div class="object-pair">'+identity(item.before,false)+identity(item.after,true)+'</div>'+(item.ambiguous?'<p class="support-note">Duplicate identity: no automatic match was assumed.</p>':'')+(facts.length?table(facts,true):'<p class="support-note">No interpreted properties; original settings are below.</p>')+(fields.length?'<details class="technical-details"><summary>'+fields.length+' original settings · '+(item.kind==='Added'||item.kind==='Removed'?item.kind+' object':item.fieldChanges.length+' changed fields')+'</summary>'+table(fields,false)+'</details>':'')+'</article>';
   }
   function showComparisonRecord(id,side){var model=side==='after'?state.comparison:state.model,r=model.records.find(function(r){return r.id===id;});if(!r)return;openModal(modalHeader(recName(r),side==='after'?'Comparison file':'Current configuration')+'<div class="modal-body"><p>'+h(r.scope||'global')+'</p><pre class="export-preview">'+h(r.fields.map(function(e){return e.key+' = '+(state.hideSensitive&&(C.secretKey(e.key)||C.secretKey(e.base)||e.base==='unrecognized-command'&&C.secretKey(e.value))?'[REDACTED]':e.value);}).join('\n')||JSON.stringify(Object.fromEntries(Object.entries(r.summary).map(function(pair){return [pair[0],C.redactValue(pair[0],summaryValue(pair[1]),state.hideSensitive)];})),null,2))+'</pre></div><div class="modal-foot"><button class="button" data-action="close-modal">Close</button></div>');}
   var exportTypes=[
@@ -6035,16 +6323,16 @@ function pJ(L,pan){const d=E(),I={},R={},T={};
   }
   function updateAction(action){try{updateManager().request(action);}catch(e){toast(e.message);}}
   function reviewUpdate(){
-    var u=updateManager(),v=u&&u.state();if(!v||!v.ready)return;if(state.busy||document.getElementById('paste-config')?.value.trim()){toast('Finish the current import or pasted configuration before reviewing an update.');return;}
+    var u=updateManager(),v=u&&u.state();if(!v||!v.ready)return;if(state.busy||state.compareText&&state.compareText.editor||document.getElementById('paste-config')?.value.trim()){toast('Finish the current import or pasted configuration before reviewing an update.');return;}
     openModal(modalHeader('Install Config Inspector '+v.version+'?','Review the update before restarting')+'<div class="modal-body"><p>The app will close, install the verified update and reopen. Open configurations and comparisons are protected locally for the restart, then restored. App preferences and the selected data folder are retained.</p><p>Finish any import, export or pasted configuration before continuing. Other copies of this executable must be closed.</p>'+(v.notes?'<h3>Release notes</h3><pre class="app-update-notes">'+h(v.notes)+'</pre>':'')+'<p id="update-install-error" role="alert" class="app-storage-error"></p></div><div class="modal-foot"><button class="button" data-action="app-settings">Cancel</button><button class="button primary" data-action="update-install">Install and restart</button></div>');
   }
   function installUpdate(){
-    try{if(state.busy||appSettingsState.busy)throw new Error('Wait for the current operation to finish before updating.');if(document.getElementById('paste-config')?.value.trim())throw new Error('Import or close the pasted configuration before updating.');var payload=window.SWUpdates.snapshot(C,workspace,state);updateManager().install(payload);document.querySelectorAll('[data-action="update-install"]').forEach(function(b){b.disabled=true;});}
+    try{if(state.busy||appSettingsState.busy||state.compareText&&state.compareText.editor)throw new Error('Wait for the current operation to finish before updating.');if(document.getElementById('paste-config')?.value.trim())throw new Error('Import or close the pasted configuration before updating.');var payload=window.SWUpdates.snapshot(C,workspace,state);updateManager().install(payload);document.querySelectorAll('[data-action="update-install"]').forEach(function(b){b.disabled=true;});}
     catch(e){var box=document.getElementById('update-install-error');if(box)box.textContent=e.message;else toast(e.message);}
   }
   async function restoreUpdateWorkspace(data){
     state.busy=true;
-    try{var restored=await window.SWUpdates.decodeWorkspace(data,parseAsync);workspace.splice(0,workspace.length);workspace.push.apply(workspace,restored.models);if(restored.model)setModel(restored.model);state.comparison=restored.comparison;state.categoryTabs=restored.categoryTabs;state.scope=restored.scope;state.showUnassigned=restored.showUnassigned;state.showEmpty=restored.showEmpty;state.view=restored.view;ensureRelevantView();render();await new Promise(function(resolve){requestAnimationFrame(function(){requestAnimationFrame(resolve);});});}
+    try{var restored=await window.SWUpdates.decodeWorkspace(data,parseAsync);workspace.splice(0,workspace.length);workspace.push.apply(workspace,restored.models);if(restored.model)setModel(restored.model);state.comparison=restored.comparison;state.compareText=restored.compareText;state.compareMode=restored.compareMode;state.categoryTabs=restored.categoryTabs;state.scope=restored.scope;state.showUnassigned=restored.showUnassigned;state.showEmpty=restored.showEmpty;state.view=restored.view;ensureRelevantView();render();await new Promise(function(resolve){requestAnimationFrame(function(){requestAnimationFrame(resolve);});});}
     finally{state.busy=false;}
   }
   function appSettingsHTML(){
@@ -6074,7 +6362,7 @@ function pJ(L,pan){const d=E(),I={},R={},T={};
   function showImport(target){
     if(state.busy)return;
     state.importTarget=target||'primary';
-    openModal(modalHeader(target==='comparison'?'Choose comparison configuration':'Import device configuration','Firewall and switch configurations. Vendor and format detection are automatic.')+
+    openModal(modalHeader(target==='comparison'?'Choose right comparison configuration':target==='compare-left'?'Choose left configuration':'Import device configuration','Firewall and switch configurations. Vendor and format detection are automatic.')+
       '<div class="modal-body"><button class="dropzone" data-action="choose-file">'+icon('upload')+'<strong>Drop a configuration file here</strong><p>Firewall exports, Aruba / Cisco text, Junos text / XML, Meraki JSON, or Config Studio JSON / 25 MB</p><span class="button small primary">Browse files</span></button>'+
       '<details class="advanced-import"><summary>Which file should I export?</summary>'+formatInstructions()+'</details>'+
       '<label class="paste-label" for="paste-config">Or paste configuration text</label><textarea id="paste-config" class="textarea" placeholder="Paste firewall or switch configuration text, XML or JSON..." spellcheck="false"></textarea>'+
@@ -6118,7 +6406,7 @@ function pJ(L,pan){const d=E(),I={},R={},T={};
         if(!state.model)throw new Error('Import a current configuration before comparing files.');
         if(model.meta.vendorId!==state.model.meta.vendorId)throw new Error('Choose another '+(state.model.meta.vendor||'SonicWall')+' configuration for a meaningful original-field comparison.');
         state.comparison=model;state.filter='all';state.ipVersionFilter='all';state.query='';state.page=1;state.sortKey='';state.view='compare';render();
-      }else setModel(model);
+      }else if(target==='compare-left'){var previousComparison=state.comparison;setModel(model);state.comparison=previousComparison&&previousComparison.meta.vendorId===model.meta.vendorId?previousComparison:null;state.view='compare';state.compareMode='records';render();}else setModel(model);
       el.modal.close();toast('Opened '+model.entries.length.toLocaleString()+' configuration fields.');
     }catch(err){importError(err.message||'The configuration could not be opened.');}
     finally{state.busy=false;if(status)status.innerHTML='';el.modal.querySelectorAll('button').forEach(function(b){b.disabled=false;});}
@@ -6573,7 +6861,7 @@ function pJ(L,pan){const d=E(),I={},R={},T={};
     }
   }
   function showHelp(){
-    openModal(modalHeader('About Config Inspector','Firewall and switch configuration explorer / version 5.16.0')+
+    openModal(modalHeader('About Config Inspector','Firewall and switch configuration explorer / version 5.17.0')+
       '<div class="modal-body"><div class="help-section"><h3>Open and explore</h3><p>Import SonicWall EXP, FortiGate FortiOS text, Palo Alto configuration XML, Sophos Firewall XML or export TAR, Aruba AOS or AOS-CX text, Cisco IOS or NX-OS text, Juniper Junos text or XML, Meraki API JSON, or a JSON snapshot exported by this application. The device type is detected automatically. You can also drop a file anywhere in the window. Select an interface or record for a plain-language explanation and key facts. Related objects show their IP addresses or service ports. Advanced details contains all original fields. Use Copy summary for readable facts and Back to return from a related item.</p></div>'+
       '<div class="help-section"><h3>Configuration sections</h3><p>Choose a root section in the sidebar, then select one of its indented subsections. Each subsection opens its own page. Routes, objects, members and other primary definitions appear before related settings. Security pages are grouped by function, including web, applications, files, intrusion prevention and SSL/TLS inspection. Certificate objects remain under Certificates. Empty subsections are hidden by default. Use View options to show empty sections, or Configuration sections and All original fields to inspect untranslated settings. Configuration context, search and table filters apply to the selected view.</p></div>'+
       '<div class="help-section"><h3>Choose access rule zones</h3><p>In Access Rules, choose From zone and To zone independently. All zones leaves that side unrestricted. Swap reverses the direction. Clear zone filters removes the pair while keeping the table filters. Search, configured state, and IP version filters combine with the pair, and CSV includes all matching rules. A matrix cell selects its zone pair. Interface and zone details offer outgoing and incoming rules.</p></div>'+
@@ -6596,7 +6884,7 @@ function pJ(L,pan){const d=E(),I={},R={},T={};
   function clearWorkspace(){
     workspace=[];
     clearTimeout(globalTimer);
-    state.model=null;state.comparison=null;state.review=null;state.recordMap=null;state.currentTable=null;state.ipRecords=[];state.activeRecord=null;
+    state.model=null;state.comparison=null;state.compareText=null;state.compareSourceCache=null;state.objectComparisonCache=null;state.compareCategory='all';state.review=null;state.recordMap=null;state.currentTable=null;state.ipRecords=[];state.activeRecord=null;
     state.rawCache=null;state.rawQuery='';state.rawPage=1;
     state.interfaceTree=null;state.interfaceNodes=new Map();state.collapsedInterfaces=new Set();state.searchCollapsedInterfaces=new Set();
     state.ruleFrom='';state.ruleTo='';state.mapQuery='';state.mapZone='';state.mapCollapsed=new Set();state.mapSearchCollapsed=new Set();state.showUnassigned=false;state.drawerHistory=[];state.technicalOpen=false;
@@ -6612,7 +6900,7 @@ function pJ(L,pan){const d=E(),I={},R={},T={};
     if(t.hasAttribute('data-review-format')){exportReview(t.getAttribute('data-review-format'));return;}
     if(t.hasAttribute('data-copy-finding')){var f=configurationFindings().find(function(f){return f.id===t.getAttribute('data-copy-finding');});if(f)copyText(findingText(f));return;}
     if(t.hasAttribute('data-copy-value')){copyText(t.getAttribute('data-copy-value'));return;}
-    if(t.hasAttribute('data-compare-mode')){state.compareMode=t.getAttribute('data-compare-mode');state.query='';state.filter='all';state.page=1;renderContent();return;}
+    if(t.hasAttribute('data-compare-mode')){state.compareMode=t.getAttribute('data-compare-mode');state.query='';state.filter='all';state.compareCategory='all';state.page=1;renderContent();return;}
     if(t.hasAttribute('data-comparison-record')){showComparisonRecord(t.getAttribute('data-comparison-record'),t.getAttribute('data-comparison-side'));return;}
     if(t.hasAttribute('data-section-parent')){view(t.getAttribute('data-section-parent'),{subsection:t.getAttribute('data-section-child')});return;}
     if(t.hasAttribute('data-related-more')){var key=relatedSettingsKey(),settings=(state.relatedSettings||(state.relatedSettings={}))[key]||{};settings.open=true;settings.limits=settings.limits||{};var group=t.getAttribute('data-related-more');settings.limits[group]=(settings.limits[group]||20)+20;state.relatedSettings[key]=settings;var scroll=el.content.scrollTop;renderContent();el.content.scrollTop=scroll;return;}
@@ -6651,7 +6939,8 @@ function pJ(L,pan){const d=E(),I={},R={},T={};
     else if(action==='open-file'){state.importTarget='primary';document.getElementById('import-file').click();}
     else if(action==='compare-swap'&&state.comparison){var previous=state.model;setModel(state.comparison);state.comparison=previous;state.view='compare';state.query='';state.filter='all';state.page=1;render();}
     else if(action==='compare-import')showImport('comparison');
-    else if(action==='choose-file')document.getElementById(state.importTarget==='comparison'?'compare-file':'import-file').click();
+    else if(action==='compare-left')showImport('compare-left');
+    else if(action==='choose-file')document.getElementById(state.importTarget==='comparison'?'compare-file':state.importTarget==='compare-left'?'compare-left-file':'import-file').click();
     else if(action==='import-paste'){var text=document.getElementById('paste-config').value;if(new Blob([text]).size>25*1024*1024)importError('Pasted content exceeds the 25 MB limit.');else importText(text,'Pasted configuration');}
     else if(action==='close-modal'){if(!state.busy)el.modal.close();}
     else if(action==='close-drawer')el.drawer.close();
@@ -6745,7 +7034,7 @@ function configTree(it){
   }
   async function importMany(files,target){
     if(state.busy)return;
-    for(var file of (target==='comparison'?files.slice(0,1):files)){
+    for(var file of (target==='comparison'||target==='compare-left'?files.slice(0,1):files)){
       await importFile(file,target);
       var error=document.getElementById('import-error');
       if(error&&!error.hidden)break;
@@ -6804,6 +7093,7 @@ function configTree(it){
     else if(id==='app-settings-auto-updates'){updateAction(event.target.checked?'update-auto-on':'update-auto-off');}
     else if(id==='app-settings-auto-specs'&&window.SWDeviceSpecs){var catalog=window.SWDeviceSpecs.manager;catalog.setEnabled(event.target.checked);if(event.target.checked&&state.model)catalog.refresh(state.model,false);}
     else if(id==='theme-choice'){applyTheme(event.target.value,true);}
+    else if(id==='compare-category'){state.compareCategory=event.target.value;state.page=1;renderContent();}
     else if(id==='table-filter'){state.filter=event.target.value;state.page=1;state.searchCollapsedInterfaces=new Set();renderContent();}
     else if(id==='workspace-scope'){clearTimeout(globalTimer);state.scope=event.target.value;state.ruleFrom='';state.ruleTo='';state.mapQuery='';state.mapZone='';state.query='';state.globalQuery='';el.global.value='';state.filter='all';state.ipVersionFilter='all';state.sortKey='';state.sortDir=1;state.page=1;state.mapCollapsed=new Set();state.collapsedInterfaces=new Set();state.mapSearchCollapsed=new Set();state.searchCollapsedInterfaces=new Set();state.activeRecord=null;state.drawerHistory=[];state.technicalOpen=false;if(el.drawer.open)el.drawer.close();ensureRelevantView();preserveInput(render);}
     else if(id==='show-empty-sections'){state.showEmpty=event.target.checked;state.query='';state.filter='all';state.ipVersionFilter='all';state.sortKey='';state.page=1;ensureRelevantView();preserveInput(render);}
@@ -6813,7 +7103,7 @@ function configTree(it){
     else if(id==='page-size'){state.pageSize=Number(event.target.value);state.page=1;renderContent();}
     else if(id==='redact-export'){state.redactExport=event.target.checked;if(state.view==='exports')renderContent();}
     else if(id==='export-preview-format'){state.exportFormat=event.target.value;renderContent();}
-    else if(id==='import-file'||id==='compare-file'){var files=Array.from(event.target.files);importMany(files,id==='compare-file'?'comparison':'primary');event.target.value='';}
+    else if(id==='import-file'||id==='compare-file'||id==='compare-left-file'){var files=Array.from(event.target.files);importMany(files,id==='compare-file'?'comparison':id==='compare-left-file'?'compare-left':'primary');event.target.value='';}
   });
   document.addEventListener('toggle',function(event){if(event.target.id==='technical-details')state.technicalOpen=event.target.open;if(event.target.id==='native-source-details')state.nativeSourceOpen=event.target.open;if(event.target.id==='record-source-details')state.sourceOpen=event.target.open;},true);
   document.addEventListener('keydown',function(event){

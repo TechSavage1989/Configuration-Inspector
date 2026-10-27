@@ -17,7 +17,7 @@
 
 - **Find useful settings:** browse recognized configuration sections and follow related objects without losing access to original source.
 - **Understand interfaces and topology:** inspect physical layouts, VLANs, interface groups and device information where the export provides enough detail.
-- **Compare snapshots:** review changes between saved configurations.
+- **Compare snapshots:** inspect matched objects and their properties side by side, or compare configuration text/files with aligned lines and synchronized scrolling.
 - **Review findings and export:** inspect configuration review results and create reports for further analysis.
 
 Imported configurations are analyzed **locally**. Optional device-specification downloads request public hardware definitions without sending configuration contents.
@@ -51,6 +51,29 @@ Prefer a browser-based edition? The same release includes **`Config_Inspector.ht
 ## How to use
 
 Use the sidebar to move between recognized configuration views, follow object links for context, and compare snapshots before exporting your findings. Consult original source for unsupported or ambiguous settings; this app does not apply changes to devices.
+
+## Compare configurations
+
+Open **Compare configs** in the sidebar and select one of the two primary modes:
+
+- **Config objects:** choose the left/current and right/comparison configurations
+  using files or pasted settings. Review paired objects and original fields;
+  filter by added, removed, changed or unchanged state, category and search.
+  Matching uses supported vendor, context, type and name. Renames remain
+  additions/removals and ambiguous duplicate identities are not guessed.
+- **Config text / files:** compare loaded configuration source or independent
+  UTF-8 files/pasted text. Aligned line numbers, change highlights, synchronized
+  scrolling and Previous/Next difference (also F7 / Shift+F7) help review changes.
+  Large comparisons render 500 aligned rows per page; navigation crosses pages.
+  Bounded alignment may use a clearly labeled approximate fallback.
+
+Both modes are **read-only** and offer explicit left/right inputs and swapping.
+The original-field comparison remains available. Direct text inputs are limited
+to 5 MB each and require acknowledgment before displaying unmasked contents.
+Loaded sources follow the sensitive-value setting; masking can hide secret-only
+text differences, while object comparison still reports the change. CRLF/LF line
+endings compare equivalently; a missing final newline remains visible. These are
+comparison tools, not an editor, merge tool or full Notepad++ plugin replacement.
 
 ## Updates and settings
 
