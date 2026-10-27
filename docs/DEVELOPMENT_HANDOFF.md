@@ -1,6 +1,42 @@
 # Configuration Inspector development handoff
 
-## 5.17.2 review candidate
+## 5.17.2 published and verified
+
+Release: https://github.com/TechSavage1989/Configuration-Inspector/releases/tag/v5.17.2
+Release ID: `425031919`; published 2026-10-27.
+Published source/tag: `a9935f3db4edce68da394905cce7bbcbc340d044`.
+Source tree: `987f00fb372403e3cef70819fa778952a73f58bd`.
+Final review run `40449086357` and main release run `40449260946` passed all jobs.
+
+Validation: 5,233 Node checks, 463 comparison browser checks, 26 updater browser
+checks, 28 Windows updater fixture checks, 83 protocol checks, native catalog
+policy, public-source/version/embed audits and 3 repository-layout guards.
+Browser cases cover normal/small windows, measured variable-height object maps,
+active bookmarks, both map drags outside bounds and across text pages, pointer
+release/cancel, subsequent navigation, source/filter/swap/resize and empty states.
+The final synthetic object-map/sidebar and compact text screenshots were inspected.
+
+The initial review passed, but the first main run caught an intermittent object
+map refresh race after details expansion and correctly withheld publication.
+A focused regression reproduced scroll delivery before geometry remeasurement;
+the fix publishes the new extent only after marker geometry is consistent.
+Final review and main runs passed without weakening the geometry assertion.
+
+All four public downloads match GitHub asset digests; EXE/HTML/icon also match
+SHA256SUMS. The executable reports top-level PE version 5.17.2.0, AMD64 Windows
+GUI. HTML/icon match the reviewed source after Windows newline normalization.
+The latest-release feed and tag resolve to the tested source. 5.17.1 assets remain
+unchanged. No force push or repository access change was used.
+
+- EXE SHA-256: `b82a329ee6a63601143120ea0a1a393a84e00de354e40aa7d84c6ab988f34bf4`
+- HTML SHA-256: `4486a864100d40780001a51d835c9d69f61108b8faa9b34d0a3b65994d8baf2a`
+- Icon SHA-256: `0b7616221b64418c3f48f5a405f56dc54248aab0e5c44ba69a7dae76e874f1d5`
+- SHA256SUMS SHA-256: `c4565110866b52834db94feaa68eef5896651ea42a17201c81c3d5924dfe1c55`
+
+Full interactive native WebView2 and updating a real installed application were
+not performed. This final handoff-only record does not rebuild the release.
+
+### Implementation and continuation
 
 Based on verified main `3a1b53f8916ea829c436178a9fb5354173caa0c3`.
 The user supplied the navigation brief and explicitly approved implementation and
@@ -21,15 +57,12 @@ publication on 2026-10-27. No private input/screenshot content is committed.
 - Preserve parsers, original source, secret masking, settings, updater snapshots,
   release gates, root allowlist and single-file feature embedding paths.
 
-Local validation passed: 5,233 Node checks, 3 repository-layout guards,
-version/embedding and public-source audits, 83 protocol checks and native catalog
-policy. Hosted browser/Windows validation and release verification are pending.
-A main-run geometry-refresh race was reproduced and fixed: publish the measured
-map extent only after marker remeasurement, retaining a consistent viewport and
-marker snapshot if a scroll event arrives before ResizeObserver.
-Local Chromium
-remains unavailable under the established sandbox restriction; do not retry it.
-Full interactive native WebView2 and a real installed app update are not claimed.
+Keep map measurements atomic: scroll may arrive before toggle/ResizeObserver.
+Do not expose a new total extent with stale marker positions; retain the settled
+snapshot and schedule measurement first. Keep the focused timing regression.
+Local Chromium remains unavailable under the established sandbox restriction;
+hosted browser/Windows checks above provide runtime coverage. Do not retry the
+restricted local route. Preserve source organization and release safeguards.
 
 ## Previous 5.17.1 publication (verified)
 
