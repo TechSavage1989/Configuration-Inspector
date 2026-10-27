@@ -1,6 +1,39 @@
 # Configuration Inspector development handoff
 
-## 5.17.1 review candidate
+## 5.17.1 published and verified
+
+Release: https://github.com/TechSavage1989/Configuration-Inspector/releases/tag/v5.17.1
+Release ID: `425015916`; published 2026-10-27.
+Published source/tag: `5a14d5aeb7d45f091c4fd642b2ccb48259e39627`.
+Source tree: `fb34d6caeb8056713d1f7d9f538a00736eefb1e1`.
+Review run `40445812462` and main release run `40446279218` passed all jobs.
+
+Coverage: 5,097 Node checks, 242 comparison browser checks, 26 updater browser
+checks, 28 Windows updater checks (real fixture-process replacement and rollback),
+83 native protocol checks, native catalog policy, public-source, version/embed and
+3 repository-layout guards. Browser checks cover 1440x960, 1000x650 and 800x600.
+The first two review runs isolated a Chromium fractional nested-scroll boundary;
+settled-gesture diagnostics reproduced it, and the scoped boundary handoff fixed
+it without weakening assertions. A stale-context replacement edge case also has
+regression coverage. No unrelated application regression required a scope change.
+
+Downloaded public EXE/HTML/icon/SHA256SUMS match GitHub asset digests. All payloads
+match SHA256SUMS. The EXE top-level PE resource is 5.17.1.0, AMD64 Windows GUI;
+HTML/icon match the reviewed source after Windows newline normalization. The
+latest-release feed and tag resolve to the tested source. 5.17.0 release/assets
+remain unchanged. Repository access was not changed; no force push was used.
+
+- EXE SHA-256: `2b0700b77d4962d743b7c2f8b56b3431c2a4f95a73df4f0025560664dff7b53c`
+- HTML SHA-256: `849dc17527254d9ff7cc35eab41052925313cb16a2f96f14baafbbbc9ec82a0f`
+- Icon SHA-256: `0b7616221b64418c3f48f5a405f56dc54248aab0e5c44ba69a7dae76e874f1d5`
+- SHA256SUMS SHA-256: `55b64a4699fc591f97714bc0e6f8fb9adea277083bb3beb2fb3164b4c566ef76`
+
+Final object and compact text/minimap screenshots were downloaded from hosted
+browser diagnostics and visually inspected. Full interactive native WebView2 and
+an update of a real installed app were not performed. This final handoff-only
+commit does not change/rebuild the published runtime.
+
+### Implementation and continuation
 
 Based on verified main `6a742c2829c2cf499c7b50ed52bb990742169208` after 5.17.0.
 The user explicitly authorized continuing the attached six-part comparison brief,
@@ -19,18 +52,21 @@ or configuration content was copied into the public repository.
 - Text minimap renders at most 160 bins × 3 change kinds, not a DOM node per line.
   Scroll/resize updates its viewport; click/keyboard jumps cross 500-row pages.
   Disconnect ResizeObserver via `SWTextComparison.unmount` before replacing DOM.
+- `mountObjectComparisonScroll` forwards vertical wheel input only at a nested
+  table boundary (2px tolerance); interior, horizontal and zoom gestures remain
+  native. Keep the real-browser boundary regression and its geometry diagnostics.
+- Replacing/swapping current input preserves valid filters, but clears a context
+  that is absent from the new model so the visible selector and filter agree.
 - Browser coverage includes normal/small windows, card/gap wheel targets, genuine
   nested scroll boundary chaining, input lifecycle, collapsed identity/height,
   mode/filter retention and map position/navigation/resize. Diagnostics contain
   synthetic screenshots and machine-readable geometry only.
 
-Local validation passed: 5,079 Node checks, 3 repository-layout checks, public-source
-and version/embedding guards, 83 protocol checks and native catalog policy.
-Browser/Windows validation and publication are pending hosted review-branch CI.
-Local browser execution
-remains unavailable due to the established sandbox limitation; do not retry that
-restricted route. Full interactive native WebView2 and a real installed upgrade
-are not claimed. Keep all root organization guards and build/embed paths intact.
+Local browser execution remains unavailable due to the established sandbox
+limitation; hosted browser/Windows results above provide runtime coverage.
+Keep all root organization guards, build/embed paths, parsers, updater safeguards
+and source retention intact. The final 5.17.1 promotion received explicit user
+approval to advance main and publish after review checks passed.
 
 ## Previous 5.17.0 publication (verified)
 
