@@ -65,7 +65,7 @@ jobs:
         with:
           name: windows-release
           path: dist
-      - name: Publish a new version after all checks pass
+      - name: Publish release downloads after all checks pass
         env:
           GH_TOKEN: ${{ github.token }}
         shell: bash
@@ -74,7 +74,8 @@ jobs:
           version=$(tr -d '\r\n' < VERSION)
           tag="v$version"
           if gh release view "$tag" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
-            echo "Version $version is already released. Bump VERSION to publish an update."
+            echo "Version $version is already released; preserve its binaries and add only missing portable downloads."
+            python3 scripts/backfill_portable.py
             exit 0
           fi
           test -s "docs/releases/$version.md"

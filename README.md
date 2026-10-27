@@ -24,7 +24,9 @@ Imported configurations are analyzed **locally**. Optional device-specification 
 
 ## Download
 
-Get **`Config_Inspector.exe`** for Windows x64 from [the latest release](https://github.com/TechSavage1989/Configuration-Inspector/releases/latest). The release also includes **`Config_Inspector.html`** for browser-based use.
+Get **`Config_Inspector_Portable.zip`** for Windows x64 from [the latest release](https://github.com/TechSavage1989/Configuration-Inspector/releases/latest). Extract it and run **`Config_Inspector.exe`**. The ZIP includes launch instructions and third-party notices; Microsoft Edge WebView2 Evergreen Runtime must already be installed. The raw **`Config_Inspector.exe`** and browser-based **`Config_Inspector.html`** downloads remain available.
+
+Use **`Config_Inspector_Portable.zip.sha256`** to check the archive hash. Future releases also list it in **`SHA256SUMS`**. The ZIP added to 5.18.0 contains that release’s exact existing executable; its original downloads and checksum file are unchanged.
 
 ## Requirements
 
@@ -41,8 +43,8 @@ For feature coverage and limitations, see [network features](webview/NETWORK_FEA
 
 ## Getting started
 
-1. Open [the latest release](https://github.com/TechSavage1989/Configuration-Inspector/releases/latest) and download **`Config_Inspector.exe`** for Windows x64.
-2. Put it in a writable local folder and launch it. **Microsoft Edge WebView2 Evergreen Runtime** must already be installed; no companion application files are needed.
+1. Open [the latest release](https://github.com/TechSavage1989/Configuration-Inspector/releases/latest) and download **`Config_Inspector_Portable.zip`** for Windows x64.
+2. Extract all files into a writable local folder and launch **`Config_Inspector.exe`** from there (not inside the ZIP viewer). **Microsoft Edge WebView2 Evergreen Runtime** must already be installed; no companion application files are needed.
 3. Open or drag in a saved network configuration. Use the sidebar to explore the recognized sections, interfaces and linked objects.
 4. Inspect the original source when a field needs context. Load another configuration when you want to compare snapshots, then export the results you need to keep.
 
@@ -202,7 +204,7 @@ On Windows, install Visual Studio Build Tools with the **C++ desktop workload an
 scripts\build-windows.cmd
 ```
 
-This produces `dist/Config_Inspector.exe` and runs Windows update replacement/rollback tests. Linux cross-compilation uses [webview/build.sh](webview/build.sh) with MinGW-w64. The standalone C++ protocol suite builds from `tests/update-protocol-tests.cpp` with C++17.
+This produces `dist/Config_Inspector.exe`, `dist/Config_Inspector_Portable.zip`, its `.sha256` sidecar and the existing HTML/icon/checksum downloads, and runs Windows update replacement/rollback tests. The ZIP uses an explicit file allowlist and is CRC/hash checked against the exact executable; no local data or build-directory glob is packaged. Linux cross-compilation uses [webview/build.sh](webview/build.sh) with MinGW-w64. The standalone C++ protocol suite builds from `tests/update-protocol-tests.cpp` with C++17.
 
 For an authorized application release:
 
@@ -210,7 +212,7 @@ For an authorized application release:
 2. Add release notes in `docs/releases/VERSION.md` using the actual version number and commit the changes to `main`.
 3. The [build workflow](.github/workflows/build-release.yml) runs regression, browser and Windows installation tests, then publishes only after checks pass.
 
-Keep the public download name `Config_Inspector.exe`. Installation preserves the user's chosen filename and folder. Existing published versions are not overwritten; documentation-only updates must not bump `VERSION`. GitHub source archives provide versioned source downloads. No separate publishing credential or update service is needed.
+Keep the public download name `Config_Inspector.exe`. Installation preserves the user's chosen filename and folder. Existing published versions are not overwritten; documentation-only updates must not bump `VERSION`. For an existing version, the publish job only adds missing portable ZIP/sidecar assets from its downloaded, digest-verified published EXE, never the rebuilt CI binary. It refuses conflicting assets and never replaces `SHA256SUMS`. GitHub source archives provide versioned source downloads. No separate publishing credential or update service is needed.
 
 Third-party WebView2 and public device-catalog notices are included in [webview](webview/). Native updater fixtures do not replace interactive WebView2 testing on Windows.
 

@@ -37,5 +37,7 @@ build\updater-scheduler-tests.exe
 if errorlevel 1 exit /b 1
 copy /y webview\index.html dist\Config_Inspector.html >nul
 copy /y webview\icon.svg dist\Config_Inspector_Icon.svg >nul
+python scripts\package_portable.py
+if errorlevel 1 exit /b 1
 python scripts\checksums.py
 if errorlevel 1 exit /b 1

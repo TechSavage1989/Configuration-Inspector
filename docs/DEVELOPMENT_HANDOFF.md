@@ -1,5 +1,22 @@
 # Configuration Inspector development handoff
 
+## Portable ZIP packaging — validation/publication pending
+
+Baseline main `951375efe595c0c38e74f2ce2a796c6653f9f8e6`, release 5.18.0.
+No application/version/updater changes. `scripts/package_portable.py` builds the
+explicit allowlisted ZIP (generic EXE, README, three third-party notices and inner
+checksums) with stable metadata and verifies every CRC/hash and EXE identity.
+The installed WebView2 runtime is still required; the loader/HTML are embedded.
+`build-windows.cmd` creates it before the explicit release checksums.
+For an already-published version, `backfill_portable.py` downloads the published
+EXE and original manifest, verifies GitHub metadata, and uploads only missing ZIP
+and sidecar assets, without --clobber or replacing any original asset.
+Future new releases include ZIP and sidecar in SHA256SUMS.
+Local checks passed: 12 packaging/publication regressions plus 3 layout guards,
+5,862 Node checks, 93 C++ updater protocol checks, catalog policy, version/embed
+consistency and public-source audit (185 files, 183 text, 66 reviewed fixtures).
+Hosted browser/Windows checks and remote publication have not run yet.
+
 ## 5.18.0 published and verified — global configuration search
 
 Release: https://github.com/TechSavage1989/Configuration-Inspector/releases/tag/v5.18.0

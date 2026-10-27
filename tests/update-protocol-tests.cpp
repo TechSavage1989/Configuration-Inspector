@@ -22,6 +22,13 @@ int main(){try{
  for(auto host:{"api.github.com","github.com","release-assets.githubusercontent.com","objects.githubusercontent.com"})ok(safeURL(std::string("https://")+host+"/example?a=1&b=2"));
  for(auto s:{"http://github.com/x","https://evil.example/x","https://github.com.evil.example/x","https://github.com@evil.example/x","https://evil@github.com/x","https://github.com:443/x","https://github.com/x#fragment","https://github.com\\evil/x","https://github.com/x\r\nCookie:secret","file:///x","https://github.com"})ok(!safeURL(s));
  auto j=fixture();auto r=release(dump(j));ok(r.version=="5.17.0"&&r.size==2000000&&r.sha256==std::string(64,'a'));
+ // Portable archives/checksums must never become updater payloads, even first.
+ {auto x=j;Json zip=Json::obj();zip.fields={{"name",Json("Config_Inspector_Portable.zip")}};
+ x.fields["assets"].items.insert(x.fields["assets"].items.begin(),zip);
+ Json checksum=Json::obj();checksum.fields={{"name",Json("Config_Inspector_Portable.zip.sha256")}};
+ x.fields["assets"].items.push_back(checksum);
+ auto selected=release(dump(x));ok(selected.url==r.url&&selected.sha256==r.sha256&&selected.size==r.size);
+ x.fields["assets"].items.erase(x.fields["assets"].items.begin()+1);rejects([&]{release(dump(x));});}
  for(auto key:{"draft","prerelease"}){auto x=j;x.fields[key]=Json(true);rejects([&]{release(dump(x));});}
  for(auto tag:{"5.17.0","v5.17.0-beta","v5.17.0/../v5.16.0"}){auto x=j;x.fields["tag_name"]=Json(tag);rejects([&]{release(dump(x));});}
  for(auto url:{"https://github.com/other/repo/releases/download/v5.17.0/Config_Inspector.exe","https://evil.example/Config_Inspector.exe","https://github.com/TechSavage1989/Configuration-Inspector/releases/download/v5.16.0/Config_Inspector.exe"}){auto x=j;x.fields["assets"].items[0].fields["browser_download_url"]=Json(url);rejects([&]{release(dump(x));});}
