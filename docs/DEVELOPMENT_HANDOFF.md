@@ -53,6 +53,16 @@ existing tags/assets, repository access and the fast-forward-only release flow.
   collapsible category wrappers must not turn ordinary property tables into nested
   300px scroll traps. Keep this regression guard and the original wheel handoff.
 
+### Review findings
+
+Initial review run `40453507370` passed Windows compilation, all 43 native Updater
+scheduler checks, 28 replacement/rollback checks and 40 updater browser checks.
+One original-field browser edge case failed: an empty-state illustration overflowed
+a small panel, incorrectly leaving the map active despite having no field rows.
+The map now reports zero range and hides its viewport when no rows exist; ordinary
+results scrolling remains available for the message. Focused unit/browser coverage
+retains the assertion instead of weakening it. No main promotion occurred.
+
 ### Validation and remaining work
 
 Passed locally: 5,329 Node checks (including 134 geometry/events, 202 text UI,

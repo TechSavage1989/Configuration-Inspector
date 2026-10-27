@@ -4728,9 +4728,9 @@ function pJ(L,pan){const d=E(),I={},R={},T={};
       // Scroll anchoring can run before ResizeObserver after details expand.
       // Never publish a new extent beside markers measured against the old one.
       if(b.total!==measuredTotal){schedule(true);return;}
-      var top=clamp(results.scrollTop,0,Math.max(0,b.total-b.visible)),active=activeSection(sections,top,b.visible,b.total);
+      var top=items.length?clamp(results.scrollTop,0,Math.max(0,b.total-b.visible)):0,active=activeSection(sections,top,b.visible,b.total);
       buttons.forEach(function(button){var selected=button.getAttribute('data-comparison-section')===active;button.classList.toggle('active',selected);if(selected)button.setAttribute('aria-current','location');else button.removeAttribute('aria-current');var section=sections.find(function(section){return section.key===button.getAttribute('data-comparison-section');});if(section)button.setAttribute('aria-expanded',String(!section.collapsed));});
-      if(map&&viewport){var g=viewportGeometry(b.total,b.visible,top,b.track);viewport.style.top=g.top+'px';viewport.style.height=g.height+'px';viewport.style.pointerEvents=g.max?'auto':'none';map.setAttribute('aria-valuemin','0');map.setAttribute('aria-valuemax',String(Math.round(g.max)));map.setAttribute('aria-valuenow',String(Math.round(top)));map.setAttribute('aria-valuetext',items.length?'Current page: '+items.length+(fields?' fields; ':' objects; ')+Math.round(top/Math.max(1,g.max)*100)+'% through results':fields?'No fields on this page':'No objects on this page');map.setAttribute('aria-disabled',String(!g.max&&!items.some(function(item){return item.collapsed;})));}
+      if(map&&viewport){var g=viewportGeometry(items.length?b.total:b.visible,b.visible,top,b.track);viewport.style.visibility=items.length?'visible':'hidden';viewport.style.top=g.top+'px';viewport.style.height=g.height+'px';viewport.style.pointerEvents=g.max?'auto':'none';map.setAttribute('aria-valuemin','0');map.setAttribute('aria-valuemax',String(Math.round(g.max)));map.setAttribute('aria-valuenow',String(Math.round(top)));map.setAttribute('aria-valuetext',items.length?'Current page: '+items.length+(fields?' fields; ':' objects; ')+Math.round(top/Math.max(1,g.max)*100)+'% through results':fields?'No fields on this page':'No objects on this page');map.setAttribute('aria-disabled',String(!g.max&&!items.some(function(item){return item.collapsed;})));}
     }
     function measure(){
       if(disposed)return;var origin=results.getBoundingClientRect().top+(results.clientTop||0),scroll=results.scrollTop,extent=results.scrollHeight||0,total=extent||1,fieldHeader=fields&&results.querySelector('thead'),fieldHeaderHeight=fieldHeader?fieldHeader.getBoundingClientRect().height:0;
@@ -4753,12 +4753,13 @@ function pJ(L,pan){const d=E(),I={},R={},T={};
     }
     listen(nav,'click',function(event){var button=event.target.closest&&event.target.closest('[data-comparison-section]');if(!button||!nav.contains(button))return;var section=expandSection(button.getAttribute('data-comparison-section'));if(section){event.preventDefault();jump(section.top);}});
     function jumpFromPoint(event){
+      if(!items.length)return;
       var mark=event.target.closest&&event.target.closest('[data-object-map-index]'),sectionMark=event.target.closest&&event.target.closest('[data-object-map-section]'),item=mark&&items[Number(mark.getAttribute('data-object-map-index'))],section=sectionMark&&sections.find(function(section){return section.key===sectionMark.getAttribute('data-object-map-section');});
       if(viewport&&viewport.contains(event.target))return;
       if(item){if(item.collapsed){var index=item.index;expandSection(item.groupKey);item=items[index];}jump(item.top-item.headingHeight);}else if(section){section=expandSection(section.key);jump(section.top);}else {var b=bounds();jump(mapScroll(event.clientY-map.getBoundingClientRect().top,b.total,b.visible,b.track));}
     }
     listen(map,'pointerdown',function(event){
-      if(drag)return;
+      if(drag||!items.length)return;
       suppressClick=false;if(event.button!==0||event.isPrimary===false||!viewport)return;
       if(bounds().total!==measuredTotal||geometryPending)measure();
       jumpFromPoint(event);suppressClick=true;if(map.focus)map.focus({preventScroll:true});event.preventDefault();
@@ -4774,7 +4775,7 @@ function pJ(L,pan){const d=E(),I={},R={},T={};
       if(suppressClick){suppressClick=false;event.preventDefault();return;}
       jumpFromPoint(event);if(map.focus)map.focus({preventScroll:true});
     });
-    listen(map,'keydown',function(event){var max=Math.max(0,results.scrollHeight-results.clientHeight),top=results.scrollTop,page=Math.max(48,results.clientHeight*.9),next={Home:0,End:max,ArrowUp:top-48,ArrowDown:top+48,PageUp:top-page,PageDown:top+page}[event.key];if(next!==undefined){endDrag();event.preventDefault();jump(next);}});
+    listen(map,'keydown',function(event){var max=Math.max(0,results.scrollHeight-results.clientHeight),top=results.scrollTop,page=Math.max(48,results.clientHeight*.9),next={Home:0,End:max,ArrowUp:top-48,ArrowDown:top+48,PageUp:top-page,PageDown:top+page}[event.key];if(next!==undefined){endDrag();event.preventDefault();if(items.length)jump(next);}});
     listen(results,'scroll',function(){schedule(false);},{passive:true});listen(results,'toggle',function(){rememberSections();schedule(true);},true);
     listen(view,'resize',function(){schedule(true);});listen(view,'blur',function(){endDrag();});
     if(view.ResizeObserver){observer=new view.ResizeObserver(function(){schedule(true);});[results,map].concat(groups,cards).filter(Boolean).forEach(function(node){observer.observe(node);});}
