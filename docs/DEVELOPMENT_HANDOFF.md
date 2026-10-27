@@ -1,18 +1,60 @@
 # Configuration Inspector development handoff
 
-## 5.18.1 canonical supplied icon — validation/publication pending
+## 5.18.1 supplied canonical icon — published and verified
 
+Release: https://github.com/TechSavage1989/Configuration-Inspector/releases/tag/v5.18.1
+Release ID: `425855364`; published 2026-10-27 at 18:48:43 UTC.
+Source/tag: `5d2056f5354981dffbe8cf4f93cda794f3bde80a`.
+Tree: `d931549e259e462b9f517526b0112341d948c0d6`.
+Final review `40562523629` and main release `40563121934` passed all jobs.
 Baseline `7e7bd81463f6ac7c6baa8dcffcd4c59c54de7bf4` includes the verified
-additive 5.18.0 portable ZIP. The Library SVG was materialized and its actual
-rendered pixels inspected before integration. `webview/icon.svg` preserves its
-4,152 bytes and SHA-256 `e9c16716ab14a7936c009e42cd935e1c66b7715ee503d51576c893b035947549`.
-See docs/ICONS.md for the source/derivative pipeline. Browser branding/favicon
-and Windows small/large icon resources now share that source. No application
-behavior changed beyond native icon selection; other native/updater changes are
-release version literals only. A new patch release preserves all 5.18.0 assets.
-Local checks passed: 5,925 Node checks (63 canonical-icon checks added), 15
-packaging/layout tests, version/embed consistency and public-source audit
-(192 files, 189 text, 66 reviewed fixtures). Hosted/native validation pending.
+additive 5.18.0 portable ZIP. Publication was explicitly authorized.
+
+The Library SVG was materialized and its actual rendered pixels inspected before
+integration. `webview/icon.svg` preserves its 4,152 bytes and SHA-256
+`e9c16716ab14a7936c009e42cd935e1c66b7715ee503d51576c893b035947549`.
+See docs/ICONS.md for the canonical source/derivative pipeline. The pinned
+build-only renderer generates 512px PNG and nine alpha ICO frames. Both Windows
+and Linux builds reject stale artifacts. HTML embedding derives the sidebar
+image and single favicon from the SVG; the competing legacy favicon is removed.
+Native small/large window icon selection uses the matching resource frame.
+The Windows release SVG uses canonical LF bytes, identical to the supplied file.
+
+No parser/search/comparison/updater behavior changed. Other native/updater edits
+are release-version literals only. Future releases produce the portable ZIP,
+sidecar and complete checksums automatically. All six 5.18.0 asset IDs, sizes,
+digests and URLs remain unchanged; no old binary or checksum file was replaced.
+
+Passed: 5,925 Node checks (63 icon checks added), 15 packaging/layout tests,
+933 comparison browser, 110 search browser and 44 updater/icon browser checks,
+79 compiled Windows icon-resource/image-loading checks, 93 C++ protocol checks,
+43 native scheduler and 28 Windows replacement/rollback checks, catalog policy,
+version/embed consistency and public-source audit (192 files, 189 text,
+66 reviewed fixtures). The actual 16–128px rendered frames and hosted browser
+brand screenshot were inspected. Initial review `40562153828` passed browser
+checks but exposed a missing <string> include in the new Windows test harness;
+the one-line correction passed without weakening any assertion.
+
+All six public downloads match GitHub size/digest metadata and SHA256SUMS.
+The ZIP CRCs, allowlisted entries, internal checksums, sidecar and enclosed EXE
+identity pass. The actual public EXE is AMD64 Windows GUI, PE version 5.18.1.0;
+all nine compiled icon frames match the generated ICO bytes, and its embedded
+HTML matches tested source. The public SVG is byte-for-byte the supplied artwork.
+The production updater release parser accepts the latest feed and selects only
+the raw EXE. The tag points to the tested commit.
+
+- EXE SHA-256: `5f63b1d2f8ce99ed767ce0e4ddee114850445f27b2ffe75487045ad3c94c899e`
+- HTML SHA-256: `260a8548c5822d0573ce64d9a20e9961ad248d64de232c764abfe655b44d32bc`
+- SVG SHA-256: `e9c16716ab14a7936c009e42cd935e1c66b7715ee503d51576c893b035947549`
+- ZIP SHA-256: `c770bf0e1dd355ef2e6b7aacddcc5c57cde2e0f40605787956a54fd60fb84c12`
+- ZIP sidecar SHA-256: `a05f919396b21d8c820fdec292e3b8621b9b1b297ad97444386269ae106f719b`
+- SHA256SUMS SHA-256: `76fd5290ba5e1f0094bf8026ab14cd95ff9a54420bda11d023da4c3703d048fc`
+
+Unrun: interactive native WebView2/Explorer/taskbar appearance and upgrading a
+real installed application. Native Windows tests do validate resource loading at
+all nine sizes, but do not inspect a visible desktop or its icon cache. No force
+push or access changes occurred. This final handoff is documentation-only and
+does not rebuild the published application.
 
 ## Portable ZIP packaging — published and verified (5.18.0 additive assets)
 
