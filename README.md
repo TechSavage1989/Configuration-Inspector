@@ -75,7 +75,9 @@ location. Use the result's Previous/Next controls to inspect each occurrence;
 **separately labeled representations**, not deduplicated underlying source
 statements: an object, original field and source line may represent the same
 setting. Source line numbers refer to the safe displayed configuration text;
-normalization or missing snapshot source is explained in coverage notes. Unknown
+normalization or missing snapshot source is explained in coverage notes. Raw
+source covers all contexts and is labeled accordingly, rather than assigned to
+a context without proven source mapping. Unknown
 content is searchable where it is retained by the importer and permitted by the
 existing masking rules. The app does not infer omitted device state.
 

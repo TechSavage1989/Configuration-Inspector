@@ -29,7 +29,14 @@ search does not silently mix workspace files or direct comparison text inputs.
 Engine, nine-vendor document/redaction and UI tests pass locally. Dedicated real
 browser scenarios cover query operators, repeated occurrences, exact destinations,
 back-navigation, lifecycle/privacy, small windows and all comparison modes.
-Hosted browser/Windows validation and release verification are still pending.
+Initial hosted review `40543768725` passed Windows, updater, all comparison
+browser checks and the new exact-destination/comparison-preservation scenarios.
+It exposed queued native-details toggle events closing search options after a
+rerender. The fix captures live expansion before replacement and ignores retired
+element events; the same failing browser cases remain required. Results are also
+contiguously grouped by category/object and whole-source context is explicitly
+labeled rather than misrepresented as global-only. Final hosted validation and
+release verification are still pending.
 Do not describe this version as published until the final release record exists.
 
 
