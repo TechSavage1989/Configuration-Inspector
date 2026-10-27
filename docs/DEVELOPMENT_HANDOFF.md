@@ -1,84 +1,86 @@
 # Configuration Inspector development handoff
 
-## 5.17.3 candidate — review validation pending
+## 5.17.3 published and verified
 
-Based on verified main `08d2cdb565e8a4204bf0a467295c7313c9191695` after 5.17.2.
-Started from local checkpoint `c1ba7af02bc967e523462e7e3e286b5cad35ab0e` on
-`fix/update-notices-menu`; release candidate is 5.17.3. On 2026-10-27 the user
-explicitly approved pushing the prompt's changes, hosted validation, safe main
-promotion and publication after passing checks. Main and latest release were
-rechecked before resuming; both still match the 5.17.2 baseline.
-The user reported missing automatic update notices and a broken native Help action,
-then requested all-three-mode maps, drag-anywhere, aligned loaders/swaps, neutral
-unchanged markers and collapsible object sections. All six parts of the final
-prompt are implemented. Do not promote a failing or untested candidate; preserve
-existing tags/assets, repository access and the fast-forward-only release flow.
+Release: https://github.com/TechSavage1989/Configuration-Inspector/releases/tag/v5.17.3
+Release ID: `425059009`; published 2026-10-27.
+Published source/tag: `3c93d17339003563fca4fe75a3551077d66b9990`.
+Source tree: `cdd6b45df363848b6d0e8a60414ebe0abbed9f76`.
+Final review run `40453919484` and main release run `40454176002` passed all jobs.
+The user's final six-part prompt and explicit push/main/publication approval were
+reconciled before preparing this release from baseline `08d2cdb`.
 
-### Findings and implementation
-
-- Confirmed Help bug: native command 11 searched for a nonexistent
-  `data-action="update-settings"` element. It now sends a typed native message;
-  a small gate retains/coalesces requests until the UI-ready handshake. The UI
-  opens/focuses the update section and checks, exposing busy/error results without
-  depending on a rendered button. Repeated requests do not overlap an active check.
-- The public 5.17.2 feed passes the application's strict C++ release parser and
-  advertises the already-verified executable digest. The user's exact automatic
-  notification cause remains unconfirmed: running version, whether left open and
-  automatic/Later preferences were not available. Existing six-hour polling and
-  global 24-hour snooze could explain delayed/missing notices; do not claim an
-  observed failure on the user's desktop.
-- Checks remain about 15 seconds after UI readiness, now every five minutes while
-  open. Disabled checks remain disabled. Later is release-specific, survives
-  reopening, and expires without awaiting another network request. Legacy global
-  delays cannot identify a version and do not suppress unrelated newer releases.
-  Download/install consent, verification, encryption and rollback are unchanged.
-- `UpdateServices` injects only clock, release-feed and preference boundaries into
-  the real native Updater for deterministic tests, without registry/network side
-  effects. `tests/updater-scheduler-tests.cpp` is wired into the Windows build;
-  it covers startup readiness, polling, retries, busy suppression, disabled state,
-  manual checks and persisted/version-specific/expired reminders. It is not yet run.
-- All original fields now has a measured current-filtered-page row map. Text,
-  object and field maps accept track/marker/viewport press-and-drag, with capture,
-  cleanup and click suppression. Text track/marker movement is anchored after the
-  initial jump; 1px regressions prevent an extra first-movement jump.
-- Text masking remains parent-owned and moves into its results toolbar, not a row
-  above inputs. Loaders and the center swap design are consistent across modes.
-- Object sections use native details/summary controls and retain collapsed category
-  state across filtering/mode changes, including cleanup before a queued toggle.
-  Open rows use real geometry; collapsed sections use labeled per-kind aggregates
-  at the actual heading, with neutral unchanged counts when included by filters.
-  Map/bookmark selection expands and remeasures before navigating. Aggregates stay
-  actionable even when all collapsed content fits beneath a full-height viewport.
-- The old generic details scroll rule is narrowed to technical-details only; new
-  collapsible category wrappers must not turn ordinary property tables into nested
-  300px scroll traps. Keep this regression guard and the original wheel handoff.
-
-### Review findings
-
-Initial review run `40453507370` passed Windows compilation, all 43 native Updater
-scheduler checks, 28 replacement/rollback checks and 40 updater browser checks.
-One original-field browser edge case failed: an empty-state illustration overflowed
-a small panel, incorrectly leaving the map active despite having no field rows.
-The map now reports zero range and hides its viewport when no rows exist; ordinary
-results scrolling remains available for the message. Focused unit/browser coverage
-retains the assertion instead of weakening it. No main promotion occurred.
-
-### Validation and remaining work
-
-Passed locally: 5,329 Node checks (including 134 geometry/events, 202 text UI,
-43 comparison view, 82 object comparison and 62 updater bridge/workspace checks),
+Validation: 5,336 Node checks, 753 comparison browser checks, 40 updater browser
+checks, 43 native Updater scheduling checks, 28 Windows replacement/rollback checks,
 91 C++ protocol/menu-gate checks, native catalog policy, 3 repository-layout guards,
-version/embedding consistency, JavaScript syntax and whitespace checks. Public
-source audit passed for 169 files (167 text, 66 reviewed fixtures). The live
-latest-release feed was separately parsed by the production C++ metadata parser.
+version/embed consistency and public-source audit (170 files, 168 text, 66 reviewed
+fixtures). The native scheduling suite executes the real Updater with isolated
+clock/feed/preferences; it is not an interactive WebView2 menu or network test.
 
-Prepared but **not run**: updated comparison/updater browser suites, the new real
-native Updater scheduler suite, Windows build and existing replacement/rollback
-fixtures. Full interactive WebView2 and a real installed-app upgrade are also unrun.
-Local Chromium remains unavailable under the previously documented sandbox
-restriction; do not retry that restricted route. Hosted review-branch CI is the
-next validation step on the authorized review branch. No parser or private-fixture changes,
-private data, access changes or force push are part of this implementation.
+The initial review `40453507370` passed updater/Windows checks but found one small
+original-field edge case: an empty-state illustration overflowed a short panel and
+incorrectly left the map active despite having no field rows. The focused fix gives
+empty maps zero navigation range and hides the viewport indicator, while leaving
+the actual results message scrollable. The regression was retained, not weakened;
+final review and main runs passed all six comparison scenarios. Final screenshots
+for object, original-field and text maps plus aligned input controls were inspected.
+
+All four public downloads match GitHub asset sizes/digests; EXE/HTML/icon also
+match SHA256SUMS. The executable's top-level PE version is 5.17.3.0, AMD64 Windows
+GUI. HTML/icon match the tested source after newline normalization. The latest
+feed passes the production C++ release parser and the tag points to tested source.
+5.17.2 assets remain unchanged. No force push or repository access change occurred.
+
+- EXE SHA-256: `7a978a856dbc7c41abeba0f611ed15e04824d895d4f4dea7f36941636e5f6c8c`
+- HTML SHA-256: `5bc1557eda2580af3ffe98d9a2e967d2eca0e4db567942f9fd9545dd02b61bd3`
+- Icon SHA-256: `0b7616221b64418c3f48f5a405f56dc54248aab0e5c44ba69a7dae76e874f1d5`
+- SHA256SUMS SHA-256: `bbb0ba54b3de95235961956d8140075227b688ed700a665640d03a5268ea9129`
+
+Unrun: full interactive native WebView2 and updating a real installed application.
+This final documentation-only record does not rebuild the published application.
+
+### Implementation and continuation
+
+- Confirmed Help bug: native command 11 searched for a nonexistent update-settings
+  DOM button. It now sends a typed native message, with a gate retaining/coalescing
+  requests until the UI handshake. The UI opens/focuses the update section and
+  checks, including repeated, busy and error cases. Keep the exact-message tests.
+- The user's exact missed-automatic-notice cause was not observed on their desktop.
+  Prior six-hour polling/global Later delay could explain it, but do not claim a
+  proven machine-specific cause. The public feed was healthy throughout.
+- Automatic checks run about 15 seconds after UI readiness and every five minutes
+  while open. Disabled preferences remain disabled. Later applies to the displayed
+  release for 24 hours; newer releases and expired reminders are not hidden by it.
+  Legacy unscoped delays cannot identify a version and do not hide newer releases.
+  Preserve download/install consent, integrity checks, encryption and rollback.
+- `UpdateServices` injects only clock, release-feed and preference boundaries for
+  the real native scheduler tests, without developer registry or network effects.
+  `tests/updater-scheduler-tests.cpp` is required by `scripts/build-windows.cmd`.
+- All original fields uses a measured current-filtered-page row map. All three
+  maps accept track/marker/viewport press-and-drag with capture, cleanup and click
+  suppression. Text track/marker movement anchors to the actual post-jump row;
+  keep the 1px continuity and cross-page/tiny-tail regressions.
+- Text masking remains parent-owned in its results toolbar, not above inputs.
+  Loader placement and the center swap design are shared across all three modes.
+- Native details/summary object sections retain collapsed category state across
+  filters/modes, including cleanup before a queued toggle. Open cards use actual
+  geometry; collapsed sections use clearly labeled per-kind counts at their real
+  heading, including neutral unchanged items under matching filters. Selecting a
+  bookmark or aggregate expands and remeasures before navigating to its target.
+  Aggregates stay actionable when collapsed content fits beneath a full-height
+  viewport. Never invent hidden-card scroll positions or unreachable page entries.
+- Only `.technical-details .comparison-scroll` is capped at 300px. Do not broaden
+  that rule to category details wrappers and create extra property-table scroll
+  traps. Preserve the fixed-height workspace and established wheel-boundary handoff.
+- Empty maps have no comparison range even if a placeholder message overflows.
+  Preserve the actual message's natural scrolling and the atomic geometry snapshot
+  guard introduced in 5.17.2. Clean up map listeners/capture/observers on rerender.
+
+Local Chromium remains unavailable under the established sandbox restriction;
+do not retry the restricted route. Hosted browser/Windows checks provide the
+runtime coverage recorded above. Preserve root organization, embedding paths,
+parsers, original sources, masking and updater safeguards; no private inputs or
+reference screenshots are committed.
 
 ## 5.17.2 published and verified
 
