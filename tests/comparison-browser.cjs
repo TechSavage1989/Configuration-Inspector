@@ -76,7 +76,7 @@ async function objectStates(browser){
  ok((await page.locator('.comparison-card .detail-label').allTextContents()).every(x=>x.startsWith('GigabitEthernet')),'object category filter');
  await page.locator('#table-query').fill('unchanged port');ok(await page.locator('.comparison-card').count()===1,'object search includes retained settings');
  await page.locator('#table-query').fill('');await page.selectOption('#compare-category','all');
- await page.locator('[data-comparison-record]').first().click();await page.locator('#modal').waitFor({state:'visible'});await page.locator('#modal [data-action="close-modal"]').click();ok(await page.locator('#modal').isHidden(),'object detail closes back to comparison');
+ await page.locator('[data-comparison-record]').first().click();await page.locator('#modal').waitFor({state:'visible'});await page.locator('#modal [data-action="close-modal"]').first().click();ok(await page.locator('#modal').isHidden(),'object detail closes back to comparison');
  await page.locator('#compare-file').setInputFiles(upload('identical.conf',stateConfiguration(false)));await page.locator('#modal').waitFor({state:'hidden'});
  ok(await page.locator('.comparison-card').count()===0,'identical configs show no changed objects');await page.selectOption('#table-filter','Unchanged');ok(await page.locator('.comparison-card').count()>0,'identical objects remain accessible');
  ok(errors.length===0,errors.join('\n'));await page.close();
