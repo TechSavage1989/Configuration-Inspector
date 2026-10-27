@@ -52,6 +52,38 @@ Prefer a browser-based edition? The same release includes **`Config_Inspector.ht
 
 Use the sidebar to move between recognized configuration views, follow object links for context, and compare snapshots before exporting your findings. Consult original source for unsupported or ambiguous settings; this app does not apply changes to devices.
 
+## Global configuration search
+
+Use the top search box, **/** or **Ctrl/Cmd+K** to search the active configuration
+across original fields, parsed objects, native sections, displayed source text
+and configuration-derived findings. Results identify their source and context;
+**Open object**, **Original field**, **Raw text** and other destination buttons
+reveal the corresponding location. **Back to search results** restores the query,
+options, selected result and scroll position. **Return to previous view** restores
+the previous workspace, including comparison inputs and filters.
+
+Expand **Search options** for All/Any terms, Match case, Whole word and section,
+source or context filters. Examples: `uplink "branch office"`, `dns -disabled`,
+and `"10.0.0.1" -"backup route"`. Exclusions always reject a matching location;
+All/Any combines positive terms within one field, object, finding or source line,
+not unrelated locations. Whole word uses Unicode letter/number/underscore
+boundaries; punctuation is literal. Regex is intentionally not enabled.
+
+Every non-overlapping occurrence is retained, including repeated matches in one
+location. Use the result's Previous/Next controls to inspect each occurrence;
+40 matching locations render per page, with no silent result cap. Counts include
+**separately labeled representations**, not deduplicated underlying source
+statements: an object, original field and source line may represent the same
+setting. Source line numbers refer to the safe displayed configuration text;
+normalization or missing snapshot source is explained in coverage notes. Unknown
+content is searchable where it is retained by the importer and permitted by the
+existing masking rules. The app does not infer omitted device state.
+
+Search is local and read-only. Hidden sensitive values are redacted before
+indexing, matching and counting; revealing them still requires the existing
+visibility control. Indexes/results are invalidated on replacement or masking
+changes. Large searches yield to the UI and superseded work is canceled.
+
 ## Compare configurations
 
 Open **Compare configs** in the sidebar and select one of the two primary modes:

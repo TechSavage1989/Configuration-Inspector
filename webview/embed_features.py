@@ -78,7 +78,7 @@ source = source[:start] + marker + '\n' + (root / 'updates.js').read_text() + '\
 page.write_text(source)
 
 # Comparison modules precede the application controller in the single-file build.
-for script_id, filename in [('comparison-engine', 'comparison.js'), ('comparison-ui', 'comparison_ui.js'), ('comparison-navigation', 'comparison_navigation.js')]:
+for script_id, filename in [('comparison-engine', 'comparison.js'), ('comparison-ui', 'comparison_ui.js'), ('comparison-navigation', 'comparison_navigation.js'), ('global-search-engine', 'global_search.js'), ('global-search-documents', 'search_documents.js'), ('global-search-ui', 'search_ui.js')]:
     marker = '<script id="' + script_id + '">'
     if marker not in source:
         anchor = source.index('<script id="app-updates">')

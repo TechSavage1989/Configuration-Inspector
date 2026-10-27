@@ -1,5 +1,38 @@
 # Configuration Inspector development handoff
 
+## 5.18.0 global search — review validation pending
+
+Prepared from main `b2bf918d1946d45a0f264bc9d3f11581359ec39e` / release 5.17.4.
+The full 106-line user prompt was read and explicit build/publication approval
+received before development. Existing comparison behavior and updater code are
+preserved (only release-version literals change in native/update files).
+
+Three embedded modules separate the work: `global_search.js` parses literal
+All/Any terms, quoted phrases and exclusions and scans in cancellable chunks;
+`search_documents.js` indexes masked fields, objects, native sections, findings
+and displayed source with stable numeric navigation fallbacks; `search_ui.js`
+renders bounded 40-location pages, each occurrence and alternate destinations.
+Global session state is separate from local filters. Target navigation snapshots
+and restores the previous workspace; masking/model changes invalidate stale work.
+Search values and metadata are scrubbed before matching/counting, including
+known sensitive values copied into derived facts. Extraordinary sensitive corpora
+fail closed with explicit coverage notes rather than allocating unbounded tries.
+
+Counts explicitly describe separate representations, not a fabricated unique
+source-statement total. Source line numbers refer to the safe displayed text;
+field/source links require proven preserved source spans. Unsupported text is
+searchable only where retained by the importer and allowed by existing masking.
+Regex is intentionally omitted (optional in the prompt); no unsafe synchronous
+regex evaluator or external search service is added. Active configuration only;
+search does not silently mix workspace files or direct comparison text inputs.
+
+Engine, nine-vendor document/redaction and UI tests pass locally. Dedicated real
+browser scenarios cover query operators, repeated occurrences, exact destinations,
+back-navigation, lifecycle/privacy, small windows and all comparison modes.
+Hosted browser/Windows validation and release verification are still pending.
+Do not describe this version as published until the final release record exists.
+
+
 ## 5.17.4 published and verified — imported configuration selection
 
 Release: https://github.com/TechSavage1989/Configuration-Inspector/releases/tag/v5.17.4

@@ -4,9 +4,9 @@ const html=fs.readFileSync('webview/index.html','utf8');
 const start=html.indexOf('  function renderContent(){');
 const end=html.indexOf('  function preserveInput(',start);
 assert.ok(start>=0&&end>start,'renderContent source is present');
-const classes=new Set(),content={innerHTML:'',classList:{add:name=>classes.add(name),remove:(...names)=>names.forEach(name=>classes.delete(name))}};
+const classes=new Set(),content={innerHTML:'',classList:{toggle:(name,on)=>on?classes.add(name):classes.delete(name),add:name=>classes.add(name),remove:(...names)=>names.forEach(name=>classes.delete(name))}};
 const state={model:{},view:'compare',comparison:null,compareMode:'records'};
-const ctx={mountObjectComparisonScroll:()=>{},state,el:{content},mapObserver:null,workspaceCompare:()=>'',comparePage:()=>'<comparison>',tablePage:()=>'<table>',welcome:()=>'<welcome>'};
+const ctx={ensureSearchStyles:()=>{},mountObjectComparisonScroll:()=>{},state,el:{content},mapObserver:null,workspaceCompare:()=>'',comparePage:()=>'<comparison>',tablePage:()=>'<table>',welcome:()=>'<welcome>'};
 vm.createContext(ctx);vm.runInContext(html.slice(start,end),ctx);
 let checks=0;
 for(const comparison of [null,{}])for(const mode of ['records','fields']){
