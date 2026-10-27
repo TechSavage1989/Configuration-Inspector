@@ -68,6 +68,18 @@ Open **Compare configs** in the sidebar and select one of the two primary modes:
   Bounded alignment may use a clearly labeled approximate fallback.
 
 Both modes are **read-only** and offer explicit left/right inputs and swapping.
+Both modes keep their controls visible while results scroll within the window.
+Use **Hide inputs** to reclaim review space without losing either configuration;
+the compact summary keeps Current/Comparison identities and filenames visible.
+Both sides always support replace, paste and clear. Object results are grouped by
+actual categories; expanded original-setting tables scroll independently and
+continue into the result list at their boundary.
+
+The text mode's vertical **change map** shows added, removed and changed lines
+across the entire aligned comparison, with an outline for the visible area. Click
+the map to jump both panes, or focus it and use arrows, Page Up/Down and Home/End.
+The map and difference navigation cross the 500-row page boundary automatically.
+
 The original-field comparison remains available. Direct text inputs are limited
 to 5 MB each and require acknowledgment before displaying unmasked contents.
 Loaded sources follow the sensitive-value setting; masking can hide secret-only

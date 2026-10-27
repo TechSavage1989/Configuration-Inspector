@@ -1,6 +1,38 @@
 # Configuration Inspector development handoff
 
-## Published and verified
+## 5.17.1 review candidate
+
+Based on verified main `6a742c2829c2cf499c7b50ed52bb990742169208` after 5.17.0.
+The user explicitly authorized continuing the attached six-part comparison brief,
+adding the text change map, and pushing/publishing the final build on 2026-10-27.
+The two supplied loader screenshots were inspected locally; no private screenshot
+or configuration content was copied into the public repository.
+
+- `#content.comparison-view` is a bounded flex workspace. Only object results,
+  original-field results, text panes or empty-state content scroll vertically.
+  Comparison-only chrome is compact; other workspace layouts are unchanged.
+- Shared input cards/summary styles serve text and object modes. Collapse removes
+  the input area from layout, preserves state and returns height to results.
+  Clearing the comparison's current slot does not delete the open configuration.
+- Object grouping uses supported record categories and DNS/DHCP sections, sorted
+  before pagination. Never invent empty categories or guess object identity.
+- Text minimap renders at most 160 bins × 3 change kinds, not a DOM node per line.
+  Scroll/resize updates its viewport; click/keyboard jumps cross 500-row pages.
+  Disconnect ResizeObserver via `SWTextComparison.unmount` before replacing DOM.
+- Browser coverage includes normal/small windows, card/gap wheel targets, genuine
+  nested scroll boundary chaining, input lifecycle, collapsed identity/height,
+  mode/filter retention and map position/navigation/resize. Diagnostics contain
+  synthetic screenshots and machine-readable geometry only.
+
+Local validation passed: 5,079 Node checks, 3 repository-layout checks, public-source
+and version/embedding guards, 83 protocol checks and native catalog policy.
+Browser/Windows validation and publication are pending hosted review-branch CI.
+Local browser execution
+remains unavailable due to the established sandbox limitation; do not retry that
+restricted route. Full interactive native WebView2 and a real installed upgrade
+are not claimed. Keep all root organization guards and build/embed paths intact.
+
+## Previous 5.17.0 publication (verified)
 
 Version **5.17.0** is published at
 https://github.com/TechSavage1989/Configuration-Inspector/releases/tag/v5.17.0

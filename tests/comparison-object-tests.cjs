@@ -96,6 +96,13 @@ const manyFields=record('Many original settings','same',{fields:Array.from({leng
 rendered=audit.comparisonCard(C.compareRecords(model([]),model([manyFields]),true,options).items[0]);
 ok(rendered.includes('Showing the first 200 of 205 settings'),'large object rendering limit is explicit');ok(rendered.includes('View item details'),'all source remains reachable through details');
 
+// Groups use real categories/sections, retain side-by-side cards and paginate
+// in category order instead of repeating arbitrary mixed sections.
+Object.assign(state,{model:model([]),comparison:model([record('Port','a'),record('Route','b',{category:'routes'}),record('Resolver','c',{category:'network',family:'dns',summary:{section:'dns'}})]),filter:'all-items',query:'',compareCategory:'all',page:1,pageSize:2,hideSensitive:true});
+rendered=audit.recordComparisonPage();ok(rendered.includes('data-comparison-category="dns"')&&rendered.includes('data-comparison-category="interfaces"'),'actual DNS and interface groups rendered');ok(!rendered.includes('data-comparison-category="routes"'),'later category remains on its own next page');
+state.page=2;rendered=audit.recordComparisonPage();ok(rendered.includes('data-comparison-category="routes"'),'route group remains reachable');ok(!rendered.includes('data-comparison-category="dns"'),'no invented empty group');
+state.compareCategory='dns';state.page=1;rendered=audit.recordComparisonPage();ok(rendered.includes('Resolver')&&!rendered.includes('data-comparison-category="interfaces"'),'section-based category filter preserved');
+
 // Real public fixture smoke: identical parsed objects expose complete unchanged
 // objects without altering their imported field values or record ownership.
 for(const fixture of ['features-cisco.conf','features-forti.conf','features-junos.conf']){

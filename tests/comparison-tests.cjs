@@ -13,9 +13,11 @@ for(const comparison of [null,{}])for(const mode of ['records','fields']){
   // Switching from an existing fixed-table view must remove its clipping class.
   state.view='raw';ctx.renderContent();assert.ok(classes.has('list-view'));checks++;
   state.view='compare';state.comparison=comparison;state.compareMode=mode;ctx.renderContent();
-  assert.ok(!classes.has('list-view'),`${mode}, loaded=${!!comparison}: comparison keeps the content scroll owner`);checks++;
+  assert.ok(!classes.has('list-view'),`${mode}, loaded=${!!comparison}: comparison excludes unrelated fixed-table layout`);checks++;
   assert.equal(content.innerHTML,'<comparison>');checks++;
+  assert.ok(classes.has('comparison-view'),'comparison uses its own fixed workspace');checks++;
 }
+state.compareLoadersCollapsed=true;ctx.renderContent();assert.ok(classes.has('compare-loaders-collapsed'));checks++;
 state.model=null;ctx.renderContent();assert.equal(content.innerHTML,'<comparison>','comparison opens without a parsed model');checks++;
-state.view='overview';ctx.renderContent();assert.equal(content.innerHTML,'<welcome>');checks++;
+state.view='overview';ctx.renderContent();assert.ok(!classes.has('comparison-view')&&!classes.has('compare-loaders-collapsed'),'other views retain their own layout');checks++;assert.equal(content.innerHTML,'<welcome>');checks++;
 console.log(checks+' comparison view checks passed (browser scrolling checked separately)');
