@@ -1,44 +1,82 @@
 # Configuration Inspector development handoff
 
-## 5.18.0 global search — review validation pending
+## 5.18.0 published and verified — global configuration search
 
-Prepared from main `b2bf918d1946d45a0f264bc9d3f11581359ec39e` / release 5.17.4.
+Release: https://github.com/TechSavage1989/Configuration-Inspector/releases/tag/v5.18.0
+Release ID: `425740536`; published 2026-10-27 at 16:53:29 UTC.
+Published source/tag: `2d52ae4506e89e1ea230376db3de01ba37e181aa`.
+Source tree: `182c7cf495b8eb179d596eae25031429d9f9e657`.
+Final review `40544694615` and main release `40545078895` passed all jobs.
+Baseline was main `b2bf918d1946d45a0f264bc9d3f11581359ec39e` / release 5.17.4.
 The full 106-line user prompt was read and explicit build/publication approval
-received before development. Existing comparison behavior and updater code are
-preserved (only release-version literals change in native/update files).
+received before development. No force push or repository access change occurred.
 
-Three embedded modules separate the work: `global_search.js` parses literal
-All/Any terms, quoted phrases and exclusions and scans in cancellable chunks;
-`search_documents.js` indexes masked fields, objects, native sections, findings
-and displayed source with stable numeric navigation fallbacks; `search_ui.js`
-renders bounded 40-location pages, each occurrence and alternate destinations.
-Global session state is separate from local filters. Target navigation snapshots
-and restores the previous workspace; masking/model changes invalidate stale work.
-Search values and metadata are scrubbed before matching/counting, including
-known sensitive values copied into derived facts. Extraordinary sensitive corpora
-fail closed with explicit coverage notes rather than allocating unbounded tries.
+### Design and continuation
 
-Counts explicitly describe separate representations, not a fabricated unique
-source-statement total. Source line numbers refer to the safe displayed text;
-field/source links require proven preserved source spans. Unsupported text is
-searchable only where retained by the importer and allowed by existing masking.
-Regex is intentionally omitted (optional in the prompt); no unsafe synchronous
-regex evaluator or external search service is added. Active configuration only;
-search does not silently mix workspace files or direct comparison text inputs.
+- `global_search.js`: literal All/Any terms, quoted phrases, exclusions, case and
+  Unicode whole-word options. Searches yield during 32 KiB scan windows, including
+  dense/no-match text; cancellation rejects without publishing partial success.
+  Query limits are explicit: 2,048 characters, 32 terms, 512 characters per term.
+  All non-overlapping occurrences are retained, with no silent result cap.
+- `search_documents.js`: indexes all model entries/records/native sections and
+  configured findings plus safe displayed source. Numeric original-model indexes
+  retain navigation when sensitive identifiers cannot be exposed. Secret values
+  and metadata are scrubbed before matching/counting, including copied derived
+  values. A single secret over 32 KiB or combined patterns over 128 KiB fails closed
+  with explicit conservative-masking notes rather than an unbounded matcher.
+- `search_ui.js`: 40 locations per rendered page, all per-location occurrences,
+  grouping by category/object, alternate destinations and compact excerpts.
+  Source/finding/parsed representations are clearly distinguished. Counts are not
+  falsely described as deduplicated underlying source-statement counts.
+- Controller session state is independent from local filters. Object, original
+  field, native section, source line and finding destinations are revealed with
+  matched context and a return path. The previous workspace snapshot includes
+  comparison filters, mode, loaded identities and pane scroll positions. Model
+  replacement, visibility changes and immediate new input invalidate stale work.
+- Native details/summary search options capture live expansion before DOM
+  replacement and ignore delayed toggle events from retired elements. Preserve
+  this guard: initial review `40543768725` exposed options collapsing on rerender;
+  its same failing browser scenarios passed after the focused fix, not a weakened
+  test. Initial Windows, existing comparison and exact navigation tests passed.
+- The existing comparison loaders, three modes, maps and updater implementation
+  are preserved. Native/updater source changes are release-version literals only.
 
-Engine, nine-vendor document/redaction and UI tests pass locally. Dedicated real
-browser scenarios cover query operators, repeated occurrences, exact destinations,
-back-navigation, lifecycle/privacy, small windows and all comparison modes.
-Initial hosted review `40543768725` passed Windows, updater, all comparison
-browser checks and the new exact-destination/comparison-preservation scenarios.
-It exposed queued native-details toggle events closing search options after a
-rerender. The fix captures live expansion before replacement and ignores retired
-element events; the same failing browser cases remain required. Results are also
-contiguously grouped by category/object and whole-source context is explicitly
-labeled rather than misrepresented as global-only. Final hosted validation and
-release verification are still pending.
-Do not describe this version as published until the final release record exists.
+### Validation and coverage limits
 
+Passed: 5,862 Node checks (203 engine, 152 document/redaction, 76 controller and
+26 UI checks added), 110 global-search browser checks across four scenarios,
+933 comparison browser checks, 40 updater browser checks, 91 C++ protocol checks,
+native catalog policy, 43 native Updater scheduler checks, 28 Windows replacement/
+rollback checks, 3 layout guards, version/embed consistency and public-source
+audit (181 files, 179 text, 66 reviewed fixtures). Browser tests cover exact five
+result-type destinations, back state, repeated occurrences, query options, privacy,
+lifecycle/context changes and all comparison modes. Engine cases include 6,000
+locations / 18,000 hits and 20,000 dense matches. Nine vendor families are covered
+by document/model regressions; this is not exhaustive rendered navigation through
+every vendor/category combination. Normal and 800x600 screenshots were inspected;
+small-window results gain space when options collapse and no outer scroll appears.
+
+Search is active-configuration only. Regex was optional and intentionally omitted;
+no unsafe synchronous evaluator or external search service was introduced. Raw
+source uses retained, safely displayed text; normalization or unavailable snapshot
+source is disclosed. Source lines span all contexts unless proven otherwise; field
+source links require verified preserved spans, never guessed field order. Existing
+masking may withhold unparsed content. Conservative masking can also hide identical
+non-secret text and is disclosed. The app does not infer omitted configuration.
+
+All four public downloads match GitHub sizes/digests. EXE/HTML/icon match SHA256SUMS;
+HTML/icon match tested source after newline normalization. The executable is AMD64
+Windows GUI, top-level PE version 5.18.0.0. The latest feed passes the production
+C++ release parser; the tag points to tested source. 5.17.4 assets remain unchanged.
+
+- EXE SHA-256: `e6d1dfda082e11282b2bc59b4f560e8840b2b90e7046c6fa57ac791fda55d7c7`
+- HTML SHA-256: `96295570e8e8976328a6c3f6a1e2661a48fac71d187a66b4cca9c9273c72b787`
+- Icon SHA-256: `0b7616221b64418c3f48f5a405f56dc54248aab0e5c44ba69a7dae76e874f1d5`
+- SHA256SUMS SHA-256: `8911d23994f517b57ea7c7bea5a7e653abe074ba8928cb4e59869e59f62cba74`
+
+Unrun: full interactive native WebView2, upgrading a real installed application,
+and a maximum-size 25 MB end-to-end desktop stress benchmark. The final handoff
+is documentation-only and does not rebuild the published executable.
 
 ## 5.17.4 published and verified — imported configuration selection
 
