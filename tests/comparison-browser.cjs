@@ -45,6 +45,30 @@ async function wheel(page,selector,dy=500,targetSelector){
  ok(await area.evaluate(el=>el.scrollTop>0),selector+' responds to wheel over '+(targetSelector||'result surface'));
  ok(await page.locator('#content').evaluate(el=>el.scrollTop===0),'wheel never moves outer comparison workspace');
 }
+async function nestedBoundaryWheel(page){
+ const selector='.comparison-card details .comparison-scroll',nested=page.locator(selector).first();
+ await nested.scrollIntoViewIfNeeded();ok(await nested.evaluate(el=>el.scrollHeight>el.clientHeight),'large original-settings table has genuine nested overflow');
+ // End the previous wheel transaction and keyboard smooth scroll before starting
+ // a separate boundary-chaining gesture; a nonzero scrollTop is not settlement.
+ await page.mouse.move(page.viewportSize().width-8,8);await page.waitForTimeout(400);
+ await nested.scrollIntoViewIfNeeded();await nested.evaluate(el=>{el.scrollTop=el.scrollHeight;});
+ const settled=await page.evaluate(async selector=>{
+  const child=document.querySelector(selector),parent=document.querySelector('.comparison-object-results');let last='',stable=0;
+  for(let i=0;i<90;i++){await new Promise(requestAnimationFrame);const box=child.getBoundingClientRect(),now=[child.scrollTop,parent.scrollTop,box.top,box.height].join(',');stable=now===last?stable+1:0;last=now;if(stable>=6)return true;}return false;
+ },selector);ok(settled,'nested and parent scroll positions settle before boundary wheel');
+ const point=await nested.evaluate(el=>{const a=el.getBoundingClientRect(),b=el.closest('.comparison-object-results').getBoundingClientRect(),top=Math.max(a.top,b.top,0),bottom=Math.min(a.bottom,b.bottom,innerHeight);return {x:Math.max(a.left,b.left)+Math.min(20,a.width/2),y:(top+bottom)/2,visibleHeight:bottom-top};});
+ ok(point.visibleHeight>20,'nested wheel target has a visible interior');await page.mouse.move(point.x,point.y);
+ async function snapshot(){return page.evaluate(({selector,point})=>{
+  const child=document.querySelector(selector),parent=document.querySelector('.comparison-object-results'),hit=document.elementFromPoint(point.x,point.y);
+  function box(el){const r=el.getBoundingClientRect(),s=getComputedStyle(el);return {node:el.tagName+'.'+el.className,top:el.scrollTop,max:el.scrollHeight-el.clientHeight,clientHeight:el.clientHeight,scrollHeight:el.scrollHeight,rect:{top:r.top,bottom:r.bottom,left:r.left,right:r.right},overflowY:s.overflowY,overscrollY:s.overscrollBehaviorY};}
+  const ancestors=[];for(let el=hit;el&&ancestors.length<10;el=el.parentElement)ancestors.push(box(el));return {child:box(child),parent:box(parent),contentTop:document.querySelector('#content').scrollTop,hitWithinNested:child.contains(hit),hit:hit&&hit.tagName+'.'+hit.className,ancestors};
+ },{selector,point});}
+ const before=await snapshot();console.log('comparison-wheel-before '+JSON.stringify({point,before}));ok(before.hitWithinNested,'wheel is hit-tested inside the nested table');ok(before.child.top>=before.child.max-1,'nested table begins at its lower boundary');ok(before.parent.top<before.parent.max-1,'parent still has room to scroll');
+ await page.mouse.wheel(0,500);let failure;
+ try{await page.waitForFunction(before=>document.querySelector('.comparison-object-results').scrollTop>before,before.parent.top,timeout);}catch(error){failure=error;}
+ const after=await snapshot(),report={label:'nested-boundary-wheel',point,before,after};metrics.push(report);console.log('comparison-wheel '+JSON.stringify(report));
+ if(failure)throw failure;ok(after.parent.top>before.parent.top&&after.contentTop===0,'nested boundary chains to parent results, never outer workspace');
+}
 async function panesSynchronized(page){
  await page.waitForFunction(()=>{const a=document.querySelector('[data-stc-pane="left"]'),b=document.querySelector('[data-stc-pane="right"]');return a&&b&&Math.abs(a.scrollTop-b.scrollTop)<2&&Math.abs(a.scrollLeft-b.scrollLeft)<2;},null,timeout);checks++;
 }
@@ -81,8 +105,7 @@ async function objectsAndScrolling(browser){
   ok(await page.locator('.comparison-card').first().locator('.object-side').count()===2,'paired GUI object identities');
   ok(await page.locator('.comparison-object-group').evaluateAll(groups=>groups.length>0&&groups.every(group=>group.querySelector('h2,h3,[role="heading"]')&&group.querySelector('.comparison-card'))),'real non-empty category groups own the object cards');
   if(viewport.width===1440){
-   const nested=page.locator('.comparison-card details .comparison-scroll').first();await nested.scrollIntoViewIfNeeded();ok(await nested.evaluate(el=>el.scrollHeight>el.clientHeight),'large original-settings table has genuine nested overflow');await nested.evaluate(el=>{el.scrollTop=el.scrollHeight;});await nested.hover();const before=await results.evaluate(el=>el.scrollTop);await page.mouse.wheel(0,500);
-   await page.waitForFunction(before=>document.querySelector('.comparison-object-results').scrollTop>before,before,timeout);checks++;
+   await nestedBoundaryWheel(page);
    await results.evaluate(el=>{el.scrollTop=0;});await page.screenshot({path:'test-results/comparison-objects.png'});
   }
   await visibleControl(page,'[aria-label="Next changes"]','object pagination');await page.locator('[aria-label="Next changes"]').click();ok(await page.locator('.comparison-card').count()===25,'all remaining objects reachable');
@@ -177,8 +200,19 @@ async function textComparison(browser){
  ok(errors.length===0,errors.join('\n'));await page.close();
 }
 (async()=>{
- fs.mkdirSync('test-results',{recursive:true});const browser=await playwright.chromium.launch({headless:true,args:['--no-sandbox'],...(process.env.CI_CHROME_PATH?{executablePath:process.env.CI_CHROME_PATH}:{})});
- try{await objectsAndScrolling(browser);await objectStates(browser);await textComparison(browser);console.log(checks+' comparison browser checks passed');}
- catch(error){for(const [i,page] of browser.contexts().flatMap(context=>context.pages()).entries()){await page.screenshot({path:`test-results/comparison-failure-${i}.png`}).catch(()=>{});fs.writeFileSync(`test-results/comparison-failure-${i}.html`,await page.content().catch(()=>''));}throw error;}
- finally{fs.writeFileSync('test-results/comparison-layout-metrics.json',JSON.stringify(metrics,null,2));await browser.close();}
+ fs.mkdirSync('test-results',{recursive:true});const browser=await playwright.chromium.launch({headless:true,args:['--no-sandbox'],...(process.env.CI_CHROME_PATH?{executablePath:process.env.CI_CHROME_PATH}:{})}),failures=[];
+ try{
+  for(const [name,run] of [['objects-scrolling',objectsAndScrolling],['object-states',objectStates],['text-comparison',textComparison]]){
+   try{await run(browser);console.log('comparison-scenario '+name+' passed');}
+   catch(error){
+    failures.push({name,error});console.error('comparison-scenario '+name+' failed: '+(error.stack||error));
+    for(const [i,page] of browser.contexts().flatMap(context=>context.pages()).entries()){await page.screenshot({path:`test-results/comparison-${name}-failure-${i}.png`}).catch(()=>{});fs.writeFileSync(`test-results/comparison-${name}-failure-${i}.html`,await page.content().catch(()=>''));}
+    // Later scenarios start in clean pages even if an earlier assertion failed.
+    for(const context of browser.contexts())await context.close().catch(()=>{});
+   }
+  }
+  fs.writeFileSync('test-results/comparison-scenarios.json',JSON.stringify({checks,failures:failures.map(({name,error})=>({name,message:error.message,stack:error.stack}))},null,2));
+  if(failures.length)throw new AggregateError(failures.map(item=>item.error),failures.map(item=>item.name).join(', ')+' failed');
+  console.log(checks+' comparison browser checks passed');
+ }finally{fs.writeFileSync('test-results/comparison-layout-metrics.json',JSON.stringify(metrics,null,2));await browser.close();}
 })().catch(error=>{console.error(error);process.exit(1);});
