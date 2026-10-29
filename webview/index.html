@@ -833,7 +833,7 @@ body{font-size:14px}.brand-mark{background:linear-gradient(145deg,#287dc6,#15578
       <div id="page-heading"></div>
       <div id="workspace-tabs"></div><div id="workspace-notice"></div>
       <div id="content"></div>
-      <footer class="page-footer"><span id="version-label">Config Inspector 5.18.2</span></footer>
+      <footer class="page-footer"><span id="version-label">Config Inspector 5.18.3</span></footer>
     </main>
   </div>
   <input type="file" id="import-file" multiple accept=".exp,.txt,.json,.conf,.cfg,.xml,.tar,.set,.log,.backup,.rsc" hidden>
@@ -5103,6 +5103,31 @@ function pJ(L,pan){const d=E(),I={},R={},T={};
 });
 
 </script>
+<script id="migration-engine">
+(function(root){'use strict';
+ function stable(x){if(Array.isArray(x))return x.map(stable).sort((a,b)=>JSON.stringify(a).localeCompare(JSON.stringify(b)));if(x&&typeof x==='object'){var o={};Object.keys(x).sort().forEach(k=>o[k]=stable(x[k]));return o;}return String(x==null?'':x).trim();}
+ function analyze(source,target,mappings){
+  mappings=mappings||{};var categories=['interfaces','vlans','routes','network','addresses','services','policies','nat','vpn','zones','links','identities','authentication','deviceusers','security','switching','certificates'];
+  var fields={interfaces:['ip','mask','vlan','nativeVLAN','untaggedVLANs','taggedVLANs','mode','aggregate','status'],vlans:['vlan','ip','mask','status'],routes:['destination','gateway','interface','metric','administrativeDistance','status'],network:['dns','dns6','servers','start','end','ranges','gateway','mask','domain','relayServers','status'],addresses:['ip','mask','network','start','end','fqdn','ipVersion'],services:['protocol','port','ports','destinationPort','sourcePort','ipVersion'],policies:['source','destination','service','inbound','outbound','action','status'],nat:['source','destination','service','translatedSource','translatedDestination','translatedService','inbound','outbound','status'],vpn:['peer','remoteGateway','local','remote','interface','status'],zones:['status'],links:['status']};
+  function facts(model,r,seen){seen=seen||new Set();if(seen.has(r.id))return {unresolved:'Cyclic reference'};seen=new Set(seen);seen.add(r.id);var out={},s=r.summary||{};
+   (fields[r.category]||[]).forEach(function(k){var v=s[k];if(v==null||v===''||/^(Not specified|Unknown)$/i.test(v))return;if(k==='mask'&&root.SWCore){var n=root.SWCore.prefix(String(v));if(typeof n==='number'&&n>=0)v='/'+n;}out[k]=stable(v);});
+   if(r.addresses&&r.addresses.length)out.addresses=stable(r.addresses.map(a=>({ip:a.ip,mask:root.SWCore&&root.SWCore.prefix(a.mask)>=0?'/'+root.SWCore.prefix(a.mask):a.mask||''})));
+   if(r.members&&r.members.length)out.members=stable(r.members.map(name=>{var found=model.records.filter(x=>x.name===name&&x.category===r.category&&x.scope===r.scope);return found.length===1?facts(model,found[0],seen):name;}));
+   Object.keys(r.references||{}).forEach(k=>{var names=r.references[k];if(!Array.isArray(names)||!names.length)return;out['references.'+k]=stable(names.map(name=>{var exact=model.records.filter(x=>x.id===name);var found=exact.length?exact:model.records.filter(x=>x.name===name&&(x.scope===r.scope||x.scope==='global'));return found.length===1?{category:found[0].category,values:facts(model,found[0],seen)}:{unresolved:name};}));});return out;
+  }
+  var used=new Set(),items=[];
+  source.records.filter(r=>categories.includes(r.category)&&!r.derived).forEach(function(r){var a=facts(source,r),candidates=target.records.filter(t=>!t.derived&&t.category===r.category&&!used.has(t.id)),mapped=mappings[r.id],matches=mapped?candidates.filter(t=>t.id===mapped):candidates.filter(t=>Object.keys(a).length&&JSON.stringify(stable(facts(target,t)))===JSON.stringify(stable(a))&&t.scope===r.scope),basis=mapped?'Explicit mapping':'Matching normalized facts';
+   if(!mapped&&matches.length!==1){matches=candidates.filter(t=>t.name===r.name&&t.scope===r.scope);basis='Matching name and context';}
+   var b=matches.length===1?matches[0]:null,other=b?facts(target,b):{},keys=Array.from(new Set(Object.keys(a).concat(Object.keys(other)))),rows=keys.map(k=>({key:k,before:a[k],after:other[k],equal:JSON.stringify(stable(a[k]))===JSON.stringify(stable(other[k]))}));if(b)used.add(b.id);
+   var unsupported=!fields[r.category]||!Object.keys(a).some(k=>!['status','mode'].includes(k))||JSON.stringify([a,other]).includes('unresolved'),critical=['policies','nat','vpn','security','switching','certificates','identities','authentication','deviceusers'].includes(r.category);
+   var status=!b?(matches.length>1||mapped?'Needs review':'Missing'):rows.some(x=>!x.equal)?'Difference':unsupported||critical?'Needs review':'Verified match';
+   items.push({source:r,target:b,status,basis,rows,candidates,reason:!b?'No unique target correspondence. Map a renamed object or check whether it is missing.':critical?'Advanced semantics, ordering, defaults and vendor-specific behavior require review.':unsupported?'Insufficient normalized facts or unresolved references.':'Verification covers only the normalized facts shown; omitted settings are not verified.'});
+  });target.records.filter(r=>categories.includes(r.category)&&!r.derived&&!used.has(r.id)).forEach(r=>items.push({source:null,target:r,status:'Additional',basis:'Unmatched target object',rows:[],reason:'Review whether this target-only configuration is intentional.'}));return {items};
+ }
+ root.SWMigration={analyze};if(typeof module==='object'&&module.exports)module.exports=root.SWMigration;
+})(typeof globalThis!=='undefined'?globalThis:this);
+
+</script>
 <script id="app-updates">
 (function(root,factory){'use strict';root.SWUpdates=factory(root);})(typeof window!=='undefined'?window:globalThis,function(root){
   'use strict';
@@ -5125,7 +5150,7 @@ function pJ(L,pan){const d=E(),I={},R={},T={};
     return {compareText:compareText,compareMode:['records','text','fields'].includes(data.compareMode)?data.compareMode:'records',models:models.slice(0,data.count),model:data.selected<0?null:models[data.selected],comparison:data.comparison<0?null:models[data.comparison],view:typeof data.view==='string'?data.view:'overview',scope:typeof data.scope==='string'?data.scope:'',categoryTabs:data.categoryTabs&&typeof data.categoryTabs==='object'&&!Array.isArray(data.categoryTabs)?data.categoryTabs:{},showUnassigned:!!data.showUnassigned,showEmpty:!!data.showEmpty};
   }
   function create(options){
-    options=options||{};var bridge=options.bridge||root.chrome&&root.chrome.webview,native=!!(bridge&&typeof bridge.postMessage==='function'&&typeof bridge.addEventListener==='function'),state={current:'5.18.2',state:'idle',message:'',automatic:true,busy:false,ready:false,available:false},handlers={},restoring=false,installing=false;
+    options=options||{};var bridge=options.bridge||root.chrome&&root.chrome.webview,native=!!(bridge&&typeof bridge.postMessage==='function'&&typeof bridge.addEventListener==='function'),state={current:'5.18.3',state:'idle',message:'',automatic:true,busy:false,ready:false,available:false},handlers={},restoring=false,installing=false;
     var commands=['update-ui-ready','update-status','update-check','update-download','update-later','update-auto-on','update-auto-off','update-restored','update-restore-failed'];
     function request(command){if(!native)throw new Error('Built-in updates are available in the Windows desktop edition.');if(!commands.includes(command))throw new Error('Unknown update action.');bridge.postMessage(command);}
     if(native)bridge.addEventListener('message',async function(event){
@@ -6779,7 +6804,7 @@ function pJ(L,pan){const d=E(),I={},R={},T={};
   function comparisonImportedModels(){return Array.from(new Set(workspace.concat([state.model,state.comparison]).filter(Boolean)));}
   function comparisonImportedAllowed(model,side){
     var other=side==='left'?state.comparison:comparisonLeftModel();
-    return state.compareMode==='text'||!other||other.meta.vendorId===model.meta.vendorId;
+    return true;
   }
   function comparisonImportedButton(side,compact){
     return '<button type="button" class="button small comparison-use-imported'+(compact?' compact':'')+'" data-action="compare-use-imported" data-comparison-side="'+side+'" aria-label="Use imported configuration on the '+side+'" title="Choose a configuration already imported in this workspace"'+(comparisonImportedModels().length?'':' disabled')+'>Use imported</button>';
@@ -6822,8 +6847,8 @@ function pJ(L,pan){const d=E(),I={},R={},T={};
       return controls+window.SWTextComparison.render(state.compareText,{hideSensitive:state.hideSensitive,importedAvailable:comparisonImportedModels().length>0});
     }
     var sources=controls+comparisonSources();
-    if(!left||!state.comparison)return sources+'<section class="panel comparison-empty-results"><div class="compare-intro">'+icon('compare')+'<h2>Choose '+(!left?'the left current':'the right comparison')+' configuration</h2><p>Match interfaces, VLANs, rules and other objects by supported vendor, context, type and name. Both inputs can be loaded, pasted or replaced independently. Use Config text / files for any plain text.</p>'+(left&&left.meta.demo?'<button class="button" data-action="demo-compare">Try example comparison</button>':'')+'</div></section>';
-    if(state.compareMode!=='fields')return sources+recordComparisonPage();
+    if(!left||!state.comparison)return sources+'<section class="panel comparison-empty-results"><div class="compare-intro">'+icon('compare')+'<h2>Choose '+(!left?'the left current':'the right comparison')+' configuration</h2><p>Compare configurations across models and vendors by context, category and unique name. Unmatched objects remain visible. Both inputs can be loaded, pasted or replaced independently. Use Config text / files for any plain text.</p>'+(left&&left.meta.demo?'<button class="button" data-action="demo-compare">Try example comparison</button>':'')+'</div></section>';
+    if(state.compareMode!=='fields')return sources+migrationPanel()+recordComparisonPage();
     var changes=C.compare(left,state.comparison,state.hideSensitive),counts=['Added','Changed','Removed'].map(function(kind){return '<span class="summary-pill">'+kind+'<strong>'+changes.filter(function(r){return r.kind===kind;}).length+'</strong></span>';}).join('');
     return sources+'<div class="comparison-field-results"><div class="summary-strip">'+counts+'</div>'+(!changes.length?'<div class="notice neutral">'+icon('check')+'No differences were found in the parsed fields.</div>':'')+dataTable(tableSpec())+'</div>';
   }
@@ -6833,6 +6858,11 @@ function pJ(L,pan){const d=E(),I={},R={},T={};
     var cache=state.objectComparisonCache;
     if(!cache||cache.left!==state.model||cache.right!==state.comparison||cache.hidden!==state.hideSensitive){cache={left:state.model,right:state.comparison,hidden:state.hideSensitive,result:C.compareRecords(state.model,state.comparison,state.hideSensitive,{includeUnchanged:true,includeValues:true})};state.objectComparisonCache=cache;}
     return cache.result;
+  }
+  function migrationPanel(){
+    var pair=state.migrationPair;if(!pair||pair[0]!==state.model||pair[1]!==state.comparison){state.migrationPair=[state.model,state.comparison];state.migrationMappings={};}
+    var result=window.SWMigration.analyze(state.model,state.comparison,state.migrationMappings),counts={};result.items.forEach(function(x){counts[x.status]=(counts[x.status]||0)+1;});
+    return '<section class="panel"><div class="panel-head"><h2 class="panel-title">Migration validation</h2></div><p class="support-note">Left is the original baseline; right is the migrated target. Matches check only displayed normalized facts. Missing defaults, unsupported settings, rule order and runtime behavior are not verified. Map renamed objects below. Original object differences remain available underneath.</p><div class="summary-strip">'+Object.keys(counts).map(function(k){return '<span class="summary-pill">'+h(k)+'<strong>'+counts[k]+'</strong></span>';}).join('')+'</div>'+result.items.map(function(x){return '<details class="native-value-card"><summary>'+h(x.status+' · '+(x.source?x.source.name:'')+' / '+(x.target?x.target.name:'No target match'))+'</summary><p>'+h(x.reason)+'</p>'+(x.source?'<label>Target mapping <select class="select" data-migration-map="'+h(x.source.id)+'"><option value="">Automatic matching</option>'+x.candidates.map(function(r){return '<option value="'+h(r.id)+'"'+(state.migrationMappings[x.source.id]===r.id?' selected':'')+'>'+h(r.name+' / '+r.scope)+'</option>';}).join('')+'</select></label>':'')+'<p>'+h(x.basis)+'</p><table><thead><tr><th>Fact</th><th>Original</th><th>Target</th></tr></thead><tbody>'+x.rows.map(function(r){return '<tr><td>'+h(r.key)+(r.equal?'':' · Difference')+'</td><td>'+h(JSON.stringify(r.before===undefined?'Not provided':r.before))+'</td><td>'+h(JSON.stringify(r.after===undefined?'Not provided':r.after))+'</td></tr>';}).join('')+'</tbody></table></details>';}).join('')+'</section>';
   }
   function recordComparisonPage(){
     var result=objectComparisonResult(),all=result.items.filter(function(item){return inScope(item.after||item.before);}),query=state.query.trim().toLowerCase();
@@ -6846,7 +6876,7 @@ function pJ(L,pan){const d=E(),I={},R={},T={};
     var objectMap='<div class="comparison-object-minimap" role="slider" tabindex="0" aria-label="Object change map — current page" aria-describedby="comparison-object-map-legend" aria-orientation="vertical" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" title="Current page: press anywhere and drag to navigate objects"><div class="comparison-object-map-markers"></div><span class="comparison-object-map-viewport" aria-hidden="true"></span></div>';
     var counts=['Added','Changed','Removed','Unchanged'].map(function(kind){return '<span class="summary-pill">'+kind+'<strong>'+all.filter(function(item){return item.kind===kind;}).length+'</strong></span>';}).join('');
     var categories=Array.from(new Set(all.map(function(item){return comparisonCategory(item.after||item.before);}))).sort();
-    return '<section class="panel object-comparison-panel"><div class="panel-head"><h2 class="panel-title" title="Objects match by vendor, context, type and unique name. Renames appear as added/removed; ambiguous duplicate names remain separate. Missing settings are not defaults.">Side-by-side config objects</h2><button class="quiet-button" data-action="toggle-sensitive">'+icon(state.hideSensitive?'eyeOff':'eye')+(state.hideSensitive?'Sensitive values hidden':'Sensitive values visible')+'</button></div><div class="summary-strip">'+counts+'</div><div class="toolbar"><label class="table-search">'+icon('search')+'<input id="table-query" type="search" value="'+h(state.query)+'" placeholder="Search objects or values" aria-label="Search compared objects"></label><select class="select" id="table-filter" aria-label="Filter changes">'+[['all','All changes'],['all-items','All objects'],['Added','Added'],['Changed','Changed'],['Removed','Removed'],['Unchanged','Unchanged']].map(function(pair){return '<option value="'+pair[0]+'"'+(state.filter===pair[0]?' selected':'')+'>'+pair[1]+'</option>';}).join('')+'</select><select class="select" id="compare-category" aria-label="Object category"><option value="all">All categories</option>'+categories.map(function(category){return '<option value="'+h(category)+'"'+(state.compareCategory===category?' selected':'')+'>'+h(comparisonCategoryLabel(category))+'</option>';}).join('')+'</select></div><div class="comparison-object-review">'+bookmarks+'<div class="comparison-object-results" tabindex="0" role="region" aria-label="Compared config objects"><p class="comparison-matching-note">Objects match by vendor, context, type and unique name. Renames and ambiguous identities remain separate; partial exports can show omissions as removals.</p>'+(result.ambiguous?'<p class="support-note">'+result.ambiguous+' ambiguous objects remain separate.</p>':'')+'<div class="record-comparisons">'+(rows.length?grouped:'<p class="empty-mini">No objects match these filters.</p>')+'</div></div>'+objectMap+'</div><div class="pagination"><span>'+rows.length+' matching objects</span><div class="pagination-controls"><button data-page="'+(state.page-1)+'"'+(state.page<=1?' disabled':'')+' aria-label="Previous changes">'+icon('left')+'</button><span>'+state.page+' / '+pages+'</span><button data-page="'+(state.page+1)+'"'+(state.page>=pages?' disabled':'')+' aria-label="Next changes">'+icon('chevron')+'</button></div></div></section>';
+    return '<section class="panel object-comparison-panel"><div class="panel-head"><h2 class="panel-title" title="Objects match by context, category and unique name across vendors; same-vendor comparisons also match the native type. Vendor syntax differences remain visible; matching names do not establish equivalent behavior. Renames appear as added/removed; ambiguous duplicate names remain separate. Missing settings are not defaults.">Side-by-side config objects</h2><button class="quiet-button" data-action="toggle-sensitive">'+icon(state.hideSensitive?'eyeOff':'eye')+(state.hideSensitive?'Sensitive values hidden':'Sensitive values visible')+'</button></div><div class="summary-strip">'+counts+'</div><div class="toolbar"><label class="table-search">'+icon('search')+'<input id="table-query" type="search" value="'+h(state.query)+'" placeholder="Search objects or values" aria-label="Search compared objects"></label><select class="select" id="table-filter" aria-label="Filter changes">'+[['all','All changes'],['all-items','All objects'],['Added','Added'],['Changed','Changed'],['Removed','Removed'],['Unchanged','Unchanged']].map(function(pair){return '<option value="'+pair[0]+'"'+(state.filter===pair[0]?' selected':'')+'>'+pair[1]+'</option>';}).join('')+'</select><select class="select" id="compare-category" aria-label="Object category"><option value="all">All categories</option>'+categories.map(function(category){return '<option value="'+h(category)+'"'+(state.compareCategory===category?' selected':'')+'>'+h(comparisonCategoryLabel(category))+'</option>';}).join('')+'</select></div><div class="comparison-object-review">'+bookmarks+'<div class="comparison-object-results" tabindex="0" role="region" aria-label="Compared config objects"><p class="comparison-matching-note">Objects match by context, category and unique name across vendors; same-vendor comparisons also match the native type. Vendor syntax differences remain visible; matching names do not establish equivalent behavior. Renames and ambiguous identities remain separate; partial exports can show omissions as removals.</p>'+(result.ambiguous?'<p class="support-note">'+result.ambiguous+' ambiguous objects remain separate.</p>':'')+'<div class="record-comparisons">'+(rows.length?grouped:'<p class="empty-mini">No objects match these filters.</p>')+'</div></div>'+objectMap+'</div><div class="pagination"><span>'+rows.length+' matching objects</span><div class="pagination-controls"><button data-page="'+(state.page-1)+'"'+(state.page<=1?' disabled':'')+' aria-label="Previous changes">'+icon('left')+'</button><span>'+state.page+' / '+pages+'</span><button data-page="'+(state.page+1)+'"'+(state.page>=pages?' disabled':'')+' aria-label="Next changes">'+icon('chevron')+'</button></div></div></section>';
   }
   function comparisonCard(item){
     var r=item.after||item.before,fields=item.fieldRows||[],facts=item.summaryRows||[];
@@ -7025,10 +7055,10 @@ function pJ(L,pan){const d=E(),I={},R={},T={};
     try{
       var model=await parseAsync(text,{filename:filename,plusAsSpace:plus});
       if(target==='comparison'){
-        var left=comparisonLeftModel();if(left&&model.meta.vendorId!==left.meta.vendorId)throw new Error('Choose another '+(left.meta.vendor||'supported')+' configuration for a meaningful object comparison.');
+        var left=comparisonLeftModel();
         state.comparison=model;state.page=1;state.view='compare';render();
       }else if(target==='compare-left'){
-        if(state.comparison&&model.meta.vendorId!==state.comparison.meta.vendorId)throw new Error('Choose another '+(state.comparison.meta.vendor||'supported')+' configuration or clear the comparison side first.');
+        
         activateComparisonLeft(model);state.page=1;render();
       }else {state.compareLeftCleared=false;setModel(model);}
       el.modal.close();toast('Opened '+model.entries.length.toLocaleString()+' configuration fields.');
@@ -7486,7 +7516,7 @@ function pJ(L,pan){const d=E(),I={},R={},T={};
     }
   }
   function showHelp(){
-    openModal(modalHeader('About Config Inspector','Firewall and switch configuration explorer / version 5.18.2')+
+    openModal(modalHeader('About Config Inspector','Firewall and switch configuration explorer / version 5.18.3')+
       '<div class="modal-body"><div class="help-section"><h3>Open and explore</h3><p>Import SonicWall EXP, FortiGate FortiOS text, Palo Alto configuration XML, Sophos Firewall XML or export TAR, Aruba AOS or AOS-CX text, Cisco IOS or NX-OS text, Juniper Junos text or XML, Meraki API JSON, or a JSON snapshot exported by this application. The device type is detected automatically. You can also drop a file anywhere in the window. Select an interface or record for a plain-language explanation and key facts. Related objects show their IP addresses or service ports. Advanced details contains all original fields. Use Copy summary for readable facts and Back to return from a related item.</p></div>'+
       '<div class="help-section"><h3>Configuration sections</h3><p>Choose a root section in the sidebar, then select one of its indented subsections. Each subsection opens its own page. Routes, objects, members and other primary definitions appear before related settings. Security pages are grouped by function, including web, applications, files, intrusion prevention and SSL/TLS inspection. Certificate objects remain under Certificates. Empty subsections are hidden by default. Use View options to show empty sections, or Configuration sections and All original fields to inspect untranslated settings. Configuration context, search and table filters apply to the selected view.</p></div>'+
       '<div class="help-section"><h3>Choose access rule zones</h3><p>In Access Rules, choose From zone and To zone independently. All zones leaves that side unrestricted. Swap reverses the direction. Clear zone filters removes the pair while keeping the table filters. Search, configured state, and IP version filters combine with the pair, and CSV includes all matching rules. A matrix cell selects its zone pair. Interface and zone details offer outgoing and incoming rules.</p></div>'+
@@ -7770,6 +7800,7 @@ function configTree(it){
   });
   document.addEventListener('change',function(event){
     if(event.target.id==='ip-view-mode'){state.ipMode=event.target.value;state.query='';state.filter='all';state.page=1;state.sortKey='';renderContent();return;}
+    if(event.target.hasAttribute('data-migration-map')){state.migrationMappings=state.migrationMappings||{};var key=event.target.getAttribute('data-migration-map');if(event.target.value)state.migrationMappings[key]=event.target.value;else delete state.migrationMappings[key];renderContent();return;}
     var id=event.target.id;
     if(/^gs-/.test(id)&&state.search){var s=state.search,key={'gs-mode':'mode','gs-case':'caseSensitive','gs-word':'wholeWord','gs-category':'category','gs-source':'source','gs-context':'context'}[id];if(key){s[key]=event.target.type==='checkbox'?event.target.checked:event.target.value;s.page=1;if(['category','source','context'].includes(key)){filterGlobalResults();preserveInput(renderContent);}else startGlobalSearch(s.query);}return;}
     if(id==='findings-kind'||id==='findings-severity'||id==='findings-area'){state[id==='findings-kind'?'findingsKind':id==='findings-severity'?'findingsSeverity':'findingsArea']=event.target.value;state.findingsLimit=40;preserveInput(renderContent);}

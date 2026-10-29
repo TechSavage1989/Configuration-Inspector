@@ -23,8 +23,8 @@ UI.setSources(state.compareText,{left:ctx.textComparisonSource(state.model),righ
 choose('right',models[2]);eq(state.compareText.right.origin,'model');ok(state.compareText.right.masked);eq(state.compareText.right.name,'imported-C.conf');
 state.hideSensitive=false;choose('left',models[0]);ok(state.compareText.left.text.includes('TEST_SECRET_ONLY_A'),'explicit existing unmask preference is honored');state.hideSensitive=true;UI.setSources(state.compareText,{left:ctx.textComparisonSource(state.model)});ok(!state.compareText.left.text.includes('TEST_SECRET_ONLY_A'),'masking still refreshes imported text after selection');
 state.compareLeftCleared=true;choose('left',models[0]);ok(!state.compareLeftCleared,'imported selection restores an explicitly cleared side');
-// Parsed comparisons preserve the existing vendor guard; direct text can use any imported source.
-workspace.push(foreign);state.compareMode='records';state.model=models[0];state.comparison=models[1];ctx.showImportedComparison('right');ok(modal.includes('Different vendor')&&modal.includes(' disabled'),'incompatible parsed choice is explained and disabled');const previous=state.comparison;ctx.selectImportedComparison('3');eq(state.comparison,previous);ok(notice.includes('matching configuration'));
+// Object comparison accepts imported configurations across vendors.
+workspace.push(foreign);state.compareMode='records';state.model=models[0];state.comparison=models[1];choose('right',foreign);eq(state.comparison,foreign,'object comparison accepts different vendor');
 state.compareMode='text';choose('right',foreign);eq(state.comparison,foreign,'text selection supports an imported different-vendor source');
 // The chooser exposes escaped identity metadata only, never configuration values.
 models[2].meta.filename='<img src=x onerror=alert(1)>.conf';ctx.showImportedComparison('left');ok(modal.includes('&lt;img')&&!modal.includes('<img src=x'),'imported filenames are escaped');ok(!modal.includes('TEST_SECRET_ONLY_'),'chooser never serializes configuration contents');
