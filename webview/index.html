@@ -834,7 +834,7 @@ body{font-size:14px}.brand-mark{background:linear-gradient(145deg,#287dc6,#15578
       <div id="page-heading"></div>
       <div id="workspace-tabs"></div><div id="workspace-notice"></div>
       <div id="content"></div>
-      <footer class="page-footer"><span id="version-label">Config Inspector 5.18.7</span></footer>
+      <footer class="page-footer"><span id="version-label">Config Inspector 5.18.8</span></footer>
     </main>
   </div>
   <input type="file" id="import-file" multiple accept=".exp,.txt,.json,.conf,.cfg,.xml,.tar,.set,.log,.backup,.rsc" hidden>
@@ -5163,7 +5163,7 @@ function pJ(L,pan){const d=E(),I={},R={},T={};
     return {compareText:compareText,compareMode:['records','text','fields'].includes(data.compareMode)?data.compareMode:'records',models:models.slice(0,data.count),model:data.selected<0?null:models[data.selected],comparison:data.comparison<0?null:models[data.comparison],view:typeof data.view==='string'?data.view:'overview',scope:typeof data.scope==='string'?data.scope:'',categoryTabs:data.categoryTabs&&typeof data.categoryTabs==='object'&&!Array.isArray(data.categoryTabs)?data.categoryTabs:{},showUnassigned:!!data.showUnassigned,showEmpty:!!data.showEmpty};
   }
   function create(options){
-    options=options||{};var bridge=options.bridge||root.chrome&&root.chrome.webview,native=!!(bridge&&typeof bridge.postMessage==='function'&&typeof bridge.addEventListener==='function'),state={current:'5.18.7',state:'idle',message:'',automatic:true,busy:false,ready:false,available:false},handlers={},restoring=false,installing=false;
+    options=options||{};var bridge=options.bridge||root.chrome&&root.chrome.webview,native=!!(bridge&&typeof bridge.postMessage==='function'&&typeof bridge.addEventListener==='function'),state={current:'5.18.8',state:'idle',message:'',automatic:true,busy:false,ready:false,available:false},handlers={},restoring=false,installing=false;
     var commands=['update-ui-ready','update-status','update-check','update-download','update-later','update-auto-on','update-auto-off','update-restored','update-restore-failed'];
     function request(command){if(!native)throw new Error('Built-in updates are available in the Windows desktop edition.');if(!commands.includes(command))throw new Error('Unknown update action.');bridge.postMessage(command);}
     if(native)bridge.addEventListener('message',async function(event){
@@ -5602,7 +5602,7 @@ function pJ(L,pan){const d=E(),I={},R={},T={};
     hideSensitive:true,redactExport:true,overviewTab:'topology',activeRecord:null,drawerQuery:'',drawerLimit:200,compareFilter:'all',compareMode:'records',compareCategory:'all',compareText:null,compareLoadersCollapsed:false,compareLeftCleared:false,compareModeState:{},exportFormat:'json',importTarget:'primary',busy:false,
     nativeSection:'',nativeSourceOpen:false,nativeSections:[],rawQuery:'',rawPage:1,rawWrap:true,rawCache:null,
     collapsedInterfaces:new Set(),searchCollapsedInterfaces:new Set(),interfaceNodes:new Map(),ipVersionFilter:'all',ipMode:'configured',
-    ruleFrom:'',ruleTo:'',mapQuery:'',mapZone:'',showUnassigned:false,unusedSections:new Set(),sourceSections:new Set(),overviewCollapsed:new Set(),mapCollapsed:new Set(),mapSearchCollapsed:new Set(),drawerHistory:[],technicalOpen:false,sourceOpen:false,scope:'',showEmpty:false,categoryTabs:{addresses:'objects',services:'objects',identities:'users'}};
+    ruleFrom:'',ruleTo:'',mapQuery:'',mapZone:'',showUnassigned:false,unusedSections:new Set(),hiddenGlanceSections:new Set(),sourceSections:new Set(),overviewCollapsed:new Set(),mapCollapsed:new Set(),mapSearchCollapsed:new Set(),drawerHistory:[],technicalOpen:false,sourceOpen:false,scope:'',showEmpty:false,categoryTabs:{addresses:'objects',services:'objects',identities:'users'}};
   var recordTabs={addresses:[{id:'objects',label:'Individual objects'},{id:'groups',label:'Groups'}],services:[{id:'objects',label:'Individual services'},{id:'groups',label:'Groups'}],identities:[{id:'users',label:'Users'},{id:'groups',label:'Groups'},{id:'authentication',label:'Authentication'}]};
   recordTabs.certificates=[{id:'objects',label:'Certificates'},{id:'authorities',label:'Certificate authorities'},{id:'service-profiles',label:'Service TLS profiles'}];
   recordTabs.security=[];recordTabs.acls=[{id:'objects',label:'Access control lists'}];
@@ -5923,7 +5923,7 @@ function pJ(L,pan){const d=E(),I={},R={},T={};
     state.interfaceUsageCache=null;state.interfaceNodes=new Map(state.interfaceTree.nodes.map(function(n){return [n.record.id,n];}));
     state.collapsedInterfaces=new Set();state.searchCollapsedInterfaces=new Set();
     state.ruleFrom='';state.ruleTo='';state.mapQuery='';state.mapZone='';state.showUnassigned=false;state.mapCollapsed=new Set();state.mapSearchCollapsed=new Set();state.drawerHistory=[];state.technicalOpen=false;state.sourceOpen=false;
-    state.categoryTabs={routes:'routes',addresses:'objects',services:'objects',identities:'users'};state.showEmpty=false;state.unusedSections=new Set();state.sourceSections=new Set();state.overviewCollapsed=new Set();state.overviewTab='topology';
+    state.categoryTabs={routes:'routes',addresses:'objects',services:'objects',identities:'users'};state.showEmpty=false;state.unusedSections=new Set();state.hiddenGlanceSections=new Set();state.sourceSections=new Set();state.overviewCollapsed=new Set();state.overviewTab='topology';
     if(window.SWDesktop)window.SWDesktop.setLoaded(true);
     state.hideSensitive=true;state.globalQuery='';el.global.value='';state.activeRecord=null;state.scope='';
     if(el.drawer.open)el.drawer.close();view('overview');
@@ -6181,11 +6181,13 @@ function pJ(L,pan){const d=E(),I={},R={},T={};
   function interfaceUnusedInOverview(r){
     return interfaceIsInactive(r)||!interfaceHasFunctionalUse(r);
   }
+  function isGlanceSection(key){return /^(?:hardware|glance):/.test(key);}
+  function unusedInterfacesShown(key){return isGlanceSection(key)?!state.hiddenGlanceSections.has(key):state.unusedSections.has(key);}
   function unusedControl(key,items){
-    var unused=items.filter(interfaceUnusedInOverview),saved=unused.filter(interfaceHasConfiguredDetails).length;
-    return unused.length?'<button class="button small unused-control" data-unused-section="'+h(key)+'" aria-expanded="'+state.unusedSections.has(key)+'">'+(state.unusedSections.has(key)?'Hide':'Show')+' unused ('+unused.length+')</button><span class="unused-count">'+(saved?saved+' with saved settings':'')+'</span>':'';
+    var unused=items.filter(interfaceUnusedInOverview),saved=unused.filter(interfaceHasConfiguredDetails).length,shown=unusedInterfacesShown(key);
+    return unused.length?'<button class="button small unused-control" data-unused-section="'+h(key)+'" aria-expanded="'+shown+'">'+(shown?'Hide':'Show')+' unused ('+unused.length+')</button><span class="unused-count">'+(saved?saved+' with saved settings':'')+'</span>':'';
   }
-  function listedInterface(r,key){return !interfaceUnusedInOverview(r)||state.unusedSections.has(key);}
+  function listedInterface(r,key){return !interfaceUnusedInOverview(r)||unusedInterfacesShown(key);}
   function interfaceOwner(r){var owner=r.recordId?recordById(r.recordId):r.category==='interfaces'?r:null;return owner&&owner.category==='interfaces'?owner:null;}
   function interfaceRetainedState(r){
     if(!interfaceHasConfiguredDetails(r)||!interfaceUnusedInOverview(r))return null;
@@ -6204,7 +6206,7 @@ function pJ(L,pan){const d=E(),I={},R={},T={};
       var p=module.profile,body='',unplaced=new Set(module.rows.map(function(r){return r.id;}));
       function face(banks,side,inventoryOnly){
         banks=banks.filter(function(b){return !b.optional||module.rows.some(function(r){return HW.coordinates(state.model,r).bank===b;});});if(!banks.length)return '';
-        var groups=banks.map(function(bank){var mapped=inventoryOnly?remaining:bank.names.map(function(n){return module.rows.find(function(r){return String(HW.coordinates(state.model,r).local).toLowerCase()===n.toLowerCase();});});mapped.forEach(function(r){if(r)unplaced.delete(r.id);});return {bank:bank,mapped:mapped};}),compact=!state.unusedSections.has(key)&&groups.some(function(g){return g.mapped.some(function(r){return !r||!listedInterface(r,key);});});
+        var groups=banks.map(function(bank){var mapped=inventoryOnly?remaining:bank.names.map(function(n){return module.rows.find(function(r){return String(HW.coordinates(state.model,r).local).toLowerCase()===n.toLowerCase();});});mapped.forEach(function(r){if(r)unplaced.delete(r.id);});return {bank:bank,mapped:mapped};}),compact=!unusedInterfacesShown(key)&&groups.some(function(g){return g.mapped.some(function(r){return !r||!listedInterface(r,key);});});
         if(compact)groups.forEach(function(g){g.mapped=g.mapped.filter(function(r){return r&&listedInterface(r,key);});});groups=groups.filter(function(g){return g.mapped.length;});if(!groups.length)return '';
         groups.forEach(function(g){g.layout=Object.assign({},g.bank,compact||inventoryOnly?{rows:Math.min(g.bank.rows,g.mapped.length),rowOffset:0}:{});g.columns=Math.ceil(g.mapped.length/g.layout.rows);});
         var columns=groups.reduce(function(n,g){return n+g.columns;},0),faceRows=Math.max.apply(null,groups.map(function(g){return g.layout.rows+(g.layout.rowOffset||0);})),gap=Math.max(0,groups.length-1)*6;
@@ -7534,7 +7536,7 @@ function pJ(L,pan){const d=E(),I={},R={},T={};
     }
   }
   function showHelp(){
-    openModal(modalHeader('About Config Inspector','Firewall and switch configuration explorer / version 5.18.7')+
+    openModal(modalHeader('About Config Inspector','Firewall and switch configuration explorer / version 5.18.8')+
       '<div class="modal-body"><div class="help-section"><h3>Open and explore</h3><p>Import SonicWall EXP, FortiGate FortiOS text, Palo Alto configuration XML, Sophos Firewall XML or export TAR, Aruba AOS or AOS-CX text, Cisco IOS or NX-OS text, Juniper Junos text or XML, Meraki API JSON, or a JSON snapshot exported by this application. The device type is detected automatically. You can also drop a file anywhere in the window. Select an interface or record for a plain-language explanation and key facts. Related objects show their IP addresses or service ports. Advanced details contains all original fields. Use Copy summary for readable facts and Back to return from a related item.</p></div>'+
       '<div class="help-section"><h3>Configuration sections</h3><p>Choose a root section in the sidebar, then select one of its indented subsections. Each subsection opens its own page. Routes, objects, members and other primary definitions appear before related settings. Security pages are grouped by function, including web, applications, files, intrusion prevention and SSL/TLS inspection. Certificate objects remain under Certificates. Empty subsections are hidden by default. Use View options to show empty sections, or Configuration sections and All original fields to inspect untranslated settings. Configuration context, search and table filters apply to the selected view.</p></div>'+
       '<div class="help-section"><h3>Choose access rule zones</h3><p>In Access Rules, choose From zone and To zone independently. All zones leaves that side unrestricted. Swap reverses the direction. Clear zone filters removes the pair while keeping the table filters. Search, configured state, and IP version filters combine with the pair, and CSV includes all matching rules. A matrix cell selects its zone pair. Interface and zone details offer outgoing and incoming rules.</p></div>'+
@@ -7603,7 +7605,7 @@ function pJ(L,pan){const d=E(),I={},R={},T={};
     if(t.hasAttribute('data-page')){state.page=Number(t.getAttribute('data-page'));renderContent();return;}
     if(t.hasAttribute('data-raw-page')){state.rawPage=Number(t.getAttribute('data-raw-page'));renderContent();return;}
     if(t.hasAttribute('data-export-format')){doExport(t.getAttribute('data-export-format'));return;}
-    if(t.hasAttribute('data-unused-section')){var section=t.getAttribute('data-unused-section');if(state.unusedSections.has(section))state.unusedSections.delete(section);else state.unusedSections.add(section);state.page=1;renderContent();return;}
+    if(t.hasAttribute('data-unused-section')){var section=t.getAttribute('data-unused-section'),sections=isGlanceSection(section)?state.hiddenGlanceSections:state.unusedSections;if(sections.has(section))sections.delete(section);else sections.add(section);state.page=1;renderContent();return;}
     var action=t.getAttribute('data-action');
     if(action==='app-settings')showAppSettings();
     else if(action==='update-settings')showUpdateSettings();
@@ -7757,7 +7759,7 @@ function configTree(it){
   });
 
   // Global search owns its query, results and navigation state; local tables are snapshots, not its filters.
-  function searchSnapshot(){var keys=['view','query','filter','page','pageSize','sortKey','sortDir','scope','ipVersionFilter','nativeSection','nativeSourceOpen','rawQuery','rawPage','rawWrap','findingsQuery','findingsSeverity','findingsArea','findingsKind','findingsLimit','categoryTabs','collapsedInterfaces','searchCollapsedInterfaces','unusedSections','showUnassigned','ruleFrom','ruleTo','technicalOpen','sourceOpen'],saved={};keys.forEach(function(k){var v=state[k];saved[k]=v instanceof Set?new Set(v):k==='categoryTabs'?Object.assign({},v):v;});saved.contentScroll=el.content.scrollTop;saved.windowScroll=window.scrollY;saved.panelScroll=Array.from(el.content.querySelectorAll('.comparison-object-results,.comparison-field-results .data-wrap,[data-stc-pane]')).map(function(e){return {top:e.scrollTop,left:e.scrollLeft};});return saved;}
+  function searchSnapshot(){var keys=['view','query','filter','page','pageSize','sortKey','sortDir','scope','ipVersionFilter','nativeSection','nativeSourceOpen','rawQuery','rawPage','rawWrap','findingsQuery','findingsSeverity','findingsArea','findingsKind','findingsLimit','categoryTabs','collapsedInterfaces','searchCollapsedInterfaces','unusedSections','hiddenGlanceSections','showUnassigned','ruleFrom','ruleTo','technicalOpen','sourceOpen'],saved={};keys.forEach(function(k){var v=state[k];saved[k]=v instanceof Set?new Set(v):k==='categoryTabs'?Object.assign({},v):v;});saved.contentScroll=el.content.scrollTop;saved.windowScroll=window.scrollY;saved.panelScroll=Array.from(el.content.querySelectorAll('.comparison-object-results,.comparison-field-results .data-wrap,[data-stc-pane]')).map(function(e){return {top:e.scrollTop,left:e.scrollLeft};});return saved;}
   function restoreSearchSnapshot(s){if(!s||!s.savedView)return;Object.keys(s.savedView).forEach(function(k){if(!['contentScroll','windowScroll','panelScroll'].includes(k))state[k]=s.savedView[k];});}
   function invalidateGlobalSearch(clear){var s=state.search;if(!s)return;if(s.abort)s.abort.abort();s.generation++;s.documents=[];s.allResults=[];s.results=[];s.indexReady=false;s.target=null;if(clear)state.search=null;}
   function ensureSearchStyles(){if(window.SWSearchUI&&!document.getElementById('global-search-styles')){var style=document.createElement('style');style.id='global-search-styles';style.textContent=window.SWSearchUI.css;document.head.appendChild(style);}}

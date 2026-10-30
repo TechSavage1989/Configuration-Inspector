@@ -52,6 +52,8 @@ Prefer a browser-based edition? The same release includes **`Config_Inspector.ht
 
 ## How to use
 
+Interfaces at a glance shows all interfaces by default, including unused ports and logical interfaces. Use **Hide unused** within a group to condense it, and **Show unused** to restore the full view. Loading a configuration starts with all interfaces visible.
+
 Use the sidebar to move between recognized configuration views, follow object links for context, and compare snapshots before exporting your findings. Consult original source for unsupported or ambiguous settings; this app does not apply changes to devices.
 
 ## Global configuration search
