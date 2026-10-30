@@ -3,6 +3,11 @@ const {boot}=require('./harness.cjs');let checks=0;function ok(value,message){ch
 function moduleUnderTest(){const ctx={TextEncoder,Map,JSON,console};ctx.window=ctx;vm.createContext(ctx);vm.runInContext(fs.readFileSync('webview/updates.js','utf8'),ctx);return ctx.SWUpdates;}
 (async()=>{
 const U=moduleUnderTest();ok(!U.manager.native);assert.throws(()=>U.manager.request('update-check'));checks++;
+let display=U.presentation({state:'downloading',busy:true,size:1700000,bytes:850000});ok(display.percent===50&&display.busy);ok(display.progressLabel==='0.8 MB of 1.6 MB');ok(display.actionLabel==='Downloading...');
+display=U.presentation({state:'downloading',size:100,bytes:150});ok(display.percent===100&&display.bytes===100&&display.title==='Verifying update');
+display=U.presentation({state:'downloading',size:-1,bytes:NaN});ok(display.size===0&&display.bytes===0&&display.percent===0,'malformed transfer values remain bounded');
+display=U.presentation({state:'error',error:true,message:'Download interrupted'});ok(display.description==='Download interrupted'&&display.actionLabel==='Retry download');
+display=U.presentation({state:'ready',ready:true});ok(display.action==='update-review'&&display.title==='Ready to install');
 const sent=[],listeners=[],bridge={postMessage:x=>sent.push(x),addEventListener:(name,f)=>listeners.push(f)},u=U.create({bridge});let status,restored,error,opened=0;
 u.start({open:()=>{opened++;u.request('update-check');},change:v=>status=v,restore:async data=>{restored=data;},error:e=>error=e});ok(sent[0]==='update-ui-ready');u.request('update-check');ok(sent.at(-1)==='update-check');assert.throws(()=>u.request('shell-execute'));checks++;
 // Deliver the exact native Help payload, not a simulated click on a settings button.

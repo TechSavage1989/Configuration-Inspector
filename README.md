@@ -165,9 +165,9 @@ Open **App settings** from the sidebar or native File menu to choose the desktop
 
 ### Updating the app
 
-Open **App settings → App updates**. Choose **Download update**, then **Review install and restart** and confirm installation after saving your work.
+Open **App settings → App updates**. Choose **Download update**, then **Review and restart** and confirm installation after saving your work.
 
-Automatic checks run after startup and every five minutes while the app is open. They can be disabled; **Later** hides that release’s notice for 24 hours without hiding a newer release. **Help → Check for updates** opens the update controls and checks immediately. Nothing downloads or restarts automatically.
+Automatic checks start as soon as the interface is ready and run every two minutes while the app is open. They can be disabled; **Later** hides that release’s notice for 24 hours without hiding a newer release. **Help → Check for updates** opens the update controls and checks immediately. Nothing downloads or restarts automatically.
 
 Updates come from this repository's stable GitHub Releases. The downloaded executable must match the release's SHA-256 digest, size, product identity, architecture and version. These builds are **not Authenticode signed**: hashes detect corruption and mismatched files, not a compromised publisher.
 

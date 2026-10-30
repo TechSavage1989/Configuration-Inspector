@@ -30,14 +30,13 @@ int wmain(){std::wstring root;try{
  {
   Harness h;Updater u(root,[&](std::string s){h.receive(std::move(s));},h.services());
   h.time=1100;u.tick();ok(h.requests==0,"Startup never checks before the UI-ready handshake.");
-  u.ready();ok(h.status(u).at("nextCheck").integer()==1115,"First check is scheduled from UI readiness, not process construction.");
-  h.time=1101;u.ready();ok(h.status(u).at("nextCheck").integer()==1115,"Repeated UI-ready does not postpone detection.");
-  h.time=1114;u.tick();ok(h.requests==0,"Startup delay is honored.");
-  h.time=1115;u.tick();auto v=h.settled(u);ok(h.requests==1,"Startup performs an automatic feed request without manual check.");
+  u.ready();auto v=h.settled(u);ok(h.requests==1,"Startup checks immediately at UI readiness without a timer delay.");
   ok(v.at("state").str()=="available"&&v.at("available").bit()&&!v.at("snoozed").bit(),"Startup publishes an unsolicited available-update notice.");
-  ok(v.at("lastCheck").integer()==1115&&v.at("nextCheck").integer()==1415,"A successful automatic check schedules five-minute polling.");
-  h.time=1414;u.tick();ok(h.requests==1,"No request before the five-minute deadline.");
-  h.time=1415;u.tick();v=h.settled(u);ok(h.requests==2,"A running app discovers releases on the next poll.");
+  ok(v.at("lastCheck").integer()==1100&&v.at("nextCheck").integer()==1220,"A successful automatic check schedules two-minute polling.");
+  h.time=1101;u.ready();ok(h.requests==1&&h.status(u).at("nextCheck").integer()==1220,"Repeated UI-ready neither duplicates nor postpones a check.");
+  u.setAutomatic(true);ok(h.requests==1,"Repeated enabled preference does not cause another request.");
+  h.time=1219;u.tick();ok(h.requests==1,"No request before the two-minute deadline.");
+  h.time=1220;u.tick();v=h.settled(u);ok(h.requests==2,"A running app discovers releases on the next poll.");
   u.later();ok(h.status(u).at("snoozed").bit(),"Later suppresses the current release.");
   h.time=v.at("nextCheck").integer();u.tick();v=h.settled(u);ok(v.at("snoozed").bit(),"Repeated checks preserve a reminder for the same release.");
   h.nextFeed("99.0.1");h.time=v.at("nextCheck").integer();u.tick();v=h.settled(u);
@@ -48,7 +47,7 @@ int wmain(){std::wstring root;try{
   ok(!v.at("snoozed").bit(),"Timer expiry publishes the notice without waiting for a network check.");
   u.later();u.check();v=h.settled(u);ok(h.requests==before+1&&!v.at("snoozed").bit()&&!v.at("automatic").bit(),"Manual checks clear Later without enabling automatic checks.");
   h.nextFeed(CI_VERSION);u.check();v=h.settled(u);ok(v.at("state").str()=="current"&&!v.at("available").bit(),"An installed current version does not advertise itself.");
-  h.nextFeed("99.0.1");u.setAutomatic(true);h.errors=1;h.time+=15;u.tick();v=h.settled(u);
+  h.nextFeed("99.0.1");h.errors=1;auto enableRequests=h.requests.load();u.setAutomatic(true);v=h.settled(u);ok(h.requests==enableRequests+1,"Re-enabling checks starts immediately.");
   ok(v.at("state").str()=="error"&&v.at("error").bit(),"Automatic network errors are reported in status.");
   ok(v.at("nextCheck").integer()==h.time+30,"An initial transient error retries after thirty seconds.");
   h.time+=30;u.tick();v=h.settled(u);ok(v.at("available").bit()&&!v.at("error").bit(),"Automatic retry recovers without user interaction.");
@@ -61,16 +60,16 @@ int wmain(){std::wstring root;try{
  }
  {
   Harness h;h.preferences[L"UpdateSnoozeUntil"]=999999;h.preferences[L"UpdateSnoozeVersion"]=updateVersionKey("99.0.0");
-  Updater u(root,[&](std::string s){h.receive(std::move(s));},h.services());u.ready();h.time+=15;u.tick();auto v=h.settled(u);
+  Updater u(root,[&](std::string s){h.receive(std::move(s));},h.services());u.ready();auto v=h.settled(u);
   ok(v.at("snoozed").bit(),"A saved release-specific Later choice survives reopening.");
   h.nextFeed("99.0.1");h.time=v.at("nextCheck").integer();u.tick();v=h.settled(u);
   ok(!v.at("snoozed").bit(),"Reopened polling still reveals a subsequent newer release.");
  }
  {
   Harness h;h.preferences[L"UpdateSnoozeUntil"]=999999; // Legacy global delay has no known release identity.
-  Updater u(root,[&](std::string s){h.receive(std::move(s));},h.services());u.ready();h.time+=15;u.tick();auto v=h.settled(u);
+  Updater u(root,[&](std::string s){h.receive(std::move(s));},h.services());u.ready();auto v=h.settled(u);
   ok(!v.at("snoozed").bit(),"An unscoped legacy delay cannot conceal an unrelated newer release.");
-  u.later();u.reset();v=h.status(u);ok(v.at("automatic").bit()&&!v.at("available").bit()&&!v.at("snoozed").bit(),"Reset clears notification state and restores the default preference.");
+  u.later();h.errors=1;u.check();v=h.settled(u);ok(v.at("error").bit(),"Reset starts with an actual failed check.");auto beforeReset=h.requests.load();u.reset();v=h.status(u);ok(v.at("automatic").bit()&&!v.at("available").bit()&&!v.at("snoozed").bit()&&!v.at("error").bit(),"Reset clears notification state and restores the default preference.");ok(h.requests==beforeReset,"Reset does not start a request while storage is being cleared.");
  }
  std::filesystem::remove_all(root);std::cout<<checks<<" native updater scheduling checks passed (real Updater; isolated clock/feed/preferences).\n";return 0;
  }catch(const std::exception& e){std::cerr<<e.what()<<"\n";return 1;}}

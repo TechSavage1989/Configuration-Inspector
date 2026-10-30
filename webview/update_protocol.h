@@ -27,7 +27,7 @@ struct UpdateMenuGate {
  bool request(){pending=true;return flush();}
  bool ready(){uiReady=true;return flush();}
 };
-inline constexpr uint64_t updateCheckInterval=5*60;
+inline constexpr uint64_t updateCheckInterval=2*60;
 
 
 struct Error:std::runtime_error { using std::runtime_error::runtime_error; };

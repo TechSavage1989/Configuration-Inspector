@@ -9,7 +9,7 @@ Json fixture(){Json a=Json::obj();a.fields={{"name",Json(assetName)},{"browser_d
 int main(){try{
  UpdateMenuGate menu;ok(!menu.request());ok(!menu.request());ok(menu.ready());ok(!menu.ready());ok(menu.request());ok(menu.request());
  ok(parse(updateMenuMessage).at("type").str()=="config-inspector-update-open");
- ok(updateCheckInterval==300);
+ ok(updateCheckInterval==120);
 
  ok(newer("5.17.0","5.16.99"));ok(!newer("5.16.0","5.16.0"));ok(newer("10.0.0","9.99.99"));ok(!newer("5.9.0","5.10.0"));
  for(auto s:{"","v5.16.0","5.16","5.16.0.0","5.16.0-beta","05.16.0","5.-1.0","65536.0.0","5.16.0 ","5.16.0\n","5.16.+1"})rejects([&]{version(s);});

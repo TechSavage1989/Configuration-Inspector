@@ -22,6 +22,20 @@ try{
  await page.evaluate(v=>window.ciMessage(v),automaticStatus);
  ok(await page.locator('#app-update-notice').isVisible(),'automatic result displays on untouched welcome screen');
  ok(await page.locator('[data-update-settings]').count()===0,'automatic notice does not force a settings modal');
+ ok((await page.locator('#app-update-notice').innerText()).includes('Update available'),'notice states the action clearly');
+ for(const theme of ['light','dark']){
+  await page.evaluate(theme=>document.documentElement.setAttribute('data-theme',theme),theme);
+  await page.locator('#app-update-notice').screenshot({path:'test-results/update-notice-'+theme+'.png'});
+ }
+ await page.evaluate(()=>document.documentElement.setAttribute('data-theme','light'));
+ await page.setViewportSize({width:800,height:600});
+ const noticeBox=await page.locator('#app-update-notice').boundingBox();
+ ok(noticeBox.x>=0&&noticeBox.y>=0&&noticeBox.x+noticeBox.width<=800&&noticeBox.y+noticeBox.height<=600,'notice fits the minimum desktop window');
+ await page.locator('#app-update-notice [data-action="update-details"]').click();
+ ok(await page.evaluate(()=>!window.ciCommands.includes('update-check')),'Details opens immediately without starting another network check');
+ await page.locator('[data-action="close-modal"]').first().click();
+ await page.setViewportSize({width:1440,height:960});
+
  await page.evaluate(v=>window.ciMessage({...v,available:false,state:'current'}),automaticStatus);
  ok(await page.locator('#app-update-notice').isHidden(),'current-version result hides the notice');
  // The literal native Help payload opens the update section and starts a check.
@@ -32,7 +46,7 @@ try{
  await page.evaluate(v=>window.ciMessage({...v,state:'checking',busy:true,message:'Checking GitHub Releases...'}),automaticStatus);
  await page.evaluate(v=>window.ciMessage(v),nativeMenuMessage);
  ok(await page.evaluate(()=>window.ciCommands.filter(v=>v==='update-check').length)===1,'repeated Help during a check does not start another request');
- ok((await page.locator('[data-update-settings]').innerText()).includes('Checking GitHub Releases'),'busy Help still exposes progress');
+ ok((await page.locator('[data-update-settings]').innerText()).includes('Checking for updates'),'busy Help still exposes progress');
  await page.evaluate(v=>window.ciMessage({...v,state:'error',error:true,available:false,message:'Example network is unavailable.'}),automaticStatus);
  ok((await page.locator('[data-update-settings]').innerText()).includes('Example network is unavailable.'),'manual errors are visible');
  await page.locator('[data-action="close-modal"]').first().click();
@@ -44,9 +58,19 @@ try{
  const status={type:'config-inspector-updates',current:currentVersion,version:nextVersion,state:'available',message:'A newer version is available.',busy:false,automatic:true,ready:false,available:true,snoozed:false,notes:'Example update\n<img src=x onerror=alert(1)>',size:1700000,bytes:0,lastCheck:1700000000,nextCheck:1700000001};
  await page.evaluate(v=>window.ciMessage(v),status);ok(await page.locator('#app-update-notice').isVisible());ok((await page.locator('[data-update-settings]').innerText()).includes(nextVersion));
  await page.locator('[data-update-settings] [data-action="update-download"]').click();ok(await page.evaluate(()=>window.ciCommands.includes('update-download')));
- await page.evaluate(v=>window.ciMessage({...v,state:'downloading',busy:true,bytes:850000}),status);ok(await page.locator('[data-update-settings] [data-action="update-check"]').isDisabled());ok(await page.locator('progress').getAttribute('value')==='850000');
+ await page.locator('[data-update-detail="notes"] summary').click();
+ await page.evaluate(v=>window.ciMessage({...v,state:'downloading',busy:true,bytes:850000}),status);ok(await page.locator('[data-update-settings] [data-action="update-check"]').isDisabled());ok(await page.locator('[data-update-settings] progress').getAttribute('value')==='850000');
+ ok((await page.locator('#app-update-notice').innerText()).includes('50%'),'notice exposes download percentage');
+ ok(await page.locator('[data-update-detail="notes"]').getAttribute('open')!==null,'progress preserves expanded release notes');
+ await page.locator('[data-action="close-modal"]').first().click();
+ await page.locator('#app-update-notice [data-action="update-details"]').focus();
+ await page.evaluate(v=>window.ciMessage({...v,state:'downloading',busy:true,bytes:1020000}),status);
+ ok(await page.locator('#app-update-notice [data-action="update-details"]').evaluate(e=>e===document.activeElement),'progress preserves keyboard focus');
+ await page.locator('#app-update-notice').screenshot({path:'test-results/update-notice-progress.png'});
+ await page.locator('#app-update-notice [data-action="update-details"]').click();
+
  await page.evaluate(v=>window.ciMessage({...v,state:'ready',ready:true,message:'Ready to install.'}),status);ok(await page.locator('[data-update-settings] [data-action="update-review"]').isEnabled());
- await page.selectOption('#app-settings-theme','dark');ok(await page.locator('html').getAttribute('data-theme')==='dark');await page.screenshot({path:'test-results/update-settings-dark.png'});await page.selectOption('#app-settings-theme','light');ok(await page.locator('html').getAttribute('data-theme')==='light');await page.screenshot({path:'test-results/update-settings-light.png'});
+ await page.selectOption('#app-settings-theme','dark');ok(await page.locator('html').getAttribute('data-theme')==='dark');await page.screenshot({path:'test-results/update-settings-dark.png',animations:'disabled'});const updateContrast=await page.locator('[data-update-settings] .button').evaluateAll(es=>es.filter(e=>!e.disabled).map(e=>{const c=getComputedStyle(e),l=x=>{const rgb=x.match(/[\d.]+/g).slice(0,3).map(v=>{v=Number(v)/255;return v<=.04045?v/12.92:Math.pow((v+.055)/1.055,2.4)});return rgb[0]*.2126+rgb[1]*.7152+rgb[2]*.0722},a=l(c.color),b=l(c.backgroundColor);return (Math.max(a,b)+.05)/(Math.min(a,b)+.05)}));ok(updateContrast.every(n=>n>=4.5),'dark update controls have readable text contrast');await page.selectOption('#app-settings-theme','light');ok(await page.locator('html').getAttribute('data-theme')==='light');await page.screenshot({path:'test-results/update-settings-light.png',animations:'disabled'});
  await page.locator('#app-settings-auto-updates').uncheck();ok(await page.evaluate(()=>window.ciCommands.includes('update-auto-off')));
  await page.locator('[data-action="close-modal"]').first().click();await page.locator('[data-action="demo"]').click();await page.waitForFunction(()=>document.querySelector('#content')?.innerText.includes('Interfaces at a glance'));
  await page.locator('#app-update-notice [data-action="update-review"]').click();ok(await page.locator('#modal').innerText().then(t=>t.includes('Install Config Inspector '+nextVersion+'?')));ok(await page.locator('#modal img').count()===0,'release notes cannot inject HTML');ok((await page.locator('.app-update-notes').innerText()).includes('<img'));
