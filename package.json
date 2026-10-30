@@ -1,10 +1,10 @@
 {
   "name": "configuration-inspector",
-  "version": "5.18.5",
+  "version": "5.18.6",
   "private": true,
   "scripts": {
     "test": "node tests/run-tests.cjs",
-    "test:browser": "node tests/updates-browser.cjs && node tests/comparison-browser.cjs && node tests/search-browser.cjs"
+    "test:browser": "node tests/updates-browser.cjs && node tests/comparison-browser.cjs && node tests/search-browser.cjs && node tests/cisco-3650-browser.cjs"
   },
   "devDependencies": {
     "@resvg/resvg-js": "2.6.2",

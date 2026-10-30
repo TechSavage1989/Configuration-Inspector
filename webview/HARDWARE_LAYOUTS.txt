@@ -1,10 +1,12 @@
-Config Inspector 5.13.0 - hardware layouts and device-owned addressing
+Config Inspector - hardware layouts and device-owned addressing
 
-The app includes 91 hardware profiles covering 195 exact model/module identifiers, including 81 verified physical layouts and ten qualified model port-group profiles. The registry is in hardware.js. It complements explicit configuration fields and automatic exact-model community catalog downloads. Manufacturer sources are documented here and in the source registry. Hardware cards, interface details and the hardware report appendix omit manufacturer links.
+The hardware profile registry is in hardware.js. It complements explicit configuration fields and automatic exact-model community catalog downloads. Manufacturer sources are documented here and in the source registry. Hardware cards, interface details and the hardware report appendix omit manufacturer links.
 
 Port types and rated capacity are separate from configured speed, interface use and fitted transceivers. The app never assumes that speed alone establishes RJ45 versus an optical cage. SFP/SFP+/SFP28 identify cage types; a fitted copper transceiver or DAC is not inferred from the cage. Shared RJ45/SFP interfaces use a combined symbol. Unknown hardware retains a neutral physical-port symbol and a layout-availability note.
 
 Profiles and sources
+- Cisco Catalyst WS-C3650-48FD and WS-C3650-48PD, including -L/-S/-E license suffixes: 48 1G RJ45 PoE+ ports in odd/even upper/lower pairs, followed by four single-row uplinks. G1/G2 are 1G SFP; G3/TE3 and G4/TE4 are 1G/10G SFP+. Provisioning is member-specific; the FD product identity is not inferred from PD provisioning. These are fixed uplinks, not a selectable expansion module. The 12X48FD multigigabit model is a different SKU and is not covered by this definition. Source: Cisco Hardware Installation Guide, front panel, uplink ports and LED labeling (Figure 1-11):
+  https://www.cisco.com/c/en/us/td/docs/switches/lan/catalyst3650/hardware/installation/guide/Cat3650hig_book/HIGOVERV.html
 - FortiGate 200G/201G, including the FortiOS FG2H0G/FG2H1G model codes: front-panel groups for HA/MGMT, ports 1-8, ports 9-16, X1-X8 and ports 17-20, with odd/even vertical numbering. Sources:
   https://jp.forticloud.com/help/supportedmodels.html
   https://fortinetweb.s3.amazonaws.com/docs.fortinet.com/v2/attachments/ff9309bd-92ed-11ef-a705-1222899fa4e9/FG-200G-Series-QSG.pdf
