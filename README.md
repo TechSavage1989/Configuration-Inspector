@@ -28,17 +28,36 @@ Imported configurations are analyzed **locally**. Optional device-specification 
 
 ## Screenshots
 
-**Interfaces at a glance with stack member port layouts**
+### Find useful settings
 
-<img src="docs/images/interfaces-at-a-glance.png" alt="Interfaces at a glance with stack member port layouts" width="900">
+<table>
+  <tr><td width="50%"><b>Configuration sections with related records</b><br><img src="docs/images/configuration-sections.png" alt="Configuration sections with related records" width="440"></td><td width="50%"><b>Object details with source and copy actions</b><br><img src="docs/images/object-details.png" alt="Object details with source and copy actions" width="440"></td></tr>
+</table>
 
-**Configuration review findings**
+### Interfaces and topology
 
-<img src="docs/images/config-review.png" alt="Configuration review findings" width="900">
+<table>
+  <tr><td width="50%"><b>Interfaces at a glance with stack member port layouts</b><br><img src="docs/images/interfaces-at-a-glance.png" alt="Interfaces at a glance with stack member port layouts" width="440"></td><td width="50%"><b>Interface table with VLAN membership</b><br><img src="docs/images/interface-table.png" alt="Interface table with VLAN membership" width="440"></td></tr>
+  <tr><td width="50%"><b>Compact network map</b><br><img src="docs/images/network-map.png" alt="Compact network map" width="440"></td><td width="50%"></td></tr>
+</table>
 
-**Side-by-side configuration object comparison**
+### Global configuration search
 
-<img src="docs/images/compare-configurations.png" alt="Side-by-side configuration object comparison" width="900">
+**Search results across fields, objects and source**
+
+<img src="docs/images/global-search.png" alt="Search results across fields, objects and source" width="900">
+
+### Compare snapshots
+
+<table>
+  <tr><td width="50%"><b>Side-by-side configuration object comparison</b><br><img src="docs/images/compare-configurations.png" alt="Side-by-side configuration object comparison" width="440"></td><td width="50%"><b>Aligned text comparison with change map</b><br><img src="docs/images/compare-text.png" alt="Aligned text comparison with change map" width="440"></td></tr>
+</table>
+
+### Review findings and export
+
+<table>
+  <tr><td width="50%"><b>Configuration review findings</b><br><img src="docs/images/config-review.png" alt="Configuration review findings" width="440"></td><td width="50%"><b>Convert and export with redaction</b><br><img src="docs/images/convert-and-export.png" alt="Convert and export with redaction" width="440"></td></tr>
+</table>
 
 ## Download
 
