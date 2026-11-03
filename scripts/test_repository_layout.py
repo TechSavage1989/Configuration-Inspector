@@ -4,7 +4,7 @@ import subprocess
 import unittest
 
 ROOT = Path(__file__).resolve().parents[1]
-ALLOWED = {'VERSION', 'AGENTS.md', '.github', 'docs', 'package.json', 'scripts', 'package-lock.json', 'tests', '.gitignore', 'webview', 'README.md'}
+ALLOWED = {'VERSION', 'AGENTS.md', 'CLAUDE.md', '.github', 'docs', 'package.json', 'scripts', 'package-lock.json', 'tests', '.gitignore', 'webview', 'README.md'}
 
 def unexpected(paths):
     return sorted({p.split('/')[0] for p in paths} - ALLOWED)
