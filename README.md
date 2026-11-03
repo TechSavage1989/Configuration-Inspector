@@ -9,8 +9,12 @@
   <a href="https://github.com/TechSavage1989/Configuration-Inspector/releases/latest">Download</a> ·
   <a href="#getting-started">Get started</a> ·
   <a href="#features">Features</a> ·
-  <a href="#updates-and-settings">Updates</a> ·
+  <a href="#screenshots">Screenshots</a> ·
   <a href="#development">Development</a>
+</p>
+
+<p align="center">
+  <img src="docs/images/hero.png" alt="Configuration Inspector main window" width="900">
 </p>
 
 ## Features
@@ -21,6 +25,20 @@
 - **Review findings and export:** inspect configuration review results and create reports for further analysis.
 
 Imported configurations are analyzed **locally**. Optional device-specification downloads request public hardware definitions without sending configuration contents.
+
+## Screenshots
+
+**Interfaces at a glance with stack member port layouts**
+
+<img src="docs/images/interfaces-at-a-glance.png" alt="Interfaces at a glance with stack member port layouts" width="900">
+
+**Configuration review findings**
+
+<img src="docs/images/config-review.png" alt="Configuration review findings" width="900">
+
+**Side-by-side configuration object comparison**
+
+<img src="docs/images/compare-configurations.png" alt="Side-by-side configuration object comparison" width="900">
 
 ## Download
 

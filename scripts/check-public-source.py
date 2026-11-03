@@ -20,6 +20,9 @@ for name in tracked:
     try:
         text = data.decode('utf-8')
     except UnicodeDecodeError:
+        if name.startswith('docs/images/') and name.endswith('.png') and '/' not in name[len('docs/images/'):]:
+            assert data.startswith(b'\x89PNG\r\n\x1a\n'), 'README image is not a PNG: ' + name
+            continue
         assert name in ['webview/WebView2Loader.dll', 'webview/icon.ico', 'webview/icon.png'], 'Unexpected binary source file: ' + name
         continue
     text_count += 1
