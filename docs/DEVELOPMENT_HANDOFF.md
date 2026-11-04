@@ -1,5 +1,14 @@
 # Configuration Inspector development handoff
 
+## 5.19.1 — interfaces at a glance fill their card
+
+Port tiles grow up to 56px per column (was 34px) so faceplates fill the card
+width; text, icon and height scale with them. Enlarge keeps a 34px minimum and
+horizontal scrolling. `tests/cisco-3650-browser.cjs` checks fill at 1600px.
+`docs/images/interfaces-at-a-glance.png` was recaptured with a fictional stack.
+5.19.0 assets were downloaded and verified against GitHub digests,
+`SHA256SUMS` and the portable ZIP contents.
+
 ## 5.19.0 — updater rate limits, rename hints, Arista EOS / Huawei VRP
 
 Release explicitly authorized by the owner on 2026-11-04. Prepared on

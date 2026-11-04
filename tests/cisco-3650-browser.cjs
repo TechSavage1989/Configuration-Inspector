@@ -20,13 +20,16 @@ const {chromium}=require('playwright'),{configuration}=require('./cisco-3650-tes
    const uplinks=await frame.locator('[data-connector^="SFP"] .hardware-port-cell').evaluateAll(es=>es.map(e=>e.getBoundingClientRect().top));
    assert.ok(uplinks.every(y=>Math.abs(y-uplinks[0])<1),'four uplinks share a physical row');
   }
-  for(const width of [1280,960]){
+  for(const width of [1600,1280,960]){
    await page.setViewportSize({width,height:900});
    const layout=await page.locator('.hardware-chassis').evaluateAll(frames=>frames.map(frame=>{
     const face=frame.querySelector('.hardware-face-scroll'),cells=[...frame.querySelectorAll('.hardware-port-cell')].map(e=>e.getBoundingClientRect());
     return {fits:face.scrollWidth<=face.clientWidth+1,overlap:cells.some((a,i)=>cells.slice(i+1).some(b=>a.left<b.right-1&&a.right>b.left+1&&a.top<b.bottom-1&&a.bottom>b.top+1)),labels:[...frame.querySelectorAll('.glance-port-name')].every(e=>e.getBoundingClientRect().right<=e.closest('.interface-badge').getBoundingClientRect().right+1)};
    }));
    assert.ok(layout.every(x=>x.fits&&!x.overlap&&x.labels),'port layout fits without collisions at '+width);
+   // A 48-port faceplate fills its card width; port tiles grow but stay at most 56px wide.
+   const fill=await page.locator('.hardware-chassis').evaluateAll(frames=>frames.map(frame=>{const scroll=frame.querySelector('.hardware-face-scroll'),face=frame.querySelector('.hardware-face'),ports=[...frame.querySelectorAll('.hardware-port-cell .interface-badge')].map(e=>e.getBoundingClientRect().width);return {ratio:face.getBoundingClientRect().width/scroll.clientWidth,widest:Math.max(...ports)};}));
+   assert.ok(fill.every(x=>x.ratio>0.98&&x.widest<=56.5),'faceplates fill the card without oversized ports at '+width+': '+JSON.stringify(fill));
   }
   await page.setViewportSize({width:1280,height:900});
   const second=page.locator('.hardware-chassis[data-hardware-member="2"]');
