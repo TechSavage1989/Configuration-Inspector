@@ -1,5 +1,21 @@
 # Configuration Inspector development handoff
 
+## 5.25.0 — app-wide polish
+
+- `deviceSummaryCard(dedicated)` (index.html, before `overview()`) builds the
+  Overview/Device information summary from `deviceIdentity`, `SWHardware.inventory`
+  and `SWSiteOverview.build([model]).settings`; `physicalPortUsage()` counts
+  physical ports only. `dedicated` (Device information) omits the stat tiles.
+- `overview()` renders device, findings, interfaces and policies sections (plus WAN
+  when present); map, totals, essentials and notes were removed from the Overview.
+- `sectionSourcePanel` renders only when toggled (`data-action="toggle-section-source"`
+  on the notice line); views without a section source never show the button.
+- `compactPortList()` turns 7+ comma-separated ports into short-name ranges in
+  `column.wrap` cells (full list kept in `title`).
+- Header import buttons show only without a model; `.workspace-add` holds Add files
+  and Paste next to the open files.
+- `tests/polish-browser.cjs` guards this layout.
+
 ## 5.24.0 — migration validation performance
 
 - `webview/migration.js` previously recomputed facts for every candidate pair and

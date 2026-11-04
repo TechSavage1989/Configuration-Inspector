@@ -99,6 +99,8 @@ Prefer a browser-based edition? The same release includes **`Config_Inspector.ht
 
 ## How to use
 
+The **Overview** opens with a **Device summary**: hostname, vendor and OS, model or stack, firmware, serial number, management address, default gateway, DNS, NTP, syslog, time zone and domain, with port usage, VLAN, route or rule and finding counts. The top review findings, interfaces at a glance and policy summary follow. Original export fields and file details sit in collapsed sections on **Device information**. On any section page, **View source** on the file line shows the original configuration lines for that section. Long port lists are shortened to ranges such as `Gi1/0/1-20`, and the full list appears on hover.
+
 Interfaces at a glance shows all interfaces by default, including unused ports and logical interfaces. Use **Hide unused** within a group to condense it, and **Show unused** to restore the full view. Loading a configuration starts with all interfaces visible.
 
 Reopen a recent configuration from **Recent files** on the start screen (desktop app, Microsoft Edge and Google Chrome). In **Convert & export**, **Client report** creates one printable HTML document for every open configuration; open it and choose **Print or save as PDF**. The sidebar groups pages into **Workspace** (overview, device information, review, site overview and comparison), the configuration areas found in the export, and **Source & export**. Click a section heading to collapse it; the choice is remembered, and the section holding the current page always stays open. Hover over an item for a short description.
