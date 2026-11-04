@@ -77,7 +77,7 @@ Use **`Config_Inspector_Portable.zip.sha256`** to check the archive hash. Future
 
 > **Treat exports as evidence, not live telemetry.** Unsupported syntax remains available in original source and is not interpreted as effective configuration. Missing hardware details or runtime state must not be assumed. Review findings against the device and its vendor documentation before making changes.
 
-For feature coverage and limitations, see [network features](webview/NETWORK_FEATURES.txt), [security features](webview/SECURITY_FEATURES.txt), [hardware layouts](webview/HARDWARE_LAYOUTS.txt) and [device specifications](webview/DEVICE_SPECIFICATIONS.txt).
+Arista EOS and Huawei VRP configuration text is recognized under its own vendor name; Huawei VRP coverage is narrower than the Cisco-style CLI adapters. For feature coverage and limitations, see [network features](webview/NETWORK_FEATURES.txt), [security features](webview/SECURITY_FEATURES.txt), [hardware layouts](webview/HARDWARE_LAYOUTS.txt) and [device specifications](webview/DEVICE_SPECIFICATIONS.txt).
 
 ## Getting started
 

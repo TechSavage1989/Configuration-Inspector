@@ -19,7 +19,7 @@ Authentication: method order and port authentication.
 Network services: recognized IPv6 advertisements, static neighbors and wireless definitions.
 
 Adapters recognize supported feature fields in SonicWall EXP/decoded text,
-FortiOS CLI, Aruba AOS-S/AOS-CX/Instant On and Cisco CLI, normalized Junos
+FortiOS CLI, Aruba AOS-S/AOS-CX/Instant On, Cisco and Arista EOS CLI, normalized Junos
 statements, PAN-OS/Sophos XML and structured JSON settings. Recognition varies
 by the fields included in the export. Missing values are omitted, not treated
 as disabled. Disabled values are retained for meaningful configured services.

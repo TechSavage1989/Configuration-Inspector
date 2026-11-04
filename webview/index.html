@@ -1549,7 +1549,7 @@ body{font-size:14px}.brand-mark{background:linear-gradient(145deg,#287dc6,#15578
       var r=n.record,s=r.summary||{},match=String(r.name).match(/^(.+?)(?::V|\.)(\d+)$/i);
       var hasVlan=s.vlan!==undefined&&s.vlan!==''&&String(s.vlan)!=='0';
       // A switch SVI routes a VLAN and is not a child of an arbitrary physical port.
-      if(/^(?:aruba-aos|aruba-cx|aruba-instant-on|cisco|juniper|meraki)$/.test(r.id.split(':')[0])&&!s.parent&&!r.parentId&&(/^(?:vlan\s*\d+|(?:irb|vlan|rvi)\.\d+)$/i.test(r.name)||/SVI|VLAN interface|routed VLAN/i.test(s.interfaceType||'')))return;
+      if(/^(?:aruba-aos|aruba-cx|aruba-instant-on|cisco|arista-eos|huawei-vrp|juniper|meraki)$/.test(r.id.split(':')[0])&&!s.parent&&!r.parentId&&(/^(?:vlan\s*\d+|(?:irb|vlan|rvi)\.\d+)$/i.test(r.name)||/SVI|VLAN interface|routed VLAN/i.test(s.interfaceType||'')))return;
       if(r.index==='global'||(!match&&!hasVlan&&r.family!=='vlan'&&!r.parentId&&!(r.scope&&s.parent)))return;
       var explicit=key(s.parent),inferred=match&&byName.get(key(match[1]));
       if(r.parentId){var exact=nodes.find(function(n){return n.record.id===r.parentId;});if(exact&&exact!==n){n.parent=exact;return;}n.unresolved=true;n.parentLabel=String(s.parent||'Not specified');return;}
@@ -1727,7 +1727,7 @@ body{font-size:14px}.brand-mark{background:linear-gradient(145deg,#287dc6,#15578
 })(typeof globalThis!=='undefined'?globalThis:this,function(C){
   'use strict';
   var MAX=25*1024*1024,MAX_FIELDS=250000;
-  var vendors={generic:'Generic structured configuration',fortigate:'Fortinet FortiGate',paloalto:'Palo Alto Networks',sophos:'Sophos Firewall','aruba-aos':'HPE / Aruba AOS-Switch','aruba-cx':'Aruba AOS-CX','aruba-instant-on':'Aruba Instant On 1960',cisco:'Cisco IOS / NX-OS',juniper:'Juniper Junos',meraki:'Cisco Meraki',mikrotik:'MikroTik RouterOS'};
+  var vendors={generic:'Generic structured configuration',fortigate:'Fortinet FortiGate',paloalto:'Palo Alto Networks',sophos:'Sophos Firewall','aruba-aos':'HPE / Aruba AOS-Switch','aruba-cx':'Aruba AOS-CX','aruba-instant-on':'Aruba Instant On 1960',cisco:'Cisco IOS / NX-OS','arista-eos':'Arista EOS','huawei-vrp':'Huawei VRP',juniper:'Juniper Junos',meraki:'Cisco Meraki',mikrotik:'MikroTik RouterOS'};
   function unique(values){return Array.from(new Set(values.filter(function(v){return v!==''&&v!==undefined&&v!==null;})));}
   function text(value){return value===undefined||value===null?'':String(value);}
   function joined(values,fallback){return values.length?values.join(', '):fallback===undefined?'Not specified':fallback;}
@@ -1785,7 +1785,7 @@ body{font-size:14px}.brand-mark{background:linear-gradient(145deg,#287dc6,#15578
     var counts={};this.records.forEach(function(r){if(r.category!=='other')counts[r.category]=(counts[r.category]||0)+1;});
     this.meta.name=this.meta.name||(this.meta.filename.replace(/\.[^.]+$/,'')||'Imported configuration');
     this.meta.contexts=unique(this.records.map(function(r){return r.scope;}).filter(function(s){return s!=='global'&&s!=='shared';}));
-    if(/^(aruba-aos|aruba-cx|aruba-instant-on|cisco|juniper|meraki)$/.test(this.vendor)&&!this.meta.deviceType)this.meta.deviceType='switch';
+    if(/^(aruba-aos|aruba-cx|aruba-instant-on|cisco|arista-eos|huawei-vrp|juniper|meraki)$/.test(this.vendor)&&!this.meta.deviceType)this.meta.deviceType='switch';
     this.meta.importNotes=this.notes;this.meta.coverage='Core settings mapped; vendor-specific settings retained for inspection';
     return {format:'firewall-config-studio',version:C.VERSION,meta:this.meta,records:this.records,entries:this.entries,categories:categories,lookup:lookup,unparsed:[],warnings:{duplicates:this.entries.length-new Set(this.entries.map(function(e){return e.key;})).size,malformedEncoding:0},decodedText:this.source,scopeParents:this.scopeParents,coverage:{mappedRecords:this.records.filter(function(r){return r.category!=='other';}).length,originalOnlyRecords:categories.other.length,categories:counts,notes:this.notes}};
   };
@@ -2315,13 +2315,19 @@ body{font-size:14px}.brand-mark{background:linear-gradient(145deg,#287dc6,#15578
   function detectSwitchCLI(source){
     if(typeof source!=='string')return '';
     if(/^vInstantOn_1960_/im.test(source))return 'aruba-instant-on';
+    // Arista EOS and Huawei VRP share Cisco-like interface names, so their own
+    // export markers are checked first instead of being labeled as Cisco.
+    if(/^!\s*device:\s*\S+\s*\([^)]*\bEOS-\d|^!\s*boot system flash:\/?EOS|^\s*daemon TerminAttr\b|^\s*management api (?:http-commands|gnmi)\b|^\s*transceiver qsfp default-mode\b/im.test(source))return 'arista-eos';
+    if(/^!Software Version V\d{3}R\d{3}|^\s*interface (?:Vlanif|Eth-Trunk|MEth)\d|^\s*port trunk allow-pass vlan\b|^\s*vlan batch\s+\d|^\s*port link-type\s+(?:access|trunk|hybrid)\b[\s\S]*^\s*sysname\s+\S|^\s*sysname\s+\S[\s\S]*^\s*port link-type\s+(?:access|trunk|hybrid)\b/im.test(source))return 'huawei-vrp';
     if(/ArubaOS-CX|^\s*vlan trunk (?:allowed|native)\b|^\s*interface lag \d+|^\s*interface \d+\/\d+\/\d+/im.test(source))return 'aruba-cx';
     if(/Configuration Editor; Created on release|^\s*trunk\s+\S+\s+trk\d+\s+(?:lacp|trunk)|^\s*(?:no )?(?:un)?tagged\s+[A-Za-z0-9]/im.test(source))return 'aruba-aos';
     if(/Cisco IOS|Cisco Nexus|NX-OS|^\s*(?:version\s+\d+(?:\.\d+)|boot nxos |feature (?:vpc|interface-vlan|lacp)|switchport(?:\s|$)|interface\s+(?:range\s+)?(?:[A-Za-z]*Ethernet|[FGTE]i(?:gabitEthernet)?\d|Te\d|Eth\d|Port-channel\d|Vlan\d))/im.test(source))return 'cisco';
     return '';
   }
   function parseSwitchCLI(source,options,vendor){
-    var labels={'aruba-aos':'HPE / Aruba AOS-Switch','aruba-cx':'Aruba AOS-CX','aruba-instant-on':'Aruba Instant On 1960',cisco:'Cisco IOS / IOS-XE / NX-OS'};
+    var labels={'aruba-aos':'HPE / Aruba AOS-Switch','aruba-cx':'Aruba AOS-CX','aruba-instant-on':'Aruba Instant On 1960',cisco:'Cisco IOS / IOS-XE / NX-OS','arista-eos':'Arista EOS','huawei-vrp':'Huawei VRP'};
+    // arista: Cisco-style syntax with EOS naming. huawei: VRP views (sysname, port link-type, undo).
+    var ciscoNames=vendor==='cisco'||vendor==='arista-eos',arista=vendor==='arista-eos',huawei=vendor==='huawei-vrp';
     var b=new Builder(vendor,source,options,labels[vendor]+' CLI text'),raw={label:'Export metadata and additional commands',_entries:[],children:[]};
     b.meta.vendor=labels[vendor];b.meta.deviceType='switch';b.meta.configurationKind='Configuration export';
     var ports=new Map(),vlans=new Map(),groups=new Map(),contexts=[],statements=[],captureStarts=[],activeStart=0,dhcpEnabled='',removedVLANs=[];
@@ -2329,7 +2335,7 @@ body{font-size:14px}.brand-mark{background:linear-gradient(145deg,#287dc6,#15578
     function clean(s){return s.replace(/\x1b\[[0-9;?]*[ -/]*[@-~]/g,'').replace(/[\x00-\x08\x0b\x0c\x0e-\x1f]/g,'');}
     function tokens(s){var result=[],re=/"((?:\\.|[^"\\])*)"|'((?:\\.|[^'\\])*)'|([^\s]+)/g,m;while((m=re.exec(s)))result.push((m[1]!==undefined?m[1]:m[2]!==undefined?m[2]:m[3]).replace(/\\(["'\\])/g,'$1'));return result;}
     function name(s){var t=tokens(s);return t.join(' ');}
-    function secret(s){return /password|passwd|\bsecret\b|community|auth-pass|priv-pass|authentication-key|message-digest-key|auth-key|privacy-key|key-string|private.?key|credential|ciphertext|\bsnmp(?:v3|-server)\s+user\b|(?:^|\s)(?:key|key-string|auth-key|privacy-key)(?:\s|$)|BEGIN .*PRIVATE KEY|BEGIN CERTIFICATE/i.test(s);}
+    function secret(s){if(huawei&&/\bcipher\b|%\^%#|%\$%\$|\bauthentication-mode\b/i.test(s))return true;return /password|passwd|\bsecret\b|community|shared-key|auth-pass|priv-pass|authentication-key|message-digest-key|auth-key|privacy-key|key-string|private.?key|credential|ciphertext|\bsnmp(?:v3|-server)\s+user\b|(?:^|\s)(?:key|key-string|auth-key|privacy-key)(?:\s|$)|BEGIN .*PRIVATE KEY|BEGIN CERTIFICATE/i.test(s);}
     var pending=null,quote='',escape=false,secretBlock=false,sshKeyBlock=false;
     source.split(/\r?\n/).forEach(function(original,index,lines){
       var line=clean(original.replace(/\r$/,'')),trim=line.trim(),key='line['+(index+1)+']/',base=trim.split(/\s+/).slice(0,3).join(' ')||'blank';
@@ -2371,7 +2377,7 @@ body{font-size:14px}.brand-mark{background:linear-gradient(145deg,#287dc6,#15578
     function own(target,statement){remember(target,statement);target.node._entries=target.node._entries.concat(statement._entries);}
     function canonPort(value){value=name(value).trim();if(/^trk\d+$/i.test(value))return 'Trk'+value.replace(/^trk/i,'');if(/^lag\s+\d+$/i.test(value))return 'lag '+value.split(/\s+/)[1];return value;}
     function port(portName,derived){
-      portName=canonPort(portName);var key=portName.toLowerCase();if(!ports.has(key)){var vm=portName.match(/^vlan\s*(\d+)$/i),aggregate=/^(?:lag\s+|trk|port-channel|po)\d+$/i.test(portName),management=/^(?:mgmt|management\S*|oobm)$/i.test(portName),type=vm?'VLAN interface':aggregate?'Link aggregation':management?'Management':/^loopback/i.test(portName)?'Loopback':portName.includes('.')?'Subinterface':'Physical port';ports.set(key,{name:portName,node:node(),summary:{interfaceType:type,status:'Not specified',mode:vm?'VLAN interface':type==='Physical port'?'Switch port':type,parent:'',vlan:vm?String(Number(vm[1])):'',portMode:'',nativeVLAN:'',untaggedVLANs:'',taggedVLANs:'',allowedVLANs:'',voiceVLAN:'',aggregate:'',poe:'',speed:'',duplex:'',mtu:'',vrf:''},addresses:[],helpers:[],accessVLAN:'',native:'',nativeTagged:false,allowed:null,tagged:new Set(),untagged:new Set(),members:[],stp:[],acl:[],derived:!!derived,notes:[]});}return ports.get(key);
+      portName=canonPort(portName);var key=portName.toLowerCase();if(!ports.has(key)){var vm=portName.match(huawei?/^vlanif\s*(\d+)$/i:/^vlan\s*(\d+)$/i),aggregate=/^(?:lag\s+|trk|port-channel|po)\d+$/i.test(portName)||huawei&&/^eth-trunk\d+$/i.test(portName),management=/^(?:mgmt|management\S*|oobm)$/i.test(portName)||huawei&&/^meth\d/i.test(portName),type=vm?'VLAN interface':aggregate?'Link aggregation':management?'Management':/^loopback/i.test(portName)?'Loopback':portName.includes('.')?'Subinterface':'Physical port';ports.set(key,{name:portName,node:node(),summary:{interfaceType:type,status:'Not specified',mode:vm?'VLAN interface':type==='Physical port'?'Switch port':type,parent:'',vlan:vm?String(Number(vm[1])):'',portMode:'',nativeVLAN:'',untaggedVLANs:'',taggedVLANs:'',allowedVLANs:'',voiceVLAN:'',aggregate:'',poe:'',speed:'',duplex:'',mtu:'',vrf:''},addresses:[],helpers:[],accessVLAN:'',native:'',nativeTagged:false,allowed:null,tagged:new Set(),untagged:new Set(),members:[],stp:[],acl:[],derived:!!derived,notes:[]});}return ports.get(key);
     }
     function vlan(id,derived){id=String(Number(id));if(!vlans.has(id))vlans.set(id,{name:id,node:node(),summary:{vlan:id,vlanName:'',status:'Configured',voice:'',comment:''},tagged:new Set(),untagged:new Set(),addresses:[],derived:!!derived});return vlans.get(id);}
     function group(category,family,key,label,summary,statement){
@@ -2395,13 +2401,15 @@ body{font-size:14px}.brand-mark{background:linear-gradient(145deg,#287dc6,#15578
     function parseAddress(p,statement,words){
       var t=statement.text,m=t.match(/^(?:ip|ipv4|ipv6) address\s+(.+)$/i);if(!m)return false;
       var args=tokens(m[1]);if(/^(?:dhcp(?:-bootp)?|dhcp-bootp|autoconfig|negotiated)$/i.test(args[0]||'')){p.dynamic=p.dynamic||[];p.dynamic.push(/ipv6/i.test(t)?'IPv6 '+args[0].toUpperCase():args[0].toUpperCase());return true;}
-      var a=address(args[0],args[0]&&args[0].includes('/')?'':C.ipv4(args[1])!==null||/^\d+$/.test(args[1]||'')?args[1]:'');if(a.ip){a.kind=/secondary/i.test(m[1])?'Secondary address':a.ip.includes(':')?'IPv6':'IPv4';p.addresses=p.addresses.filter(function(existing){return existing.ip!==a.ip;});p.addresses.push(a);}return true;
+      var a=address(args[0],args[0]&&args[0].includes('/')?'':C.ipv4(args[1])!==null||/^\d+$/.test(args[1]||'')?args[1]:'');if(a.ip){a.kind=/secondary|\ssub$/i.test(m[1])?'Secondary address':a.ip.includes(':')?'IPv6':'IPv4';p.addresses=p.addresses.filter(function(existing){return existing.ip!==a.ip;});p.addresses.push(a);}return true;
     }
     function makeRelay(p,statement,ips){
       var k=p.name.toLowerCase(),r=relay.get(k);if(!r){r={name:p.name+' DHCP relay',node:node(),interface:p.name,servers:[]};relay.set(k,r);}own(r,statement);r.servers=unique(r.servers.concat(ips));p.helpers=unique(p.helpers.concat(ips));
     }
     function interfaceCommand(p,st,attach){
       var t=st.text,m,w=tokens(t);remember(p,st);if(attach)own(p,st);
+      if(huawei&&huaweiInterfaceCommand(p,st,attach))return;
+      if(arista&&(m=t.match(/^vrf\s+(\S+)$/i))){p.summary.vrf=m[1];return;}
       if((m=t.match(/^(?:description|name)\s+(.+)/i))){p.summary.comment=name(m[1]);if(vendor==='aruba-instant-on'&&p.summary.vlan&&/^name /i.test(t))vlan(p.summary.vlan,true).summary.vlanName=name(m[1]);}
       else if(/^(?:shutdown|disable)$/i.test(t))p.summary.status='Disabled';
       else if(/^(?:no shutdown|enable)$/i.test(t))p.summary.status='Enabled';
@@ -2422,7 +2430,7 @@ body{font-size:14px}.brand-mark{background:linear-gradient(145deg,#287dc6,#15578
       else if(/^(?:no switchport|routing)$/i.test(t)){p.summary.portMode='Routed';p.summary.mode='Routed';}
       else if(/^(?:no routing|switchport)$/i.test(t)){if(!p.summary.portMode)p.summary.portMode='Switched';}
       else if((m=t.match(/^lag\s+(\d+)/i))){p.summary.aggregate='lag '+m[1];findAggregate(p.summary.aggregate).members.push(p.name);}
-      else if((m=t.match(/^channel-group\s+(\d+)(?:\s+mode\s+(\S+))?/i))){p.summary.aggregate=(vendor==='aruba-instant-on'?'Trk':'Port-channel')+m[1];var agg=findAggregate(p.summary.aggregate);agg.members.push(p.name);if(m[2])agg.summary.lagProtocol=/active|passive/i.test(m[2])?'LACP':vendor==='aruba-instant-on'?m[2]:/desirable|auto/i.test(m[2])?'PAgP':'Static';}
+      else if((m=t.match(/^channel-group\s+(\d+)(?:\s+mode\s+(\S+))?/i))){p.summary.aggregate=(vendor==='aruba-instant-on'?'Trk':arista?'Port-Channel':'Port-channel')+m[1];var agg=findAggregate(p.summary.aggregate);agg.members.push(p.name);if(m[2])agg.summary.lagProtocol=/active|passive/i.test(m[2])?'LACP':vendor==='aruba-instant-on'?m[2]:/desirable|auto/i.test(m[2])?'PAgP':'Static';}
       else if((m=t.match(/^(?:ip vrf forwarding|vrf attach|vrf forwarding|vrf member)\s+(.+)/i)))p.summary.vrf=name(m[1]);
       else if((m=t.match(/^(?:ip helper-address|ip dhcp relay address|dhcp-relay server-address)\s+(.+)/i))){var ips=tokens(m[1]).filter(function(x){return C.ipv4(x)!==null||C.ipv6(x);});if(attach)makeRelay(p,st,ips);else p.helpers=unique(p.helpers.concat(ips));}
       else if((m=t.match(/^speed\s+(.+)/i)))p.summary.speed=m[1];
@@ -2435,6 +2443,50 @@ body{font-size:14px}.brand-mark{background:linear-gradient(145deg,#287dc6,#15578
       else if((m=t.match(/^encapsulation dot1[qQ]\s+(\d+)(?:\s+(native))?/))){p.summary.vlan=m[1];p.summary.parent=p.name.split('.')[0];p.summary.nativeTagged=m[2]?'Untagged':'Tagged';}
       else if((m=t.match(/^ip (?:default-gateway|gateway)\s+(\S+)/i)))p.summary.gateway=m[1];
     }
+    function huaweiVLANs(expression){return text(expression).replace(/(\d+)\s+to\s+(\d+)/gi,'$1-$2');}
+    // VRP interface view. Unrecognized commands fall through to the shared handlers.
+    function huaweiInterfaceCommand(p,st,attach){
+      var t=st.text,m;
+      if(/^undo shutdown$/i.test(t)){p.summary.status='Enabled';return true;}
+      if((m=t.match(/^port link-type\s+(\S+)$/i))){var mode=m[1].toLowerCase();p.summary.portMode=mode==='access'?'Access':mode==='trunk'?'Trunk':mode==='hybrid'?'Hybrid':name(m[1]);return true;}
+      if((m=t.match(/^port default vlan\s+(\d+)$/i))){p.accessVLAN=m[1];if(!p.summary.portMode)p.summary.portMode='Access';return true;}
+      if((m=t.match(/^port (?:trunk|hybrid) pvid vlan\s+(\d+)$/i))){p.native=m[1];return true;}
+      if((m=t.match(/^(undo )?port trunk allow-pass vlan\s+(.+)$/i))){
+        // allow-pass is additive in VRP; long lists are exported as several lines.
+        var expression=huaweiVLANs(m[2]).trim();
+        if(m[1]){if(p.allowed&&p.allowed.type==='set')expand(expression,true).forEach(function(id){p.allowed.set.delete(id);});else p.notes.push('Removed from the allowed VLAN list: '+expression+'.');}
+        else if(/^all$/i.test(expression))setAllowed(p,'all');
+        else if(p.allowed&&p.allowed.type==='set')expand(expression,true).forEach(function(id){p.allowed.set.add(id);});
+        else if(!p.allowed||p.allowed.type!=='all')setAllowed(p,expression);
+        return true;
+      }
+      if((m=t.match(/^(undo )?port hybrid (tagged|untagged) vlan\s+(.+)$/i))){var membership=m[2].toLowerCase()==='tagged'?p.tagged:p.untagged;expand(huaweiVLANs(m[3]),true).forEach(function(id){if(m[1])membership.delete(id);else {membership.add(id);vlan(id,true);}});p.summary.portMode='Hybrid';return true;}
+      if((m=t.match(/^eth-trunk\s+(\d+)$/i))){p.summary.aggregate='Eth-Trunk'+m[1];findAggregate(p.summary.aggregate).members.push(p.name);return true;}
+      if((m=t.match(/^mode\s+(lacp(?:-static|-dynamic)?|manual(?:\s+load-balance)?)$/i))){p.summary.lagProtocol=/^lacp/i.test(m[1])?'LACP':'Static';p.summary.lacpMode=m[1];return true;}
+      if((m=t.match(/^ip binding vpn-instance\s+(\S+)$/i))){p.summary.vrf=m[1];return true;}
+      if((m=t.match(/^dhcp relay server-ip\s+(\S+)$/i))){var ips=[m[1]].filter(function(x){return C.ipv4(x)!==null||C.ipv6(x);});if(attach)makeRelay(p,st,ips);else p.helpers=unique(p.helpers.concat(ips));return true;}
+      if((m=t.match(/^stp edged-port\s+(enable|disable)$/i))){p.stp.push(t);p.summary.edgePort=m[1].toLowerCase()==='enable'?'Enabled':'Disabled';return true;}
+      if((m=t.match(/^stp bpdu-filter\s+(enable|disable)$/i))){p.stp.push(t);return true;}
+      if((m=t.match(/^traffic-filter\s+(inbound|outbound)\s+(?:ipv6\s+)?acl\s+(?:name\s+)?(\S+)/i))){p.acl.push(m[2]+' ('+(m[1].toLowerCase()==='outbound'?'out':'in')+')');return true;}
+      if((m=t.match(/^jumboframe enable\s+(\d+)$/i))){p.summary.mtu=m[1];return true;}
+      return false;
+    }
+    // VRP system view.
+    function huaweiGlobalCommand(st,t,w){
+      var m;
+      if((m=t.match(/^sysname\s+(.+)$/i))){b.meta.name=name(m[1]);system.summary.hostname=b.meta.name;own(system,st);return true;}
+      if((m=t.match(/^vlan batch\s+(.+)$/i))){var vs=expand(huaweiVLANs(m[1]),true).map(function(id){return vlan(id,false);});if(vs.length){own(vs[0],st);vs.forEach(function(v){remember(v,st);v.derived=false;});}return true;}
+      if(/^(?:ip|ipv6) route-static\s/i.test(t)){staticRoute(st);return true;}
+      if((m=t.match(/^dns server\s+(?:ipv6\s+)?(\S+)/i))){if(C.ipv4(m[1])!==null||C.ipv6(m[1]))dns.servers=unique(dns.servers.concat(m[1]));dns.nodes.push(st);return true;}
+      if(/^dns resolve$/i.test(t)){dns.nodes.push(st);return true;}
+      if(/^ntp-service\b/i.test(t)){time.nodes.push(st);if((m=t.match(/^ntp-service\s+unicast-(?:server|peer)\s+(?:ipv6\s+)?(\S+)/i)))time.servers=unique(time.servers.concat(m[1]));if(/^ntp-service enable$/i.test(t))time.summary.status='Enabled';return true;}
+      if((m=t.match(/^info-center loghost\s+(?:ipv6\s+)?(\S+)/i))){logging.servers.push(m[1]);logging.nodes.push(st);return true;}
+      if(/^snmp-agent\b/i.test(t)){var snmp=group('system','snmp','snmp','SNMP management',{status:'Configured'},st);if((m=t.match(/^snmp-agent sys-info location\s+(.+)$/i)))snmp.summary.location=name(m[1]);if((m=t.match(/^snmp-agent sys-info contact\s+(.+)$/i)))snmp.summary.contact=name(m[1]);if((m=t.match(/^snmp-agent target-host\b.*?\baddress\s+(?:udp-domain\s+)?(\S+)/i)))snmp.summary.destinations=joined(unique((snmp.summary.destinations?snmp.summary.destinations.split(', '):[]).concat(m[1])),'');return true;}
+      if(/^(?:undo )?(?:stp|lldp)\b/i.test(t)){var kind=/^(?:undo )?stp\b/i.test(t)?'spanning-tree':'lldp',g=group('switching',kind,kind,kind==='lldp'?'LLDP':'Spanning tree',{kind:kind,status:'Configured'},st);g.commands=g.commands||[];g.commands.push(t);g.summary.settings=g.commands.join('; ');if((m=t.match(/^stp mode\s+(\S+)$/i)))g.summary.mode=m[1];if((m=t.match(/^stp priority\s+(\d+)$/i)))g.summary.priority=m[1];return true;}
+      if(/^hwtacacs-server\b|^radius-server\b/i.test(t)){var auth=group('identities','authentication','authentication','Authentication settings',{kind:'Authentication settings',status:'Configured'},st);var ip=w.find(function(x){return C.ipv4(x)!==null||C.ipv6(x);});if(ip)auth.summary.server=joined(unique((auth.summary.server?auth.summary.server.split(', '):[]).concat(ip)),'');return true;}
+      if(/^(?:undo )?(?:user-interface|stelnet server|telnet server|ssh (?:server|user|authentication-type)|http (?:secure-)?server|dhcp enable|header)\b/i.test(t)){own(system,st);return true;}
+      return false;
+    }
     function vlanCommand(v,st,attach){remember(v,st);
       var t=st.text,m;if(attach)own(v,st);
       if((m=t.match(/^name\s+(.+)/i)))v.summary.vlanName=name(m[1]);
@@ -2444,16 +2496,16 @@ body{font-size:14px}.brand-mark{background:linear-gradient(145deg,#287dc6,#15578
       else if(/^no voice$/i.test(t))v.summary.voice='Disabled';
       else if(/^shutdown|^disable$/i.test(t))v.summary.status='Disabled';
       else if(/^no shutdown|^enable$/i.test(t))v.summary.status='Enabled';
-      else if(/^(?:ip|ipv6) address\b|^no (?:ip|ipv6) address\b|^ip helper-address\b|^(?:ip access-group|ipv6 traffic-filter|apply access-list)\b/i.test(t)){var portName=vendor==='cisco'?'Vlan'+v.name:'VLAN '+v.name;if(/^no (?:ip|ipv6) address/i.test(t)&&!ports.has(portName.toLowerCase()))return;var p=port(portName,true);interfaceCommand(p,st,false);if(/^ip helper-address/i.test(t)&&attach)makeRelay(p,st,p.helpers);}
+      else if(/^(?:ip|ipv6) address\b|^no (?:ip|ipv6) address\b|^ip helper-address\b|^(?:ip access-group|ipv6 traffic-filter|apply access-list)\b/i.test(t)){var portName=ciscoNames?'Vlan'+v.name:'VLAN '+v.name;if(/^no (?:ip|ipv6) address/i.test(t)&&!ports.has(portName.toLowerCase()))return;var p=port(portName,true);interfaceCommand(p,st,false);if(/^ip helper-address/i.test(t)&&attach)makeRelay(p,st,p.helpers);}
     }
     function staticRoute(st,defaultVRF){
       var w=tokens(st.text),v6=w[0].toLowerCase()==='ipv6',at=2,vrf=defaultVRF||'',destination='',mask='',gateway='',iface='',distance='',metric='',routeName='';
-      if(w[at]&&w[at].toLowerCase()==='vrf'){vrf=w[at+1]||'';at+=2;}
-      destination=w[at++]||'';if(!destination.includes('/')&&!v6&&C.ipv4(w[at])!==null)mask=w[at++];
+      if(w[at]&&/^(?:vrf|vpn-instance)$/i.test(w[at])){vrf=w[at+1]||'';at+=2;}
+      destination=w[at++]||'';if(!destination.includes('/')&&!v6&&C.ipv4(w[at])!==null)mask=w[at++];else if(huawei&&!destination.includes('/')&&/^\d{1,3}$/.test(w[at]||''))mask=w[at++];
       var a=address(destination,mask,true),next=w[at++]||'';
       if(C.ipv4(next)!==null||C.ipv6(next))gateway=next;else if(/^(?:null0|reject|blackhole|discard)$/i.test(next)){iface=next;gateway='Discard traffic';}else {iface=next;if(C.ipv4(w[at])!==null||C.ipv6(w[at]))gateway=w[at++];}
       if(/^\d+$/.test(w[at]||''))distance=w[at++];
-      for(;at<w.length;at++){if(w[at].toLowerCase()==='vrf')vrf=w[++at]||vrf;else if(w[at].toLowerCase()==='metric')metric=w[++at]||'';else if(w[at].toLowerCase()==='distance')distance=w[++at]||'';else if(w[at].toLowerCase()==='name')routeName=w[++at]||'';}
+      for(;at<w.length;at++){if(w[at].toLowerCase()==='vrf')vrf=w[++at]||vrf;else if(w[at].toLowerCase()==='metric')metric=w[++at]||'';else if(/^(?:distance|preference)$/i.test(w[at]))distance=w[++at]||'';else if(w[at].toLowerCase()==='name'||huawei&&w[at].toLowerCase()==='description')routeName=w[++at]||'';}
       var obj=group('routes','static-route','static '+st.line,routeName||'Route to '+(a.network||destination),{routeType:'Static route',destination:a.network||destination,gateway:gateway||'Not specified',interface:iface||'Not specified',vrf:vrf,administrativeDistance:distance||'Not specified',metric:metric||'Not specified',ipVersion:v6?'IPv6':'IPv4',status:'Configured'},st);obj.interface=iface;
     }
     function poolCommand(obj,st){
@@ -2471,7 +2523,7 @@ body{font-size:14px}.brand-mark{background:linear-gradient(145deg,#287dc6,#15578
     function contextHeader(st){
       var t=st.text,m;
       if((m=t.match(/^interface\s+(?:range\s+)?(.+)/i))){
-        var spec=name(m[1]),names;if(/^vlan\s+\d+$/i.test(spec))names=[vendor==='cisco'?'Vlan'+spec.split(/\s+/)[1]:'VLAN '+spec.split(/\s+/)[1]];else if(/^lag\s+\d+$/i.test(spec))names=[spec];else names=portNames(spec.replace(/([A-Za-z][A-Za-z-]*)\s+(?=\d)/g,'$1'));
+        var spec=name(m[1]),names;if(/^vlan\s+\d+$/i.test(spec))names=[ciscoNames?'Vlan'+spec.split(/\s+/)[1]:'VLAN '+spec.split(/\s+/)[1]];else if(/^lag\s+\d+$/i.test(spec))names=[spec];else names=portNames(spec.replace(/([A-Za-z][A-Za-z-]*)\s+(?=\d)/g,'$1'));
         var ps=names.map(function(n){return port(n,false);});if(!ps.length)return null;own(ps[0],st);ps.forEach(function(p){remember(p,st);p.derived=false;});return {type:'interface',objects:ps,indent:st.indent};
       }
       if((m=t.match(/^vlan\s+([\d, -]+)$/i))){var vs=expand(m[1],true).map(function(id){return vlan(id,false);});if(!vs.length)return null;own(vs[0],st);vs.forEach(function(v){remember(v,st);v.derived=false;});return {type:'vlan',objects:vs,indent:st.indent};}
@@ -2482,12 +2534,12 @@ body{font-size:14px}.brand-mark{background:linear-gradient(145deg,#287dc6,#15578
       if((m=t.match(/^vsf member\s+(\d+)/i))){var stack=group('switching','stack','vsf '+m[1],'VSF member '+m[1],{kind:'Stack member',member:m[1],technology:'VSF',status:'Configured'},st);stack.links=stack.links||[];return {type:'stack',objects:[stack],indent:st.indent};}
       if((m=t.match(/^(?:monitor|mirror) session\s+(\S+)/i))){var mirror=group('switching','mirror','mirror '+m[1],'Mirror session '+m[1],{kind:'Port mirroring',session:m[1],status:'Configured'},st);return {type:'mirror',objects:[mirror],indent:st.indent};}
       if(/^(?:oobm)$/i.test(t)){var mgmt=port('OOBM',false);own(mgmt,st);return {type:'interface',objects:[mgmt],indent:st.indent};}
-      if((m=t.match(/^(?:vrf (?:context|definition)|ip vrf)\s+(\S+)/i))){var vr=group('switching','vrf','vrf '+m[1],'VRF '+m[1],{kind:'Virtual routing context',vrf:m[1],status:'Configured'},st);return {type:'vrf',objects:[vr],indent:st.indent};}
+      if((m=t.match(/^(?:vrf (?:context|definition|instance)|ip vrf|ip vpn-instance)\s+(\S+)/i))){var vr=group('switching','vrf','vrf '+m[1],'VRF '+m[1],{kind:'Virtual routing context',vrf:m[1],status:'Configured'},st);return {type:'vrf',objects:[vr],indent:st.indent};}
       return null;
     }
     statements.slice(activeStart).forEach(function(st){
       var t=st.text,m,w=tokens(t);if(!t||st.terminal||/^[!;#]/.test(t)||/^Current configuration\s*:/i.test(t))return;
-      if(/^(?:exit|exit-vlan-config|end)$/i.test(t)){var ended=contexts.pop();if(ended&&ended.objects[0])own(ended.objects[0],st);if(/^end$/i.test(t))contexts=[];return;}
+      if(/^(?:exit|exit-vlan-config|end)$/i.test(t)||huawei&&/^(?:quit|return)$/i.test(t)){var ended=contexts.pop();if(ended&&ended.objects[0])own(ended.objects[0],st);if(/^(?:end|return)$/i.test(t))contexts=[];return;}
       if(/^(?:configure terminal|conf t|write memory|copy running-config startup-config)$/i.test(t)){own(system,st);return;}
       while(contexts.length&&st.indent<=contexts[contexts.length-1].indent)contexts.pop();
       var ctx=contexts[contexts.length-1];
@@ -2504,6 +2556,7 @@ body{font-size:14px}.brand-mark{background:linear-gradient(145deg,#287dc6,#15578
         if(ctx.type==='dhcp-server'){own(ctx.objects[0],st);if(/^enable$/i.test(t)){ctx.objects[0].summary.status='Enabled';dhcpEnabled=ctx.objects[0].summary.vrf;}else if(/^disable$/i.test(t))ctx.objects[0].summary.status='Disabled';return;}
         if(ctx.type==='vrf'){if(/^(?:ip|ipv6) route\s+/i.test(t)){staticRoute(st,ctx.objects[0].summary.vrf);return;}own(ctx.objects[0],st);if((m=t.match(/^rd\s+(.+)/i)))ctx.objects[0].summary.routeDistinguisher=m[1];return;}
       }
+      if(huawei&&huaweiGlobalCommand(st,t,w))return;
       if((m=t.match(/^hostname\s+(.+)/i))){b.meta.name=name(m[1]);system.summary.hostname=b.meta.name;own(system,st);}
       else if((m=t.match(/^version\s+(.+)/i))){b.meta.firmware=m[1];own(system,st);}
       else if((m=t.match(/^module\s+(\S+)\s+type\s+(\S+)/i))){var mod=group('switching','module','module '+m[1],'Module '+m[1],{kind:'Hardware module',module:m[1],model:m[2],status:'Configured'},st);}
@@ -2512,24 +2565,26 @@ body{font-size:14px}.brand-mark{background:linear-gradient(145deg,#287dc6,#15578
       else if(/^(?:ip|ipv6) route\s+/i.test(t))staticRoute(st);
       else if((m=t.match(/^ip default-gateway\s+(\S+)/i))){defaultGateway=m[1];group('routes','management-gateway','default-gateway','Management default gateway',{routeType:'Management default gateway',destination:'Management traffic',gateway:m[1],status:'Configured'},st);}
       else if((m=t.match(/^ip (?:dns server-address(?:\s+priority\s+\d+)?|name-server)\s+(.+)/i))){dns.servers=unique(dns.servers.concat(tokens(m[1]).filter(function(x){return C.ipv4(x)!==null||C.ipv6(x);})));dns.nodes.push(st);}
-      else if((m=t.match(/^(?:ip )?domain(?:-name| name)\s+(.+)/i))){dns.domain=name(m[1]);dns.nodes.push(st);}
+      else if((m=t.match(/^(?:(?:ip )?domain(?:-name| name)|dns domain)\s+(?:vrf\s+\S+\s+)?(.+)/i))){dns.domain=name(m[1]);dns.nodes.push(st);}
       else if((m=t.match(/^ip domain(?:-list| list)\s+(.+)/i))){dns.search.push(name(m[1]));dns.nodes.push(st);}
       else if((m=t.match(/^ip dhcp excluded-address\s+(.+)/i)))group('network','dhcp-exclusion','exclusion '+st.line,'DHCP excluded range',{kind:'DHCP excluded addresses',ranges:m[1],status:'Configured'},st);
       else if((m=t.match(/^access-list\s+(\S+)\s+(.+)/i))){var acl=group('security','access-list','acl '+m[1],m[1],{kind:'Access control list',aclType:'Numbered ACL',status:'Configured'},st);acl.ruleLines=acl.ruleLines||[];acl.ruleLines.push(m[2]);acl.summary.entries=String(acl.ruleLines.length);}
       else if(/^(?:no )?(?:spanning-tree|lldp|lacp|loop-protect|vlan dot1q tag native|vlan dot1Q tag native|vpc|vsf|stackwise|switch \d+ provision|errdisable|storm-control)\b/i.test(t)){
         var kind=/spanning-tree/i.test(t)?'spanning-tree':/lldp/i.test(t)?'lldp':/lacp/i.test(t)?'lacp':/loop-protect/i.test(t)?'loop-protection':/vsf|stackwise|switch \d+ provision/i.test(t)?'stack':'switching';var g=group('switching',kind,kind,{'spanning-tree':'Spanning tree',lldp:'LLDP',lacp:'LACP','loop-protection':'Loop protection',stack:'Stack settings',switching:'Switching settings'}[kind],{kind:kind,status:'Configured'},st);g.commands=g.commands||[];g.commands.push(t);g.summary.settings=g.commands.join('; ');if(/^spanning-tree priority\s+/i.test(t))g.summary.priority=w[w.length-1];if(/^spanning-tree mode\s+/i.test(t))g.summary.mode=w[w.length-1];if(/^vlan dot1q tag native$/i.test(t))b._nativeTagged=true;
       }
-      else if(/^(?:ntp|sntp|timesync|clock timezone|time timezone|time daylight-time-rule)\b/i.test(t)){time.nodes.push(st);if((m=t.match(/^(?:ntp|sntp) server(?:\s+priority\s+\d+)?\s+(\S+)/i)))time.servers=unique(time.servers.concat(m[1]));if((m=t.match(/^(?:clock timezone|time timezone)\s+(.+)/i)))time.summary.timezone=name(m[1]);if((m=t.match(/^timesync\s+(.+)/i)))time.summary.timeSource=m[1];if(/^ntp enable$/i.test(t))time.summary.status='Enabled';}
-      else if((m=t.match(/^logging(?:\s+host)?\s+((?:\d+\.){3}\d+|[0-9a-f:]{4,}|\S+\.\S+)(?:\s|$)/i))){logging.servers.push(m[1]);logging.nodes.push(st);}
+      else if(/^(?:ntp|sntp|timesync|clock timezone|time timezone|time daylight-time-rule)\b/i.test(t)){time.nodes.push(st);if((m=t.match(/^(?:ntp|sntp) server(?:\s+priority\s+\d+)?(?:\s+vrf\s+\S+)?\s+(\S+)/i)))time.servers=unique(time.servers.concat(m[1]));if((m=t.match(/^(?:clock timezone|time timezone)\s+(.+)/i)))time.summary.timezone=name(m[1]);if((m=t.match(/^timesync\s+(.+)/i)))time.summary.timeSource=m[1];if(/^ntp enable$/i.test(t))time.summary.status='Enabled';}
+      else if((m=t.match(/^logging(?:\s+vrf\s+\S+)?(?:\s+host)?\s+((?:\d+\.){3}\d+|[0-9a-f:]{4,}|\S+\.\S+)(?:\s|$)/i))){logging.servers.push(m[1]);logging.nodes.push(st);}
       else if((m=t.match(/^password\s+(manager|operator)(?:\s+user-name\s+("[^"]*"|\S+))?/i))){group('identities','user','account '+m[1]+' '+(m[2]||''),m[2]?name(m[2]):m[1]+' account',{kind:'User',role:m[1],authMethod:'Local credential configured',status:'Configured'},st);}
-      else if((m=t.match(/^(?:user|username|local-user)\s+(\S+)(.*)/i))){var rest=m[2],account=group('identities','user','user '+name(m[1]),name(m[1]),{kind:'User',status:'Configured'},st);if((m=rest.match(/\b(?:group|role)\s+(\S+)/i)))account.summary.groups=m[1];if((m=rest.match(/\bprivilege\s+(\d+)/i)))account.summary.privilege=m[1];account.summary.authMethod=/password|secret/i.test(rest)?'Local credential configured':'Not specified';}
+      else if((m=t.match(/^(?:user|username|local-user)\s+(\S+)(.*)/i))){var rest=m[2],account=group('identities','user','user '+name(m[1]),name(m[1]),{kind:'User',status:'Configured'},st);if((m=rest.match(/\b(?:group|role)\s+(\S+)/i)))account.summary.groups=m[1];if((m=rest.match(/\bprivilege\s+(?:level\s+)?(\d+)/i)))account.summary.privilege=m[1];if(account.summary.authMethod!=='Local credential configured')account.summary.authMethod=/password|secret/i.test(rest)?'Local credential configured':'Not specified';}
       else if(/^aaa\b|^(?:radius|tacacs)(?:-server)?\b/i.test(t)){var auth=group('identities','authentication','authentication','Authentication settings',{kind:'Authentication settings',status:'Configured'},st);var ip=w.find(function(x){return C.ipv4(x)!==null||C.ipv6(x);});if(ip)auth.summary.server=joined(unique((auth.summary.server?auth.summary.server.split(', '):[]).concat(ip)),'');}
       else if(/^snmp-server|^snmpv3\b/i.test(t)){var snmp=group('system','snmp','snmp','SNMP management',{status:'Configured'},st);if((m=t.match(/(?:system-location|\blocation)\s+([\s\S]+)/i)))snmp.summary.location=name(m[1]).replace(/\s+/g,' ');if((m=t.match(/\bcontact\s+"([^"]*)"/i)))snmp.summary.contact=m[1];if((m=t.match(/^snmp-server host\s+(\S+)/i)))snmp.summary.destinations=joined(unique((snmp.summary.destinations?snmp.summary.destinations.split(', '):[]).concat(m[1])),'');}
-      else if(/^ip routing$|^no ip routing$|^ip ssh\b|^(?:no )?(?:ssh server|https-server|web-management|tftp|autorun|console|service|enable secret|enable password|password manager|banner|line |boot |crypto |ip http)\b/i.test(t)){own(system,st);if(/^ip routing$|^no ip routing$/i.test(t))system.summary.ipRouting=/^no /i.test(t)?'Disabled':'Enabled';}
+      else if(/^ip routing$|^no ip routing$|^ip ssh\b|^(?:no )?(?:ssh server|https-server|web-management|tftp|autorun|console|service|enable secret|enable password|password manager|banner|line |boot |crypto |ip http)\b/i.test(t)||arista&&/^(?:no )?(?:management (?:api|ssh|telnet|console)|daemon|transceiver)\b/i.test(t)){own(system,st);if(/^ip routing$|^no ip routing$/i.test(t))system.summary.ipRouting=/^no /i.test(t)?'Disabled':'Enabled';}
     });
     if(vendor==='aruba-instant-on'){var ionVersion=source.match(/^vInstantOn_1960_([^\r\n]+)/im),ionModel=source.match(/^SKU Description "([^"]+)"/im);if(ionVersion)b.meta.firmware=ionVersion[1];if(ionModel)b.meta.model=ionModel[1];b.note('Instant On 1960 explicit port, VLAN and aggregation settings are interpreted. Omitted ports are included only where the model and evidenced member type establish their layout. Implicit configuration defaults are not inferred.');}
     var version=source.match(/(?:!Version ArubaOS-CX\s+|Created on release\s+#)([^\r\n]+)/i);if(version)b.meta.firmware=version[1].trim();
     // A show-version banner provides a patch release that 'version 16.9' omits.
+    if(arista){var eosDevice=source.match(/^!\s*device:\s*(\S+)\s*\(([^,()]+),\s*EOS-([^\s)]+)\)/im);if(eosDevice){b.meta.model=eosDevice[2].trim();b.meta.firmware=eosDevice[3];if(!b.meta.name)b.meta.name=eosDevice[1];}}
+    if(huawei){var vrpVersion=source.match(/^!Software Version\s+(\S+)/im);if(vrpVersion)b.meta.firmware=vrpVersion[1];b.note('Huawei VRP views are interpreted for interfaces, VLANs, aggregation, routes, DNS, time, logging and SNMP. Other commands remain in original fields. VRP defaults that are not exported are not inferred.');}
     if(vendor==='cisco'){var iosVersion=source.match(/^Cisco IOS(?: XE)? Software[^\r\n]*?\bVersion\s+([^\s,]+)/im);if(iosVersion)b.meta.firmware=iosVersion[1];}
     var hardware=source.match(/^;\s+(\S+) Configuration Editor/i);if(hardware)b.meta.model=hardware[1];
     if(!b.meta.name){var prompt=source.match(/^([^\s>#]+)#\s*(?:sh(?:ow)?\s+run(?:ning-config)?)?\s*$/im);if(prompt)b.meta.name=prompt[1];}
@@ -2547,6 +2602,7 @@ body{font-size:14px}.brand-mark{background:linear-gradient(145deg,#287dc6,#15578
       }
     }
     // VLANs configured on an SVI or an explicit port command also appear in the VLAN inventory.
+    if(huawei)ports.forEach(function(p){if(p.summary.portMode==='Trunk'&&!p.allowed){p.allowed={type:'set',set:new Set()};p.huaweiUnlisted=true;p.notes.push('No allow-pass VLAN list is exported for this trunk. VRP trunks do not carry every VLAN by default, so no tagged VLANs are inferred.');}});
     ports.forEach(function(p){if(p.summary.vlan)vlan(p.summary.vlan,true);[p.accessVLAN,p.native,p.summary.voiceVLAN].filter(function(v){return /^\d+$/.test(v);}).forEach(function(v){vlan(v,true);});if(p.allowed&&p.allowed.type==='set')p.allowed.set.forEach(function(id){vlan(id,true);});});
     removedVLANs.forEach(function(id){vlans.delete(id);});
     // AOS-Switch membership is VLAN-oriented. A trunk in that syntax is an aggregate link.
@@ -2573,6 +2629,7 @@ body{font-size:14px}.brand-mark{background:linear-gradient(145deg,#287dc6,#15578
     });
     var interfaceRecords=new Map(),vlanRecords=new Map();
     ports.forEach(function(p){
+      if(p.huaweiUnlisted&&!p.allowed.set.size)p.summary.allowedVLANs='Not listed in export';
       p.summary.untaggedVLANs=Array.from(p.untagged).join(', ');p.summary.taggedVLANs=Array.from(p.tagged).join(', ');if(!p.summary.allowedVLANs&&p.tagged.size)p.summary.allowedVLANs=unique(Array.from(p.tagged).concat(Array.from(p.untagged))).join(', ');
       if(!p.summary.voiceVLAN){var voice=Array.from(p.tagged).concat(Array.from(p.untagged)).filter(function(id){return vlans.has(id)&&vlans.get(id).summary.voice==='Enabled';});p.summary.voiceVLAN=unique(voice).join(', ');}
       if(p.helpers.length)p.summary.dhcpRelay=p.helpers.join(', ');
@@ -2750,7 +2807,7 @@ function pJ(L,pan){const d=E(),I={},R={},T={};
     function orderedEntries(){return model.entries.slice().sort(function(a,b){return (Number.isInteger(a.ordinal)?a.ordinal:Number(a.position)||0)-(Number.isInteger(b.ordinal)?b.ordinal:Number(b.position)||0);});}
     if(model.meta.format==='PAN-OS set commands')return orderedEntries().map(function(e){return sensitive(e)?'[REDACTED]':e.value;}).join('\n');
     if(vendor==='sonicwall')return orderedEntries().map(function(e){return e.key+' = '+C.redactValue(e.key,e.value,true);}).join('\n');
-    if(/^(?:aruba-aos|aruba-cx|aruba-instant-on|cisco)$/.test(vendor))return orderedEntries().map(function(e){return sensitive(e)?((e.value.match(/^\s*/)||[''])[0]+'[REDACTED]'):e.value;}).join('\n');
+    if(/^(?:aruba-aos|aruba-cx|aruba-instant-on|cisco|arista-eos|huawei-vrp)$/.test(vendor))return orderedEntries().map(function(e){return sensitive(e)?((e.value.match(/^\s*/)||[''])[0]+'[REDACTED]'):e.value;}).join('\n');
     if(vendor==='fortigate'){
       var lines=source.split(/\r?\n/),privateEntries=model.entries.filter(sensitive);
       // Source spans are mandatory for native rendering. Legacy snapshots and
@@ -2822,7 +2879,7 @@ function pJ(L,pan){const d=E(),I={},R={},T={};
     function fallback(){return {text:fields.map(function(e){return e.key+' = '+(hidden(e)?'[REDACTED]':e.value);}).join('\n'),note:vendor==='sonicwall'?'Decoded EXP fields for this item, in source order.':'Original field paths and values. Native source formatting is unavailable for this item.'};}
     if(model.meta.format==='PAN-OS set commands')return {text:fields.map(function(e){return hidden(e)?'[REDACTED]':e.value;}).join('\n'),note:'Related set commands; partial semantic interpretation.'};
     if(vendor==='sonicwall')return fallback();
-    if(/^(?:aruba-aos|aruba-cx|aruba-instant-on|cisco|juniper)$/.test(vendor))return {text:fields.map(function(e){return hidden(e)?'[REDACTED]':e.value;}).join('\n'),note:vendor==='juniper'?'Related Junos statements. Hierarchical exports are represented as set statements.':'Related source lines in their original order; surrounding context may be omitted.'};
+    if(/^(?:aruba-aos|aruba-cx|aruba-instant-on|cisco|arista-eos|huawei-vrp|juniper)$/.test(vendor))return {text:fields.map(function(e){return hidden(e)?'[REDACTED]':e.value;}).join('\n'),note:vendor==='juniper'?'Related Junos statements. Hierarchical exports are represented as set statements.':'Related source lines in their original order; surrounding context may be omitted.'};
     if(vendor==='fortigate'){
       var lines=configurationText(model,redact).split(/\r?\n/),indices=new Set();
       if(fields.every(function(e){return Number.isInteger(e.sourceLineStart)&&Number.isInteger(e.sourceLineEnd)&&e.sourceLineStart>0&&e.sourceLineEnd<=lines.length;})){
@@ -2898,7 +2955,7 @@ function pJ(L,pan){const d=E(),I={},R={},T={};
         return {text:JSON.stringify(prune(data,'meraki'),null,2),note:'Complete JSON collections with their original property names and enclosing object structure.'};
       }catch(e){}
     }
-    if(nativeSource&&/^(?:aruba-aos|aruba-cx|aruba-instant-on|cisco)$/.test(vendor)){
+    if(nativeSource&&/^(?:aruba-aos|aruba-cx|aruba-instant-on|cisco|arista-eos|huawei-vrp)$/.test(vendor)){
       var lines=configurationText(model,redact).split(/\r?\n/),original=source.split(/\r?\n/),include=new Set();
       fields.forEach(function(e){var m=e.key.match(/^line\[(\d+)\]/);if(!m)return;var index=Number(m[1])-1,start=index;
         // Native switch blocks begin with an unindented command. Keep every
@@ -2935,7 +2992,7 @@ function pJ(L,pan){const d=E(),I={},R={},T={};
       return first==='exit'||first==='end'?'Export metadata':first;
     }
     model.entries.forEach(function(e){var owner=owners.get(e.recordId),name;
-      if(/^(?:aruba-aos|aruba-cx|aruba-instant-on|cisco)$/.test(vendor)&&/^line\[/.test(e.key)){
+      if(/^(?:aruba-aos|aruba-cx|aruba-instant-on|cisco|arista-eos|huawei-vrp)$/.test(vendor)&&/^line\[/.test(e.key)){
         var t=e.value.trim();if(t&&!/^\s/.test(e.value)&&!/^\s*[!#;]/.test(t))root=label(t);
         name=root;
       }else if(vendor==='fortigate'){
@@ -3438,7 +3495,7 @@ function pJ(L,pan){const d=E(),I={},R={},T={};
         var t=e.value.trim(),m,owner=owners.get(e.recordId),name=owner&&(['interfaces','vlans'].includes(owner.category)||owner.category==='network'&&/dhcp/i.test(owner.family))?owner.name:'Global',off=/^no\s+/i.test(t),cmd=t.replace(/^no\s+/i,''),s=off?'Disabled':'Enabled';if(t==='!'){block='';return;}if(!t||/^[!#;]/.test(t))return;
         if(!/^\s/.test(e.value))block=/^(?:line |vrrp |track |route-map |router |flow exporter |flow monitor |sampler |ip dhcp pool )/i.test(t)?t:'';else if(/^(?:exit|end)$/i.test(t))block='';
         if((m=cmd.match(/^(?:clock timezone|time timezone)\s+(.+)$/i))){var zone=m[1];if(/^[-+]?\d+$/.test(zone)&&model.meta.vendorId==='aruba-aos'){var mins=Number(zone);zone='UTC'+(mins<0?'-':'+')+String(Math.floor(Math.abs(mins)/60)).padStart(2,'0')+':'+String(Math.abs(mins)%60).padStart(2,'0')+' (configured offset)';}put('time','Time zone',e,'Time zone',off?'Vendor default (explicit reset)':zone);}
-        else if((m=cmd.match(/^(?:ntp|sntp) server(?:\s+priority\s+\d+)?\s+(\S+)(.*)$/i))){put('time','NTP synchronization',e,'NTP servers',m[1]);if(off)put('time','NTP synchronization',e,'Server configuration','Explicitly removed');if(/\bprefer\b/i.test(m[2]))put('time','NTP synchronization',e,'Preferred server',m[1]);}
+        else if((m=cmd.match(/^(?:ntp|sntp) server(?:\s+priority\s+\d+)?(?:\s+vrf\s+\S+)?\s+(\S+)(.*)$/i))){put('time','NTP synchronization',e,'NTP servers',m[1]);if(off)put('time','NTP synchronization',e,'Server configuration','Explicitly removed');if(/\bprefer\b/i.test(m[2]))put('time','NTP synchronization',e,'Preferred server',m[1]);}
         else if((m=cmd.match(/^(?:timesync|ntp (?:enable|disable)|sntp (?:unicast|broadcast))\b(.*)$/i))){put('time','NTP synchronization',e,'Time source',off?'Disabled':cmd);}
         else if((m=cmd.match(/^time daylight-time-rule\s+(.+)$/i)))put('time','Time zone',e,'Daylight saving rule',off?'Vendor default (explicit reset)':m[1]);
         else if((m=cmd.match(/^(?:logging(?:\s+host)?|syslog(?:-server)?)\s+((?:\d+\.){3}\d+|[0-9a-f:]{4,}|[\w-]+\.[\w.-]+)(.*)$/i))){var title='Syslog '+m[1],tail=m[2];put('syslog',title,e,'Syslog server',m[1]);put('syslog',title,e,'Destination state',off?'Removed':'Configured');var port=tail.match(/(?:port|tcp|udp)\s+(\d+)\b/i);if(port)put('syslog',title,e,'Port',port[1]);var tr=tail.match(/\b(tcp|udp|tls)\b/i);if(tr)put('syslog',title,e,'Transport',tr[1].toUpperCase());}
@@ -3464,7 +3521,7 @@ function pJ(L,pan){const d=E(),I={},R={},T={};
         else if((m=cmd.match(/^ip pim(?:\s+(.*))?$/i)))put('multicast',name+' multicast routing',e,'PIM mode',off?'Disabled':m[1]||'Configured');
         else if(/^ip multicast-routing\b/i.test(cmd))put('multicast','Multicast routing',e,'Multicast routing',s);
         else if((m=cmd.match(/^(?:ip routing|ipv6 unicast-routing|maximum-paths\s+(.+)|ip load-sharing\s+(.+))$/i)))put('advanced','Route forwarding',e,/maximum/.test(cmd)?'Maximum paths':/load-sharing/.test(cmd)?'ECMP selection':/ipv6/.test(cmd)?'IPv6 routing':'IPv4 routing',m[1]||m[2]||s);
-        else if((m=cmd.match(/^(?:ip vrf|vrf definition|vrf)\s+(\S+)/i)))put('vrf',m[1],e,'Routing context',m[1]);
+        else if((m=cmd.match(/^(?:ip vrf|vrf definition|vrf instance|vrf)\s+(\S+)/i)))put('vrf',m[1],e,'Routing context',m[1]);
         else if((m=cmd.match(/^ip prefix-list\s+(\S+)\s+(?:seq\s+\d+\s+)?(permit|deny)\s+(.+)$/i))){put('routefilter',m[1],e,'Prefix entries',m[2]+' '+m[3]);}
         else if((m=cmd.match(/^redistribute\s+(.+)$/i)))put('routefilter',owner&&owner.name||block||'Route redistribution',e,'Redistributed routes',m[1]);
         else if((m=cmd.match(/^(?:match ip address prefix-list|match ip address|set ip next-hop|set metric)\s+(.+)$/i)))put('routefilter',/^route-map/i.test(block)?block:'Route policy',e,/next-hop/.test(cmd)?'Next hop':/metric/.test(cmd)?'Metric':'Match lists',m[1]);
@@ -3546,7 +3603,7 @@ function pJ(L,pan){const d=E(),I={},R={},T={};
     }
     if(model.meta.vendorId==='fortigate')forti();
     else if(!model.meta.vendorId||model.meta.vendorId==='sonicwall')sonic();
-    else if(/^(?:aruba-aos|aruba-cx|aruba-instant-on|cisco)$/.test(model.meta.vendorId))cli();
+    else if(/^(?:aruba-aos|aruba-cx|aruba-instant-on|cisco|arista-eos)$/.test(model.meta.vendorId))cli();
     else if(model.meta.vendorId==='juniper')junos();
     else if(model.meta.vendorId==='mikrotik')original.forEach(function(r){if(r.summary.mikrotikTopic)add(r.summary.mikrotikTopic,r.name,r.fields,facts(r),r.references,r.scope,r.id);});
     else xmlAndJSON();
@@ -3993,7 +4050,7 @@ function pJ(L,pan){const d=E(),I={},R={},T={};
       });
     }
     var vendor=model.meta.vendorId;
-    if(vendor==='fortigate')forti();else if(vendor==='juniper')junos();else if(/^(?:cisco|aruba-aos|aruba-cx|aruba-instant-on)$/.test(vendor))cli();else if(vendor==='paloalto')palo();else if(vendor==='meraki')meraki();else if(vendor==='sophos')sophos();
+    if(vendor==='fortigate')forti();else if(vendor==='juniper')junos();else if(/^(?:cisco|arista-eos|aruba-aos|aruba-cx|aruba-instant-on)$/.test(vendor))cli();else if(vendor==='paloalto')palo();else if(vendor==='meraki')meraki();else if(vendor==='sophos')sophos();
     nativeNAT();nativeRoutesAndSchedules();nativeProtocols();
     // Typed links resolve in the owning context. Identical names in different
     // VDOMs, logical systems, pool types or record kinds are never guessed.
@@ -7117,7 +7174,7 @@ function pJ(L,pan){const d=E(),I={},R={},T={};
     if(file.size>25*1024*1024){importError('This file exceeds the 25 MB limit. Choose a smaller EXP or decoded text file.');return;}
     try{if(window.SWImporters&&file.arrayBuffer){var unpacked=window.SWImporters.unpack(new Uint8Array(await file.arrayBuffer()),file.name);await importText(unpacked.text,unpacked.filename);}else await importText(await file.text(),file.name);}catch(err){importError(err.message||'The file could not be read. Try selecting it again.');}
   }
-  function formatInstructions(){return '<div class="format-guide"><p><strong>Aruba / HPE AOS-Switch:</strong> Open a saved running or startup configuration in text format, including VLAN and port sections.</p><p><strong>Aruba Instant On 1960:</strong> Open the exported text configuration, including VLAN membership and TRK aggregation settings.</p><p><strong>Aruba AOS-CX:</strong> Open running or startup configuration text. Include interface, VLAN, routing and switching sections.</p><p><strong>Cisco IOS / IOS-XE / NX-OS:</strong> Open running or startup configuration text. Include interface and VLAN sections. IOS and NX-OS use platform-specific switching commands.</p><p><strong>Juniper Junos:</strong> Open hierarchical configuration text, display set output, or configuration XML. Inheritance groups and apply-groups are preserved; inherited effective settings require an expanded export.</p><p><strong>Meraki:</strong> Import a structured Dashboard API JSON export containing device and switch configuration, such as ports, VLANs, routing, link aggregations and switching settings. Meraki does not use an IOS running configuration file. Partial exports show only the included endpoints.</p><p><strong>MikroTik RouterOS:</strong> Open an unencrypted binary .backup or a .rsc text export. Recognized networking settings are grouped and linked. Unknown binary fields remain in original fields. Encrypted backups require an unencrypted backup or text export.</p><p><strong>SonicWall:</strong> Export settings as EXP, or open decoded key=value text.</p><p><strong>FortiGate:</strong> Use Backup configuration, FortiOS format, without whole-file encryption. Embedded ENC secret values are supported and stay masked. YAML is not supported.</p><p><strong>Palo Alto:</strong> Device, Setup, Operations, Export named configuration snapshot. Open the XML file. Panorama-pushed settings may require a separate export.</p><p><strong>Sophos Firewall XG/XGS:</strong> Backup &amp; firmware, Import export, Export full configuration. Open the TAR or its Entities.xml. Include dependent entities for selective exports. Regular encrypted backups and legacy UTM backups use different formats.</p></div>';}
+  function formatInstructions(){return '<div class="format-guide"><p><strong>Aruba / HPE AOS-Switch:</strong> Open a saved running or startup configuration in text format, including VLAN and port sections.</p><p><strong>Aruba Instant On 1960:</strong> Open the exported text configuration, including VLAN membership and TRK aggregation settings.</p><p><strong>Aruba AOS-CX:</strong> Open running or startup configuration text. Include interface, VLAN, routing and switching sections.</p><p><strong>Cisco IOS / IOS-XE / NX-OS:</strong> Open running or startup configuration text. Include interface and VLAN sections. IOS and NX-OS use platform-specific switching commands.</p><p><strong>Arista EOS:</strong> Open show running-config text, including the "! device:" header when available. Interface, VLAN, routing and management sections are interpreted.</p><p><strong>Huawei VRP:</strong> Open display current-configuration output or a saved .cfg file. Interface, VLAN, Eth-Trunk, route-static and system views are interpreted; other commands stay in original source.</p><p><strong>Juniper Junos:</strong> Open hierarchical configuration text, display set output, or configuration XML. Inheritance groups and apply-groups are preserved; inherited effective settings require an expanded export.</p><p><strong>Meraki:</strong> Import a structured Dashboard API JSON export containing device and switch configuration, such as ports, VLANs, routing, link aggregations and switching settings. Meraki does not use an IOS running configuration file. Partial exports show only the included endpoints.</p><p><strong>MikroTik RouterOS:</strong> Open an unencrypted binary .backup or a .rsc text export. Recognized networking settings are grouped and linked. Unknown binary fields remain in original fields. Encrypted backups require an unencrypted backup or text export.</p><p><strong>SonicWall:</strong> Export settings as EXP, or open decoded key=value text.</p><p><strong>FortiGate:</strong> Use Backup configuration, FortiOS format, without whole-file encryption. Embedded ENC secret values are supported and stay masked. YAML is not supported.</p><p><strong>Palo Alto:</strong> Device, Setup, Operations, Export named configuration snapshot. Open the XML file. Panorama-pushed settings may require a separate export.</p><p><strong>Sophos Firewall XG/XGS:</strong> Backup &amp; firmware, Import export, Export full configuration. Open the TAR or its Entities.xml. Include dependent entities for selective exports. Regular encrypted backups and legacy UTM backups use different formats.</p></div>';}
   function showCoverage(){
     var m=state.model;if(!m)return;var coverage=m.coverage,notes=m.meta.importNotes||['SonicWall field families are mapped by known aliases. Firmware layouts can vary. Original fields remain available.'];
     openModal(modalHeader('Import coverage',m.meta.vendor+' / '+m.meta.format)+'<div class="modal-body"><div class="detail-summary"><div class="detail-cell"><span>Original fields</span>'+m.entries.length+'</div><div class="detail-cell"><span>Interpreted records</span>'+(coverage?coverage.mappedRecords:m.records.length-m.categories.other.length)+'</div><div class="detail-cell"><span>Records with original fields only</span>'+m.categories.other.length+'</div></div><div class="record-notes">'+notes.map(function(n){return '<p>'+icon('info')+h(n)+'</p>';}).join('')+'</div><p class="support-note">Sections and tabs follow recognized records in the selected context. Hidden or empty sections do not establish whether a feature is disabled or unsupported. Unfamiliar settings remain available in original fields. </p></div><div class="modal-foot"><button class="button" data-action="close-modal">Close</button><button class="button primary" data-action="coverage-originals">View original fields</button></div>');

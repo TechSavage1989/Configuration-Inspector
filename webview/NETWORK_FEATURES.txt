@@ -72,6 +72,29 @@ Cisco IOS/IOS XE and recognized NX-OS CLI syntax:
   lists and next hops; time-range schedules. Specialized NAT syntax is not
   interpreted as a generic static rule when its addresses do not match.
 
+Arista EOS CLI (running-config text):
+  Detected from EOS export markers (the "! device: ... EOS-" header, boot
+  image, TerminAttr or management API sections) instead of being labeled as
+  Cisco. Shares the Cisco-style interface, VLAN, aggregation, static route,
+  DNS, time, logging, user and feature handling, with EOS naming
+  (Port-Channel, Management1), CIDR addresses, "vrf instance" contexts and
+  VRF-scoped name, NTP and logging servers. Model and EOS version come from
+  the export header. Cisco-specific review checks are not applied.
+
+Huawei VRP CLI (display current-configuration / saved .cfg text):
+  Detected from VRP markers (software version header, Vlanif/Eth-Trunk/MEth
+  interfaces, port trunk allow-pass, vlan batch, or sysname with port
+  link-type). Interprets sysname, vlan batch ranges, access/trunk/hybrid port
+  modes, PVIDs, allow-pass and hybrid tagged/untagged VLANs, Eth-Trunk
+  membership and LACP mode, Vlanif addresses including "sub" secondaries,
+  vpn-instance bindings, DHCP relay, ip route-static (mask or prefix length,
+  vpn-instance, preference, description), DNS, ntp-service, info-center
+  loghost, snmp-agent, stp and local users. A trunk with no exported
+  allow-pass list is shown as "Not listed in export" rather than inferring
+  VRP defaults. Lines containing cipher text, %^%# / %$%$ encodings or
+  shared keys are masked. NAT, ACL rule, QoS and feature-model views are not
+  interpreted for VRP; those commands remain in original source.
+
 Meraki Dashboard API JSON:
   Explicit appliance endpoint identities recognize port forwarding, one-to-one
   and one-to-many NAT, preserving external/internal ports, allowed inbound
