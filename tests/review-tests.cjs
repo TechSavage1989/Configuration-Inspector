@@ -120,5 +120,36 @@ m=current.load('tests/fixtures/review-forti.conf');let a=ctx.audit;a.state.revie
 ok(a.filteredFindings().every(f=>f.kind!=='Retained setting'),'Inactive settings hidden in default findings');a.state.findingsKind='retained';ok(a.filteredFindings().every(f=>f.kind==='Retained setting')&&a.filteredFindings().length>0,'Retained settings accessible');a.state.findingsKind='issues';ok(a.filteredFindings().every(f=>f.kind==='Issue'),'Issue-only filter');a.state.findingsKind='all';a.state.findingsQuery='RFC 9325';ok(a.filteredFindings().every(f=>f.check==='tls-legacy')&&a.filteredFindings().length>0,'Guidance searchable');
 a.state.findingsQuery='';const ui=a.findingsPage();ok(ui.indexOf('Source configuration')<ui.indexOf('Review of '),'Source configuration remains first');ok(ui.includes('Recommended resolution')&&ui.includes('Where to change')&&ui.includes('Verify the resolution'),'Review UI contains practical resolution sections');ok(ui.includes('Not assessed'),'Coverage discloses unsupported inputs');
 const json=JSON.parse(R.report({...a.state.review,selection:{context:'VDOM root',kind:'issues'}},m.records,'json',a.filteredFindings()));eq(json.selection,{context:'VDOM root',kind:'issues'},'Export selection metadata retained');eq(json.findings.length,a.filteredFindings().length,'Filtered export includes full result set');
+// Unused objects: whole-name references anywhere outside the object's own definition.
+{
+ const forti=objects=>parse('config firewall address\n'+objects.map(n=>' edit "'+n+'"\n  set subnet 192.0.2.'+(objects.indexOf(n)+1)+' 255.255.255.255\n next\n').join('')+'end\nconfig firewall addrgrp\n edit "Servers"\n  set member "web"\n next\nend\nconfig firewall policy\n edit 1\n  set srcintf "port1"\n  set dstintf "port2"\n  set srcaddr "all"\n  set dstaddr "Servers" "db server"\n  set action accept\n  set service "HTTPS"\n next\nend\n');
+ let r=review(forti(['web','db server','old-host','all']));const f=r.findings.filter(x=>x.check==='unused-object');
+ eq(f.map(x=>x.title),['Address object is not referenced'],'only the unreferenced address object is reported');
+ ok(f[0].detail.startsWith('1 address object is defined but its name does not appear'),'singular wording: '+f[0].detail);
+ ok(f[0].evidence[0]==='Address objects: old-host','group members, names with spaces and built-in "all" count as used');
+ ok(!f.some(x=>/group/i.test(x.title)),'a group used by a policy is not unused');
+ const acl=parse('version 15.2\nhostname acl\nip access-list extended USED-IN\n permit ip any any\nip access-list extended SPARE-LIST\n deny ip any any\ninterface GigabitEthernet1/0/1\n ip access-group USED-IN in\n');
+ r=review(acl);eq(r.findings.filter(x=>x.check==='unused-object').map(x=>x.evidence[0]),['Access lists: SPARE-LIST'],'Cisco ACL bound to an interface is used; the other is not');
+ const vty=parse('version 15.2\nhostname vty\nip access-list standard MGMT\n permit 192.0.2.0 0.0.0.255\nline vty 0 4\n access-class MGMT in\n');
+ ok(!has(review(vty),'unused-object'),'ACL referenced from a line is used');
+ const partial=C.parse('version 15.2\nconfigure terminal\nip access-list extended ONLY-HERE\n permit ip any any\nend\n',{filename:'delta.txt'});
+ ok(!has(review(partial),'unused-object'),'partial command files are not checked for unused objects');
+}
+// VLAN definitions and membership.
+{
+ const cfg='version 15.2\nhostname vlans\nvlan 10\n name USERS\nvlan 20,30\nvlan 99\n name SPARE\ninterface GigabitEthernet1/0/1\n switchport mode access\n switchport access vlan 10\ninterface GigabitEthernet1/0/2\n switchport mode access\n switchport access vlan 40\ninterface GigabitEthernet1/0/3\n switchport mode access\n switchport access vlan 1\ninterface GigabitEthernet1/0/4\n switchport mode trunk\ninterface GigabitEthernet1/0/5\n switchport mode trunk\n switchport trunk allowed vlan 10,20\ninterface GigabitEthernet1/0/6\n switchport mode access\n switchport access vlan 1\n shutdown\ninterface Vlan30\n ip address 10.0.30.1 255.255.255.0\n';
+ const r=review(parse(cfg)),get=id=>r.findings.filter(x=>x.check===id);
+ eq(get('vlan-undefined').map(x=>x.title),['VLAN 40 is assigned to ports but not defined'],'only VLAN 40 is used without a declaration');
+ eq(get('vlan-undefined')[0].kind,'Issue','undefined VLAN is an issue');
+ eq(get('vlan-unused').map(x=>x.evidence[0]),[],'every declared VLAN is carried by the unlimited trunk, so none is unused');
+ eq(get('vlan-default').map(x=>x.evidence[0]),['Ports: GigabitEthernet1/0/3'],'an active VLAN 1 access port is reported; a shutdown one is not');
+ eq(get('trunk-all-vlans').map(x=>x.evidence[0]),['Trunks: GigabitEthernet1/0/4'],'only the trunk without an allowed list is reported');
+ const limited=review(parse(cfg.replace('interface GigabitEthernet1/0/4\n switchport mode trunk\n','')));
+ eq(limited.findings.filter(x=>x.check==='vlan-unused').map(x=>x.evidence[0]),['VLANs: 99 (SPARE)'],'VLAN 99 has no ports or interface; ranged VLAN 30 has an SVI and VLAN 20 a trunk');
+ const lag=review(parse('version 15.2\nhostname lag\ninterface Port-channel1\n switchport mode trunk\ninterface GigabitEthernet1/0/1\n switchport mode trunk\n channel-group 1 mode active\n'));
+ eq(lag.findings.filter(x=>x.check==='trunk-all-vlans').map(x=>x.evidence[0]),['Trunks: Port-channel1'],'aggregate members are reported once through their aggregate');
+ const snapshot=C.parse(ctx.SWImporters.exportJSON(parse(cfg),false),{});
+ eq(review(snapshot).findings.filter(x=>x.check==='vlan-undefined').map(x=>x.title),['VLAN 40 is assigned to ports but not defined'],'snapshots keep VLAN declaration state');
+}
 eq([...new Set(R.checks.map(c=>c.id))].length,R.checks.length,'Check identifiers are unique');eq(R.checks.filter(c=>!detected.has(c.id)).map(c=>c.id),[],'Every registered check has a positive detection case');
 fs.writeFileSync('tests/review-results.json',JSON.stringify({checks,ruleCount:R.checks.length,detectedChecks:[...detected].sort(),assessedChecks:[...assessed].sort(),fixtures:Object.keys(expected),vendors:[...vendors].sort(),referenceTime:NOW},null,2));console.log(checks+' configuration review checks passed across '+vendors.size+' vendors and '+Object.keys(expected).length+' fixtures');

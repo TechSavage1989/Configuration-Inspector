@@ -14,7 +14,7 @@ Coverage
 Every registered check has a positive regression test. A check is assessed only where required recognized inputs are available. Not assessed is distinct from no issue found. No percentage, compliance score or certification is inferred. The review time and guidance revision accompany exports.
 
 Vendor handling
-Common normalized addressing, VLAN, route, DHCP, policy and object-group structures are reviewed across supported vendors. Explicit FortiOS, Cisco/HPE CLI, Junos, PAN-OS XML, Sophos XML, SonicOS fields and typed RouterOS data add vendor-specific checks. Individual checks can remain unassessed if an export omits the fields, the schema is unknown, or binary fields are not interpreted. Exact duplicate policy comparison is limited to recognized FortiOS and PAN-OS explicit rule fields. Cisco password storage types are interpreted only for Cisco imports.
+Common normalized addressing, VLAN, route, DHCP, policy and object-group structures are reviewed across supported vendors. Explicit FortiOS, Cisco/HPE CLI, Junos, PAN-OS XML, Sophos XML, SonicOS fields and typed RouterOS data add vendor-specific checks. Individual checks can remain unassessed if an export omits the fields, the schema is unknown, or binary fields are not interpreted. Exact duplicate policy comparison is limited to recognized FortiOS and PAN-OS explicit rule fields. Cisco password storage types are interpreted only for Cisco imports. Unused objects (address objects and groups, service objects and groups, IP pools and access lists) are reported for FortiOS, PAN-OS, Sophos, SonicOS, Cisco, Arista, Aruba and Huawei exports: an object counts as used when its name appears as a whole word in any other setting, so uncertain matches are treated as used, FortiOS factory objects are ignored, and partial command files are not assessed. VLAN definition, VLAN 1 access and unlimited trunk checks apply to Cisco, Arista, Aruba and Huawei switch exports; VLAN 1 and reserved VLANs 1002-1005 are never reported as undefined, and VTP or vlan.dat definitions outside the running configuration are called out in the recommendation.
 
 Exceptions and interpretation
 Routing contexts and VRFs are kept separate. IPv4 /31 and /32 interfaces and IPv6 link-local reuse are not treated as ordinary host/subnet conflicts. Known DHCP exclusions can suppress allocation conflicts. LDAP port 389 alone is not treated as plaintext: TLS/StartTLS settings are inspected. Deleted and deactivated Junos service statements are not revived. AEAD proposals do not require a separate integrity algorithm. Disabled profiles are kept separate. Rule comparisons include explicit conditions and profiles, and do not claim general firewall shadowing. Explicit DNS recursion does not establish internet exposure. Logging over UDP/TCP may be protected by a tunnel or management network.
@@ -84,6 +84,11 @@ directed-broadcast | Routing | Explicit IP directed-broadcast forwarding
 bpdu-filter | Switching | Explicit BPDU filtering
 admin-mfa | Authentication | Explicitly disabled administrator MFA
 root-ssh | Authentication | Explicit SSH root password login
+unused-object | Objects | Objects not referenced by any other setting
+vlan-undefined | Switching | VLANs assigned to ports without a VLAN definition
+vlan-unused | Switching | Defined VLANs without ports or a VLAN interface
+vlan-default | Switching | Access ports in VLAN 1
+trunk-all-vlans | Switching | Trunks that carry every VLAN
 
 PRIMARY REFERENCES
 cisa | CISA: Communications infrastructure hardening | https://www.cisa.gov/resources-tools/resources/enhanced-visibility-and-hardening-guidance-communications-infrastructure
