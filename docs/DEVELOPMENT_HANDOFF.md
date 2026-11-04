@@ -1,5 +1,29 @@
 # Configuration Inspector development handoff
 
+## Unreleased on `claude/amazing-meitner-ogir0h` (VERSION stays 5.18.8)
+
+Not released; no version bump, tag or asset change was made.
+
+- Updater: automatic checks run at UI readiness and every six hours (was two
+  minutes), send `If-None-Match` and reuse the verified feed on 304, and pause
+  for `Retry-After`/`X-RateLimit-Reset` on 403/429 (1 minute..24 hours,
+  default one hour). Pure helpers live in `update_protocol.h`.
+- Object comparison: unique same-type removed/added pairs with identical
+  settings apart from the name get a "Possible rename" hint; kinds and counts
+  are unchanged.
+- New CLI dialects `arista-eos` and `huawei-vrp` in the CLI switch adapter,
+  detected before Cisco. Huawei is not wired into the feature/network/NAT
+  modules (they parse Cisco-style syntax). Device-spec downloads do not map
+  either manufacturer yet.
+- README: Updates quick link and Troubleshooting section.
+
+Checks run: 110 C++ protocol checks; 58 native scheduler checks compiled with
+MinGW and run under Wine; full Windows app cross-compiled; all Node suites
+(including 100 new vendor and 18 new rename checks); all four browser suites
+(938 comparison, 110 search, 51 updater, Cisco 3650); public-source audit;
+layout tests. Unrun: `updater-windows-tests.cpp` replacement/rollback and
+interactive WebView2 on real Windows (CI's Windows job covers the former).
+
 ## 5.18.1 supplied canonical icon — published and verified
 
 Release: https://github.com/TechSavage1989/Configuration-Inspector/releases/tag/v5.18.1
