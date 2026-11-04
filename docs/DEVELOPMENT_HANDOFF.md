@@ -1,5 +1,17 @@
 # Configuration Inspector development handoff
 
+## 5.21.0 — client report and change summary
+
+- `webview/client_report.js` (embedded `client-report`) renders HTML from data the
+  app collects in `clientReportDevice()`; port states reuse the Interfaces at a
+  glance classification by temporarily activating each workspace model
+  (`withModel`, which swaps `state.model`, `state.interfaceUsageCache` and
+  `state.recordMap` and restores them). Secrets are never collected.
+- `webview/change_summary.js` (embedded `change-summary`) turns
+  `SWCore.compareRecords(..., redact=true)` into text. Renames are tracked by
+  comparison item because record ids can repeat across the two sides.
+- `var APP_VERSION` in `index.html` is updated by `scripts/version.py`.
+
 ## 5.20.0 — recent files and new review checks
 
 - `webview/recent_files.js` (embedded as `recent-files`): File System Access handles

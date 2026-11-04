@@ -22,8 +22,8 @@
 
 - **Find useful settings:** browse recognized configuration sections and follow related objects without losing access to original source.
 - **Understand interfaces and topology:** inspect physical layouts, VLANs, interface groups and device information where the export provides enough detail.
-- **Compare snapshots:** inspect matched objects and their properties side by side, or compare configuration text/files with aligned lines and synchronized scrolling.
-- **Review findings and export:** inspect configuration review results, including unused objects, undefined or unused VLANs, access ports in VLAN 1 and trunks that carry every VLAN, and create reports for further analysis.
+- **Compare snapshots:** inspect matched objects and their properties side by side, or compare configuration text/files with aligned lines and synchronized scrolling. Copy a plain-language **change summary** for a ticket or change record.
+- **Review findings and export:** inspect configuration review results, including unused objects, undefined or unused VLANs, access ports in VLAN 1 and trunks that carry every VLAN, and create reports for further analysis. A printable **client report** summarizes every open configuration: devices, port usage, VLANs, IP addresses and findings.
 
 Imported configurations are analyzed **locally**. Optional device-specification downloads request public hardware definitions without sending configuration contents.
 
@@ -52,12 +52,14 @@ Imported configurations are analyzed **locally**. Optional device-specification 
 
 <table>
   <tr><td width="50%"><b>Side-by-side configuration object comparison</b><br><img src="docs/images/compare-configurations.png" alt="Side-by-side configuration object comparison" width="440"></td><td width="50%"><b>Aligned text comparison with change map</b><br><img src="docs/images/compare-text.png" alt="Aligned text comparison with change map" width="440"></td></tr>
+  <tr><td width="50%"><b>Plain-language change summary</b><br><img src="docs/images/change-summary.png" alt="Plain-language change summary" width="440"></td><td width="50%"></td></tr>
 </table>
 
 ### Review findings and export
 
 <table>
   <tr><td width="50%"><b>Configuration review findings</b><br><img src="docs/images/config-review.png" alt="Configuration review findings" width="440"></td><td width="50%"><b>Convert and export with redaction</b><br><img src="docs/images/convert-and-export.png" alt="Convert and export with redaction" width="440"></td></tr>
+  <tr><td width="50%"><b>Printable client report</b><br><img src="docs/images/client-report.png" alt="Printable client report" width="440"></td><td width="50%"></td></tr>
 </table>
 
 ## Download
@@ -92,7 +94,7 @@ Prefer a browser-based edition? The same release includes **`Config_Inspector.ht
 
 Interfaces at a glance shows all interfaces by default, including unused ports and logical interfaces. Use **Hide unused** within a group to condense it, and **Show unused** to restore the full view. Loading a configuration starts with all interfaces visible.
 
-Reopen a recent configuration from **Recent files** on the start screen (desktop app, Microsoft Edge and Google Chrome). Use the sidebar to move between recognized configuration views, follow object links for context, and compare snapshots before exporting your findings. Consult original source for unsupported or ambiguous settings; this app does not apply changes to devices.
+Reopen a recent configuration from **Recent files** on the start screen (desktop app, Microsoft Edge and Google Chrome). In **Convert & export**, **Client report** creates one printable HTML document for every open configuration; open it and choose **Print or save as PDF**. Use the sidebar to move between recognized configuration views, follow object links for context, and compare snapshots before exporting your findings. Consult original source for unsupported or ambiguous settings; this app does not apply changes to devices.
 
 ## Global configuration search
 
@@ -145,6 +147,8 @@ Open **Compare configs** in the sidebar and select one of the two primary modes:
   scrolling and Previous/Next difference (also F7 / Shift+F7) help review changes.
   Large comparisons render 500 aligned rows per page; navigation crosses pages.
   Bounded alignment may use a clearly labeled approximate fallback.
+
+In **Config objects**, **Change summary** lists every change in plain language (for example `Untagged VLANs: 10 → 30` or `Tagged VLANs: removed 100`), grouped by category, with sensitive values always masked. Copy it or download it as text for a ticket or change record.
 
 Both modes are **read-only**. The double-arrow **Swap sides** button between the
 inputs swaps their contents and names; the same control remains between the
