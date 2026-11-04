@@ -14,7 +14,13 @@ existing CI checks before promotion. New root entries require an intentional rev
 of the allowlist and a reason in the change description; never relax it to a glob.
 Rebase older feature branches on current main and rerun checks after integration.
 Organization changes do not authorize version bumps, releases, tag/asset replacement
-or repository access changes. Preserve the polished README layout.
+or repository access changes.
+
+Owner's standing instruction (2026-11-04): the owner does not use GitHub directly.
+For user-visible changes, agents open the pull request, merge it once all checks
+are green, and release it (bump `VERSION`, add `docs/releases/VERSION.md`, merge to
+`main`) without asking, then verify the published assets. Never replace an
+existing release or its assets. Preserve the polished README layout.
 
 ## Gotchas
 
