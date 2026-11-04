@@ -10,6 +10,7 @@
   <a href="#getting-started">Get started</a> ·
   <a href="#features">Features</a> ·
   <a href="#screenshots">Screenshots</a> ·
+  <a href="#updates-and-settings">Updates</a> ·
   <a href="#development">Development</a>
 </p>
 
@@ -215,6 +216,19 @@ During an update, loaded configurations and the comparison are encrypted using W
 Close additional copies of the same executable before installing and keep the application folder writable. A failed download leaves the current executable unchanged. Update checks do not send configuration contents or require GitHub credentials.
 
 See [UPDATING.md](docs/UPDATING.md) for installation, rollback, storage and trust details.
+
+## Troubleshooting
+
+| Problem | What to do |
+| --- | --- |
+| The app does not open or shows an empty window | Install the **Microsoft Edge WebView2 Evergreen Runtime**, then extract the ZIP to a local folder and run **`Config_Inspector.exe`** from there, not from inside the ZIP viewer. |
+| Windows warns about an unrecognized app | The builds are not Authenticode signed. Check the download against **`Config_Inspector_Portable.zip.sha256`** or **`SHA256SUMS`** from the same release before running it. |
+| A setting is missing from the structured views | Unsupported or ambiguous syntax is kept in original source rather than interpreted. Use **global search** with **Raw text**, or open the object's original source. |
+| *"The application folder is not writable"* | Move the executable to a folder your account can write to, then use **App settings → App updates** again. |
+| *"Close other copies of this app before installing the update"* | Close every other window running the same executable, then choose **Review and restart** again. |
+| *"GitHub has temporarily limited update requests"* | Several copies on the same network share GitHub's request allowance. Automatic checks pause for the delay GitHub reports and then resume; **Help → Check for updates** can be retried later. |
+| The updated version does not start | The previous executable is restored automatically if the new one does not finish opening within 90 seconds. For manual recovery, see [Installation and recovery](docs/UPDATING.md#installation-and-recovery). |
+| Hardware details are missing or out of date | Specification downloads use exact model matches and can be disabled in **Device information**; cached definitions work offline. Refresh them there, or see [device specifications](webview/DEVICE_SPECIFICATIONS.txt). |
 
 ## Development
 
