@@ -1,5 +1,15 @@
 # Configuration Inspector development handoff
 
+## 5.24.0 — migration validation performance
+
+- `webview/migration.js` previously recomputed facts for every candidate pair and
+  expanded reference chains recursively (VLAN -> ports -> VLANs), which never
+  finished on a 106-port stack. Facts are now computed once per record, referenced
+  objects are described by their own facts (one level), and matching uses
+  category/scope/signature and name indexes. 118 items analyze in ~8 ms.
+- `migrationPanel()` caches the analysis (`state.migrationCache`), defaults to the
+  Needs attention filter, pages 50 items and builds item bodies on `toggle`.
+
 ## 5.23.0 — navigation and map collapse
 
 - Sidebar sections render through `navSection()`; collapsed keys are stored in

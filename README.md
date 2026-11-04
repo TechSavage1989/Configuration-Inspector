@@ -152,7 +152,7 @@ Open two or more configurations from the same site (**Add files**) and choose **
 
 ## Compare configurations
 
-Open **Compare configs** in the sidebar and select one of the two primary modes:
+Open **Compare configs** in the sidebar and select a mode. **Migration validation** is for device replacements and vendor changes: put the original configuration on the left and the new one on the right, and it lists everything that is different, missing or only on the new device. The two everyday modes are:
 
 - **Config objects:** choose the left/current and right/comparison configurations
   using files or pasted settings. Review paired objects and original fields;
