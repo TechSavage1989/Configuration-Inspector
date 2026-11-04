@@ -136,7 +136,10 @@ Open **Compare configs** in the sidebar and select one of the two primary modes:
   using files or pasted settings. Review paired objects and original fields;
   filter by added, removed, changed or unchanged state, category and search.
   Matching uses supported vendor, context, type and name. Renames remain
-  additions/removals and ambiguous duplicate identities are not guessed.
+  additions/removals and ambiguous duplicate identities are not guessed. When
+  exactly one removed and one added object of the same type and context have
+  identical settings apart from the name, both cards show a **Possible rename**
+  hint naming the other object; counts and filters are unchanged.
 - **Config text / files:** compare loaded configuration source or independent
   UTF-8 files/pasted text. Aligned line numbers, change highlights, synchronized
   scrolling and Previous/Next difference (also F7 / Shift+F7) help review changes.
