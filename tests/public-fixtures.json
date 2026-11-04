@@ -267,6 +267,14 @@
     "tests/fixtures/specifications-forti.conf": {
       "sha256": "00d5e03173befb9c30d94ca76c819a85914d1f85d10b3f367b8b6e22a16f34ad",
       "origin": "Synthetic regression fixture"
+    },
+    "tests/fixtures/vendor-arista.conf": {
+      "sha256": "95f9467a7c9fb2c445c29912303ef6ae2ac53c3c045433c3d07ff1203a997f09",
+      "origin": "Synthetic regression fixture"
+    },
+    "tests/fixtures/vendor-huawei.cfg": {
+      "sha256": "b6a7cb2c45a33535a844f639402c49ab86f76bcbba32f790fb62db1a08ae1c77",
+      "origin": "Synthetic regression fixture"
     }
   }
 }

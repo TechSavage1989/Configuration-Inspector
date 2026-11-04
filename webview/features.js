@@ -115,7 +115,7 @@
         var t=e.value.trim(),m,owner=owners.get(e.recordId),name=owner&&(['interfaces','vlans'].includes(owner.category)||owner.category==='network'&&/dhcp/i.test(owner.family))?owner.name:'Global',off=/^no\s+/i.test(t),cmd=t.replace(/^no\s+/i,''),s=off?'Disabled':'Enabled';if(t==='!'){block='';return;}if(!t||/^[!#;]/.test(t))return;
         if(!/^\s/.test(e.value))block=/^(?:line |vrrp |track |route-map |router |flow exporter |flow monitor |sampler |ip dhcp pool )/i.test(t)?t:'';else if(/^(?:exit|end)$/i.test(t))block='';
         if((m=cmd.match(/^(?:clock timezone|time timezone)\s+(.+)$/i))){var zone=m[1];if(/^[-+]?\d+$/.test(zone)&&model.meta.vendorId==='aruba-aos'){var mins=Number(zone);zone='UTC'+(mins<0?'-':'+')+String(Math.floor(Math.abs(mins)/60)).padStart(2,'0')+':'+String(Math.abs(mins)%60).padStart(2,'0')+' (configured offset)';}put('time','Time zone',e,'Time zone',off?'Vendor default (explicit reset)':zone);}
-        else if((m=cmd.match(/^(?:ntp|sntp) server(?:\s+priority\s+\d+)?\s+(\S+)(.*)$/i))){put('time','NTP synchronization',e,'NTP servers',m[1]);if(off)put('time','NTP synchronization',e,'Server configuration','Explicitly removed');if(/\bprefer\b/i.test(m[2]))put('time','NTP synchronization',e,'Preferred server',m[1]);}
+        else if((m=cmd.match(/^(?:ntp|sntp) server(?:\s+priority\s+\d+)?(?:\s+vrf\s+\S+)?\s+(\S+)(.*)$/i))){put('time','NTP synchronization',e,'NTP servers',m[1]);if(off)put('time','NTP synchronization',e,'Server configuration','Explicitly removed');if(/\bprefer\b/i.test(m[2]))put('time','NTP synchronization',e,'Preferred server',m[1]);}
         else if((m=cmd.match(/^(?:timesync|ntp (?:enable|disable)|sntp (?:unicast|broadcast))\b(.*)$/i))){put('time','NTP synchronization',e,'Time source',off?'Disabled':cmd);}
         else if((m=cmd.match(/^time daylight-time-rule\s+(.+)$/i)))put('time','Time zone',e,'Daylight saving rule',off?'Vendor default (explicit reset)':m[1]);
         else if((m=cmd.match(/^(?:logging(?:\s+host)?|syslog(?:-server)?)\s+((?:\d+\.){3}\d+|[0-9a-f:]{4,}|[\w-]+\.[\w.-]+)(.*)$/i))){var title='Syslog '+m[1],tail=m[2];put('syslog',title,e,'Syslog server',m[1]);put('syslog',title,e,'Destination state',off?'Removed':'Configured');var port=tail.match(/(?:port|tcp|udp)\s+(\d+)\b/i);if(port)put('syslog',title,e,'Port',port[1]);var tr=tail.match(/\b(tcp|udp|tls)\b/i);if(tr)put('syslog',title,e,'Transport',tr[1].toUpperCase());}
@@ -141,7 +141,7 @@
         else if((m=cmd.match(/^ip pim(?:\s+(.*))?$/i)))put('multicast',name+' multicast routing',e,'PIM mode',off?'Disabled':m[1]||'Configured');
         else if(/^ip multicast-routing\b/i.test(cmd))put('multicast','Multicast routing',e,'Multicast routing',s);
         else if((m=cmd.match(/^(?:ip routing|ipv6 unicast-routing|maximum-paths\s+(.+)|ip load-sharing\s+(.+))$/i)))put('advanced','Route forwarding',e,/maximum/.test(cmd)?'Maximum paths':/load-sharing/.test(cmd)?'ECMP selection':/ipv6/.test(cmd)?'IPv6 routing':'IPv4 routing',m[1]||m[2]||s);
-        else if((m=cmd.match(/^(?:ip vrf|vrf definition|vrf)\s+(\S+)/i)))put('vrf',m[1],e,'Routing context',m[1]);
+        else if((m=cmd.match(/^(?:ip vrf|vrf definition|vrf instance|vrf)\s+(\S+)/i)))put('vrf',m[1],e,'Routing context',m[1]);
         else if((m=cmd.match(/^ip prefix-list\s+(\S+)\s+(?:seq\s+\d+\s+)?(permit|deny)\s+(.+)$/i))){put('routefilter',m[1],e,'Prefix entries',m[2]+' '+m[3]);}
         else if((m=cmd.match(/^redistribute\s+(.+)$/i)))put('routefilter',owner&&owner.name||block||'Route redistribution',e,'Redistributed routes',m[1]);
         else if((m=cmd.match(/^(?:match ip address prefix-list|match ip address|set ip next-hop|set metric)\s+(.+)$/i)))put('routefilter',/^route-map/i.test(block)?block:'Route policy',e,/next-hop/.test(cmd)?'Next hop':/metric/.test(cmd)?'Metric':'Match lists',m[1]);
@@ -223,7 +223,7 @@
     }
     if(model.meta.vendorId==='fortigate')forti();
     else if(!model.meta.vendorId||model.meta.vendorId==='sonicwall')sonic();
-    else if(/^(?:aruba-aos|aruba-cx|aruba-instant-on|cisco)$/.test(model.meta.vendorId))cli();
+    else if(/^(?:aruba-aos|aruba-cx|aruba-instant-on|cisco|arista-eos)$/.test(model.meta.vendorId))cli();
     else if(model.meta.vendorId==='juniper')junos();
     else if(model.meta.vendorId==='mikrotik')original.forEach(function(r){if(r.summary.mikrotikTopic)add(r.summary.mikrotikTopic,r.name,r.fields,facts(r),r.references,r.scope,r.id);});
     else xmlAndJSON();

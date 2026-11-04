@@ -165,7 +165,7 @@
       });
     }
     var vendor=model.meta.vendorId;
-    if(vendor==='fortigate')forti();else if(vendor==='juniper')junos();else if(/^(?:cisco|aruba-aos|aruba-cx|aruba-instant-on)$/.test(vendor))cli();else if(vendor==='paloalto')palo();else if(vendor==='meraki')meraki();else if(vendor==='sophos')sophos();
+    if(vendor==='fortigate')forti();else if(vendor==='juniper')junos();else if(/^(?:cisco|arista-eos|aruba-aos|aruba-cx|aruba-instant-on)$/.test(vendor))cli();else if(vendor==='paloalto')palo();else if(vendor==='meraki')meraki();else if(vendor==='sophos')sophos();
     nativeNAT();nativeRoutesAndSchedules();nativeProtocols();
     // Typed links resolve in the owning context. Identical names in different
     // VDOMs, logical systems, pool types or record kinds are never guessed.

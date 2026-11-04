@@ -10,6 +10,7 @@
   <a href="#getting-started">Get started</a> ·
   <a href="#features">Features</a> ·
   <a href="#screenshots">Screenshots</a> ·
+  <a href="#updates-and-settings">Updates</a> ·
   <a href="#development">Development</a>
 </p>
 
@@ -76,7 +77,7 @@ Use **`Config_Inspector_Portable.zip.sha256`** to check the archive hash. Future
 
 > **Treat exports as evidence, not live telemetry.** Unsupported syntax remains available in original source and is not interpreted as effective configuration. Missing hardware details or runtime state must not be assumed. Review findings against the device and its vendor documentation before making changes.
 
-For feature coverage and limitations, see [network features](webview/NETWORK_FEATURES.txt), [security features](webview/SECURITY_FEATURES.txt), [hardware layouts](webview/HARDWARE_LAYOUTS.txt) and [device specifications](webview/DEVICE_SPECIFICATIONS.txt).
+Arista EOS and Huawei VRP configuration text is recognized under its own vendor name; Huawei VRP coverage is narrower than the Cisco-style CLI adapters. For feature coverage and limitations, see [network features](webview/NETWORK_FEATURES.txt), [security features](webview/SECURITY_FEATURES.txt), [hardware layouts](webview/HARDWARE_LAYOUTS.txt) and [device specifications](webview/DEVICE_SPECIFICATIONS.txt).
 
 ## Getting started
 
@@ -135,7 +136,10 @@ Open **Compare configs** in the sidebar and select one of the two primary modes:
   using files or pasted settings. Review paired objects and original fields;
   filter by added, removed, changed or unchanged state, category and search.
   Matching uses supported vendor, context, type and name. Renames remain
-  additions/removals and ambiguous duplicate identities are not guessed.
+  additions/removals and ambiguous duplicate identities are not guessed. When
+  exactly one removed and one added object of the same type and context have
+  identical settings apart from the name, both cards show a **Possible rename**
+  hint naming the other object; counts and filters are unchanged.
 - **Config text / files:** compare loaded configuration source or independent
   UTF-8 files/pasted text. Aligned line numbers, change highlights, synchronized
   scrolling and Previous/Next difference (also F7 / Shift+F7) help review changes.
@@ -206,7 +210,7 @@ Open **App settings** from the sidebar or native File menu to choose the desktop
 
 Open **App settings → App updates**. Choose **Download update**, then **Review and restart** and confirm installation after saving your work.
 
-Automatic checks start as soon as the interface is ready and run every two minutes while the app is open. They can be disabled; **Later** hides that release’s notice for 24 hours without hiding a newer release. **Help → Check for updates** opens the update controls and checks immediately. Nothing downloads or restarts automatically.
+Automatic checks start as soon as the interface is ready and run every six hours while the app is open, pausing for the delay GitHub reports if it limits requests. They can be disabled; **Later** hides that release’s notice for 24 hours without hiding a newer release. **Help → Check for updates** opens the update controls and checks immediately. Nothing downloads or restarts automatically.
 
 Updates come from this repository's stable GitHub Releases. The downloaded executable must match the release's SHA-256 digest, size, product identity, architecture and version. These builds are **not Authenticode signed**: hashes detect corruption and mismatched files, not a compromised publisher.
 
@@ -215,6 +219,19 @@ During an update, loaded configurations and the comparison are encrypted using W
 Close additional copies of the same executable before installing and keep the application folder writable. A failed download leaves the current executable unchanged. Update checks do not send configuration contents or require GitHub credentials.
 
 See [UPDATING.md](docs/UPDATING.md) for installation, rollback, storage and trust details.
+
+## Troubleshooting
+
+| Problem | What to do |
+| --- | --- |
+| The app does not open or shows an empty window | Install the **Microsoft Edge WebView2 Evergreen Runtime**, then extract the ZIP to a local folder and run **`Config_Inspector.exe`** from there, not from inside the ZIP viewer. |
+| Windows warns about an unrecognized app | The builds are not Authenticode signed. Check the download against **`Config_Inspector_Portable.zip.sha256`** or **`SHA256SUMS`** from the same release before running it. |
+| A setting is missing from the structured views | Unsupported or ambiguous syntax is kept in original source rather than interpreted. Use **global search** with **Raw text**, or open the object's original source. |
+| *"The application folder is not writable"* | Move the executable to a folder your account can write to, then use **App settings → App updates** again. |
+| *"Close other copies of this app before installing the update"* | Close every other window running the same executable, then choose **Review and restart** again. |
+| *"GitHub has temporarily limited update requests"* | Several copies on the same network share GitHub's request allowance. Automatic checks pause for the delay GitHub reports and then resume; **Help → Check for updates** can be retried later. |
+| The updated version does not start | The previous executable is restored automatically if the new one does not finish opening within 90 seconds. For manual recovery, see [Installation and recovery](docs/UPDATING.md#installation-and-recovery). |
+| Hardware details are missing or out of date | Specification downloads use exact model matches and can be disabled in **Device information**; cached definitions work offline. Refresh them there, or see [device specifications](webview/DEVICE_SPECIFICATIONS.txt). |
 
 ## Development
 

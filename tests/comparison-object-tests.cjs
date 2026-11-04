@@ -118,4 +118,40 @@ for(const fixture of ['features-cisco.conf','features-forti.conf','features-juno
  ok(same.items.every(item=>item.kind==='Unchanged'&&!item.ambiguous),fixture+' exact duplicates stay unchanged');
  eq(JSON.stringify(parsed),snapshot,fixture+' source retention');
 }
+// Possible renames: labeled hints only. Kinds and counts are never changed.
+result=C.compareRecords(model([record('Old name','shared settings'),record('Kept','same')]),model([record('New name','shared settings'),record('Kept','same')]),true,options);
+eq(result.items.map(item=>[item.kind,item.before&&item.before.name,item.after&&item.after.name]),[['Removed','Old name',null],['Unchanged','Kept','Kept'],['Added',null,'New name']],'a rename remains a separate removal and addition');
+eq(result.renames,1,'one possible rename is counted');
+eq(result.items.find(item=>item.kind==='Removed').possibleRename,{to:'New name',id:'New name'},'removed object points to its possible new name');
+eq(result.items.find(item=>item.kind==='Added').possibleRename,{from:'Old name',id:'Old name'},'added object points to its possible old name');
+ok(!result.items.find(item=>item.kind==='Unchanged').possibleRename,'matched objects carry no rename hint');
+const selfNamed=name=>record(name,'interface '+name+' uplink',{fields:[{key:'line',base:'line',value:'interface '+name+' uplink'}]});
+eq(C.compareRecords(model([selfNamed('Port-A')]),model([selfNamed('Port-B')]),true,options).renames,1,'an object whose settings repeat its own name is masked before comparison');
+result=C.compareRecords(model([record('Old name','different')]),model([record('New name','shared settings')]),true,options);
+eq(result.renames,0,'different settings are not a rename');ok(result.items.every(item=>!item.possibleRename));
+result=C.compareRecords(model([record('Old A','shared settings'),record('Old B','shared settings')]),model([record('New A','shared settings')]),true,options);
+eq(result.renames,0,'two removed candidates for one addition are not guessed');
+result=C.compareRecords(model([record('Old A','shared settings')]),model([record('New A','shared settings'),record('New B','shared settings')]),true,options);
+eq(result.renames,0,'two added candidates for one removal are not guessed');
+result=C.compareRecords(model([record('Old name','shared settings',{family:'address'})]),model([record('New name','shared settings')]),true,options);
+eq(result.renames,0,'different object families are not paired');
+result=C.compareRecords(model([record('Old name','shared settings',{scope:'vdom-a'})]),model([record('New name','shared settings',{scope:'vdom-b'})]),true,options);
+eq(result.renames,0,'different scopes are not paired');
+result=C.compareRecords(model([record('Old name','shared settings')],'cisco'),model([record('New name','shared settings')],'fortigate'),true,options);
+eq(result.renames,0,'different vendors are not paired');
+const empty=name=>record(name,'',{summary:{},fields:[{key:'name',base:'name',value:name}]});
+eq(C.compareRecords(model([empty('Old')]),model([empty('New')]),true,options).renames,0,'objects with no settings beyond their name are not paired');
+result=C.compareRecords(duplicatesLeft,model([record('Duplicate','b',{id:'right-b'}),record('Other','a',{id:'right-other'})]),true,options);
+ok(result.items.every(item=>!item.possibleRename),'ambiguous duplicate identities never receive a rename hint');
+
+// Real importer: a renamed FortiGate address object.
+const forti=(names)=>C.parse('config firewall address\n'+names.map(([n,ip])=>' edit "'+n+'"\n  set subnet '+ip+' 255.255.255.255\n next\n').join('')+'end\n',{filename:'rename-example.conf'});
+const fortiBefore=forti([['web-old','192.0.2.10'],['database','192.0.2.20'],['retired','192.0.2.30']]),fortiAfter=forti([['web-server','192.0.2.10'],['database','192.0.2.20'],['replacement','192.0.2.31']]);
+const fortiSnapshot=JSON.stringify([fortiBefore,fortiAfter]);
+result=C.compareRecords(fortiBefore,fortiAfter,true,options);
+const hinted=result.items.filter(item=>item.possibleRename).map(item=>[item.kind,(item.before||item.after).name]).sort();
+eq(hinted,[['Added','web-server'],['Removed','web-old']],'only the address with identical settings is labeled as a possible rename');
+ok(result.items.some(item=>item.kind==='Removed'&&item.before.name==='retired'&&!item.possibleRename),'changed settings remain an unlabeled removal');
+eq(JSON.stringify([fortiBefore,fortiAfter]),fortiSnapshot,'rename hints never mutate either source');
+
 console.log(checks+' side-by-side object comparison checks passed');

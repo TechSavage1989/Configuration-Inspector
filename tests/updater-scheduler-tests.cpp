@@ -10,18 +10,19 @@ std::string feed(const std::string& v){
  Json list=Json::list();list.items={a};Json j=Json::obj();j.fields={{"tag_name",Json("v"+v)},{"draft",Json(false)},{"prerelease",Json(false)},{"body",Json("Synthetic scheduler test")},{"assets",list}};return dump(j);
 }
 struct Harness {
- std::atomic<uint64_t> time{1000};std::atomic<unsigned> requests{0},errors{0};std::atomic<bool> blocked{false};
+ std::atomic<uint64_t> time{1000};std::atomic<unsigned> requests{0},errors{0},limited{0},notModified{0};std::atomic<bool> blocked{false};std::atomic<uint64_t> limitWait{0};std::string servedTag="\"feed-1\"",sentTag;
  std::mutex mutex;std::map<std::wstring,uint64_t> preferences;std::string response=feed("99.0.0");Json last;
  UpdateServices services(){UpdateServices s;
   s.clock=[this]{return time.load();};
   s.read=[this](const wchar_t* key,uint64_t fallback){std::lock_guard<std::mutex> lock(mutex);auto it=preferences.find(key);return it==preferences.end()?fallback:it->second;};
   s.save=[this](const wchar_t* key,uint64_t value){std::lock_guard<std::mutex> lock(mutex);preferences[key]=value;};
-  s.feed=[this](std::atomic<bool>& stop){++requests;while(blocked&&!stop)Sleep(1);require(!stop,"Cancelled scheduler test.");if(errors){--errors;throw Error("Synthetic offline failure");}std::lock_guard<std::mutex> lock(mutex);return response;};return s;
+  s.feed=[this](std::atomic<bool>& stop,const std::string& etag){++requests;while(blocked&&!stop)Sleep(1);require(!stop,"Cancelled scheduler test.");if(errors){--errors;throw Error("Synthetic offline failure");}if(limited){--limited;throw RateLimited(limitWait);}std::lock_guard<std::mutex> lock(mutex);sentTag=etag;FeedResponse r;r.etag=servedTag;if(!etag.empty()&&etag==servedTag){++notModified;r.notModified=true;return r;}r.body=response;return r;};return s;
  }
  void receive(std::string value){std::lock_guard<std::mutex> lock(mutex);last=parse(value);}
  Json status(Updater& u){u.status();std::lock_guard<std::mutex> lock(mutex);return last;}
  Json settled(Updater& u){for(unsigned i=0;u.active()&&i<5000;++i)Sleep(1);ok(!u.active(),"Updater worker completes within the test deadline.");return status(u);}
- void nextFeed(const std::string& v){std::lock_guard<std::mutex> lock(mutex);response=feed(v);}
+ void nextFeed(const std::string& v){std::lock_guard<std::mutex> lock(mutex);response=feed(v);servedTag="\"feed-"+v+"\"";}
+ std::string tag(){std::lock_guard<std::mutex> lock(mutex);return sentTag;}
 };
 int wmain(){std::wstring root;try{
  wchar_t temp[32768];GetTempPathW(32768,temp);root=full(std::wstring(temp)+L"ci-scheduler-tests-"+wide(nonce().substr(0,16)));directory(root);
@@ -32,11 +33,21 @@ int wmain(){std::wstring root;try{
   h.time=1100;u.tick();ok(h.requests==0,"Startup never checks before the UI-ready handshake.");
   u.ready();auto v=h.settled(u);ok(h.requests==1,"Startup checks immediately at UI readiness without a timer delay.");
   ok(v.at("state").str()=="available"&&v.at("available").bit()&&!v.at("snoozed").bit(),"Startup publishes an unsolicited available-update notice.");
-  ok(v.at("lastCheck").integer()==1100&&v.at("nextCheck").integer()==1220,"A successful automatic check schedules two-minute polling.");
-  h.time=1101;u.ready();ok(h.requests==1&&h.status(u).at("nextCheck").integer()==1220,"Repeated UI-ready neither duplicates nor postpones a check.");
+  const uint64_t next=1100+updateCheckInterval;ok(updateCheckInterval==6*60*60,"Automatic polling stays within GitHub's unauthenticated rate limit.");
+  ok(v.at("lastCheck").integer()==1100&&v.at("nextCheck").integer()==uint64_t(next),"A successful automatic check schedules six-hour polling.");ok(h.tag().empty(),"The first feed request is unconditional.");
+  h.time=1101;u.ready();ok(h.requests==1&&h.status(u).at("nextCheck").integer()==uint64_t(next),"Repeated UI-ready neither duplicates nor postpones a check.");
   u.setAutomatic(true);ok(h.requests==1,"Repeated enabled preference does not cause another request.");
-  h.time=1219;u.tick();ok(h.requests==1,"No request before the two-minute deadline.");
-  h.time=1220;u.tick();v=h.settled(u);ok(h.requests==2,"A running app discovers releases on the next poll.");
+  h.time=next-1;u.tick();ok(h.requests==1,"No request before the six-hour deadline.");
+  h.time=next;u.tick();v=h.settled(u);ok(h.requests==2,"A running app polls again at the interval.");
+  ok(h.tag()=="\"feed-1\""&&h.notModified==1,"Later polls send the previous ETag as If-None-Match.");
+  ok(v.at("state").str()=="available"&&v.at("version").str()=="99.0.0"&&!v.at("error").bit(),"A 304 Not Modified response reuses the previous release.");
+  h.limited=1;h.limitWait=900;h.time=v.at("nextCheck").integer();u.tick();v=h.settled(u);
+  ok(v.at("error").bit()&&v.at("nextCheck").integer()==uint64_t(h.time+900),"A rate-limited check waits for GitHub's reported delay.");
+  h.time+=899;u.tick();auto limitedRequests=h.requests.load();ok(!u.active()&&h.requests==limitedRequests,"No automatic request before the rate-limit delay ends.");
+  h.time+=1;u.tick();v=h.settled(u);ok(h.requests==limitedRequests+1&&!v.at("error").bit()&&v.at("available").bit(),"Automatic checks resume after the rate-limit delay.");
+  h.limited=1;h.limitWait=0;h.time=v.at("nextCheck").integer();u.tick();v=h.settled(u);
+  ok(v.at("nextCheck").integer()==uint64_t(h.time+rateLimitMinWait),"A rate limit never retries sooner than the minimum wait.");
+  h.time=v.at("nextCheck").integer();u.tick();v=h.settled(u);
   u.later();ok(h.status(u).at("snoozed").bit(),"Later suppresses the current release.");
   h.time=v.at("nextCheck").integer();u.tick();v=h.settled(u);ok(v.at("snoozed").bit(),"Repeated checks preserve a reminder for the same release.");
   h.nextFeed("99.0.1");h.time=v.at("nextCheck").integer();u.tick();v=h.settled(u);

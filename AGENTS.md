@@ -16,6 +16,21 @@ Rebase older feature branches on current main and rerun checks after integration
 Organization changes do not authorize version bumps, releases, tag/asset replacement
 or repository access changes. Preserve the polished README layout.
 
+## Gotchas
+
+- CLI dialects with Cisco-like interface names (Arista EOS, Huawei VRP) must be
+  detected in `detectSwitchCLI` before the Cisco pattern, or they are labeled
+  Cisco. A new vendor id must also be added to every vendor list in
+  `webview/index.html`, `features.js`, `network.js` and `review.js`; grep for
+  `aruba-instant-on|cisco` to find them.
+- `tests/mikrotik-tests.cjs` compares every fixture with the 5.13.0 baseline;
+  only fixtures that now detect as a dialect added later may skip that vendor
+  check.
+- The GitHub releases API allows 60 unauthenticated requests per hour per IP,
+  shared by every copy on a network. Keep automatic update polling infrequent.
+- `index.html` embeds the `webview/*.js` modules; run
+  `python3 webview/embed_features.py` after editing them (CI fails on drift).
+
 ## Repository standards (all contributors and AI tools)
 
 This repository follows the shared TechSavage1989 standard in [`docs/REPOSITORY_STANDARDS.md`](docs/REPOSITORY_STANDARDS.md), the same file in every app repository. Read it before changing anything. In short:

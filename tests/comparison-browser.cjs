@@ -373,10 +373,21 @@ async function textComparison(browser){
  await textFile(page,'left','same\n','restored-left.txt');ok((await page.locator('.sw-text-comparison').innerText()).includes('No text differences'),'file replacement restores equal comparison');await page.locator('[data-stc-action="clear"][data-stc-side="right"]').click();ok((await page.locator('.comparison-loaders').innerText()).includes('restored-left.txt'),'clearing right text preserves left input');
  ok(errors.length===0,errors.join('\n'));await page.close();
 }
+function renameConfiguration(acl){return `version 15.2\nhostname Example-Renames\nip access-list extended ${acl}\n permit tcp any host 192.0.2.10 eq 443\n deny ip any any\ninterface GigabitEthernet1/0/1\n description Example uplink\n exit\n`;}
+async function renameHints(browser){
+ const page=await browser.newPage({viewport:{width:1440,height:960}}),errors=[];page.on('pageerror',error=>errors.push(error.message));
+ await openComparison(page,renameConfiguration('WEB-OLD'),renameConfiguration('WEB-IN'));
+ ok((await page.locator('[data-possible-renames]').innerText()).includes('1 possible rename is labeled'),'panel counts possible renames');
+ const removed=page.locator('.comparison-card[data-object-kind="Removed"] .comparison-rename-hint'),added=page.locator('.comparison-card[data-object-kind="Added"] .comparison-rename-hint');
+ ok((await removed.innerText()).includes('Possible rename to WEB-IN'),'removed card names the possible new object');
+ ok((await added.innerText()).includes('Possible rename of WEB-OLD'),'added card names the possible previous object');
+ ok(await page.locator('.comparison-card[data-object-kind="Removed"]').count()===1&&await page.locator('.comparison-card[data-object-kind="Added"]').count()===1,'renamed objects stay a separate removal and addition');
+ ok(errors.length===0,errors.join('\n'));await page.close();
+}
 (async()=>{
  fs.mkdirSync('test-results',{recursive:true});const browser=await playwright.chromium.launch({headless:true,args:['--no-sandbox'],...(process.env.CI_CHROME_PATH?{executablePath:process.env.CI_CHROME_PATH}:{})}),failures=[];
  try{
-  for(const [name,run] of [['objects-scrolling',objectsAndScrolling],['object-states',objectStates],['object-navigation',objectNavigation],['field-navigation',fieldNavigation],['unified-inputs',unifiedComparisonInputs],['imported-inputs',importedComparisonInputs],['text-comparison',textComparison]]){
+  for(const [name,run] of [['objects-scrolling',objectsAndScrolling],['rename-hints',renameHints],['object-states',objectStates],['object-navigation',objectNavigation],['field-navigation',fieldNavigation],['unified-inputs',unifiedComparisonInputs],['imported-inputs',importedComparisonInputs],['text-comparison',textComparison]]){
    try{await run(browser);console.log('comparison-scenario '+name+' passed');}
    catch(error){
     failures.push({name,error});console.error('comparison-scenario '+name+' failed: '+(error.stack||error));
