@@ -27,11 +27,41 @@ struct UpdateMenuGate {
  bool request(){pending=true;return flush();}
  bool ready(){uiReady=true;return flush();}
 };
-inline constexpr uint64_t updateCheckInterval=2*60;
+// Unauthenticated GitHub API clients share 60 requests per hour per IP address, so
+// several copies behind one office NAT must stay well below that. Automatic checks
+// run at UI readiness and then every six hours; Help -> Check for updates is immediate.
+inline constexpr uint64_t updateCheckInterval=6*60*60;
+inline constexpr uint64_t rateLimitDefaultWait=60*60,rateLimitMinWait=60,rateLimitMaxWait=24*60*60;
 
 
 struct Error:std::runtime_error { using std::runtime_error::runtime_error; };
 inline void require(bool ok,const char* message){if(!ok)throw Error(message);}
+
+// GitHub answered 403/429. wait is the number of seconds automatic checks pause.
+struct RateLimited:Error {
+ uint64_t wait;
+ explicit RateLimited(uint64_t seconds):Error("GitHub has temporarily limited update requests. Automatic checks will resume later; the current app is unchanged."),wait(seconds){}
+};
+inline bool headerSeconds(const std::string& value,uint64_t& out){
+ if(value.empty()||value.size()>12||value.find_first_not_of("0123456789")!=std::string::npos)return false;
+ out=std::strtoull(value.c_str(),nullptr,10);return true;
+}
+// Retry-After (delta seconds) wins; otherwise X-RateLimit-Reset (epoch seconds);
+// otherwise one hour. HTTP-date Retry-After values fall through to the next source.
+inline uint64_t rateLimitWait(uint64_t now,const std::string& retryAfter,const std::string& reset){
+ uint64_t value=0,wait=rateLimitDefaultWait;
+ if(headerSeconds(retryAfter,value))wait=value;else if(headerSeconds(reset,value)&&value>now)wait=value-now;
+ return (std::min)(rateLimitMaxWait,(std::max)(rateLimitMinWait,wait));
+}
+// An entity tag is echoed back in If-None-Match, so only visible ASCII is accepted
+// (no CR/LF or other header-injection characters).
+inline bool safeETag(const std::string& value){
+ if(value.size()<2||value.size()>256)return false;
+ for(unsigned char c:value)if(c<0x21||c>0x7e)return false;
+ return value.back()=='"';
+}
+// Conditional feed response: a 304 reuses the release body from the previous 200.
+struct FeedResponse {std::string body,etag;bool notModified=false;};
 struct Json {
  enum Kind {null,boolean,number,string,array,object} kind=null;
  std::string text;bool flag=false;std::vector<Json> items;std::map<std::string,Json> fields;
