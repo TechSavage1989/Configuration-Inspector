@@ -1,5 +1,20 @@
 # Configuration Inspector development handoff
 
+## 5.20.0 — recent files and new review checks
+
+- `webview/recent_files.js` (embedded as `recent-files`): File System Access handles
+  in IndexedDB `config-inspector-recent-files`. Display metadata (`entries`) and
+  handles (`handles`) are separate stores; listing never deserializes a handle.
+  A `config-inspector-recent-pending` localStorage marker disables the feature on
+  the next start if a reopen never finished. Contents are never stored.
+- Headless Chromium in the Linux sandbox stops the page when a stored OPFS handle is
+  read back from IndexedDB, so `tests/recent-files-browser.cjs` verifies real
+  persistence and listing, and uses an injected `window.SWRecentFilesStore` for
+  reopening. Real reopen of a stored handle is unverified in WebView2.
+- Review checks `unused-object`, `vlan-undefined`, `vlan-unused`, `vlan-default`,
+  `trunk-all-vlans` in `webview/review.js`. CLI VLAN records gained `declared`
+  (persisted in snapshots) because range-declared VLANs only own the first line.
+
 ## 5.19.1 — interfaces at a glance fill their card
 
 Port tiles grow up to 56px per column (was 34px) so faceplates fill the card

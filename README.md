@@ -23,7 +23,7 @@
 - **Find useful settings:** browse recognized configuration sections and follow related objects without losing access to original source.
 - **Understand interfaces and topology:** inspect physical layouts, VLANs, interface groups and device information where the export provides enough detail.
 - **Compare snapshots:** inspect matched objects and their properties side by side, or compare configuration text/files with aligned lines and synchronized scrolling.
-- **Review findings and export:** inspect configuration review results and create reports for further analysis.
+- **Review findings and export:** inspect configuration review results, including unused objects, undefined or unused VLANs, access ports in VLAN 1 and trunks that carry every VLAN, and create reports for further analysis.
 
 Imported configurations are analyzed **locally**. Optional device-specification downloads request public hardware definitions without sending configuration contents.
 
@@ -92,7 +92,7 @@ Prefer a browser-based edition? The same release includes **`Config_Inspector.ht
 
 Interfaces at a glance shows all interfaces by default, including unused ports and logical interfaces. Use **Hide unused** within a group to condense it, and **Show unused** to restore the full view. Loading a configuration starts with all interfaces visible.
 
-Use the sidebar to move between recognized configuration views, follow object links for context, and compare snapshots before exporting your findings. Consult original source for unsupported or ambiguous settings; this app does not apply changes to devices.
+Reopen a recent configuration from **Recent files** on the start screen (desktop app, Microsoft Edge and Google Chrome). Use the sidebar to move between recognized configuration views, follow object links for context, and compare snapshots before exporting your findings. Consult original source for unsupported or ambiguous settings; this app does not apply changes to devices.
 
 ## Global configuration search
 
@@ -202,6 +202,7 @@ comparison tools, not an editor, merge tool or full Notepad++ plugin replacement
 Open **App settings** from the sidebar or native File menu to choose the desktop data folder and manage stored app data. The default desktop location is **`%LOCALAPPDATA%\ConfigInspectorWebView`**, outside the executable folder; changing the location takes effect on the next launch.
 
 - Imported configuration files remain in their original locations.
+- **Recent files** on the start screen remember only each file's name, device name, vendor and location, never its contents. Reopening reads the file again from its folder. Remove entries, use **Clear list**, or delete stored data to forget them.
 - Device-specification downloads can be disabled in **Device information**; cached definitions remain available offline.
 - **Delete stored data** also removes update caches, backups and update preferences. It does not delete configuration files or exports. Read the [storage guide](webview/APP_STORAGE.txt) before clearing data you may need for recovery.
 - Never commit private configuration exports or credentials to this repository.

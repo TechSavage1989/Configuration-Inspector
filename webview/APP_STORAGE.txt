@@ -18,9 +18,16 @@ Delete stored data
 - The selected data location is retained. The app stops saving window placement for the remainder of the reset session. Close other copies of the app if data is still in use. The current folder and previously retained storage folders are independent; the reset operates on the location used by the current app instance.
 - Configuration files and exports are never deleted. Imported configs remain in memory only; this app does not autosave them into the app profile.
 
+Recent files
+- Where the browser engine supports the File System Access API (the desktop app's WebView2, Microsoft Edge and Google Chrome), configurations opened with Open configuration file, Ctrl+O or drag and drop are listed under Recent files on the start screen.
+- Each entry stores the file name, the device name, the vendor, when it was opened, and a browser file reference that lets the app read the same file again. Configuration contents are never stored. Reopening reads the current file from its original folder; the browser may ask once for permission to read it.
+- Display details and file references are kept in separate local stores. The list is shown without reading any file reference; a reference is read only when an entry is chosen. If a previous reopen did not finish, Recent files turns itself off on the next start instead of repeating it.
+- Up to 10 files are listed. Use the remove button on an entry or Clear list to forget them. Delete stored data also removes the list.
+- Browsers without the API keep the standard file chooser and show no Recent files list.
+
 HTML edition
 - Data location is controlled by the browser. A standalone HTML file cannot choose or move its browser storage folder.
-- The same cache/reset controls clear only Config Inspector's three storage keys: config-studio.theme, config-inspector-auto-specs and config-inspector-device-specs-v1. Other data on the origin is unaffected.
+- The same cache/reset controls clear only Config Inspector's storage keys (config-studio.theme, config-inspector-auto-specs, config-inspector-device-specs-v1 and config-inspector-recent-pending) and its Recent files database (config-inspector-recent-files). Other data on the origin is unaffected.
 
 Validation limitations
 - The Windows host is cross-compiled and its WebView2 interface signatures and executable resources are checked. Native folder migration, folder selection, startup and actual WebView2 profile clearing require Windows runtime validation. Browser tests use a simulated native message bridge for these UI paths.
