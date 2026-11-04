@@ -101,7 +101,11 @@ Prefer a browser-based edition? The same release includes **`Config_Inspector.ht
 
 Interfaces at a glance shows all interfaces by default, including unused ports and logical interfaces. Use **Hide unused** within a group to condense it, and **Show unused** to restore the full view. Loading a configuration starts with all interfaces visible.
 
-Reopen a recent configuration from **Recent files** on the start screen (desktop app, Microsoft Edge and Google Chrome). In **Convert & export**, **Client report** creates one printable HTML document for every open configuration; open it and choose **Print or save as PDF**. Use the sidebar to move between recognized configuration views, follow object links for context, and compare snapshots before exporting your findings. Consult original source for unsupported or ambiguous settings; this app does not apply changes to devices.
+Reopen a recent configuration from **Recent files** on the start screen (desktop app, Microsoft Edge and Google Chrome). In **Convert & export**, **Client report** creates one printable HTML document for every open configuration; open it and choose **Print or save as PDF**. The sidebar groups pages into **Workspace** (overview, device information, review, site overview and comparison), the configuration areas found in the export, and **Source & export**. Click a section heading to collapse it; the choice is remembered, and the section holding the current page always stays open. Hover over an item for a short description.
+
+In the **Network map**, click a group heading to collapse or expand it, or use **Collapse all** and **Expand all**, in both the detailed and compact maps.
+
+Use the sidebar to move between recognized configuration views, follow object links for context, and compare snapshots before exporting your findings. Consult original source for unsupported or ambiguous settings; this app does not apply changes to devices.
 
 ## Global configuration search
 

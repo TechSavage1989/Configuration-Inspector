@@ -1,6 +1,6 @@
 (function(root,factory){'use strict';root.SWAppStorage=factory(root);})(typeof window!=='undefined'?window:globalThis,function(root){
   'use strict';
-  var KEYS=['config-studio.theme','config-inspector-device-specs-v1','config-inspector-auto-specs','config-inspector-recent-pending'];
+  var KEYS=['config-studio.theme','config-inspector-device-specs-v1','config-inspector-auto-specs','config-inspector-recent-pending','config-inspector-nav-collapsed'];
   function create(options){
     options=options||{};var bridge=options.bridge||root.chrome&&root.chrome.webview,storage=options.storage,pending=new Map();
     try{if(storage===undefined)storage=root.localStorage;}catch(e){}

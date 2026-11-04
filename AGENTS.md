@@ -36,6 +36,8 @@ existing release or its assets. Preserve the polished README layout.
   shared by every copy on a network. Keep automatic update polling infrequent.
 - Pages that stack several panels must be excluded from the `list-view` layout
   (the view list in `renderContent`), or every panel collapses to one screen.
+- The detailed network map renderer already has a `collapsed` variable in scope;
+  shadowing it breaks every import. Browser tests catch this, `npm test` does not.
 - `index.html` embeds the `webview/*.js` modules; run
   `python3 webview/embed_features.py` after editing them (CI fails on drift).
 

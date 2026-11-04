@@ -1,5 +1,17 @@
 # Configuration Inspector development handoff
 
+## 5.23.0 — navigation and map collapse
+
+- Sidebar sections render through `navSection()`; collapsed keys are stored in
+  localStorage `config-inspector-nav-collapsed` (cleared by Delete stored data).
+  The section containing `aria-current="page"` is always open; Workspace is fixed.
+- Map groups use `state.mapCollapsed` (keys `zone:<group>` and `compact:<group>`),
+  toggled by `data-map-collapse`; `data-map-collapse-all` collapses or expands all.
+- Avoid `var collapsed` inside the detailed map renderer: an outer `collapsed`
+  Set already exists in that scope (shadowing it broke imports).
+- README screenshots were all recaptured with a fictional DEMO-ACCESS-SW01 stack
+  and a three-switch site set kept outside the repository.
+
 ## 5.22.0 — site overview
 
 - `webview/site_overview.js` (embedded `site-overview`) compares workspace models:
