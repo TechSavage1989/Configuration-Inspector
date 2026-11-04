@@ -1,8 +1,11 @@
 # Configuration Inspector development handoff
 
-## Unreleased on `claude/amazing-meitner-ogir0h` (VERSION stays 5.18.8)
+## 5.19.0 — updater rate limits, rename hints, Arista EOS / Huawei VRP
 
-Not released; no version bump, tag or asset change was made.
+Release explicitly authorized by the owner on 2026-11-04. Prepared on
+`claude/amazing-meitner-ogir0h`, merged through pull request 4; the main
+workflow publishes after its checks pass. Release notes:
+`docs/releases/5.19.0.md`.
 
 - Updater: automatic checks run at UI readiness and every six hours (was two
   minutes), send `If-None-Match` and reuse the verified feed on 304, and pause
