@@ -27,7 +27,7 @@ Recent files
 
 HTML edition
 - Data location is controlled by the browser. A standalone HTML file cannot choose or move its browser storage folder.
-- The same cache/reset controls clear only Config Inspector's storage keys (config-studio.theme, config-inspector-auto-specs, config-inspector-device-specs-v1 and config-inspector-recent-pending) and its Recent files database (config-inspector-recent-files). Other data on the origin is unaffected.
+- The same cache/reset controls clear only Config Inspector's storage keys (config-studio.theme, config-inspector-auto-specs, config-inspector-device-specs-v1, config-inspector-recent-pending and config-inspector-nav-collapsed, which remembers collapsed sidebar sections) and its Recent files database (config-inspector-recent-files). Other data on the origin is unaffected.
 
 Validation limitations
 - The Windows host is cross-compiled and its WebView2 interface signatures and executable resources are checked. Native folder migration, folder selection, startup and actual WebView2 profile clearing require Windows runtime validation. Browser tests use a simulated native message bridge for these UI paths.
