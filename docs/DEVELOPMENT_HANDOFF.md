@@ -1,5 +1,16 @@
 # Configuration Inspector development handoff
 
+## 5.22.0 — site overview
+
+- `webview/site_overview.js` (embedded `site-overview`) compares workspace models:
+  settings (summary fields plus feature facts such as "NTP servers"), VLANs,
+  duplicate addresses and shared subnets per VRF, and descriptions that name
+  another open device (whole-name, case-insensitive). No physical links are
+  inferred because running configurations lack CDP/LLDP neighbor tables.
+- `sitePage()` in `index.html`; the `site` view is excluded from the fixed-height
+  `list-view` layout so its panels scroll normally. The nav item appears only
+  with two or more open configurations.
+
 ## 5.21.0 — client report and change summary
 
 - `webview/client_report.js` (embedded `client-report`) renders HTML from data the

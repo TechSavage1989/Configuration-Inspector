@@ -34,6 +34,8 @@ existing release or its assets. Preserve the polished README layout.
   check.
 - The GitHub releases API allows 60 unauthenticated requests per hour per IP,
   shared by every copy on a network. Keep automatic update polling infrequent.
+- Pages that stack several panels must be excluded from the `list-view` layout
+  (the view list in `renderContent`), or every panel collapses to one screen.
 - `index.html` embeds the `webview/*.js` modules; run
   `python3 webview/embed_features.py` after editing them (CI fails on drift).
 

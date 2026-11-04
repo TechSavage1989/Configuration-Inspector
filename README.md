@@ -22,6 +22,7 @@
 
 - **Find useful settings:** browse recognized configuration sections and follow related objects without losing access to original source.
 - **Understand interfaces and topology:** inspect physical layouts, VLANs, interface groups and device information where the export provides enough detail.
+- **See a whole site:** open several configurations and compare their NTP, DNS, syslog, SNMP, local users and spanning-tree settings, VLAN names, shared subnets and duplicate IP addresses on one page.
 - **Compare snapshots:** inspect matched objects and their properties side by side, or compare configuration text/files with aligned lines and synchronized scrolling. Copy a plain-language **change summary** for a ticket or change record.
 - **Review findings and export:** inspect configuration review results, including unused objects, undefined or unused VLANs, access ports in VLAN 1 and trunks that carry every VLAN, and create reports for further analysis. A printable **client report** summarizes every open configuration: devices, port usage, VLANs, IP addresses and findings.
 
@@ -47,6 +48,12 @@ Imported configurations are analyzed **locally**. Optional device-specification 
 **Search results across fields, objects and source**
 
 <img src="docs/images/global-search.png" alt="Search results across fields, objects and source" width="900">
+
+### Site overview
+
+**Common settings, VLANs and addressing across every open configuration**
+
+<img src="docs/images/site-overview.png" alt="Site overview comparing settings across three switches" width="900">
 
 ### Compare snapshots
 
@@ -129,6 +136,15 @@ Search is local and read-only. Hidden sensitive values are redacted before
 indexing, matching and counting; revealing them still requires the existing
 visibility control. Indexes/results are invalidated on replacement or masking
 changes. Large searches yield to the UI and superseded work is canceled.
+
+## Site overview
+
+Open two or more configurations from the same site (**Add files**) and choose **Site overview** in the sidebar. It compares only what the exports contain:
+
+- **Settings consistency:** NTP and DNS servers, DNS domain, syslog and SNMP destinations, SNMP location, local user accounts, time zone and spanning-tree mode. Values that differ from the most common one are highlighted; "Not in export" means the setting is absent from that file.
+- **VLANs across devices:** where each VLAN exists, its name and port count on each device, and VLANs whose names differ.
+- **Duplicate IP addresses** configured on more than one device, and **shared subnets** that interfaces on different devices belong to.
+- **Descriptions naming another device**, such as `Uplink to CORE-SW1`. Running configurations do not include live CDP/LLDP neighbor tables, so the page does not claim physical links.
 
 ## Compare configurations
 
