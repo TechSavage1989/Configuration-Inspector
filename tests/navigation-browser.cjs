@@ -31,23 +31,30 @@ const cfg='version 16.12\nhostname MAP-SW1\nspanning-tree mode rapid-pvst\nvlan 
   ok(await page.locator('[data-nav-group="network"] .nav-group-items').isVisible(),'the section holding the current page stays open');
   await page.locator('[data-nav-toggle="network"]').click();ok(await page.locator('[data-nav-group="network"] .nav-group-items').isVisible(),'it cannot hide the current page');
   ok(await page.locator('.network-map-panel > .panel-head[data-pinned]').count()===1&&await page.locator('.network-map-panel > .map-toolbar[data-pinned]').count()===1,'the map title and its search and filter toolbar stay pinned');
-  // Detailed map groups.
+  // Detailed map groups start collapsed.
+  const panels=await page.locator('.map-zone-panel').count();
+  ok(panels>0&&await page.locator('.map-zone-panel.collapsed').count()===panels&&await page.locator('.map-zone-panel .interface-map-grid').count()===0,'every map group starts collapsed');
   const zone=page.locator('[data-map-collapse^="zone:"]').first(),name=await zone.innerText();
-  const before=await page.locator('.map-zone-panel').first().locator('.interface-map-grid button').count();ok(before>0,'group lists its interfaces');
+  ok(await zone.getAttribute('aria-expanded')==='false','collapsed group is announced');
   await zone.click();
-  ok(await page.locator('.map-zone-panel').first().locator('.interface-map-grid').count()===0,'a map group collapses to its heading: '+name);
-  ok(await page.locator('[data-map-collapse^="zone:"]').first().getAttribute('aria-expanded')==='false','collapsed group is announced');
+  ok(await page.locator('.map-zone-panel').first().locator('.interface-map-grid button').count()>0,'a group opens to list its interfaces: '+name);
+  ok(await page.locator('[data-map-collapse^="zone:"]').first().getAttribute('aria-expanded')==='true','open group is announced');
   ok(await page.evaluate(()=>document.activeElement&&document.activeElement.hasAttribute('data-map-collapse')),'focus stays on the toggle');
-  await page.locator('[data-map-collapse-all="collapse"]').first().click();
-  ok(await page.locator('.map-zone-panel .interface-map-grid').count()===0,'Collapse all closes every group');
+  await page.locator('[data-map-collapse^="zone:"]').first().click();ok(await page.locator('.map-zone-panel').first().locator('.interface-map-grid').count()===0,'and closes again');
   await page.locator('[data-map-collapse-all="expand"]').first().click();
   ok(await page.locator('.map-zone-panel.collapsed').count()===0&&await page.locator('.map-zone-panel .interface-map-grid').count()>0,'Expand all opens every group');
-  // Compact map groups.
+  await page.locator('[data-map-collapse-all="collapse"]').first().click();
+  ok(await page.locator('.map-zone-panel .interface-map-grid').count()===0,'Collapse all closes every group');
+  await page.locator('#map-query').fill('Example desk 3');await page.waitForTimeout(400);
+  ok(await page.locator('.map-zone-panel .interface-map-grid button').count()>0,'a search opens the groups with matches');
+  await page.locator('#map-query').fill('');await page.waitForTimeout(300);ok(await page.locator('.map-zone-panel .interface-map-grid').count()===0,'clearing the search returns to collapsed groups');
+  // Compact map groups start collapsed too.
   await page.locator('[data-map-mode="compact"]').click();await page.locator('.compact-zone').first().waitFor();
-  const rows=await page.locator('.compact-zone').first().locator('.compact-interface').count();ok(rows>0,'compact group lists interfaces');
+  ok(await page.locator('.compact-zone .compact-interface').count()===0,'compact groups start collapsed');
   await page.locator('.compact-zone [data-map-collapse]').first().click();
-  ok(await page.locator('.compact-zone').first().locator('.compact-interface').count()===0,'a compact group collapses');
+  ok(await page.locator('.compact-zone').first().locator('.compact-interface').count()>0,'a compact group opens');
   await page.locator('[data-map-collapse-all="expand"]').first().click();ok(await page.locator('.compact-zone.collapsed').count()===0,'compact Expand all');
+  await page.locator('[data-map-collapse-all="collapse"]').first().click();ok(await page.locator('.compact-zone .compact-interface').count()===0,'compact Collapse all');
   // Delete stored data forgets collapsed sections.
   ok(await page.evaluate(()=>JSON.parse(localStorage.getItem('config-inspector-nav-collapsed')||'[]').includes('switching')),'collapsed sections are stored locally');
   ok(errors.length===0,errors.join('\n'));

@@ -51,6 +51,8 @@ const file=(name,buffer,type)=>({name,mimeType:type||'text/plain',buffer:Buffer.
   await page.keyboard.press('Escape');
   // The network map shows live link state and connected devices.
   await page.locator('.nav-scroll [data-view="topology"]').click();await page.waitForTimeout(500);
+  ok(await page.locator('.live-neighbors-panel.collapsed').count()===1,'connected devices start collapsed like the other map groups');
+  await page.locator('[data-map-collapse-all="expand"]').first().click();await page.waitForTimeout(300);
   ok(await page.locator('.map-interface .live-dot.up').count()>=3,'live link dots on the network map');
   ok((await page.locator('[data-map-interface]').filter({hasText:'TenGigabitEthernet1/1/1'}).first().innerText()).includes('EXAMPLE-CORE'),'map rows name the neighbor');
   const connected=await page.locator('.live-neighbors-panel').innerText();ok(connected.includes('EXAMPLE-CORE')&&connected.includes('EXAMPLE-AP1'),'connected devices on the map: '+connected);

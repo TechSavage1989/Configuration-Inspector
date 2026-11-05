@@ -112,7 +112,7 @@ Interfaces at a glance shows all interfaces by default, including unused ports a
 
 Reopen a recent configuration from **Recent files** on the start screen (desktop app, Microsoft Edge and Google Chrome). In **Convert & export**, **Client report** creates one printable HTML document for every open configuration; open it and choose **Print or save as PDF**. The sidebar groups pages into **Workspace** (overview, device information, review, site overview and comparison), the configuration areas found in the export, and **Source & export**. Click a section heading to collapse it; the choice is remembered, and the section holding the current page always stays open. Hover over an item for a short description.
 
-In the **Network map**, click a group heading to collapse or expand it, or use **Collapse all** and **Expand all**, in both the detailed and compact maps.
+In the **Network map**, every group (port types, VLAN interfaces, zones, connected devices) and every interface with subinterfaces starts collapsed, so the map opens as a short overview. Click a group heading to expand or collapse it, or use **Expand all** and **Collapse all**, in both the detailed and compact maps. Searching or filtering by zone opens the groups that contain matches.
 
 Headers stay at the top while you scroll: page tabs, each panel's title with its search, filter and sort controls, and table column headings.
 

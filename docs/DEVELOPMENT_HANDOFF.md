@@ -1,5 +1,13 @@
 # Configuration Inspector development handoff
 
+## 5.28.0 — network map collapsed by default
+
+- `state.mapOpen` holds opened map groups (`zone:`/`compact:` keys) and interface ids;
+  `mapClosed(key)` treats everything else as collapsed. While searching or filtering,
+  `state.mapSearchCollapsed` is used instead (groups open by default). `toggleMapItem`
+  handles `data-map-collapse` and `data-map-toggle`. Connected devices (live) uses
+  `zone:live-neighbors` / `compact:live-neighbors`.
+
 ## 5.27.5 — independently scrolling site map panel
 
 - `.site-map-detail` is sticky with `overflow-y:auto`; `pinHeaders()` sets its
