@@ -32,6 +32,8 @@ const files=[
   ok(!(await page.locator('#content').innerText()).includes('TEST_SECRET_ONLY'),'no secrets on the page');
   const layout=await page.evaluate(()=>{const c=document.getElementById('content');return {list:c.classList.contains('list-view'),scrolls:c.scrollHeight>c.clientHeight,panels:[...document.querySelectorAll('.site-panel')].every(p=>p.getBoundingClientRect().height>80)};});
   ok(!layout.list&&layout.scrolls&&layout.panels,'the page scrolls and no panel is collapsed: '+JSON.stringify(layout));
+  const pins=await page.evaluate(()=>{const c=document.getElementById('content'),panels=[...c.querySelectorAll('.site-panel')];return panels.map(p=>{const h=p.querySelector(':scope > .panel-head'),t=p.querySelector('thead');return [h&&h.getAttribute('data-pinned'),t&&t.getAttribute('data-pinned'),t&&h?parseFloat(t.style.top)===h.offsetHeight:null];});});
+  ok(pins.length&&pins.every(x=>x[0]==='true'&&(x[1]===null||x[1]==='true')&&x[2]!==false),'panel titles and table column headings stay pinned while scrolling: '+JSON.stringify(pins));
   await page.locator('[data-remove-workspace="2"]').click();await page.waitForFunction(()=>document.querySelectorAll('[data-remove-workspace]').length===2);
   await page.locator('[data-view="site"]').first().click();await page.locator('.site-summary').waitFor();
   ok((await page.locator('.site-summary .chip').allInnerTexts()).join('|')==='2 devices|Common settings match|No duplicate addresses|VLAN names match|1 shared subnet','the overview updates when a configuration is closed: '+(await page.locator('.site-summary .chip').allInnerTexts()).join('|'));

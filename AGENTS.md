@@ -47,6 +47,11 @@ existing release or its assets. Preserve the polished README layout.
 - Pages that scroll as a whole must not contain vertical scroll areas (nested scrollbars
   trap the mouse wheel). Split long content into tabs or "Show more" instead; the
   supplementary browser test checks the Supplementary data page for this.
+- Headers are pinned by `pinHeaders()` after every `renderContent()` on pages that scroll
+  as a whole: page bars (`PAGE_BARS`), each panel's `.panel-head`/`.toolbar`, then `thead`.
+  Panels there use `overflow:clip` (not `hidden`) so sticky works; don't add
+  `overflow:hidden/auto` around new tables without a real scroll need. Node tests that
+  copy `renderContent` must stub `pinHeaders`.
 - `index.html` embeds the `webview/*.js` modules; run
   `python3 webview/embed_features.py` after editing them (CI fails on drift).
 

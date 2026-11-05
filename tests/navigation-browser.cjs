@@ -30,6 +30,7 @@ const cfg='version 16.12\nhostname MAP-SW1\nspanning-tree mode rapid-pvst\nvlan 
   await page.evaluate(()=>document.querySelector('[data-view="topology"]').click());await page.waitForTimeout(600);
   ok(await page.locator('[data-nav-group="network"] .nav-group-items').isVisible(),'the section holding the current page stays open');
   await page.locator('[data-nav-toggle="network"]').click();ok(await page.locator('[data-nav-group="network"] .nav-group-items').isVisible(),'it cannot hide the current page');
+  ok(await page.locator('.network-map-panel > .panel-head[data-pinned]').count()===1&&await page.locator('.network-map-panel > .map-toolbar[data-pinned]').count()===1,'the map title and its search and filter toolbar stay pinned');
   // Detailed map groups.
   const zone=page.locator('[data-map-collapse^="zone:"]').first(),name=await zone.innerText();
   const before=await page.locator('.map-zone-panel').first().locator('.interface-map-grid button').count();ok(before>0,'group lists its interfaces');
