@@ -1,5 +1,11 @@
 # Configuration Inspector development handoff
 
+## 5.27.3 — copyable live data
+
+- `evidenceCell(c,i,label)` wraps plain values in `copyValue`; `{html,text}` cells get a
+  compact copy icon (`copy:false` opts out). `evidenceRowsHTML` and `tableTSV` back the
+  tables and the **Copy table** buttons (`data-copy-value`).
+
 ## 5.27.2 — pinned headers app-wide
 
 - `renderContent()` now calls `renderContentView()` then `pinHeaders()`, which sets inline
