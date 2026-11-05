@@ -1,5 +1,23 @@
 # Configuration Inspector development handoff
 
+## 5.26.0 — supplementary data and site map
+
+- `webview/evidence.js` (embedded `supplementary-data`, `window.SWEvidence`) reads XLSX
+  (own ZIP reader using `DecompressionStream('deflate-raw')`, regex sheet XML), CSV and
+  show-command text into one shape: `interfaces`, `links`, `devices`, `routes`, `arp`,
+  `mac`, `networks`, `lifecycle`, `vulnerabilities`. Tables are recognized by header
+  names (`RECOGNIZERS`), not sheet names; `Top ...` and `... Evidence` sheets are skipped.
+  `fromText` returns null for configuration-like text so configs still import normally.
+- `webview/site_map.js` (embedded `site-map`, `window.SWSiteMap`) assigns roles and tiers
+  (firewalls first, BFS) and summarizes APs/endpoints on their switch.
+- `index.html`: `evidenceSets` (in memory), `liveFor(model)` per-model join cached by
+  `evidenceVersion()`, live table columns (`live:*` keys in `rowValue`), glance badge
+  classes `live-up`/`live-down`, `liveInterfacePanel` in the drawer, views `sitemap` and
+  `evidence`. `clearWorkspace(true)` keeps supplementary data when the last config closes.
+- Tests: `tests/supplementary-tests.cjs`, `tests/supplementary-browser.cjs`, test data
+  from `tests/xlsx-writer.cjs` (fictional). README images `site-map.png` and
+  `live-interfaces.png` come from a fictional site export kept outside the repository.
+
 ## 5.25.0 — app-wide polish
 
 - `deviceSummaryCard(dedicated)` (index.html, before `overview()`) builds the

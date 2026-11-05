@@ -23,6 +23,7 @@
 - **Find useful settings:** browse recognized configuration sections and follow related objects without losing access to original source.
 - **Understand interfaces and topology:** inspect physical layouts, VLANs, interface groups and device information where the export provides enough detail.
 - **See a whole site:** open several configurations and compare their NTP, DNS, syslog, SNMP, local users and spanning-tree settings, VLAN names, shared subnets and duplicate IP addresses on one page.
+- **Add live network data:** open Auvik site or device reports (.xlsx or .csv) and show command output (routes, interface status, LLDP / CDP neighbors, MAC and ARP tables). The app draws a **site map** of firewalls and switches with the ports that connect them, and adds link state, neighbors and the devices seen on each port to the matching configuration.
 - **Compare snapshots:** inspect matched objects and their properties side by side, or compare configuration text/files with aligned lines and synchronized scrolling. Copy a plain-language **change summary** for a ticket or change record.
 - **Review findings and export:** inspect configuration review results, including unused objects, undefined or unused VLANs, access ports in VLAN 1 and trunks that carry every VLAN, and create reports for further analysis. A printable **client report** summarizes every open configuration: devices, port usage, VLANs, IP addresses and findings.
 
@@ -48,6 +49,12 @@ Imported configurations are analyzed **locally**. Optional device-specification 
 **Search results across fields, objects and source**
 
 <img src="docs/images/global-search.png" alt="Search results across fields, objects and source" width="900">
+
+### Site map and live data
+
+<table>
+  <tr><td width="50%"><b>Site map built from an Auvik site export</b><br><img src="docs/images/site-map.png" alt="Site map with a firewall, core switch and access switches" width="440"></td><td width="50%"><b>Live link state and neighbors on the interface table</b><br><img src="docs/images/live-interfaces.png" alt="Interface table with live link state and connected devices" width="440"></td></tr>
+</table>
 
 ### Site overview
 
@@ -150,7 +157,23 @@ Open two or more configurations from the same site (**Add files**) and choose **
 - **Settings consistency:** NTP and DNS servers, DNS domain, syslog and SNMP destinations, SNMP location, local user accounts, time zone and spanning-tree mode. Values that differ from the most common one are highlighted; "Not in export" means the setting is absent from that file.
 - **VLANs across devices:** where each VLAN exists, its name and port count on each device, and VLANs whose names differ.
 - **Duplicate IP addresses** configured on more than one device, and **shared subnets** that interfaces on different devices belong to.
-- **Descriptions naming another device**, such as `Uplink to CORE-SW1`. Running configurations do not include live CDP/LLDP neighbor tables, so the page does not claim physical links.
+- **Descriptions naming another device**, such as `Uplink to CORE-SW1`. Running configurations do not include live CDP/LLDP neighbor tables, so the page does not claim physical links. Add neighbor data (below) to see the real links on the **Site map**.
+
+## Supplementary data and the site map
+
+Configurations say how a device is set up; monitoring exports and command output say what was actually connected and up. Open them with **Add files**, drag them in, or paste command output into **Paste**:
+
+- **Auvik site export** (.xlsx): every device with its type, model, addresses, serial and software, every interface with its link state and neighbor, routes, end-of-support dates and known vulnerabilities.
+- **Auvik device report** (.xlsx): one device's interfaces, neighbors, MAC table (FDB), ARP table, routes, networks and CPU / memory. Individual Auvik tables saved as **.csv** work too, as does any CSV with local port, neighbor and neighbor port columns.
+- **Show command output** (.txt, .log or pasted): `show ip route` (IOS, IOS-XE, NX-OS, AOS-CX, FortiGate `get router info routing-table`, Linux `ip route`), `show interfaces status`, `show ip interface brief`, `show interfaces description`, `show interfaces`, `show lldp neighbors` (brief and detail, including Arista, AOS-CX and AOS-S formats), `show cdp neighbors` (brief and detail), `show mac address-table` and `show ip arp`. Several commands can be in one file; the hostname in the prompt (`SW1#`) tells the app which device they belong to.
+
+Data is matched to an open configuration by hostname, or by an interface address. Output without a hostname applies to the configuration that is open; you can change the match under **Applies to** on the **Supplementary data** page.
+
+- **Site map** (sidebar, once any file contains links): firewalls at the top, then switches by how far they are from the edge. Each line is labeled with the ports at both ends; ×2 marks parallel links. Access points and other endpoints are counted on the switch they connect to; tick **Show access points** to draw them. Click a device for its connections, double-click a device marked **Config** to open its configuration, and use **Find a device** or the zoom menu on large sites.
+- **Live data on configuration pages:** the **Overview** device summary shows links up, neighbors and CPU / memory; ports at a glance get a green dot for links that are up and an outline for links that are down; the **Interfaces** table adds **Link**, **Connected to**, **Speed**, **Devices seen** and **Errors** columns; and the interface details show everything collected for that port, including MAC addresses with the IP addresses found in any imported ARP table.
+- **Supplementary data** page: imported files and what was recognized in each, the matching configuration's neighbors, interface state, routing table and ARP table, and for site exports the devices past their last support date, known vulnerabilities and every network device.
+
+Supplementary data describes the network when it was collected. It is never merged into a configuration or an export, is kept in memory only, and is cleared with **Clear workspace**. Older `.xls` workbooks are not supported; save them as .xlsx or CSV.
 
 ## Compare configurations
 
@@ -258,6 +281,7 @@ See [UPDATING.md](docs/UPDATING.md) for installation, rollback, storage and trus
 | *"Close other copies of this app before installing the update"* | Close every other window running the same executable, then choose **Review and restart** again. |
 | *"GitHub has temporarily limited update requests"* | Several copies on the same network share GitHub's request allowance. Automatic checks pause for the delay GitHub reports and then resume; **Help → Check for updates** can be retried later. |
 | The updated version does not start | The previous executable is restored automatically if the new one does not finish opening within 90 seconds. For manual recovery, see [Installation and recovery](docs/UPDATING.md#installation-and-recovery). |
+| Supplementary data does not appear on a configuration | The hostname in the export or prompt must match the configuration's hostname (the domain is ignored), or one of its interface addresses must match. Otherwise choose the configuration under **Applies to** on the **Supplementary data** page. |
 | Hardware details are missing or out of date | Specification downloads use exact model matches and can be disabled in **Device information**; cached definitions work offline. Refresh them there, or see [device specifications](webview/DEVICE_SPECIFICATIONS.txt). |
 
 ## Development
