@@ -52,6 +52,9 @@ existing release or its assets. Preserve the polished README layout.
   Panels there use `overflow:clip` (not `hidden`) so sticky works; don't add
   `overflow:hidden/auto` around new tables without a real scroll need. Node tests that
   copy `renderContent` must stub `pinHeaders`.
+- Keep one design language: side panels use `.side-panel-body` with `.device-info-row`
+  label/value rows, details drawers use `.detail-summary`/`.detail-cell`, and lists in
+  narrow panels are rows (`.site-link-row`), never multi-column tables.
 - `index.html` embeds the `webview/*.js` modules; run
   `python3 webview/embed_features.py` after editing them (CI fails on drift).
 

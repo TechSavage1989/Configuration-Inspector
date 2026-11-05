@@ -1,5 +1,11 @@
 # Configuration Inspector development handoff
 
+## 5.27.4 — consistent side panels
+
+- `siteMapDetail()` renders `.side-panel-body` rows and `.site-link-row` connection rows
+  (connections to drawn devices, then attached devices). `liveInterfacePanel()` uses the
+  drawer's `.detail-summary`/`.detail-cell`.
+
 ## 5.27.3 — copyable live data
 
 - `evidenceCell(c,i,label)` wraps plain values in `copyValue`; `{html,text}` cells get a
