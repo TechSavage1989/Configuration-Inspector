@@ -1,5 +1,13 @@
 # Configuration Inspector development handoff
 
+## 5.27.2 — pinned headers app-wide
+
+- `renderContent()` now calls `renderContentView()` then `pinHeaders()`, which sets inline
+  `position:sticky` and stacked `top` offsets (`data-pinned`) and unclips non-scrolling
+  table wrappers (`data-unclipped`). List-view pages and Compare keep their own layout.
+- `#content:not(.list-view) .panel{overflow:clip}` keeps rounded corners without
+  creating a scroll container. Tests: supplementary, site overview and navigation suites.
+
 ## 5.27.1 — sticky supplementary tabs
 
 - `.evidence-tabs` is `position:sticky;top:0` inside `#content` (the page scroller);

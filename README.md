@@ -114,6 +114,8 @@ Reopen a recent configuration from **Recent files** on the start screen (desktop
 
 In the **Network map**, click a group heading to collapse or expand it, or use **Collapse all** and **Expand all**, in both the detailed and compact maps.
 
+Headers stay at the top while you scroll: page tabs, each panel's title with its search, filter and sort controls, and table column headings.
+
 Use the sidebar to move between recognized configuration views, follow object links for context, and compare snapshots before exporting your findings. Consult original source for unsupported or ambiguous settings; this app does not apply changes to devices.
 
 ## Global configuration search
