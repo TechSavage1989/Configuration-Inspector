@@ -38,6 +38,12 @@ existing release or its assets. Preserve the polished README layout.
   (the view list in `renderContent`), or every panel collapses to one screen.
 - The detailed network map renderer already has a `collapsed` variable in scope;
   shadowing it breaks every import. Browser tests catch this, `npm test` does not.
+- Supplementary data (`webview/evidence.js` parsing, `webview/site_map.js` layout) is
+  joined with configurations in `index.html` (`liveFor`, `evidenceOwner`). Never commit
+  real monitoring exports or command output: build test data with `tests/xlsx-writer.cjs`
+  and documentation addresses (192.0.2.x, 10.x, 00:00:5e:00:53:xx MACs).
+- Auvik uses placeholder port names ("Some Interface", "Wired Interface"); treat them as
+  unknown ports, and keep `open` checks as `>=0` (`-1` means no open configuration).
 - `index.html` embeds the `webview/*.js` modules; run
   `python3 webview/embed_features.py` after editing them (CI fails on drift).
 
