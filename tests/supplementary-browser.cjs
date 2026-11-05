@@ -41,14 +41,44 @@ const file=(name,buffer,type)=>({name,mimeType:type||'text/plain',buffer:Buffer.
   const printer=page.locator('tr').filter({hasText:'GigabitEthernet1/0/7'}).first();ok((await printer.innerText()).includes('10.0.10.50'),'ARP from the firewall names the device behind a switch port');
   await printer.click();await page.locator('#drawer .live-panel').waitFor();const live=await page.locator('#drawer .live-panel').innerText();ok(live.includes('Printer')&&live.includes('00:00:5e:00:53:a1')&&live.includes('100 Mb/s'),'interface details show live data: '+live);
   await page.keyboard.press('Escape');
+  // The network map shows live link state and connected devices.
+  await page.locator('.nav-scroll [data-view="topology"]').click();await page.waitForTimeout(500);
+  ok(await page.locator('.map-interface .live-dot.up').count()>=3,'live link dots on the network map');
+  ok((await page.locator('[data-map-interface]').filter({hasText:'TenGigabitEthernet1/1/1'}).first().innerText()).includes('EXAMPLE-CORE'),'map rows name the neighbor');
+  const connected=await page.locator('.live-neighbors-panel').innerText();ok(connected.includes('EXAMPLE-CORE')&&connected.includes('EXAMPLE-AP1'),'connected devices on the map: '+connected);
+  await page.locator('#map-query').fill('example-core');await page.waitForTimeout(400);ok(await page.locator('[data-map-interface]').count()===1,'map search finds interfaces by neighbor name');await page.locator('#map-query').fill('');await page.waitForTimeout(300);
+  // Neighbor details.
+  await page.locator('.live-neighbors-panel [data-neighbor-device="EXAMPLE-CORE"]').click();await page.locator('.neighbor-details').waitFor();
+  const nd=await page.locator('#modal').innerText();ok(['EXAMPLE-CORE','10.0.99.2','EXAMPLE-CORE-0001','TenGigabitEthernet1/1/1','TenGigabitEthernet1/0/11','00:00:5e:00:53:12'].every(t=>nd.includes(t)),'neighbor details show hostname, address, serial, both ports and the remote MAC: '+nd);
+  await page.locator('#modal [data-neighbor-sitemap]').click();await page.locator('.site-map-detail').waitFor();ok((await page.locator('.site-map-detail .panel-title').first().innerText()).includes('EXAMPLE-CORE'),'show on site map');
+  await page.locator('[data-workspace="0"]').first().click();await page.waitForTimeout(400);
+  // Live tabs in the sections they belong to.
+  await page.locator('.nav-scroll [data-view="switching"]').click();await page.waitForTimeout(400);
+  const subs=await page.locator('.nav-subsections .nav-subsection').allInnerTexts();ok(subs.some(t=>t.startsWith('Neighbors (live)'))&&subs.some(t=>t.startsWith('MAC address table (live)')),'Switching has live neighbor and MAC tabs: '+subs.join(' | '));
+  await page.locator('.nav-subsection').filter({hasText:'MAC address table (live)'}).click();await page.waitForTimeout(300);
+  ok((await page.locator('[data-live-tab="live-mac"]').innerText()).includes('10.0.10.50'),'MAC table with IP addresses from ARP');
+  await page.locator('.nav-subsection').filter({hasText:'Neighbors (live)'}).click();await page.waitForTimeout(300);
+  await page.locator('[data-live-tab] [data-neighbor-device="EXAMPLE-AP1"]').first().click();await page.locator('.neighbor-details').waitFor();ok((await page.locator('#modal').innerText()).includes('10.0.30.21'),'neighbors in section tabs open details');await page.keyboard.press('Escape');
+  await page.locator('.nav-scroll [data-view="system"]').click();await page.waitForTimeout(300);
+  if(await page.locator('.nav-subsection').filter({hasText:'Monitoring data (live)'}).count())await page.locator('.nav-subsection').filter({hasText:'Monitoring data (live)'}).click();await page.waitForTimeout(300);
+  ok((await page.locator('[data-live-tab="live-device"]').innerText()).includes('Example Access 48P'),'collected device facts under System & management');
   // Command output pasted for the open configuration.
   await page.locator('.workspace-add [data-action="paste-settings"]').click();await page.locator('#paste-config').fill(SHOW);await page.locator('#paste-submit').click();await page.waitForTimeout(500);
   ok(!(await page.locator('#modal').evaluate(m=>m.open)),'pasted command output is accepted');
+  await page.locator('.nav-scroll [data-view="interfaces"]').click();await page.waitForTimeout(400);
   ok((await page.locator('tr').filter({hasText:'GigabitEthernet1/0/4'}).first().innerText()).includes('Up'),'show interfaces status updates the port');
   // Supplementary data page.
   await page.locator('[data-view="evidence"]').first().click();await page.waitForTimeout(400);
+  const tabs=await page.locator('[data-evidence-tab]').allInnerTexts();
+  ok(['Files','Neighbors','Interface state','Network devices','Past last support date','Known vulnerabilities'].every(t=>tabs.some(x=>x.startsWith(t))),'each table has its own tab: '+tabs.join(' | '));
+  ok(await page.locator('[data-evidence-tab][aria-pressed="true"]').innerText().then(t=>t.startsWith('Neighbors')),'the first table opens by default');
+  ok(await page.locator('.evidence-panel').count()===1,'one table at a time');
+  const nested=await page.evaluate(()=>[...document.querySelectorAll('#content *')].filter(e=>{const s=getComputedStyle(e);return /auto|scroll/.test(s.overflowY)&&e.scrollHeight>e.clientHeight+1;}).map(e=>e.className));
+  ok(nested.length===0,'no scroll areas inside the page: '+nested.join(','));
+  await page.locator('[data-evidence-tab="ports"]').click();await page.locator('#evidence-query').fill('1/0/7');await page.waitForTimeout(300);
+  ok(await page.locator('[data-evidence-section="ports"] tbody tr').count()===1&&(await page.locator('#evidence-query').evaluate(e=>document.activeElement===e)),'a tab filters its table and keeps focus');
+  await page.locator('[data-evidence-tab="files"]').click();await page.waitForTimeout(300);
   ok(await page.locator('.evidence-file').count()===2,'both imports are listed');
-  const panels=await page.locator('.evidence-panel .panel-title').allInnerTexts();ok(panels.some(t=>/^Neighbors/.test(t))&&panels.some(t=>/^Interface state/.test(t))&&panels.some(t=>/^Devices past last support date/.test(t))&&panels.some(t=>/^Known vulnerabilities/.test(t)),'device and site tables: '+panels.join(' | '));
   await page.locator('[data-evidence-file] [data-remove-evidence]').last().click();await page.waitForTimeout(300);ok(await page.locator('.evidence-file').count()===1,'an import can be removed');
   // Compare configs does not accept supplementary data.
   await page.locator('[data-view="compare"]').first().click();await page.locator('#compare-left-file').setInputFiles(file('example-site.xlsx',demoSite()));await page.waitForTimeout(500);
