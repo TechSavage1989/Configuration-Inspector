@@ -75,6 +75,10 @@ const file=(name,buffer,type)=>({name,mimeType:type||'text/plain',buffer:Buffer.
   ok(await page.locator('.evidence-panel').count()===1,'one table at a time');
   const nested=await page.evaluate(()=>[...document.querySelectorAll('#content *')].filter(e=>{const s=getComputedStyle(e);return /auto|scroll/.test(s.overflowY)&&e.scrollHeight>e.clientHeight+1;}).map(e=>e.className));
   ok(nested.length===0,'no scroll areas inside the page: '+nested.join(','));
+  await page.setViewportSize({width:1440,height:520});await page.evaluate(()=>{const c=document.getElementById('content');c.scrollTop=c.scrollHeight;});await page.waitForTimeout(200);
+  const pinned=await page.evaluate(()=>{const c=document.getElementById('content').getBoundingClientRect(),t=document.querySelector('.evidence-tabs').getBoundingClientRect(),scrolled=document.getElementById('content').scrollTop;return {scrolled,top:t.top-c.top,height:t.height};});
+  ok(pinned.scrolled>0&&pinned.top>=-1&&pinned.top<4,'the section tabs stay at the top while the page scrolls: '+JSON.stringify(pinned));
+  await page.setViewportSize({width:1440,height:900});await page.evaluate(()=>{document.getElementById('content').scrollTop=0;});
   await page.locator('[data-evidence-tab="ports"]').click();await page.locator('#evidence-query').fill('1/0/7');await page.waitForTimeout(300);
   ok(await page.locator('[data-evidence-section="ports"] tbody tr').count()===1&&(await page.locator('#evidence-query').evaluate(e=>document.activeElement===e)),'a tab filters its table and keeps focus');
   await page.locator('[data-evidence-tab="files"]').click();await page.waitForTimeout(300);
