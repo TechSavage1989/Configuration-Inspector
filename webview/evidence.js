@@ -136,7 +136,7 @@
    if(!header)return;
    var rows=reader(t,header),before=recognized;
    if(rec.id==='interfaces'){rows.forEach(function(get){var name=get('interface name');if(!name)return;var list=parseConnectedList(get('connected to')),n=list[0]||null;ev.interfaces.push({neighbors:list,device:get('parent device'),name:PLACEHOLDER_PORT.test(interfaceLabel(name))?'':interfaceLabel(name),description:interfaceDescription(name),admin:get('admin status'),oper:get('oper status'),mac:normalizeMAC(get('mac address')),type:get('type'),speed:speedText(get('negotiated speed')),vlans:vlansFrom(get('configuration details')),neighbor:n,source:'Auvik'});});recognized+=rows.length;}
-   else if(rec.id==='devices'){rows.forEach(function(get){var name=get('device name');if(!name)return;var existing=ev.devices.find(function(d){return d.name===name;}),record=({name:name,type:get('type'),model:get('make & model'),ips:splitList(get('ip address(es)')),networks:splitList(get('network(s)')),connected:parseThrough(get('connected to')),software:get('software version'),firmware:get('firmware version'),serial:get('serial number'),description:get('description'),status:get('status')});if(!existing){ev.devices.push(record);return;}Object.keys(record).forEach(function(k){var v=record[k];if(v&&(!Array.isArray(v)||v.length)&&(!existing[k]||Array.isArray(existing[k])&&!existing[k].length))existing[k]=v;});});recognized+=rows.length;}
+   else if(rec.id==='devices'){rows.forEach(function(get){var name=get('device name');if(!name)return;var existing=ev.devices.find(function(d){return d.name===name;}),record=({name:name,type:get('type'),model:get('make & model'),ips:splitList(get('ip address(es)')),macs:splitList(get('mac address(es)')).map(normalizeMAC).filter(Boolean),networks:splitList(get('network(s)')),connected:parseThrough(get('connected to')),software:get('software version'),firmware:get('firmware version'),serial:get('serial number'),description:get('description'),status:get('status')});if(!existing){ev.devices.push(record);return;}Object.keys(record).forEach(function(k){var v=record[k];if(v&&(!Array.isArray(v)||v.length)&&(!existing[k]||Array.isArray(existing[k])&&!existing[k].length))existing[k]=v;});});recognized+=rows.length;}
    else if(rec.id==='routes'){rows.forEach(function(get){var hop=get('next hop');ev.routes.push({device:get('device name'),prefix:get('destination'),nextHop:hop==='0.0.0.0'?'':hop,metric:get('metric'),iface:get('gateway interface'),protocol:'',distance:'',source:'Auvik'});});recognized+=rows.length;}
    else if(rec.id==='arp'){rows.forEach(function(get){ev.arp.push({device:get('device name'),ip:get('ip address'),mac:normalizeMAC(get('hardware (mac) address','mac address')),iface:get('interface')});});recognized+=rows.length;}
    else if(rec.id==='fdb'){rows.forEach(function(get){ev.mac.push({device:get('device name'),mac:normalizeMAC(get('destination mac address')),iface:get('interface'),vlan:get('vlan')});});recognized+=rows.length;}
@@ -228,7 +228,7 @@
   var count=0,text=lines.join('\n'),m;
   // CDP detail
   if(/Device ID:/i.test(text)&&/Port ID \(outgoing port\)/i.test(text)){
-   text.split(/(?=^\s*Device ID:)/m).forEach(function(block){var id=block.match(/Device ID:\s*(\S+)/i);var intf=block.match(/Interface:\s*([^,\n]+),\s*Port ID \(outgoing port\):\s*(.+)/i);if(!id||!intf)return;var ip=block.match(/(?:IP(?:v4)? [Aa]ddress|IP address):\s*(\d+\.\d+\.\d+\.\d+)/);var plat=block.match(/Platform:\s*([^,\n]+)/i);out.push({device:device,local:intf[1].trim(),remote:id[1].replace(/\(.*\)$/,''),remotePort:intf[2].trim(),remoteIP:ip?ip[1]:'',platform:plat?plat[1].trim():'',protocol:'CDP'});count++;});
+   text.split(/(?=^\s*Device ID:)/m).forEach(function(block){var id=block.match(/Device ID:\s*(\S+)/i);var intf=block.match(/Interface:\s*([^,\n]+),\s*Port ID \(outgoing port\):\s*(.+)/i);if(!id||!intf)return;var ip=block.match(/(?:IP(?:v4)? [Aa]ddress|IP address):\s*(\d+\.\d+\.\d+\.\d+)/);var plat=block.match(/Platform:\s*([^,\n]+)/i),caps=block.match(/Capabilities:\s*([^\n]+)/i);out.push({device:device,local:intf[1].trim(),remote:id[1].replace(/\(.*\)$/,''),remotePort:intf[2].trim(),remoteIP:ip?ip[1]:'',platform:plat?plat[1].trim():'',capabilities:caps?caps[1].trim():'',protocol:'CDP'});count++;});
    return count;
   }
   // LLDP detail (IOS, NX-OS, Arista, AOS-CX)
@@ -240,7 +240,8 @@
     var port=block.match(/^\s*(?:-\s*)?(?:Neighbor Port-ID|Port id|Port ID)\s*:\s*"?([^"\n]+?)"?\s*$/im);
     if(!local||!name||!port)return;
     var desc=block.match(/(?:Neighbor Port-Desc|Port Description|Port Descr)\s*:\s*"?([^"\n]*?)"?\s*$/im),ip=block.match(/(?:Management Address(?:es)?|Neighbor Management-Address|IP)\s*:\s*\n?\s*(?:IP:\s*)?(\d+\.\d+\.\d+\.\d+)/i),sys=block.match(/(?:System Description|Neighbor System-Description)\s*:\s*\n?\s*"?([^"\n]+)/i);
-    out.push({device:device,local:local[1],remote:name[1].trim(),remotePort:port[1].trim(),remotePortDescription:desc?desc[1].trim():'',remoteIP:ip?ip[1]:'',platform:sys?sys[1].trim().slice(0,120):'',protocol:'LLDP'});count++;
+    var chassis=block.match(/(?:Chassis id|Chassis ID|Neighbor Chassis-ID)\s*:\s*(\S+)/i),caps=block.match(/(?:Enabled Capabilities|System Capabilities)\s*:\s*([^\n]+)/i);
+    out.push({device:device,local:local[1],remote:name[1].trim(),remotePort:port[1].trim(),remotePortDescription:desc?desc[1].trim():'',remoteIP:ip?ip[1]:'',platform:sys?sys[1].trim().slice(0,120):'',chassis:chassis?normalizeMAC(chassis[1]):'',capabilities:caps?caps[1].trim():'',protocol:'LLDP'});count++;
    });
    if(count)return count;
   }
@@ -293,7 +294,7 @@
   // Merge status, detail and neighbor rows into one interface list per device.
   var byKey=new Map();function iface(device,name){var key=deviceKey(device)+'\u0000'+interfaceKey(name);if(!byKey.has(key)){var x={device:device,name:name,description:'',admin:'',oper:'',mac:'',type:'',speed:'',vlans:[],neighbor:null,source:'Show commands'};byKey.set(key,x);ev.interfaces.push(x);}return byKey.get(key);}
   raw.detail.concat(raw.status).forEach(function(r){var x=iface(r.device,r.name);['description','admin','oper','mac','speed','duplex','ip','media','state','inputErrors','outputErrors','crc'].forEach(function(k){if(r[k]!==undefined&&r[k]!==''&&(x[k]===undefined||x[k]===''))x[k]=r[k];});if(r.vlan&&!x.vlans.length&&/^\d+$/.test(r.vlan))x.vlans=[{id:r.vlan,name:''}];if(r.vlan==='trunk')x.mode='Trunk';});
-  raw.neighbors.forEach(function(n){var x=iface(n.device,n.local);x.neighbor={device:n.remote,port:n.remotePort,ip:n.remoteIP||'',platform:n.platform||'',protocol:n.protocol};});
+  raw.neighbors.forEach(function(n){var x=iface(n.device,n.local);x.neighbor={device:n.remote,port:n.remotePort,ip:n.remoteIP||'',platform:n.platform||'',protocol:n.protocol,portDescription:n.remotePortDescription||'',chassis:n.chassis||'',capabilities:n.capabilities||''};});
   finish(ev);return ev;
  }
 
@@ -303,7 +304,7 @@
   // name only the far port) fill in device pairs that no interface row covers. A link
   // is dropped when another link between the same devices covers both of its ports.
   var raw=[];
-  ev.interfaces.forEach(function(i){(i.neighbors&&i.neighbors.length?i.neighbors:i.neighbor?[i.neighbor]:[]).forEach(function(n){if(n&&n.device)raw.push({a:{device:i.device||ev.device,port:i.name},b:{device:n.device,port:n.port||''},source:n.protocol||i.source});});});
+  ev.interfaces.forEach(function(i){(i.neighbors&&i.neighbors.length?i.neighbors:i.neighbor?[i.neighbor]:[]).forEach(function(n){if(n&&n.device)raw.push({a:{device:i.device||ev.device,port:i.name},b:{device:n.device,port:n.port||''},source:n.protocol||i.source,ip:n.ip||'',platform:n.platform||'',portDescription:n.portDescription||'',chassis:n.chassis||'',capabilities:n.capabilities||''});});});
   ev.interfaces=ev.interfaces.filter(function(i){return i.name;});
   var pairs=new Set(raw.map(function(l){return [deviceKey(l.a.device),deviceKey(l.b.device)].sort().join('~');}));
   ev.devices.forEach(function(d){(d.connected||[]).forEach(function(c){var pair=[deviceKey(d.name),deviceKey(c.device)].sort().join('~');if(!pairs.has(pair))raw.push({a:{device:d.name,port:''},b:{device:c.device,port:c.port},source:'Auvik'});});});
@@ -330,10 +331,10 @@
  // Device records for joining with configurations: name, type, model and addresses.
  function deviceList(ev){
   var map=new Map();function touch(name){var k=deviceKey(name);if(!k)return null;if(!map.has(k))map.set(k,{name:name,key:k,type:'',model:'',ips:[],generic:genericDevice(name)});return map.get(k);}
-  ev.devices.forEach(function(d){var x=touch(d.name);if(!x)return;Object.assign(x,{type:d.type||x.type,model:d.model||x.model,ips:d.ips||[],serial:d.serial,software:d.software,status:d.status,networks:d.networks});});
+  ev.devices.forEach(function(d){var x=touch(d.name);if(!x)return;Object.assign(x,{type:d.type||x.type,model:d.model||x.model,ips:d.ips||[],macs:d.macs||[],serial:d.serial,software:d.software,firmware:d.firmware,status:d.status,networks:d.networks,description:d.description});});
   if(ev.device)touch(ev.device);
   ev.links.forEach(function(l){touch(l.a.device);touch(l.b.device);});
-  ev.interfaces.forEach(function(i){if(i.neighbor&&i.neighbor.device){var x=touch(i.neighbor.device);if(x&&i.neighbor.ip&&!x.ips.includes(i.neighbor.ip))x.ips.push(i.neighbor.ip);if(x&&i.neighbor.platform&&!x.model)x.model=i.neighbor.platform;}});
+  ev.interfaces.forEach(function(i){if(i.neighbor&&i.neighbor.device){var x=touch(i.neighbor.device);if(x&&i.neighbor.ip&&!x.ips.includes(i.neighbor.ip))x.ips.push(i.neighbor.ip);if(x&&i.neighbor.platform&&!x.model)x.model=i.neighbor.platform;if(x&&i.neighbor.chassis){x.macs=x.macs||[];if(!x.macs.includes(i.neighbor.chassis))x.macs.push(i.neighbor.chassis);}}});
   return Array.from(map.values());
  }
  root.SWEvidence={load:load,readXlsx:readXlsx,parseCSV:parseCSV,fromTables:fromTables,fromText:fromText,interfaceKey:interfaceKey,interfaceLabel:interfaceLabel,deviceKey:deviceKey,genericDevice:genericDevice,normalizeMAC:normalizeMAC,deviceList:deviceList,isZip:isZip,configLike:configLike};

@@ -1,5 +1,20 @@
 # Configuration Inspector development handoff
 
+## 5.27.0 — supplementary data in sections, map and neighbor details
+
+- `evidenceSections()` builds the tables; `evidencePage()` renders a tab row
+  (`data-evidence-tab`, `state.evidenceTab`) and one section through `evidenceSection()`
+  with a filter (`#evidence-query`, `state.evidenceQuery`) and `data-evidence-more`
+  paging (`state.evidenceLimit`, 100 rows). `.evidence-wrap` scrolls only sideways.
+- `.site-map-scroll` scrolls only sideways; the device panel is sticky without its
+  own scroll area.
+- `liveTabs(id)` adds `live-*` tabs to `availableTabs` (Routing, Switching, System);
+  `liveTabPanel` renders them, and `configurationCategories`/`hasView` count them so a
+  section with only imported data still appears.
+- Network map: `liveMapLine(r)` on each row, `liveNeighborPanel()` as an extra zone
+  panel. `showNeighbor(name, localPort)` opens the neighbor details modal; links carry
+  `ip`, `platform`, `portDescription`, `chassis` and `capabilities` from evidence.js.
+
 ## 5.26.0 — supplementary data and site map
 
 - `webview/evidence.js` (embedded `supplementary-data`, `window.SWEvidence`) reads XLSX

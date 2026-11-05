@@ -44,6 +44,9 @@ existing release or its assets. Preserve the polished README layout.
   and documentation addresses (192.0.2.x, 10.x, 00:00:5e:00:53:xx MACs).
 - Auvik uses placeholder port names ("Some Interface", "Wired Interface"); treat them as
   unknown ports, and keep `open` checks as `>=0` (`-1` means no open configuration).
+- Pages that scroll as a whole must not contain vertical scroll areas (nested scrollbars
+  trap the mouse wheel). Split long content into tabs or "Show more" instead; the
+  supplementary browser test checks the Supplementary data page for this.
 - `index.html` embeds the `webview/*.js` modules; run
   `python3 webview/embed_features.py` after editing them (CI fails on drift).
 
