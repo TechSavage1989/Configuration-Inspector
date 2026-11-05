@@ -1,5 +1,10 @@
 # Configuration Inspector development handoff
 
+## 5.27.1 — sticky supplementary tabs
+
+- `.evidence-tabs` is `position:sticky;top:0` inside `#content` (the page scroller);
+  keep ancestors free of `overflow` so it stays pinned. The browser test checks it.
+
 ## 5.27.0 — supplementary data in sections, map and neighbor details
 
 - `evidenceSections()` builds the tables; `evidencePage()` renders a tab row
