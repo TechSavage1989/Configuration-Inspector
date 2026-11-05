@@ -1,5 +1,10 @@
 # Configuration Inspector development handoff
 
+## 5.27.5 — independently scrolling site map panel
+
+- `.site-map-detail` is sticky with `overflow-y:auto`; `pinHeaders()` sets its
+  `max-height` to the visible content height. Its `.panel-head` sticks inside it.
+
 ## 5.27.4 — consistent side panels
 
 - `siteMapDetail()` renders `.side-panel-body` rows and `.site-link-row` connection rows

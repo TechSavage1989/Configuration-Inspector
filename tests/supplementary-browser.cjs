@@ -28,6 +28,11 @@ const file=(name,buffer,type)=>({name,mimeType:type||'text/plain',buffer:Buffer.
   await page.locator('.site-node').filter({hasText:'EXAMPLE-CORE'}).click();await page.locator('.site-map-detail').waitFor();
   const detail=await page.locator('.site-map-detail').innerText();ok(detail.includes('EXAMPLE-CORE-0001')&&detail.includes('TenGigabitEthernet1/0/11'),'device details list its connections');
   ok(await page.locator('.site-map-detail table').count()===0&&await page.locator('.site-map-detail .device-info-row').count()>=3&&await page.locator('.site-map-detail .site-link-row').count()===4,'the device panel uses the standard side panel rows, with one row per connection');
+  await page.setViewportSize({width:1440,height:420});await page.waitForTimeout(200);
+  const side=await page.locator('.site-map-detail').boundingBox();await page.mouse.move(side.x+side.width/2,side.y+Math.min(side.height-10,120));await page.mouse.wheel(0,400);await page.waitForTimeout(300);
+  const own=await page.evaluate(()=>{const d=document.querySelector('.site-map-detail'),c=document.getElementById('content');return {overflow:getComputedStyle(d).overflowY,scrollable:d.scrollHeight>d.clientHeight,panel:d.scrollTop,page:c.scrollTop,fits:d.getBoundingClientRect().height<=c.clientHeight};});
+  ok(own.overflow==='auto'&&own.scrollable&&own.panel>0&&own.page===0&&own.fits,'the site map device panel scrolls on its own without moving the page: '+JSON.stringify(own));
+  await page.setViewportSize({width:1440,height:900});await page.waitForTimeout(200);
   await page.locator('.site-map-detail [data-sitemap-node="exampleaccess2"]').click();ok((await page.locator('.site-map-detail .panel-title').first().innerText()).includes('EXAMPLE-ACCESS2'),'connections link to the neighboring device');
   await page.locator('#sitemap-query').fill('access3');ok(await page.locator('.site-node.match').count()===1&&await page.locator('.site-node.dim').count()===4,'find a device');await page.locator('#sitemap-query').fill('');
   // The configuration joins with the export by name.

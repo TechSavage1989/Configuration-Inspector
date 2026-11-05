@@ -750,7 +750,9 @@ table.data th,table.data td{vertical-align:top}
 .dropzone-extra{font-size:11px;color:var(--muted);margin-top:4px}
 .evidence-page,.site-map-page{display:flex;flex-direction:column;gap:16px}
 .site-map-page.with-detail{display:grid;grid-template-columns:minmax(0,1fr) 380px;align-items:start}
-.site-map-page.with-detail .site-map-detail{position:sticky;top:0}
+.site-map-page.with-detail .site-map-detail{position:sticky;top:0;overflow-y:auto;overscroll-behavior:contain;scrollbar-width:thin}
+.site-map-detail>.panel-head{position:sticky;top:0;z-index:2;background:var(--theme-surface-ffffff,var(--paper))}
+#content:not(.list-view) .site-map-page.with-detail .site-map-detail{overflow-x:hidden;overflow-y:auto}
 .site-map-detail .device-summary-facts{grid-template-columns:1fr 1fr}
 @media (max-width:1100px){.site-map-page.with-detail{display:flex}}
 .evidence-file-list{display:flex;flex-direction:column;gap:8px}
@@ -919,7 +921,7 @@ body{font-size:14px}.brand-mark{background:linear-gradient(145deg,#287dc6,#15578
       <div id="page-heading"></div>
       <div id="workspace-tabs"></div><div id="workspace-notice"></div>
       <div id="content"></div>
-      <footer class="page-footer"><span id="version-label">Config Inspector 5.27.4</span></footer>
+      <footer class="page-footer"><span id="version-label">Config Inspector 5.27.5</span></footer>
     </main>
   </div>
   <input type="file" id="import-file" multiple accept=".exp,.txt,.json,.conf,.cfg,.xml,.tar,.set,.log,.backup,.rsc,.xlsx,.csv" hidden>
@@ -6068,7 +6070,7 @@ function pJ(L,pan){const d=E(),I={},R={},T={};
     return {compareText:compareText,compareMode:['records','text','fields'].includes(data.compareMode)?data.compareMode:'records',models:models.slice(0,data.count),model:data.selected<0?null:models[data.selected],comparison:data.comparison<0?null:models[data.comparison],view:typeof data.view==='string'?data.view:'overview',scope:typeof data.scope==='string'?data.scope:'',categoryTabs:data.categoryTabs&&typeof data.categoryTabs==='object'&&!Array.isArray(data.categoryTabs)?data.categoryTabs:{},showUnassigned:!!data.showUnassigned,showEmpty:!!data.showEmpty};
   }
   function create(options){
-    options=options||{};var bridge=options.bridge||root.chrome&&root.chrome.webview,native=!!(bridge&&typeof bridge.postMessage==='function'&&typeof bridge.addEventListener==='function'),state={current:'5.27.4',state:'idle',message:'',automatic:true,busy:false,ready:false,available:false},handlers={},restoring=false,installing=false;
+    options=options||{};var bridge=options.bridge||root.chrome&&root.chrome.webview,native=!!(bridge&&typeof bridge.postMessage==='function'&&typeof bridge.addEventListener==='function'),state={current:'5.27.5',state:'idle',message:'',automatic:true,busy:false,ready:false,available:false},handlers={},restoring=false,installing=false;
     var commands=['update-ui-ready','update-status','update-check','update-download','update-later','update-auto-on','update-auto-off','update-restored','update-restore-failed'];
     function request(command){if(!native)throw new Error('Built-in updates are available in the Windows desktop edition.');if(!commands.includes(command))throw new Error('Unknown update action.');bridge.postMessage(command);}
     if(native)bridge.addEventListener('message',async function(event){
@@ -6954,6 +6956,7 @@ function pJ(L,pan){const d=E(),I={},R={},T={};
     var root=el.content;if(!root||!root.querySelectorAll||typeof getComputedStyle!=='function')return;
     root.querySelectorAll('[data-pinned]').forEach(function(x){x.style.position='';x.style.top='';x.style.zIndex='';x.removeAttribute('data-pinned');});
     root.querySelectorAll('[data-unclipped]').forEach(function(x){x.style.overflow='';x.removeAttribute('data-unclipped');});
+    var side=root.querySelector('.site-map-page.with-detail .site-map-detail');if(side)side.style.maxHeight=Math.max(240,root.clientHeight-8)+'px';
     if(root.classList.contains('list-view')||state.view==='compare')return;
     function scrollsBetween(node,stop){for(var n=node.parentElement;n&&n!==stop;n=n.parentElement){var o=getComputedStyle(n).overflowY;if(o==='auto'||o==='scroll'||o==='hidden')return true;}return false;}
     function pin(node,top,z){node.style.position='sticky';node.style.top=top+'px';node.style.zIndex=z;node.setAttribute('data-pinned','true');}
@@ -8292,7 +8295,7 @@ function pJ(L,pan){const d=E(),I={},R={},T={};
     return summary+panels.join('');
   }
   // Kept current by scripts/version.py, which replaces the release string on each bump.
-  var APP_VERSION='5.27.4';
+  var APP_VERSION='5.27.5';
   // Client report: one section per open configuration. Port states use the same
   // classification as Interfaces at a glance, evaluated with each model active.
   function withModel(m,fn){var saved={model:state.model,usage:state.interfaceUsageCache,recordMap:state.recordMap};state.model=m;state.interfaceUsageCache=null;state.recordMap=new Map(m.records.map(function(r){return [r.id,r];}));try{return fn();}finally{state.model=saved.model;state.interfaceUsageCache=saved.usage;state.recordMap=saved.recordMap;}}
@@ -8933,7 +8936,7 @@ function pJ(L,pan){const d=E(),I={},R={},T={};
     }
   }
   function showHelp(){
-    openModal(modalHeader('About Config Inspector','Firewall and switch configuration explorer / version 5.27.4')+
+    openModal(modalHeader('About Config Inspector','Firewall and switch configuration explorer / version 5.27.5')+
       '<div class="modal-body"><div class="help-section"><h3>Open and explore</h3><p>Import SonicWall EXP, FortiGate FortiOS text, Palo Alto configuration XML, Sophos Firewall XML or export TAR, Aruba AOS or AOS-CX text, Cisco IOS or NX-OS text, Juniper Junos text or XML, Meraki API JSON, or a JSON snapshot exported by this application. The device type is detected automatically. You can also drop a file anywhere in the window. Select an interface or record for a plain-language explanation and key facts. Related objects show their IP addresses or service ports. Advanced details contains all original fields. Use Copy summary for readable facts and Back to return from a related item.</p></div>'+
       '<div class="help-section"><h3>Configuration sections</h3><p>Choose a root section in the sidebar, then select one of its indented subsections. Each subsection opens its own page. Routes, objects, members and other primary definitions appear before related settings. Security pages are grouped by function, including web, applications, files, intrusion prevention and SSL/TLS inspection. Certificate objects remain under Certificates. Empty subsections are hidden by default. Use View options to show empty sections, or Configuration sections and All original fields to inspect untranslated settings. Configuration context, search and table filters apply to the selected view.</p></div>'+
       '<div class="help-section"><h3>Choose access rule zones</h3><p>In Access Rules, choose From zone and To zone independently. All zones leaves that side unrestricted. Swap reverses the direction. Clear zone filters removes the pair while keeping the table filters. Search, configured state, and IP version filters combine with the pair, and CSV includes all matching rules. A matrix cell selects its zone pair. Interface and zone details offer outgoing and incoming rules.</p></div>'+
