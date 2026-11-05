@@ -40,6 +40,8 @@ const file=(name,buffer,type)=>({name,mimeType:type||'text/plain',buffer:Buffer.
   const ap=page.locator('tr').filter({hasText:'GigabitEthernet1/0/1'}).first();const apText=await ap.innerText();ok(apText.includes('EXAMPLE-AP1 · eth0')&&apText.includes('1 MAC'),'neighbor and devices seen on the port: '+apText);
   const printer=page.locator('tr').filter({hasText:'GigabitEthernet1/0/7'}).first();ok((await printer.innerText()).includes('10.0.10.50'),'ARP from the firewall names the device behind a switch port');
   await printer.click();await page.locator('#drawer .live-panel').waitFor();const live=await page.locator('#drawer .live-panel').innerText();ok(live.includes('Printer')&&live.includes('00:00:5e:00:53:a1')&&live.includes('100 Mb/s'),'interface details show live data: '+live);
+  ok(await page.locator('#drawer .live-panel td [data-copy-value="00:00:5e:00:53:a1"]').count()===1&&await page.locator('#drawer .live-panel td [data-copy-value="10.0.10.50"]').count()===1,'MAC and IP addresses on a port can be copied');
+  ok((await page.locator('#drawer .live-copy-all').getAttribute('data-copy-value')).includes('00:00:5e:00:53:a1\t10.0.10.50'),'all devices on a port can be copied at once');
   await page.keyboard.press('Escape');
   // The network map shows live link state and connected devices.
   await page.locator('.nav-scroll [data-view="topology"]').click();await page.waitForTimeout(500);
@@ -50,6 +52,7 @@ const file=(name,buffer,type)=>({name,mimeType:type||'text/plain',buffer:Buffer.
   // Neighbor details.
   await page.locator('.live-neighbors-panel [data-neighbor-device="EXAMPLE-CORE"]').click();await page.locator('.neighbor-details').waitFor();
   const nd=await page.locator('#modal').innerText();ok(['EXAMPLE-CORE','10.0.99.2','EXAMPLE-CORE-0001','TenGigabitEthernet1/1/1','TenGigabitEthernet1/0/11','00:00:5e:00:53:12'].every(t=>nd.includes(t)),'neighbor details show hostname, address, serial, both ports and the remote MAC: '+nd);
+  ok(await page.locator('#modal td [data-copy-value="TenGigabitEthernet1/0/11"]').count()===1&&await page.locator('#modal td [data-copy-value="00:00:5e:00:53:12"]').count()===1,'neighbor ports and MAC addresses can be copied');
   await page.locator('#modal [data-neighbor-sitemap]').click();await page.locator('.site-map-detail').waitFor();ok((await page.locator('.site-map-detail .panel-title').first().innerText()).includes('EXAMPLE-CORE'),'show on site map');
   await page.locator('[data-workspace="0"]').first().click();await page.waitForTimeout(400);
   // Live tabs in the sections they belong to.
@@ -85,6 +88,8 @@ const file=(name,buffer,type)=>({name,mimeType:type||'text/plain',buffer:Buffer.
   await page.setViewportSize({width:1440,height:900});await page.evaluate(()=>{document.getElementById('content').scrollTop=0;});
   await page.locator('[data-evidence-tab="ports"]').click();await page.locator('#evidence-query').fill('1/0/7');await page.waitForTimeout(300);
   ok(await page.locator('[data-evidence-section="ports"] tbody tr').count()===1&&(await page.locator('#evidence-query').evaluate(e=>document.activeElement===e)),'a tab filters its table and keeps focus');
+  ok((await page.locator('[data-evidence-section] [data-copy-value^="Interface"]').getAttribute('data-copy-value')).split('\n')[0]==='Interface\tLink\tSpeed\tDescription reported\tDevices seen','tables can be copied with their column names');
+  ok(await page.locator('[data-evidence-section] tbody td [data-copy-value]').count()>0,'table values can be copied');
   await page.locator('[data-evidence-tab="files"]').click();await page.waitForTimeout(300);
   ok(await page.locator('.evidence-file').count()===2,'both imports are listed');
   await page.locator('[data-evidence-file] [data-remove-evidence]').last().click();await page.waitForTimeout(300);ok(await page.locator('.evidence-file').count()===1,'an import can be removed');

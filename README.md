@@ -177,6 +177,8 @@ Data is matched to an open configuration by hostname, or by an interface address
 - **Neighbor details:** click a neighbor anywhere it is listed to see its hostname, type, model or platform, IP and MAC addresses, capabilities, serial number and software, and each link to the open configuration with both ports, link state and the remote port's MAC address.
 - **Supplementary data** page: a row of tabs at the top. **Files** lists imported files, what was recognized in each and which configuration each applies to (**Applies to**). The other tabs each show one table for the open configuration: **Neighbors**, **Interface state**, **Routing table**, **ARP table** and **Networks**. Site exports add **Network devices**, **Past last support date** and **Known vulnerabilities**. Each table has a filter and shows 100 rows at a time with **Show more**, and the page scrolls as one, with no scroll areas inside it; the tab row stays at the top while you scroll.
 
+Values in these tables (MAC and IP addresses, ports, device names) can be copied by clicking them, and **Copy table** copies the rows shown with their column names for a spreadsheet or ticket.
+
 Supplementary data describes the network when it was collected. It is never merged into a configuration or an export, is kept in memory only, and is cleared with **Clear workspace**. Older `.xls` workbooks are not supported; save them as .xlsx or CSV.
 
 ## Compare configurations
