@@ -157,6 +157,11 @@
  // row at the middle of the shape's port rows; along a row, a run of evenly sized pairs
  // that nearly touch is a run of cages; console and USB points without a partner row are
  // left out. Ports are numbered column by column, upper row first.
+ // Every connection point inside the shape as a fraction of it, top row (0) or bottom row (1) by
+ // which half of the points' height range it sits in; for fitting a device's ports onto it.
+ function guid(text){var h=[0x811c9dc5,0x01000193,0x5bd1e995,0x27d4eb2f];for(var i=0;i<String(text).length;i++){var c=String(text).charCodeAt(i);for(var k=0;k<4;k++)h[k]=Math.imul(h[k]^c^(k*131),16777619+k*2)>>>0;}var x=h.map(function(v){return ('00000000'+v.toString(16)).slice(-8).toUpperCase();}).join('');return '{'+x.slice(0,8)+'-'+x.slice(8,12)+'-'+x.slice(12,16)+'-'+x.slice(16,20)+'-'+x.slice(20,32)+'}';}
+ function portPoints(master){var pts=(master.connections||[]).filter(function(p){return p.x>=0&&p.x<=master.w&&p.y>=0&&p.y<=master.h;});if(pts.length<2)return null;
+  var ys=pts.map(function(p){return p.y;}),mid=(Math.max.apply(null,ys)+Math.min.apply(null,ys))/2;return pts.map(function(p){return {fx:p.x/master.w,fy:1-p.y/master.h,row:p.y>mid?0:1};});}
  function edgePorts(master){
   var pts=(master.connections||[]).filter(function(p){return p.x>=0&&p.x<=master.w&&p.y>=0&&p.y<=master.h;});if(pts.length<4)return null;
   var tol=master.h*0.04,levels=[];pts.slice().sort(function(a,b){return a.y-b.y;}).forEach(function(p){var l=levels.find(function(x){return Math.abs(x.y-p.y)<=tol;});if(l){l.pts.push(p);l.y=l.pts.reduce(function(a,q){return a+q.y;},0)/l.pts.length;}else levels.push({y:p.y,pts:[p]});});
@@ -375,7 +380,8 @@
    var conns=top.conns.map(function(c){return {x:c.x-frame.x,y:c.y-frame.y};}),fw=frame.w,fh=frame.h;
    var xml='<?xml version="1.0" encoding="utf-8" standalone="yes"?>\n<MasterContents xmlns="http://schemas.microsoft.com/office/visio/2012/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" xml:space="preserve"><Shapes><Shape ID="5" NameU="'+escX(name)+'" Name="'+escX(name)+'" Type="Group" LineStyle="0" FillStyle="0" TextStyle="0">'+xc('PinX',fw/2)+xc('PinY',fh/2)+xc('Width',fw)+xc('Height',fh)+xc('LocPinX',fw/2)+xc('LocPinY',fh/2)+
     (conns.length?'<Section N="Connection">'+conns.map(function(c,i){return '<Row T="Connection" IX="'+i+'">'+xc('X',c.x)+xc('Y',c.y)+'</Row>';}).join('')+'</Section>':'')+(picXML?'<Shapes>'+picXML+'</Shapes>':'')+'</Shape></Shapes></MasterContents>';
-   var element='<Master ID="'+id+'" NameU="'+escX(name)+'" Name="'+escX(name)+'" IconSize="1" AlignName="2" MatchByName="0" IconUpdate="1" PatternFlags="0" Hidden="0" MasterType="2"><PageSheet LineStyle="0" FillStyle="0" TextStyle="0">'+xc('PageWidth',fw)+xc('PageHeight',fh)+'</PageSheet><Rel r:id="rId1"/></Master>';
+   // Visio's own masters carry a UniqueID and a BaseID: stable ones from the file and the shape.
+   var element='<Master ID="'+id+'" NameU="'+escX(name)+'" Name="'+escX(name)+'" IconSize="1" AlignName="2" MatchByName="0" IconUpdate="1" UniqueID="'+guid(fileName+'#'+id+'#u')+'" BaseID="'+guid(fileName+'#'+name+'#b')+'" PatternFlags="0" Hidden="0" MasterType="2"><PageSheet LineStyle="0" FillStyle="0" TextStyle="0">'+xc('PageWidth',fw)+xc('PageHeight',fh)+'</PageSheet><Rel r:id="rId1"/></Master>';
    var part=((name.match(/^([A-Z0-9][A-Z0-9-]{3,14})(?=[\s/(]|$)/)||[])[1]||'');if(!/\d/.test(part))part='';
    masters.push({cells:{PinX:fw/2,PinY:fh/2,LocPinX:fw/2,LocPinY:fh/2},type:'Group',file:fileName||'stencil',id:id,name:name,element:element,xml:xml,rels:rels,media:mfiles,props:{},part:part,product:'',manufacturer:'',shapeW:fw,shapeH:fh,w:fw,h:fh,x0:0,y0:0,oneD:false,connections:conns,
     pictures:pics.map(function(pc){return {x:pc.x-frame.x,y:pc.y-frame.y,w:pc.w,h:pc.h,ext:pc.ext,data:pc.data};})});});
@@ -393,6 +399,6 @@
    file[0]=0x42;file[1]=0x4d;var dv=new DataView(file.buffer);dv.setUint32(2,file.length,true);dv.setUint32(10,offset,true);file.set(d,14);return {ext:'bmp',data:file};}
   return null;
  }
- root.SWStencils={bankLayout:bankLayout,edgePorts:edgePorts,read:read,match:match,score:score,ports:ports,layout:layout,artwork:artwork,emf:emf,unzip:unzip};
+ root.SWStencils={bankLayout:bankLayout,edgePorts:edgePorts,portPoints:portPoints,read:read,match:match,score:score,ports:ports,layout:layout,artwork:artwork,emf:emf,unzip:unzip};
  if(typeof module==='object'&&module.exports)module.exports=root.SWStencils;
 })(typeof globalThis!=='undefined'?globalThis:this);

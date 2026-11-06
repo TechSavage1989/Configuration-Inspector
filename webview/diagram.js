@@ -28,7 +28,7 @@
  // Link kinds by cable or fiber type and speed, as the reference drawing names them ("10 Gbps
  // SR fiber", "10 Gbps SFP+ DAC", "1 Gbps local handoff", "AP copper"). The media comes from
  // the port's reported media (show interfaces status) or else its connector (SFP cage or RJ45).
- var LINK_MEDIA={sr:{name:'SR fiber',color:'#e02b20',order:1},lr:{name:'LR fiber',color:'#00a3e0',order:2},fiber:{name:'fiber',color:'#e02b20',order:3},dac:{name:'DAC',color:'#111111',order:4},wan:{name:'local handoff',color:'#f0c330',order:5},copper:{name:'copper',color:'#f0c330',order:6},wap:{name:'AP copper',color:'#18a34a',order:7},other:{name:'Media unspecified',color:'#8a94a6',order:8}};
+ var LINK_MEDIA={custom:{name:'',color:'#8a94a6',order:8.5},sr:{name:'SR fiber',color:'#e02b20',order:1},lr:{name:'LR fiber',color:'#00a3e0',order:2},fiber:{name:'fiber',color:'#e02b20',order:3},dac:{name:'DAC',color:'#111111',order:4},wan:{name:'local handoff',color:'#f0c330',order:5},copper:{name:'copper',color:'#f0c330',order:6},wap:{name:'AP copper',color:'#18a34a',order:7},other:{name:'Media unspecified',color:'#8a94a6',order:8}};
  var KINDS={};
  function speedText(v){return v>=1000?(Math.round(v/100)/10)+' Gbps':v>0?v+' Mbps':'';}
  function mediaOf(s){s=String(s||'');if(!s)return '';if(/twinax|\bDAC\b|-CU\d|CU\d+M|copper.*sfp|sfp.*copper/i.test(s))return 'dac';if(/(?:base-?|-|\b)(?:LR|LX|ER|ZR|LRM)\d?\b/i.test(s))return 'lr';if(/(?:base-?|-|\b)(?:SR|SX)\d?\b/i.test(s))return 'sr';if(/base-?T\b|RJ-?45|10\/100|BaseTX/i.test(s))return 'copper';if(/sfp|fiber|fibre|optic/i.test(s))return 'fiber';return '';}
@@ -193,7 +193,7 @@
  function drawPlate(page,dev,used,fills){
   var node=dev.node,x0=dev.x,y=dev.y;
   if(dev.stencil){dev.plates.forEach(function(pl){var x=x0+pl.x;
-    page.rect(x,y,pl.w,dev.h,{fill:'#f4f7fb',stroke:'#c9d3df',width:1,radius:4});page.image(x+G,y+dev.imgTop,dev.img.w,dev.img.h,{art:dev.stencil.art,master:dev.stencil.master});
+    page.rect(x,y,dev.noLabel?pl.labelX-G:pl.w,dev.h,{fill:'#f4f7fb',stroke:'#c9d3df',width:1,radius:4});page.image(x+G,y+dev.imgTop,dev.img.w,dev.img.h,{art:dev.stencil.art,master:dev.stencil.master});if(dev.noLabel)return;
     var lx=x+pl.labelX,lw=pl.w-pl.labelX-8,ty=y+Math.max(4,(dev.h-58)/2);
     if(pl.first)page.text(lx,ty,lw,58,clip(node.name,30)+'\n'+clip(node.model||dev.stencil.master.name||'',34)+'\n'+((node.ips||[])[0]||''),{size:10.5,align:'left',firstBold:true,lineHeight:17});else page.text(lx,y+dev.h/2-9,lw,18,'Member '+pl.member,{size:10.5,bold:true,align:'left'});});
    // Linked ports: a ring in the link color on the stencil.
@@ -207,11 +207,11 @@
      if(fl.label)page.text(x0+a.p.x-w/2,y+a.p.y-hh/2+(hh-Math.min(9,hh*0.62))/2-1,w,hh,fl.label,{size:Math.min(9,hh*0.62,w/(Math.max(2,fl.label.length)*0.62)),bold:true,color:'#1f2937'});});}
    return;}
   dev.plates.forEach(function(pl){var x=x0+pl.x;
-   page.rect(x,y,pl.w,72,{fill:'#dfe7f3',stroke:'#3d5a80',width:1.5,radius:4});page.rect(x+10,y+10,44,52,{fill:ROLE_FILL[node.role]||'#4f81bd',stroke:'none'});
+   page.rect(x,y,dev.noLabel?pl.labelX-G:pl.w,72,{fill:'#dfe7f3',stroke:'#3d5a80',width:1.5,radius:4});page.rect(x+10,y+10,44,52,{fill:ROLE_FILL[node.role]||'#4f81bd',stroke:'none'});
    pl.groups.forEach(function(g){for(var i=0;i<g.count;i++){var pp=portPos(g,i),row=pp.row,cx=x+pp.dx,cy=y+(g.mid?36:row?51:21),key=pl.member+'|'+g.name+'|'+i,u=used&&used.get(key),label=g.labels?g.labels[i]:g.name==='other'?'':String((g.base||0)+(g.zero?i:i+1));
     var fl=fills&&fills.get(key);drawPort(page,g.form||(g.fiber?'sfp':'rj45'),cx,cy,row,u,fl);
     if(label)page.text(cx-9,cy-4.5,18,9,label,{size:label.length>2?5:6.5,bold:!!(fl&&fl.up),color:(g.form==='sfp'||g.form==='qsfp'||!g.form&&g.fiber)&&!u&&!fl?'#ffffff':'#1f2937'});}});
-   var lx=x+pl.labelX,lw=pl.w-pl.labelX-8;
+   var lx=x+pl.labelX,lw=pl.w-pl.labelX-8;if(dev.noLabel)return;
    if(pl.first)page.text(lx,y+8,lw,58,clip(node.name,30)+'\n'+clip(node.model||ROLE_LABEL[node.role]||'',34)+'\n'+((node.ips||[])[0]||''),{size:10.5,align:'left',firstBold:true,lineHeight:17});
    else page.text(lx,y+26,lw,18,'Member '+pl.member,{size:10.5,bold:true,align:'left'});});
  }
@@ -319,7 +319,7 @@
  // input: {layout, links, vlans: Map, ports: Map key -> [port names]}
  // view: {title, rows (from scope), style 'plate' | 'box', aps, others, vlansFor, maxRow}
  function epKey(d,a){return a.node.group?'group:'+d.key:(a.node.key||a.node.name||'');}
- function render(input,view){
+ function render(input,view){EP_W=126;EP_PITCH=153;
   var layout=input.layout,all=new Map(layout.all.map(function(n){return [n.key,n];})),shownByKey=new Map(layout.nodes.map(function(n){return [n.key,n];})),style=view.style==='box'?'box':'plate';
   var page=new Page(view.title||'Network diagram'),devices=new Map(),rowsOut=[],used=new Set();
   var maxRow=view.maxRow||(style==='box'?10:3);
@@ -334,6 +334,10 @@
    var apList=named.filter(function(a){return a.node.role==='ap';});if(view.apGroup&&apList.length>1){var models=apList.map(function(a){return a.node.model;}).filter(function(m,i,all){return m&&all.indexOf(m)===i;});
     named=[{node:{name:apList.length+' access points',role:'ap',key:'',model:models.length===1?models[0]:models.length+' models',group:true},port:apList[0].port,ports:apList.map(function(a){return a.port;})}].concat(named.filter(function(a){return a.node.role!=='ap';}));}
    dev.eps=named.slice(0,12);dev.others=list.length-(view.apGroup&&apList.length>1?apList.length-1:0)-dev.eps.length;});
+  // Endpoint boxes are wide enough for the longest full name on the page (owner request: access
+  // points show their whole name); the image takes 52 px when a stencil draws the endpoint.
+  var longest=0;devices.forEach(function(dev){(dev.eps||[]).forEach(function(a){if(!a.node.group)longest=Math.max(longest,String(a.node.name||'').length);});});
+  if(longest){EP_W=Math.max(126,up9(60+longest*9*0.56));EP_PITCH=EP_W+27;}
   // Connections: one per physical link on faceplates, one per device pair on boxes.
   var conns=[],seenLinks=new Set();
   (input.links||[]).forEach(function(l){var A=devices.get(l.a),B=devices.get(l.b);if(!A||!B||A===B)return;var key=[l.a+'|'+short(l.aPort),l.b+'|'+short(l.bPort)].sort().join('~');if(seenLinks.has(key))return;seenLinks.add(key);
@@ -341,6 +345,8 @@
    if(style==='box'){var pk=[l.a,l.b].sort().join('~'),c=conns.find(function(x){return x.pair===pk;});if(c){c.aPorts.push(l.a===c.A.key?l.aPort:l.bPort);c.bPorts.push(l.a===c.A.key?l.bPort:l.aPort);if(isFiberKind(type))c.type=type;return;}conns.push({pair:pk,A:A,B:B,aPorts:[l.aPort],bPorts:[l.bPort],type:type,dash:dash});return;}
    conns.push({A:A,B:B,aPorts:[l.aPort],bPorts:[l.bPort],type:type,dash:dash});});
   devices.forEach(function(dev){dev.eps.forEach(function(a,j){var l=(input.links||[]).find(function(x){return x.a===dev.key&&x.b===a.node.key&&short(x.aPort)===short(a.port)||x.b===dev.key&&x.a===a.node.key&&short(x.bPort)===short(a.port);})||{aPort:a.port};conns.push({A:dev,ep:j,aPorts:[a.port],bPorts:[],type:linkKind(l,dev.node.role,a.node.role,false,false),dash:slowLink(l)});});});
+  // A link given its own type by hand (name and color): links sharing that name share one legend entry.
+  var lk=view.edits&&view.edits.lineKinds;if(lk)conns.forEach(function(c){var key=c.A.key+'|'+short(c.aPorts[0]||'')+'~'+(c.B?c.B.key+'|'+short(c.bPorts[0]||''):'ep:'+epKey(c.A,c.A.eps[c.ep])),o=lk[key];if(!o||!o.label)return;var k='custom:'+String(o.label).toLowerCase();KINDS[k]={label:o.label,color:o.color||'#8a94a6',dash:false,media:'custom',speed:0};c.type=k;});
   conns.forEach(function(c){used.add(c.type);});
   // Terminals on faceplates come from the port slot; boxes get a side per direction.
   var usedPorts=new Map();
@@ -360,7 +366,9 @@
   // Compact (owner request): a row of endpoints stays within the device's width where it fits,
   // each as near its port as its neighbors allow, instead of running off to one side.
   devices.forEach(function(d){[d.top,d.bot].forEach(function(list){var x=null;list.sort(function(p,q){return p.dx-q.dx;}).forEach(function(e){var ideal=snap(e.dx-EP_W/2);x=x==null?ideal:Math.max(ideal,x+EP_PITCH);e.rx=x;});
-    var n=list.length,span=n?(n-1)*EP_PITCH+EP_W:0,lo=0,hi=Math.max(0,snap(d.w-EP_W));if(n&&span<=d.w){for(var i=n-1;i>=0;i--){var cap=i===n-1?hi:list[i+1].rx-EP_PITCH;if(list[i].rx>cap)list[i].rx=cap;}for(var j=0;j<n;j++){var floor=j?list[j-1].rx+EP_PITCH:lo;if(list[j].rx<floor)list[j].rx=floor;}}});
+    var lastPl=d.plates&&d.plates[d.plates.length-1],body=lastPl&&lastPl.labelX?d.w-(lastPl.w-lastPl.labelX)+G:d.w,n=list.length,span=n?(n-1)*EP_PITCH+EP_W:0,lo=0,hi=Math.max(0,snap(body-EP_W));if(n&&span<=body){for(var i=n-1;i>=0;i--){var cap=i===n-1?hi:list[i+1].rx-EP_PITCH;if(list[i].rx>cap)list[i].rx=cap;}for(var j=0;j<n;j++){var floor=j?list[j-1].rx+EP_PITCH:lo;if(list[j].rx<floor)list[j].rx=floor;}}
+    // A row wider than the body still starts where it stays within the device's width if it can.
+    else if(n){var start=Math.max(0,Math.min(list[0].rx,snap(d.w-span)));list.forEach(function(e,k){e.rx=start+k*EP_PITCH;});}});
    var left=Math.min.apply(null,[0].concat(d.top.concat(d.bot).map(function(e){return e.rx;}))),right=Math.max.apply(null,[d.w+(d.others?G*2+EP_W:0)].concat(d.top.concat(d.bot).map(function(e){return e.rx+EP_W;})));d.offset=-left;d.cellW=right-left;});
   // Horizontal placement: cells left to right, rows centered.
   // Rows start on one vertical line: the first device of every row has the same left edge
@@ -401,9 +409,9 @@
     // devices and provider handoffs in a pale box with a dark accent bar.
     if(a.node.group){page.rect(x,y,EP_W,EP_H,{fill:'#86d9a4',stroke:'#2f9e5b',width:1});var pre=commonPrefix(a.ports);page.text(x+4,y+11,EP_W-8,40,clip(ranges(a.ports,pre),16)+'  |  '+a.ports.length+' APs\n'+clip(a.node.model||'',22),{size:9.5,lineHeight:16,firstBold:true,color:'#123524'});page.end();return;}
     var plain=a.node.role!=='ap';page.rect(x,y,EP_W,EP_H,{fill:plain?'#e8eef5':'#eef8f0',stroke:plain?'#c9d3df':ROLE_FILL.ap,width:1,radius:plain?0:6});if(plain)page.rect(x,y,4,EP_H,{fill:'#1d3a5c',stroke:'none'});var est=input.stencils&&input.stencils.get(a.node.key);
-    if(est&&est.art){var r=est.art.w/est.art.h,ih=44,iw=ih*r;if(iw>44){iw=44;ih=iw/r;}page.image(x+5+(44-iw)/2,y+5+(44-ih)/2,iw,ih,{art:est.art,master:est.master});page.text(x+52,y+5,EP_W-56,46,clip(short(portEdit(dev,a.port)),12)+'\n'+clip(a.node.name,13)+'\n'+clip(epIP(a.node)||a.node.model||'',14),{size:8.5,lineHeight:14,firstBold:true,align:'left'});}
-    else if(plain)page.text(x+12,y+9,EP_W-16,40,clip(a.node.name,19)+'\n'+clip(short(portEdit(dev,a.port)),9)+'  |  '+clip(epIP(a.node)||a.node.model||ROLE_LABEL[a.node.role]||'',14),{size:9,lineHeight:16,firstBold:true,align:'left',color:'#1b3a4b'});
-    else page.text(x+4,y+5,EP_W-8,46,clip(short(portEdit(dev,a.port)),16)+'\n'+clip(a.node.name,20)+'\n'+clip(epIP(a.node)||a.node.model||ROLE_LABEL[a.node.role]||'',22),{size:9,lineHeight:14,firstBold:true});page.end();});
+    if(est&&est.art){var r=est.art.w/est.art.h,ih=44,iw=ih*r;if(iw>44){iw=44;ih=iw/r;}page.image(x+5+(44-iw)/2,y+5+(44-ih)/2,iw,ih,{art:est.art,master:est.master});page.text(x+52,y+5,EP_W-56,46,clip(short(portEdit(dev,a.port)),12)+'\n'+a.node.name+'\n'+clip(epIP(a.node)||a.node.model||'',Math.max(14,Math.floor((EP_W-56)/5))),{size:8.5,lineHeight:14,firstBold:true,align:'left'});}
+    else if(plain)page.text(x+12,y+9,EP_W-16,40,a.node.name+'\n'+clip(short(portEdit(dev,a.port)),9)+'  |  '+clip(epIP(a.node)||a.node.model||ROLE_LABEL[a.node.role]||'',14),{size:9,lineHeight:16,firstBold:true,align:'left',color:'#1b3a4b'});
+    else page.text(x+4,y+5,EP_W-8,46,clip(short(portEdit(dev,a.port)),16)+'\n'+a.node.name+'\n'+clip(epIP(a.node)||a.node.model||ROLE_LABEL[a.node.role]||'',22),{size:9,lineHeight:14,firstBold:true});page.end();});
    // Grouped access points: a box in the access point color around the ports they use.
    (dev.eps||[]).forEach(function(a){if(!a.node.group||!a.ports||style!=='plate')return;var pts=a.ports.map(function(p){var sl=dev.slot(p||''),pos=dev.positions&&dev.positions[sl.key];return pos?[dev.x+pos.x,dev.y+pos.y]:[dev.x+sl.dx,dev.y+(sl.py!=null?sl.py:sl.row?51:21)];});if(!pts.length)return;
     var xs=pts.map(function(p){return p[0];}),ys=pts.map(function(p){return p[1];}),x0=Math.min.apply(null,xs)-9,x1=Math.max.apply(null,xs)+9,y0=Math.min.apply(null,ys)-11,y1=Math.max.apply(null,ys)+11;page.rect(x0,y0,x1-x0,y1-y0,{fill:'none',stroke:ROLE_FILL.ap,width:2,radius:4});});
@@ -485,7 +493,7 @@
   var title=o.scope==='site'||!focus?(o.title||'Site')+' - Existing Topology':focus.name+(o.scope==='neighbors'?' - Connections':' and below');
   var kicker=(o.title||'Site')+(o.scope==='site'||!focus?'':' / '+focus.name),sub=o.subtitle||(o.scope==='site'||!focus?'Devices and links from imported neighbor and monitoring data':[focus.model,(focus.ips||[])[0]].filter(Boolean).join('  |  '));
   if(o.customTitle)title=o.customTitle;if(o.customSubtitle)sub=o.customSubtitle;
-  var view={company:o.company?String(o.company).toUpperCase():'',footer:o.author?'Prepared by '+o.author+(o.date?'  |  '+o.date:''):(o.date||''),title:title,kicker:kicker,subtitle:sub,rows:s.rows,context:s.context,style:style,aps:o.aps,apGroup:!!o.apGroup,others:o.others,wan:o.wan,vlansFor:o.scope==='site'||o.noVlans?null:o.focus,maxRow:o.maxRow};
+  var view={company:o.company?String(o.company).toUpperCase():'',footer:o.author?'Prepared by '+o.author+(o.date?'  |  '+o.date:''):(o.date||''),title:title,kicker:kicker,subtitle:sub,rows:s.rows,context:s.context,style:style,aps:o.aps,apGroup:!!o.apGroup,others:o.others,wan:o.wan,vlansFor:o.scope==='site'||o.noVlans?null:o.focus,maxRow:o.maxRow,linkStyles:o.linkStyles};
   // Diagrams are meant to print on a letter sheet: try several row widths and keep the
   // one that needs the least shrinking (in either orientation).
   // Hand edits keep the arrangement they were made on.
@@ -582,7 +590,7 @@
     d.ports.forEach(function(p){var role=portRole(p),slot=d.hw&&dev.hw&&!dev.hw.portOf(p.name)?null:dev.slot(p.name);used[role]=true;if(slot&&slot.key)fills.set(slot.key,{fill:PORT_ROLES[role].fill,up:p.up!==false,stroke:'#3d4a5c',label:portNumber(p.name)});
      var detail=portDetail(p,role),k=role+'|'+detail;if(!rowsByKey.has(k))rowsByKey.set(k,{role:role,detail:detail,ports:{}});(rowsByKey.get(k).ports[d.key]=rowsByKey.get(k).ports[d.key]||[]).push(p.name);});
     dev.plates.forEach(function(pl){var ph=dev.h+40,pg=flow.need(ph+14);pg.text(DM,pg.y,560,20,d.name+(dev.plates.length>1?'  ·  member '+pl.member:''),{size:15,bold:true,align:'left',color:'#1b3a4b'});pg.text(DM+420,pg.y+3,DOC_W-2*DM-420,16,[d.model,upCount(d),d.ip].filter(Boolean).join('   |   '),{size:10,align:'right',color:'#4a5568'});
-     var keep=pl.x;pl.x=0;var one=Object.create(dev);one.plates=[pl];one.x=DM;one.y=pg.y+26;one.w=pl.w;drawPlate(pg,one,null,fills);pl.x=keep;pg.y+=26+dev.h+18;});});
+     var keep=pl.x;pl.x=0;var one=Object.create(dev);one.noLabel=true;one.plates=[pl];one.x=DM;one.y=pg.y+26;one.w=pl.w;drawPlate(pg,one,null,fills);pl.x=keep;pg.y+=26+dev.h+18;});});
    var p=flow.need(40),lx=DM;p.text(lx,p.y,90,16,'PORT ROLES',{size:9.5,bold:true,align:'left',color:'#1d5b79'});lx+=96;
    Object.keys(PORT_ROLES).filter(function(r){return used[r];}).forEach(function(r){p.rect(lx,p.y,26,14,{fill:PORT_ROLES[r].fill,stroke:'#7a8ca8',width:0.75});p.text(lx+32,p.y,170,16,PORT_ROLES[r].label,{size:10,align:'left'});lx+=40+PORT_ROLES[r].label.length*5.6;});p.y+=24;
    note(flow,'A filled port means the link is up (or no link state was imported); an outlined port means down.'+(function(){var pre=commonPrefix([].concat.apply([],group.map(function(d){return d.ports.map(function(x){return x.name;});})));return pre?' Port numbers use the prefix '+pre+'.':'';})());
@@ -675,15 +683,27 @@
   if(cols.length>N)cols=cols.filter(function(c,k){return !((k===0&&c.x<0.03)||(k===cols.length-1&&c.x>0.97));});
   var M=cols.length;if(M<N)return null;
   var cg=[];for(var k=1;k<M;k++)cg.push(cols[k].x-cols[k-1].x);var sg=cg.slice().sort(function(a,b){return a-b;}),step=sg[Math.floor(sg.length/2)]||pitch;
-  var blockStart=cols.map(function(c,k){return k===0||cols[k].x-cols[k-1].x>step*1.6;});
-  var E=[];banks.forEach(function(b,bi){for(var c=0;c<b.ncols;c++)E.push({bank:bi,col:c,first:c===0});});
-  // dp[i][j]: least cost with the first i device columns placed on the first j stencil columns.
-  var INF=1e9,dp=[],from=[];for(var a=0;a<=N;a++){dp.push(new Array(M+1).fill(INF));from.push(new Array(M+1).fill(0));}dp[0][0]=0;
-  for(var a2=0;a2<=N;a2++)for(var j=0;j<=M;j++){var v=dp[a2][j];if(v>=INF)continue;
-   if(j<M&&v+1<dp[a2][j+1]){dp[a2][j+1]=v+1;from[a2][j+1]=1;}
-   if(a2<N&&j<M){var e=E[a2],c2=v+(e.first&&!blockStart[j]?3:0)+(!e.first&&blockStart[j]?0.5:0);if(c2<dp[a2+1][j+1]){dp[a2+1][j+1]=c2;from[a2+1][j+1]=2;}}}
-  var bestJ=-1,bv=INF;for(var j2=N;j2<=M;j2++)if(dp[N][j2]+(M-j2)<bv){bv=dp[N][j2]+(M-j2);bestJ=j2;}if(bestJ<0)return null;
-  var take=new Array(N),ii=N,jj=bestJ;while(ii>0||jj>0){var f=from[ii][jj];if(f===2){take[ii-1]=jj-1;ii--;jj--;}else if(f===1){jj--;}else break;}if(ii>0)return null;
+  // Each group takes consecutive stencil columns whose spacing follows the group's own pattern
+  // (regular pitch, wider gaps between blocks of jacks); groups may skip stencil columns only
+  // between them. A shifted placement breaks the pattern, so the right start wins clearly.
+  banks.forEach(function(b){var g=b.g,xs=[];for(var c=0;c<b.ncols;c++)xs.push(portPos(g,b.rows===1?c:c*2).dx);var p0=g.pitch||18;b.eg=[];for(var c2=1;c2<xs.length;c2++)b.eg.push((xs[c2]-xs[c2-1])/p0);});
+  // Skipping a stencil column (0.5) costs more than adding it to a cluster (0.12): points between
+  // groups usually belong to one of them.
+  // A group may cover more stencil columns than it has (a cage marked at both edges and its middle):
+  // the run is split at its widest gaps into one cluster per column of the group.
+  function clusters(s0,L,n){if(L===n){var one=[];for(var q=0;q<n;q++)one.push([s0+q]);return one;}var gs=[];for(var k=1;k<L;k++)gs.push({k:k,g:cols[s0+k].x-cols[s0+k-1].x});gs.sort(function(a,b){return b.g-a.g||a.k-b.k;});var cuts=gs.slice(0,n-1).map(function(x){return x.k;}).sort(function(a,b){return a-b;}),out=[],from0=0;cuts.concat([L]).forEach(function(c){var part=[];for(var q=from0;q<c;q++)part.push(s0+q);out.push(part);from0=c;});return out;}
+  function centre(cl){return cl.reduce(function(a,k){return a+cols[k].x;},0)/cl.length;}
+  function bankCost(b,cl){var c=0.12*(cl.reduce(function(a,x){return a+x.length;},0)-cl.length);for(var k=1;k<cl.length;k++){var sgap=(centre(cl[k])-centre(cl[k-1]))/step;c+=Math.min(1.5,Math.abs(sgap-b.eg[k-1]));}
+   // A cluster no wider than a cage (two jacks a pitch apart are two ports, not one).
+   cl.forEach(function(x){if(x.length>1){var span=cols[x[x.length-1]].x-cols[x[0]].x;if(span>step*1.5)c+=1;}});return c;}
+  var B=banks.length,INF=1e9,dp=[],from=[];for(var bi=0;bi<=B;bi++){dp.push(new Array(M+1).fill(INF));from.push(new Array(M+1).fill(null));}for(var j0=0;j0<=M;j0++)dp[0][j0]=j0*0.5;
+  for(var bi2=0;bi2<B;bi2++)for(var jj=0;jj<=M;jj++){var v=dp[bi2][jj];if(v>=INF)continue;var bk=banks[bi2];
+   for(var st=jj;st+bk.ncols<=M;st++)for(var L=bk.ncols;L<=Math.min(3*bk.ncols,M-st);L++){var cl=clusters(st,L,bk.ncols),c3=v+(st-jj)*0.5+bankCost(bk,cl),end=st+L;if(c3<dp[bi2+1][end]){dp[bi2+1][end]=c3;from[bi2+1][end]={prev:jj,cl:cl};}}}
+  var bestE=-1,bv=INF;for(var e2=0;e2<=M;e2++)if(dp[B][e2]+(M-e2)*0.5<bv){bv=dp[B][e2]+(M-e2)*0.5;bestE=e2;}if(bestE<0)return null;
+  var picks=new Array(B),cur=bestE;for(var bb=B;bb>0;bb--){var f=from[bb][cur];if(!f)return null;picks[bb-1]=f.cl;cur=f.prev;}
+  // One merged column per cluster: its centre, and its top and bottom points.
+  var take=[],merged=[];picks.forEach(function(cl){cl.forEach(function(x){var tops=[],bots=[];x.forEach(function(k){if(cols[k].top)tops.push(cols[k].top);if(cols[k].bottom)bots.push(cols[k].bottom);});var avg=function(list){return list.length?{fx:list.reduce(function(a,p){return a+p.fx;},0)/list.length,fy:list.reduce(function(a,p){return a+p.fy;},0)/list.length}:null;};merged.push({x:centre(x),top:avg(tops),bottom:avg(bots)});take.push(merged.length-1);});});
+  cols=merged;
   var out={},ys=[[],[]];cols.forEach(function(c){if(c.top)ys[0].push(c.top.fy);if(c.bottom)ys[1].push(c.bottom.fy);});var my=ys.map(function(v,r){v.sort(function(p,q){return p-q;});return v.length?v[Math.floor(v.length/2)]:r?0.65:0.35;});
   var at=0;banks.forEach(function(b){var g=b.g;for(var idx=0;idx<g.count;idx++){var c=b.rows===1?idx:Math.floor(idx/2),row=b.rows===1?0:portPos(g,idx).row,col=cols[take[at+c]],pt=row?col.bottom:col.top;
     out[g.name+'|'+idx]=pt?{fx:pt.fx,fy:pt.fy,row:row,exact:true}:{fx:col.x,fy:b.rows===1&&!col.top&&col.bottom?col.bottom.fy:my[row],row:row,exact:!!(b.rows===1&&(col.top||col.bottom))};}at+=b.ncols;});

@@ -1,5 +1,23 @@
 # Configuration Inspector development handoff
 
+## 5.42.0 — per-link types, full endpoint names, cage clusters
+
+- `diagram()` builds `view` field by field: pass new options through it (`linkStyles` was missing,
+  so legend edits did nothing).
+- Per-link kinds: `edits.lineKinds[lineKey] = {label, color}` becomes kind `custom:<label>`
+  (shared legend entry); set in `showLinkStyle(kind, lineKey)` with the "This link only" choice.
+- `EP_W`/`EP_PITCH` are reset per render and widened to the longest endpoint name; rows stay
+  over the device body (`d.w` minus the last plate's label) or at least within the device.
+- Port map faceplates draw with `noLabel` (no repeated name/model/address box).
+- `fitPorts` takes raw points from `SWStencils.portPoints()` and lets a group cover more stencil
+  columns than it has (clusters split at the widest gaps; skip 0.5, extra column 0.12, a
+  cluster wider than 1.5 pitches +1). `tests/stencil-tests.cjs` reproduces the 6100 layout
+  (five SFP points per row) that 5.41.0 placed three columns left.
+- Synthesized .vss masters get deterministic `UniqueID`/`BaseID` (`guid()` in stencils.js).
+- Visio error 271 is still reported by the owner; package structure, rels, content types, style
+  ids, master references and cell names all validate. Diagnostic variants (no stencils,
+  FortiGate only, AP only) were sent to the owner to isolate the part Visio rejects.
+
 ## 5.41.0 — link kinds, wireless editing, port fitting
 
 - Link kinds (`linkKind`, `KINDS`, `LINK_MEDIA` in diagram.js): media from `l.aMedia/bMedia`

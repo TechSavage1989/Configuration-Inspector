@@ -26,9 +26,25 @@ const {stencil,unzip,vss}=require('./stencil-writer.cjs');
   // Extra chassis points at both ends (so the groups do not map one to one): the device's layout
   // is fitted onto the stencil's points and every port still lands on its own point.
   const bm2=Object.assign({},bm,{connections:bm.connections.concat([{x:0.02,y:0.6},{x:0.02,y:0.2},{x:2.38,y:0.6},{x:2.38,y:0.2}])});ok(T.bankLayout(bm2,[2,16,4])===null,'extra points defeat the one-to-one group mapping');
-  const node2=Object.assign({},node,{stencil:{art:{w:240,h:80,body:''},master:bm2,banks:c=>T.bankLayout(bm2,c),edges:()=>(T.edgePorts(bm2)||[]).map(p=>({fx:p.x/bm2.w,fy:1-p.y/bm2.h,row:p.row}))}});
+  const node2=Object.assign({},node,{stencil:{art:{w:240,h:80,body:''},master:bm2,banks:c=>T.bankLayout(bm2,c),edges:()=>T.portPoints(bm2)}});
   const d2=new (D._Device)(node2,[],[],'plate'),at=n=>{const sl=d2.slot(n),p=d2.positions[sl.key];return p&&{fx:Math.round((p.x-d2.plates[0].x-9)/d2.img.w*2.4*100)/100,row:sl.row,exact:p.exact};};
   const got=['ha','mgmt','port1','port2','port16','x1','x2','x3','x4'].map(n=>[n,at(n)]);
+  // Like a 48-port switch with 4 SFP+ cages on the left: each cage marked at both edges (four columns
+  // for two cage columns), then 24 RJ45 columns in four blocks of six.
+  {const conn=[],W=10,H=1;const add=(x,yTop,yBot)=>{conn.push({x,y:yTop},{x,y:yBot});};[0.5,0.8,1.05,1.35].forEach(x=>add(x,0.7,0.3));for(let blk=0;blk<4;blk++)for(let c=0;c<6;c++)add(1.9+blk*2.0+c*0.3,0.72,0.28);conn.push({x:0.01,y:0.5},{x:9.99,y:0.5});
+   const sw={name:'EX-SW48',w:W,h:H,connections:conn},r=(p,a,b)=>Array.from({length:b-a+1},(_,i)=>p+(a+i)),pf={title:'EX-SW48',banks:[{label:'Uplinks',names:r('',49,52),form:'SFP+',rows:2},{label:'1G',names:r('',1,48),form:'RJ45',rows:2}]};
+   const nd={key:'sw',name:'SW',role:'switch',model:'EX-SW48',hw:{members:[{id:'1',profile:pf}],portOf:n=>{const b=pf.banks.find(b=>b.names.includes(n));return b?{member:'1',bank:pf.banks.indexOf(b),index:b.names.indexOf(n)}:null;}},stencil:{art:{w:1000,h:100,body:''},master:sw,banks:c=>T.bankLayout(sw,c),edges:()=>T.portPoints(sw)}};
+   const d3=new (D._Device)(nd,[],[],'plate'),x=n=>{const sl=d3.slot(n),p=d3.positions[sl.key];return p&&Math.round((p.x-d3.plates[0].x-9)/d3.img.w*W*100)/100;},rw=n=>d3.slot(n).row;
+   const res={p1:x('1'),p2:x('2'),p12:x('12'),p13:x('13'),p48:x('48'),p49:x('49'),p51:x('51')};
+   ok(res.p1===1.9&&res.p2===1.9&&rw('1')===0&&rw('2')===1&&res.p12===3.4&&res.p13===3.9&&res.p48===9.4&&res.p49<1.9&&res.p51<1.9&&res.p49<res.p51,'a 48-port switch stencil with cage edge points: ports 1-48 land on their jacks, 49-52 on the cages: '+JSON.stringify(res));}
+  // The layout of a real 48-port stencil: the four SFP+ cages (two cage columns) carry five points
+  // per row (two on one cage column, three on the other), then 24 RJ45 columns in blocks of six.
+  {const conn=[],W=32,H=1;const add=(x,a,b)=>conn.push({x,y:a},{x,y:b});[1.25,1.8,2.4,2.95,3.5].forEach(x=>add(x,0.68,0.3));for(let blk=0;blk<4;blk++)for(let c=0;c<6;c++)add(4.7+blk*(6*1.05+0.5)+c*1.05,0.7,0.3);
+   const sw={name:'EX-SW48B',w:W,h:H,connections:conn},r=(p,a,b)=>Array.from({length:b-a+1},(_,i)=>p+(a+i)),pf={title:'EX-SW48B',banks:[{label:'Uplinks',names:r('',49,52),form:'SFP+',rows:2},{label:'1G',names:r('',1,48),form:'RJ45',rows:2}]};
+   const nd={key:'sw2',name:'SW2',role:'switch',model:'EX-SW48B',hw:{members:[{id:'1',profile:pf}],portOf:n=>{const b=pf.banks.find(b=>b.names.includes(n));return b?{member:'1',bank:pf.banks.indexOf(b),index:b.names.indexOf(n)}:null;}},stencil:{art:{w:3200,h:100,body:''},master:sw,banks:c=>T.bankLayout(sw,c),edges:()=>T.portPoints(sw)}};
+   const d4=new (D._Device)(nd,[],[],'plate'),x=n=>{const sl=d4.slot(n),p=d4.positions[sl.key];return p&&Math.round((p.x-d4.plates[0].x-9)/d4.img.w*W*100)/100;};
+   const res={p49:x('49'),p50:x('50'),p51:x('51'),p1:x('1'),p2:x('2'),p13:x('13'),p47:x('47'),p48:x('48')},last=4.7+3*(6*1.05+0.5)+5*1.05;
+   ok(Math.abs(res.p49-1.53)<0.05&&res.p50===res.p49&&Math.abs(res.p51-2.95)<0.05&&res.p1===4.7&&res.p2===4.7&&Math.abs(res.p13-(4.7+6.8))<0.02&&Math.abs(res.p48-last)<0.02&&res.p47===res.p48,'cages marked by several points: 49-52 land on their cages and 1-48 on their jacks: '+JSON.stringify(res));}
   ok(got.every(([n,p])=>p&&p.exact)&&at('ha').fx===0.2&&at('mgmt').row===1&&at('port1').fx===0.6&&at('port16').fx===1.5&&at('x1').fx===1.9&&at('x3').fx===2&&at('x4').row===1,'ports are fitted onto the stencil despite extra points: '+JSON.stringify(got));}
  const aps=[{name:'EX-AP900 side',part:'EXAP900',w:3,h:0.4,connections:[]},{name:'EX-AP900',part:'EXAP900',w:3.2,h:0.45,connections:[]},{name:'EX-AP900 top',part:'EXAP900',w:2,h:2,connections:[]}];
  ok(T.match({model:'EX-AP900',parts:['EXAP900'],role:'ap'},aps)===aps[2],'an access point is drawn face-on, not from the side');
