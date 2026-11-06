@@ -2,10 +2,18 @@
 
 ## 5.40.0 — fewer crossings, hardware packs
 
-- Routing: `CROSS` is 30 (above a bend). After the first pass every crossing line is routed
-  again against all others (`Router.rebuild(paths, skip)`, `Router.score()` = crossings and
-  bends); the new route is kept when it crosses fewer lines with at most one more bend.
-  A second pass gained nothing on the test site, so there is one.
+- Routing: `CROSS` is 30 in the first pass. Every line that still crosses is routed again
+  against all others (`Router.rebuild(paths, skip)`) with `router.cross = CROSS_STRICT` (400)
+  and kept when `Router.score()` shows fewer crossings (owner request: avoid crossings whenever
+  any route does), or as many with fewer bends. A strict cost in the first pass made early lines
+  take long detours that blocked later ones, so it is used only in the second pass.
+- Style follows the owner's reference drawing (a client site's core page, kept outside the repository): `LINK_TYPES` colors (fiber red,
+  copper and WAN yellow, AP green), line widths 2/2.5, `legendColumn()` at the left (`LEGEND_W`,
+  devices start at `LEFT`; the router blocks the column), endpoint boxes with an accent bar,
+  the green AP group box, and numbered role squares on stencil port maps (`portNumber`).
+- The browser context menu is suppressed outside text fields (`onDoc('contextmenu')`).
+- README diagram screenshots were recaptured from the fictional `demoSite()` plus EXAMPLE-ACCESS1
+  configuration (tests/xlsx-writer.cjs).
 - Hardware packs (index.html `saveHardwarePack`/`importHardwarePack`, format
   `config-inspector-hardware-pack`, schema 1): the masters in use (fields as `read()` gives
   them, Uint8Arrays as `{$b64}`, `_`-prefixed caches dropped), `points` per `masterKey` and
