@@ -48,6 +48,9 @@ function campus(){
  ok(site.title==='Example Site - Existing Topology'&&site.devices.length===5,'whole site page: '+site.devices.map(d=>d.name).join(', '));
  const core=D.diagram(input,{scope:'downstream',focus:'examplecore'}),texts=core.shapes.filter(s=>s.type==='text').map(s=>s.text).join('\n');
  ok(core.title==='EXAMPLE-CORE and below'&&['EXAMPLE-FW1','EXAMPLE-ACCESS1','EXAMPLE-ACCESS3','EXAMPLE-AP1','VLAN 10 – USERS'].every(t=>texts.includes(t)),'device page: upstream device, switches below, access points and VLANs');
+ {// Owner request: details stacked with the device (name above the faceplate, model and address below), not a card beside it.
+  const sh=core.shapes,name=sh.find(t=>t.type==='text'&&t.text==='EXAMPLE-ACCESS3'),foot=sh.find(t=>t.type==='text'&&/^Example Access 24P {2}\| {2}10\.0\.99\.13$/.test(t.text||''))
+  ok(name&&foot&&foot.y>name.y+40&&!sh.some(t=>t.type==='text'&&/^EXAMPLE-ACCESS3\n/.test(t.text||'')),'device name above its faceplate, model and address below it');}
  ok(core.shapes.some(s=>s.type==='text'&&s.rotate&&s.text==='Te1/1/1'),'linked ports are named in the band beside their stub');
  const one=D.diagram(input,{scope:'downstream',focus:'examplecore',depth:1,aps:false,upstream:false});
  ok(!one.devices.some(d=>d.name==='EXAMPLE-FW1')&&!one.shapes.some(s=>s.type==='text'&&/EXAMPLE-AP1/.test(s.text)),'upstream device and access points can be left out');

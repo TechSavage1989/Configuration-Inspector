@@ -132,6 +132,9 @@ existing release or its assets. Preserve the polished README layout.
 - Hardware packs carry parsed stencil masters (not the stencil files); keep master fields JSON
   friendly (no Maps or DOM nodes) and keep `m.file` as the original file name so choices and
   port points (keyed by `masterKey`) apply to pack shapes.
+- Device details are stacked with the device (owner request): name above the faceplate, model
+  and address below (`HEAD`/`FOOT` inside `dev.h`, `drawHeader`, `fitHeader`). Don't bring back
+  a side label column; keep port `py` offsets including `HEAD`.
 - Messages (`toast`) are a popover in the top layer so they show over dialogs; don't move
   `#toast` back into normal flow.
 - Keep one design language: side panels use `.side-panel-body` with `.device-info-row`
