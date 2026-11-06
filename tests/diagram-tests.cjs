@@ -73,7 +73,25 @@ function campus(){
  ok(files['visio/pages/page1.xml'].includes('Type="Group"')&&files['visio/pages/page1.xml'].includes('N="Angle"')&&!/NaN|undefined|<Foreign|media\//.test(Object.values(files).join('')),'devices are plain-shape groups, labels rotate, no images');
  const book=D.build(big);ok(book.pages.length>=3&&book.pages[0].title==='Example Campus - Existing Topology','site book: '+book.pages.map(p=>p.title).join(' | '));
  const bf=unzip(Buffer.from(D.vsdx(book.pages,'Example Campus')));ok((bf['visio/pages/pages.xml'].match(/<Page /g)||[]).length===book.pages.length,'one Visio page per site book page');
- const lib=D.library(),lf=unzip(Buffer.from(D.vsdx([lib],'Device library'))),groups=(lf['visio/pages/page1.xml'].match(/Type="Group"/g)||[]).length;
- ok(groups===D.stencilPages().length&&groups>=30&&lib.shapes.some(s=>s.text==='Aruba 6100 48G 4SFP+'),'device library: '+groups+' grouped faceplates');
+ const lib=D.library(),lf=unzip(Buffer.from(D.vsdx(lib,'Device library'))),groups=Object.keys(lf).filter(n=>/^visio\/pages\/page\d+\.xml$/.test(n)).reduce((t,n)=>t+(lf[n].match(/Type="Group"/g)||[]).length,0);
+ ok(groups===D.stencilPages().length&&groups>=30&&lib.length>=5&&lib.some(p=>p.shapes.some(s=>s.text==='Aruba 6100 48G 4SFP+')),'device library: '+groups+' grouped faceplates on '+lib.length+' pages');
+ // Letter paper: every Visio page is 11 x 8.5 in (or 8.5 x 11) and the drawing fits inside.
+ const letterPages=[lf['visio/pages/pages.xml'],bf['visio/pages/pages.xml']].join('');
+ ok((letterPages.match(/<Cell N="PageWidth" V="([\d.]+)"/g)||[]).every(c=>/V="(11|8\.5)"/.test(c))&&(letterPages.match(/<Cell N="PageHeight" V="([\d.]+)"/g)||[]).every(c=>/V="(11|8\.5)"/.test(c)),'Visio pages are letter size');
+ const fitted=D.onLetter(coreBig);ok((fitted.w===1056&&fitted.h===816||fitted.w===816&&fitted.h===1056)&&fitted.shapes.every(s=>s.type==='line'?s.points.every(p=>p[0]>=0&&p[0]<=fitted.w&&p[1]>=0&&p[1]<=fitted.h):s.x>=0&&s.y>=0&&s.x+s.w<=fitted.w+0.5&&s.y+s.h<=fitted.h+0.5),'the campus core page fits a letter sheet at '+Math.round(fitted.paper.scale*100)+'%');
+ ok(D.fitLetter(coreBig).scale>=D.fitLetter(D.diagram(big,{scope:'downstream',focus:'campuscore',maxRow:1})).scale,'the chosen row width needs no more shrinking than one device per row');
+ // Visio is stricter than LibreOffice: document settings are elements, fonts are named,
+ // every cell name is one Visio writes, every part is well formed, ZIP dates are valid.
+ const raw=Buffer.from(D.vsdx([core],'Example Site')),doc=files['visio/document.xml'];
+ ok(/<DocumentSettings[^>]*><GlueSettings>9<\/GlueSettings><SnapSettings>/.test(doc)&&!/<DocumentSettings[^>]*>\s*<Cell/.test(doc),'document settings are elements');
+ const faces=[...doc.matchAll(/<FaceName NameU="([^"]+)"/g)].map(m=>m[1]),fontCells=[...Object.values(files).join('').matchAll(/<Cell N="Font" V="([^"]*)"/g)].map(m=>m[1]);
+ ok(!/Panos=/.test(doc)&&/Panose=/.test(doc)&&fontCells.length&&fontCells.every(c=>faces.includes(c)),'fonts are named and declared: '+faces.join(','));
+ const VISIO_CELLS=new Set(['PinX','PinY','Width','Height','LocPinX','LocPinY','Angle','LineWeight','LineColor','LinePattern','FillForegnd','FillPattern','Rounding','VerticalAlign','HorzAlign','LeftMargin','RightMargin','TopMargin','BottomMargin','Font','Color','Style','Size','NoFill','NoLine','X','Y','PageWidth','PageHeight','PageScale','DrawingScale','DrawingSizeType','DrawingScaleType','PrintPageOrientation','BeginX','BeginY','EndX','EndY','ImgOffsetX','ImgOffsetY','ImgWidth','ImgHeight',
+  'EnableLineProps','EnableFillProps','EnableTextProps','HideForApply','EndArrowSize','BeginArrow','EndArrow','LineCap','BeginArrowSize','LineColorTrans','CompoundType','FillBkgnd','ShdwForegnd','ShdwPattern','FillForegndTrans','FillBkgndTrans','ShdwForegndTrans','ShapeShdwType','ShapeShdwOffsetX','ShapeShdwOffsetY','ShapeShdwObliqueAngle','ShapeShdwScaleFactor','ShapeShdwBlur','ShapeShdwShow','TextBkgnd','DefaultTabStop','TextDirection','TextBkgndTrans','LockTextEdit','LockVtxEdit','ObjType','Case','Pos','FontScale','DblUnderline','Overline','Strikethru','DoubleStrikethrough','Letterspace','ColorTrans','AsianFont','ComplexScriptFont','ComplexScriptSize','LangID','IndFirst','IndLeft','IndRight','SpLine','SpBefore','SpAfter','Bullet','BulletStr','BulletFont','BulletFontSize','TextPosAfterBullet','Flags']);
+ const used=new Set((Object.values(files).join('').match(/<Cell N="[^"]+"/g)||[]).map(c=>c.slice(9,-1)));ok([...used].every(c=>VISIO_CELLS.has(c)),'only known cell names: '+[...used].filter(c=>!VISIO_CELLS.has(c)).join(','));
+ const balanced=x=>{const st=[];for(const m of x.replace(/<\?[^>]*\?>/g,'').matchAll(/<(\/?)([A-Za-z:]+)[^>]*?(\/?)>/g)){if(m[3])continue;if(m[1]){if(st.pop()!==m[2])return false;}else st.push(m[2]);}return !st.length;};
+ ok(Object.entries(files).filter(([n])=>/\.(xml|rels)$/.test(n)).every(([,x])=>balanced(x)),'every part is well formed');
+ ok(!Object.values(files).some(x=>/<\/Section><Cell/.test(x)),'cells come before sections in every shape, as the Visio schema requires');
+ let zo=0,dates=true;while(raw.readUInt32LE(zo)===0x04034b50){if(raw.readUInt16LE(zo+12)===0)dates=false;zo+=30+raw.readUInt16LE(zo+26)+raw.readUInt16LE(zo+28)+raw.readUInt32LE(zo+18);}ok(dates,'ZIP entries carry valid dates');
  console.log(checks+' network diagram checks passed');
 })().catch(e=>{console.error(e);process.exit(1);});

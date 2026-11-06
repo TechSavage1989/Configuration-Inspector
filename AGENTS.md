@@ -42,8 +42,14 @@ existing release or its assets. Preserve the polished README layout.
   except vendor stencils the user imports (`webview/stencils.js`), which are written as
   masters with instances; check generated .vsdx files open in LibreOffice. Never commit
   vendor stencils or their artwork: build test stencils in the test (`tests/stencil-tests.cjs`).
-- LibreOffice refuses a .vsdx whose shape has an invalid cell value (for example
-  `FillForegnd="none"`); write a cell only when it has a real value.
+- Diagrams must try to fit a letter sheet (owner request): `diagram()` picks the row width
+  whose measured size needs the least shrinking (`fitLetter`), and every download goes
+  through `onLetter()` (Visio pages, SVG and printable HTML are 11 x 8.5 in or 8.5 x 11 in).
+- Microsoft Visio is stricter than LibreOffice (error 271 on open): document settings are
+  elements, FaceName uses `Panose`, Font cells name a declared face, a shape's cells come
+  before its sections, cell names must be real Visio cells, and ZIP dates must be valid.
+  `tests/diagram-tests.cjs` checks these; LibreOffice also refuses invalid cell values such
+  as `FillForegnd="none"` (write a cell only when it has a real value).
 - Neighbor ports from monitoring exports can be wrong; `correctLinkPort()` in index.html
   swaps in the port that the far end's description names when link state agrees.
 - Device names and IPv4 addresses in tables and detail rows become `.entity-link`

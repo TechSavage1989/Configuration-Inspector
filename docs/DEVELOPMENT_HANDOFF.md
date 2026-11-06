@@ -1,5 +1,23 @@
 # Configuration Inspector development handoff
 
+## 5.33.0 — Visio compatibility, letter paper, stencil folders, document details
+
+- Visio package fixes in `diagram.js` (`documentXML`, `charSection`, `shapeXML` order, ZIP
+  dates); structure checks in `tests/diagram-tests.cjs`.
+- `diagramMeta()` (title, subtitle, file, author, company; author/company in localStorage)
+  feeds `diagram()` (`customTitle`, `company`, `footer`) and `vsdx(pages,title,meta)`.
+- Device list: `filterDiagramDevices()`, `data-diagram-bulk`. Stencil folder input
+  (`webkitdirectory`), legacy `.vss` detection (`e.legacy`) listed in the dialog.
+
+- `render(input,{measure:true})` returns the laid-out size before routing; `diagram()` tries
+  several `maxRow` values and keeps the best `fitLetter()` result. `onLetter(page)` scales
+  every shape onto a letter page; `vsdx()` applies it to all pages, the SVG and printable
+  downloads use it too. VLAN lists go below in columns when that fits paper better.
+  `library()` returns several pages. The panel shows `paperChip()`.
+- `stencilNotice()` invites importing stencils (or reports that none match);
+  `.vsdx` files from **Add files** are read as stencil sources.
+- `tests/stencil-writer.cjs` builds the fictional test stencil for node and browser tests.
+
 ## 5.32.0 — stencils, linked names, add/remove devices
 
 - `webview/stencils.js` (embedded `vendor-stencils`, `window.SWStencils`): `read()` unzips a
@@ -121,7 +139,7 @@
 - `liveTabs(id)` adds `live-*` tabs to `availableTabs` (Routing, Switching, System);
   `liveTabPanel` renders them, and `configurationCategories`/`hasView` count them so a
   section with only imported data still appears.
-- Network map: `liveMapLine(r)` on each row, `liveNeighborPanel()` as an extra zone
+- Interface map (view `topology`): `liveMapLine(r)` on each row, `liveNeighborPanel()` as an extra zone
   panel. `showNeighbor(name, localPort)` opens the neighbor details modal; links carry
   `ip`, `platform`, `portDescription`, `chassis` and `capabilities` from evidence.js.
 

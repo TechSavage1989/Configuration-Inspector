@@ -269,6 +269,8 @@
    var rowH=Math.max.apply(null,ds.map(function(d){return d.h;}));
    cursor+=G*2*kTop;var topExtra=nTop?EP_H+G*(nTop+3+2*kTop):0,y=cursor+topExtra+BAND,epBot=y+rowH+BAND+G*(nBot+3+2*kBot),bottom=(nBot?epBot+EP_H:y+rowH+BAND)+G*2*kBot;
    ds.forEach(function(d){d.y=y;d.epTopY=cursor;d.epBotY=epBot;});cursor=up9(bottom)+G*Math.min(chan[r+1],40);});
+  // Size only (to choose a row width that suits the paper).
+  if(view.measure){var lb=Math.max.apply(null,Array.from(devices.values()).map(function(d){return d.bot.length?d.epBotY+EP_H:d.y+d.h+BAND;}));var vl=view.vlansFor&&input.vlans&&input.vlans.get(view.vlansFor);return {w:MARGIN*2+maxW+G*16+(vl&&vl.length?320:0),h:lb+G*8};}
   // Title and legend.
   if(view.kicker)page.text(MARGIN,16,1200,14,view.kicker.toUpperCase(),{size:9.5,bold:true,align:'left',color:'#1d5b79'});
   page.text(MARGIN,32,1400,30,page.title,{size:24,bold:true,align:'left',color:'#1b3a4b'});
@@ -317,8 +319,13 @@
   conns.forEach(function(c){[c.ta,c.tb].forEach(function(t,i){if(!t||t.ep!=null||t.shared||!t.label)return;var g=i?c.gb:c.ga;page.text(g.lx,g.ly,10,BAND-8,t.label,{size:8,rotate:true,align:g.lalign,color:'#2d3748'});});});
   // VLANs of the focus device to the right of everything routed.
   var vlans=view.vlansFor&&input.vlans&&input.vlans.get(view.vlansFor)||[];
-  if(vlans.length){var vx=up9(Math.max(page.w-MARGIN,legendRight)+G*2);page.text(vx,TOP,280,20,'VLANs',{size:13,bold:true,align:'left'});page.text(vx,TOP+26,300,Math.max(20,Math.min(vlans.length,40)*17+17),vlans.slice(0,40).map(function(v){return 'VLAN '+v.id+(v.name?' – '+v.name:'');}).join('\n')+(vlans.length>40?'\n+'+(vlans.length-40)+' more':''),{size:11,align:'left',lineHeight:17});}
-  page.text(page.w-MARGIN-300,16,300,14,'NETWORK DOCUMENTATION',{size:9.5,bold:true,align:'right',color:'#1d5b79'});
+  // VLANs to the right, or below in columns when that suits letter paper better.
+  if(vlans.length){var list=vlans.slice(0,60).map(function(v){return 'VLAN '+v.id+(v.name?' – '+v.name:'');}).concat(vlans.length>60?['+'+(vlans.length-60)+' more']:[]),cw=Math.max(page.w,legendRight+MARGIN),ch=page.h;
+   var right={w:up9(cw+G*2)+300+MARGIN,h:Math.max(ch,TOP+26+Math.min(list.length,40)*17+MARGIN)},cols=Math.max(1,Math.floor((cw-2*MARGIN)/300)),rows=Math.ceil(list.length/cols),below={w:cw,h:ch+30+rows*17+MARGIN};
+   if(fitLetter(below).raw>fitLetter(right).raw){var by=up9(ch-MARGIN+G);page.text(MARGIN,by,280,20,'VLANs',{size:13,bold:true,align:'left'});for(var ci=0;ci<cols;ci++){var part=list.slice(ci*rows,(ci+1)*rows);if(part.length)page.text(MARGIN+ci*300,by+26,290,part.length*17+4,part.join('\n'),{size:11,align:'left',lineHeight:17});}}
+   else{var vx=up9(cw-MARGIN+G*2),col=list.slice(0,40);page.text(vx,TOP,280,20,'VLANs',{size:13,bold:true,align:'left'});page.text(vx,TOP+26,300,Math.max(20,col.length*17+4),col.join('\n')+(list.length>40?'\n+'+(list.length-40)+' more':''),{size:11,align:'left',lineHeight:17});}}
+  page.text(page.w-MARGIN-400,16,400,14,(view.company?view.company+'  /  ':'')+'NETWORK DOCUMENTATION',{size:9.5,bold:true,align:'right',color:'#1d5b79'});
+  if(view.footer)page.text(MARGIN,page.h-MARGIN+6,Math.max(400,page.w-2*MARGIN),14,view.footer,{size:9,align:'left',color:'#4a5568'});
   page.rect(MARGIN,84,page.w-2*MARGIN,1,{fill:'#c9d3df',stroke:'none'});
   page.lines=lines;page.devices=Array.from(devices.values()).map(function(d){return {key:d.key,name:d.node.name,x:d.x,y:d.y,w:d.w,h:d.h};});
   return page;
@@ -328,20 +335,37 @@
   var s=scope(input.layout,o),t=s.tree,focus=t.byKey.get(o.focus),style=o.style&&o.style!=='auto'?o.style:o.scope==='site'||!focus?'box':'plate';
   var title=o.scope==='site'||!focus?(o.title||'Site')+' - Existing Topology':focus.name+(o.scope==='neighbors'?' - Connections':' and below');
   var kicker=(o.title||'Site')+(o.scope==='site'||!focus?'':' / '+focus.name),sub=o.subtitle||(o.scope==='site'||!focus?'Devices and links from imported neighbor and monitoring data':[focus.model,(focus.ips||[])[0]].filter(Boolean).join('  |  '));
-  var page=render(input,{title:title,kicker:kicker,subtitle:sub,rows:s.rows,context:s.context,style:style,aps:o.aps,others:o.others,vlansFor:o.scope==='site'?null:o.focus,maxRow:o.maxRow});
-  page.scope=o;return page;
+  if(o.customTitle)title=o.customTitle;if(o.customSubtitle)sub=o.customSubtitle;
+  var view={company:o.company?String(o.company).toUpperCase():'',footer:o.author?'Prepared by '+o.author+(o.date?'  |  '+o.date:''):(o.date||''),title:title,kicker:kicker,subtitle:sub,rows:s.rows,context:s.context,style:style,aps:o.aps,others:o.others,vlansFor:o.scope==='site'?null:o.focus,maxRow:o.maxRow};
+  // Diagrams are meant to print on a letter sheet: try several row widths and keep the
+  // one that needs the least shrinking (in either orientation).
+  if(!o.maxRow){var best=null;(style==='box'?[3,4,6,8,10,14]:[1,2,3,4,5,6]).forEach(function(c){var m=render(input,Object.assign({},view,{maxRow:c,measure:true})),f=fitLetter(m);if(!best||f.raw>best.raw*1.02)best={c:c,raw:f.raw};});view.maxRow=best.c;}
+  var page=render(input,view);page.scope=o;page.style=style;page.letter=fitLetter(page);return page;
+ }
+ // Letter paper (11 x 8.5 in at 96 px per inch) with 0.35 in margins: the orientation
+ // that needs less shrinking, the scale (never above 1) and the offsets that center it.
+ var LETTER_MARGIN=0.35*96;
+ function fitLetter(p){var L={W:11*96,H:8.5*96},P={W:8.5*96,H:11*96};function f(o){return Math.min((o.W-2*LETTER_MARGIN)/p.w,(o.H-2*LETTER_MARGIN)/p.h);}
+  var land=f(L)>=f(P),o=land?L:P,raw=f(o),k=Math.min(1,raw);return {W:o.W,H:o.H,raw:raw,scale:k,landscape:land,ox:(o.W-p.w*k)/2,oy:(o.H-p.h*k)/2};}
+ // The page drawn on letter paper: every coordinate, size, line and font scaled.
+ function onLetter(page){
+  if(page.paper)return page;var f=fitLetter(page),k=f.scale,out=new Page(page.title);out.w=f.W;out.h=f.H;out.paper=f;
+  page.shapes.forEach(function(x){var y=Object.assign({},x);
+   if(y.type==='line')y.points=x.points.map(function(p){return [Math.round((f.ox+p[0]*k)*100)/100,Math.round((f.oy+p[1]*k)*100)/100];});else{y.x=f.ox+x.x*k;y.y=f.oy+x.y*k;y.w=x.w*k;y.h=x.h*k;}
+   ['size','lineHeight','width','radius'].forEach(function(c){if(y[c])y[c]=x[c]*k;});out.shapes.push(y);});
+  return out;
  }
  // Site book: the whole site, then one downstream page for each switch with switches or
  // access points below it (a small subtree on one page; a large one one level at a time).
  function build(input){
-  var map=input.layout,t=tree(map),pages=[diagram(input,{scope:'site',title:input.title||'Site'})];
+  var map=input.layout,t=tree(map),extra=input.meta||{},pages=[diagram(input,Object.assign({scope:'site',title:input.title||'Site'},extra))];
   function isSwitch(k){var n=t.byKey.get(k);return n&&/switch|router|controller/.test(n.role);}
   function subtree(k){var out=[],stack=[k];while(stack.length){var c=stack.pop();out.push(c);(t.children.get(c)||[]).forEach(function(x){if(isSwitch(x))stack.push(x);});}return out;}
   var visited=new Set();
   function visit(k){if(visited.has(k)||pages.length>=40)return;visited.add(k);var kids=(t.children.get(k)||[]).filter(isSwitch),aps=(t.byKey.get(k).attached||[]).some(function(a){return a.role==='ap';}),tree2=subtree(k);
    if(!kids.length&&!aps)return;
-   if(tree2.length<=6){pages.push(diagram(input,{scope:'downstream',focus:k,depth:0}));tree2.forEach(function(x){visited.add(x);});return;}
-   pages.push(diagram(input,{scope:'downstream',focus:k,depth:1}));kids.forEach(visit);}
+   if(tree2.length<=6){pages.push(diagram(input,Object.assign({scope:'downstream',focus:k,depth:0,title:input.title},extra)));tree2.forEach(function(x){visited.add(x);});return;}
+   pages.push(diagram(input,Object.assign({scope:'downstream',focus:k,depth:1,title:input.title},extra)));kids.forEach(visit);}
   map.nodes.filter(function(n){return isSwitch(n.key);}).sort(function(a,b){return a.y-b.y||a.x-b.x;}).forEach(function(n){visit(n.key);});
   return {pages:pages,linkTypes:LINK_TYPES};
  }
@@ -366,15 +390,15 @@
  var crcTable=null;function crc32(bytes){if(!crcTable){crcTable=[];for(var n=0;n<256;n++){var c=n;for(var k=0;k<8;k++)c=c&1?0xedb88320^(c>>>1):c>>>1;crcTable[n]=c>>>0;}}var crc=0xffffffff;for(var i=0;i<bytes.length;i++)crc=(crc>>>8)^crcTable[(crc^bytes[i])&0xff];return (crc^0xffffffff)>>>0;}
  function zip(files){
   var enc=new TextEncoder(),parts=[],central=[],offset=0;
-  files.forEach(function(f){var name=enc.encode(f[0]),data=typeof f[1]==='string'?enc.encode(f[1]):f[1],crc=crc32(data),h=new DataView(new ArrayBuffer(30));h.setUint32(0,0x04034b50,true);h.setUint16(4,20,true);h.setUint32(14,crc,true);h.setUint32(18,data.length,true);h.setUint32(22,data.length,true);h.setUint16(26,name.length,true);parts.push(new Uint8Array(h.buffer),name,data);
-   var c=new DataView(new ArrayBuffer(46));c.setUint32(0,0x02014b50,true);c.setUint16(4,20,true);c.setUint16(6,20,true);c.setUint32(16,crc,true);c.setUint32(20,data.length,true);c.setUint32(24,data.length,true);c.setUint16(28,name.length,true);c.setUint32(42,offset,true);central.push(new Uint8Array(c.buffer),name);offset+=30+name.length+data.length;});
+  files.forEach(function(f){var name=enc.encode(f[0]),data=typeof f[1]==='string'?enc.encode(f[1]):f[1],crc=crc32(data),h=new DataView(new ArrayBuffer(30));h.setUint32(0,0x04034b50,true);h.setUint16(4,20,true);h.setUint16(12,0x21,true);h.setUint32(14,crc,true);h.setUint32(18,data.length,true);h.setUint32(22,data.length,true);h.setUint16(26,name.length,true);parts.push(new Uint8Array(h.buffer),name,data);
+   var c=new DataView(new ArrayBuffer(46));c.setUint32(0,0x02014b50,true);c.setUint16(4,20,true);c.setUint16(6,20,true);c.setUint16(14,0x21,true);c.setUint32(16,crc,true);c.setUint32(20,data.length,true);c.setUint32(24,data.length,true);c.setUint16(28,name.length,true);c.setUint32(42,offset,true);central.push(new Uint8Array(c.buffer),name);offset+=30+name.length+data.length;});
   var size=central.reduce(function(n,p){return n+p.length;},0),e=new DataView(new ArrayBuffer(22));e.setUint32(0,0x06054b50,true);e.setUint16(8,files.length,true);e.setUint16(10,files.length,true);e.setUint32(12,size,true);e.setUint32(16,offset,true);
   var all=parts.concat(central,[new Uint8Array(e.buffer)]),total=all.reduce(function(n,p){return n+p.length;},0),out=new Uint8Array(total),pos=0;all.forEach(function(p){out.set(p,pos);pos+=p.length;});return out;
  }
  var NS='http://schemas.microsoft.com/office/visio/2012/main',RNS='http://schemas.openxmlformats.org/officeDocument/2006/relationships';
  function n(v){return Math.round(v*10000)/10000;}
  function cell(name,v){return '<Cell N="'+name+'" V="'+v+'"/>';}
- function charSection(s){return '<Section N="Character"><Row IX="0">'+cell('Font','1')+cell('Color',s.color||'#1F2937')+cell('Style',s.bold?1:0)+cell('Size',n((s.size||11)*0.75/72))+'</Row></Section>';}
+ function charSection(s){return '<Section N="Character"><Row IX="0">'+cell('Font','Segoe UI')+cell('Color',s.color||'#1F2937')+cell('Style',s.bold?1:0)+cell('Size',n((s.size||11)*0.75/72))+'</Row></Section>';}
  var BOX_GEOM='<Row T="RelMoveTo" IX="1">'+cell('X',0)+cell('Y',0)+'</Row><Row T="RelLineTo" IX="2">'+cell('X',1)+cell('Y',0)+'</Row><Row T="RelLineTo" IX="3">'+cell('X',1)+cell('Y',1)+'</Row><Row T="RelLineTo" IX="4">'+cell('X',0)+cell('Y',1)+'</Row><Row T="RelLineTo" IX="5">'+cell('X',0)+cell('Y',0)+'</Row>';
  // One shape in a coordinate frame: page height H (inches), origin offset ox/oy.
  function shapeXML(s,ids,H,ox,oy,ctx){var id=ids.next++;
@@ -385,7 +409,7 @@
   var isText=s.type==='text',cx=(s.x+s.w/2)/96-ox,cy=H-(s.y+s.h/2)/96-oy,w=Math.max((s.rotate?s.h:s.w)/96,0.01),h=Math.max((s.rotate?s.w:s.h)/96,0.01);
   return '<Shape ID="'+id+'" Type="Shape" LineStyle="0" FillStyle="0" TextStyle="0">'+cell('PinX',n(cx))+cell('PinY',n(cy))+cell('Width',n(w))+cell('Height',n(h))+cell('LocPinX',n(w/2))+cell('LocPinY',n(h/2))+(s.rotate?cell('Angle','1.5707963'):'')+
    (isText?cell('LinePattern',0)+cell('FillPattern',0)+cell('VerticalAlign',s.rotate?1:0):(s.fill&&s.fill!=='none'?cell('FillForegnd',s.fill):'')+cell('FillPattern',s.fill&&s.fill!=='none'?1:0)+cell('LineColor',s.stroke&&s.stroke!=='none'?s.stroke:'#000000')+cell('LinePattern',s.stroke&&s.stroke!=='none'?1:0)+cell('LineWeight',n((s.width||1)/96))+(s.radius?cell('Rounding',n(s.radius/96)):''))+
-   (isText?charSection(s)+'<Section N="Paragraph"><Row IX="0">'+cell('HorzAlign',s.align==='left'?0:s.align==='right'?2:1)+'</Row></Section>'+cell('LeftMargin',0)+cell('RightMargin',0)+cell('TopMargin',0)+cell('BottomMargin',0):'')+
+   (isText?cell('LeftMargin',0)+cell('RightMargin',0)+cell('TopMargin',0)+cell('BottomMargin',0)+charSection(s)+'<Section N="Paragraph"><Row IX="0">'+cell('HorzAlign',s.align==='left'?0:s.align==='right'?2:1)+'</Row></Section>':'')+
    '<Section N="Geometry" IX="0">'+cell('NoFill',isText?1:0)+cell('NoLine',isText?1:0)+BOX_GEOM+'</Section>'+(isText?'<Text>'+esc(s.text)+'</Text>':'')+'</Shape>';
  }
  function bounds(list){var x0=Infinity,y0=Infinity,x1=-Infinity,y1=-Infinity;list.forEach(function(s){if(s.type==='line')s.points.forEach(function(p){x0=Math.min(x0,p[0]);y0=Math.min(y0,p[1]);x1=Math.max(x1,p[0]);y1=Math.max(y1,p[1]);});else{x0=Math.min(x0,s.x);y0=Math.min(y0,s.y);x1=Math.max(x1,s.x+s.w);y1=Math.max(y1,s.y+s.h);}});return {x:x0,y:y0,w:x1-x0,h:y1-y0};}
@@ -433,22 +457,23 @@
   return {parts:parts,media:Object.keys(media)};
  }
  function documentXML(){
-  return '<?xml version="1.0" encoding="utf-8" standalone="yes"?>\n<VisioDocument xmlns="'+NS+'" xmlns:r="'+RNS+'" xml:space="preserve"><DocumentSettings TopPage="0" DefaultTextStyle="0" DefaultLineStyle="0" DefaultFillStyle="0" DefaultGuideStyle="0">'+cell('GlueSettings',9)+cell('SnapSettings',65847)+'</DocumentSettings><Colors><ColorEntry IX="0" RGB="#000000"/><ColorEntry IX="1" RGB="#FFFFFF"/></Colors><FaceNames><FaceName NameU="Calibri" UnicodeRanges="-536859905 -1073732485 9 0" CharSets="536871423 0" Panos="2 15 5 2 2 2 4 3 2 4" Flags="325"/><FaceName NameU="Segoe UI" UnicodeRanges="-469750017 -1073683329 9 0" CharSets="536871423 0" Panos="2 11 5 2 4 2 4 2 2 3" Flags="325"/></FaceNames><StyleSheets><StyleSheet ID="0" NameU="No Style" Name="No Style">'+
+  return '<?xml version="1.0" encoding="utf-8" standalone="yes"?>\n<VisioDocument xmlns="'+NS+'" xmlns:r="'+RNS+'" xml:space="preserve"><DocumentSettings TopPage="0" DefaultTextStyle="0" DefaultLineStyle="0" DefaultFillStyle="0" DefaultGuideStyle="0"><GlueSettings>9</GlueSettings><SnapSettings>65847</SnapSettings><SnapExtensions>34</SnapExtensions><SnapAngles/><DynamicGridEnabled>1</DynamicGridEnabled><ProtectStyles>0</ProtectStyles><ProtectShapes>0</ProtectShapes><ProtectMasters>0</ProtectMasters><ProtectBkgnds>0</ProtectBkgnds></DocumentSettings><Colors><ColorEntry IX="0" RGB="#000000"/><ColorEntry IX="1" RGB="#FFFFFF"/></Colors><FaceNames><FaceName NameU="Calibri" UnicodeRanges="-536859905 -1073732485 9 0" CharSets="536871423 0" Panose="2 15 5 2 2 2 4 3 2 4" Flags="325"/><FaceName NameU="Segoe UI" UnicodeRanges="-469750017 -1073683329 9 0" CharSets="536871423 0" Panose="2 11 5 2 4 2 4 2 2 3" Flags="325"/></FaceNames><StyleSheets><StyleSheet ID="0" NameU="No Style" Name="No Style">'+
    cell('EnableLineProps',1)+cell('EnableFillProps',1)+cell('EnableTextProps',1)+cell('HideForApply',0)+cell('LineWeight',0.01041666666666667)+cell('LineColor','#000000')+cell('LinePattern',1)+cell('Rounding',0)+cell('EndArrowSize',2)+cell('BeginArrow',0)+cell('EndArrow',0)+cell('LineCap',0)+cell('BeginArrowSize',2)+cell('LineColorTrans',0)+cell('CompoundType',0)+cell('FillForegnd','#FFFFFF')+cell('FillBkgnd','#000000')+cell('FillPattern',1)+cell('ShdwForegnd','#000000')+cell('ShdwPattern',0)+cell('FillForegndTrans',0)+cell('FillBkgndTrans',0)+cell('ShdwForegndTrans',0)+cell('ShapeShdwType',0)+cell('ShapeShdwOffsetX',0)+cell('ShapeShdwOffsetY',0)+cell('ShapeShdwObliqueAngle',0)+cell('ShapeShdwScaleFactor',1)+cell('ShapeShdwBlur',0)+cell('ShapeShdwShow',0)+cell('LeftMargin',0.05555555555555555)+cell('RightMargin',0.05555555555555555)+cell('TopMargin',0.05555555555555555)+cell('BottomMargin',0.05555555555555555)+cell('VerticalAlign',1)+cell('TextBkgnd',0)+cell('DefaultTabStop',0.5)+cell('TextDirection',0)+cell('TextBkgndTrans',0)+cell('LockTextEdit',0)+cell('LockVtxEdit',0)+cell('ObjType',0)+
-   '<Section N="Character"><Row IX="0">'+cell('Font',1)+cell('Color','#000000')+cell('Style',0)+cell('Case',0)+cell('Pos',0)+cell('FontScale',1)+cell('Size',0.1666666666666667)+cell('DblUnderline',0)+cell('Overline',0)+cell('Strikethru',0)+cell('DoubleStrikethrough',0)+cell('Letterspace',0)+cell('ColorTrans',0)+cell('AsianFont',0)+cell('ComplexScriptFont',0)+cell('ComplexScriptSize',-1)+cell('LangID','en-US')+'</Row></Section><Section N="Paragraph"><Row IX="0">'+cell('IndFirst',0)+cell('IndLeft',0)+cell('IndRight',0)+cell('SpLine',-1.2)+cell('SpBefore',0)+cell('SpAfter',0)+cell('HorzAlign',1)+cell('Bullet',0)+cell('BulletStr','')+cell('BulletFont',0)+cell('BulletFontSize',-1)+cell('TextPosAfterBullet',0)+cell('Flags',0)+'</Row></Section></StyleSheet></StyleSheets></VisioDocument>';
+   '<Section N="Character"><Row IX="0">'+cell('Font','Calibri')+cell('Color','#000000')+cell('Style',0)+cell('Case',0)+cell('Pos',0)+cell('FontScale',1)+cell('Size',0.1666666666666667)+cell('DblUnderline',0)+cell('Overline',0)+cell('Strikethru',0)+cell('DoubleStrikethrough',0)+cell('Letterspace',0)+cell('ColorTrans',0)+cell('AsianFont',0)+cell('ComplexScriptFont',0)+cell('ComplexScriptSize',-1)+cell('LangID','en-US')+'</Row></Section><Section N="Paragraph"><Row IX="0">'+cell('IndFirst',0)+cell('IndLeft',0)+cell('IndRight',0)+cell('SpLine',-1.2)+cell('SpBefore',0)+cell('SpAfter',0)+cell('HorzAlign',1)+cell('Bullet',0)+cell('BulletStr','')+cell('BulletFont',0)+cell('BulletFontSize',-1)+cell('TextPosAfterBullet',0)+cell('Flags',0)+'</Row></Section></StyleSheet></StyleSheets></VisioDocument>';
  }
- function packageFiles(title,mainType,docRels,parts,extraDefaults){
+ function packageFiles(title,mainType,docRels,parts,extraDefaults,meta){meta=meta||{};
   var files=[];
   files.push(['[Content_Types].xml','<?xml version="1.0" encoding="utf-8" standalone="yes"?>\n<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/visio/document.xml" ContentType="'+mainType+'"/>'+(extraDefaults||[]).map(function(e){return '<Default Extension="'+e+'" ContentType="'+(MEDIA[e]||'application/octet-stream')+'"/>';}).join('')+parts.filter(function(p){return p[2]&&!/\.rels$/.test(p[0]);}).map(function(p){return '<Override PartName="/'+p[0]+'" ContentType="'+p[2]+'"/>';}).join('')+'<Override PartName="/docProps/core.xml" ContentType="application/vnd.openxmlformats-package.core-properties+xml"/><Override PartName="/docProps/app.xml" ContentType="application/vnd.openxmlformats-officedocument.extended-properties+xml"/></Types>']);
   files.push(['_rels/.rels','<?xml version="1.0" encoding="utf-8" standalone="yes"?>\n<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.microsoft.com/visio/2010/relationships/document" Target="visio/document.xml"/><Relationship Id="rId2" Type="http://schemas.openxmlformats.org/package/2006/relationships/metadata/core-properties" Target="docProps/core.xml"/><Relationship Id="rId3" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/extended-properties" Target="docProps/app.xml"/></Relationships>']);
-  files.push(['docProps/app.xml','<?xml version="1.0" encoding="utf-8" standalone="yes"?>\n<Properties xmlns="http://schemas.openxmlformats.org/officeDocument/2006/extended-properties"><Application>Config Inspector</Application><Template></Template></Properties>']);
-  files.push(['docProps/core.xml','<?xml version="1.0" encoding="utf-8" standalone="yes"?>\n<cp:coreProperties xmlns:cp="http://schemas.openxmlformats.org/package/2006/metadata/core-properties" xmlns:dc="http://purl.org/dc/elements/1.1/"><dc:title>'+esc(title)+'</dc:title><dc:creator>Config Inspector</dc:creator></cp:coreProperties>']);
+  files.push(['docProps/app.xml','<?xml version="1.0" encoding="utf-8" standalone="yes"?>\n<Properties xmlns="http://schemas.openxmlformats.org/officeDocument/2006/extended-properties"><Template/>'+(meta.company?'<Company>'+esc(meta.company)+'</Company>':'')+'<Application>Config Inspector</Application></Properties>']);
+  files.push(['docProps/core.xml','<?xml version="1.0" encoding="utf-8" standalone="yes"?>\n<cp:coreProperties xmlns:cp="http://schemas.openxmlformats.org/package/2006/metadata/core-properties" xmlns:dc="http://purl.org/dc/elements/1.1/"><dc:title>'+esc(title)+'</dc:title>'+(meta.subject?'<dc:subject>'+esc(meta.subject)+'</dc:subject>':'')+'<dc:creator>'+esc(meta.creator||'Config Inspector')+'</dc:creator></cp:coreProperties>']);
   files.push(['visio/document.xml',documentXML()]);
   files.push(['visio/_rels/document.xml.rels','<?xml version="1.0" encoding="utf-8" standalone="yes"?>\n<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">'+docRels+'</Relationships>']);
   parts.forEach(function(p){files.push([p[0],p[1]]);});
   return zip(files);
  }
- function vsdx(pages,title){
+ function vsdx(pages,title,meta){
+  pages=pages.map(onLetter);
   var parts=[],rels=[],entries=[],ctx={masters:mastersOf(pages)},mp=masterParts(ctx);
   pages.forEach(function(p,i){var prels=[];parts.push(['visio/pages/page'+(i+1)+'.xml',pageXML(p,ctx,prels),'application/vnd.ms-visio.page+xml']);
    var mrel=[];ctx.masters.forEach(function(mm){mrel.push('<Relationship Id="rM'+mm.id+'" Type="http://schemas.microsoft.com/visio/2010/relationships/master" Target="../masters/master'+mm.id+'.xml"/>');});
@@ -456,7 +481,7 @@
    var name=esc(String(p.title).slice(0,31));entries.push('<Page ID="'+i+'" NameU="'+name+'" Name="'+name+'" ViewScale="-1" ViewCenterX="0" ViewCenterY="0"><PageSheet LineStyle="0" FillStyle="0" TextStyle="0">'+cell('PageWidth',n(p.w/96))+cell('PageHeight',n(p.h/96))+cell('PageScale',1)+cell('DrawingScale',1)+cell('DrawingSizeType',0)+cell('DrawingScaleType',0)+cell('PrintPageOrientation',p.w>p.h?2:1)+'</PageSheet><Rel r:id="rId'+(i+1)+'"/></Page>');});
   parts.push(['visio/pages/pages.xml','<?xml version="1.0" encoding="utf-8" standalone="yes"?>\n<Pages xmlns="'+NS+'" xmlns:r="'+RNS+'" xml:space="preserve">'+entries.join('')+'</Pages>','application/vnd.ms-visio.pages+xml']);
   parts.push(['visio/pages/_rels/pages.xml.rels','<?xml version="1.0" encoding="utf-8" standalone="yes"?>\n<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">'+rels.join('')+'</Relationships>','application/vnd.openxmlformats-package.relationships+xml']);
-  return packageFiles(title||'Network diagram','application/vnd.ms-visio.drawing.main+xml','<Relationship Id="rId1" Type="http://schemas.microsoft.com/visio/2010/relationships/pages" Target="pages/pages.xml"/>'+(mp?'<Relationship Id="rId2" Type="http://schemas.microsoft.com/visio/2010/relationships/masters" Target="masters/masters.xml"/>':''),parts.concat(mp?mp.parts:[]),mp?mp.media:[]);
+  return packageFiles(title||'Network diagram','application/vnd.ms-visio.drawing.main+xml','<Relationship Id="rId1" Type="http://schemas.microsoft.com/visio/2010/relationships/pages" Target="pages/pages.xml"/>'+(mp?'<Relationship Id="rId2" Type="http://schemas.microsoft.com/visio/2010/relationships/masters" Target="masters/masters.xml"/>':''),parts.concat(mp?mp.parts:[]),mp?mp.media:[],meta);
  }
  // Faceplates of every catalog model (and generic sizes) as plain-shape pages.
  function stencilPages(){
@@ -467,14 +492,15 @@
  // The catalog as one drawing: every faceplate as a grouped plain-shape device with its
  // model name, to copy into diagrams or drag into a stencil of your own in Visio.
  function library(){
-  var plates=stencilPages(),page=new Page('Device library'),colW=Math.max.apply(null,plates.map(function(p){return p.w;}))+72,y=[TOP,TOP];
-  page.text(MARGIN,16,800,14,'CONFIG INSPECTOR',{size:9.5,bold:true,align:'left',color:'#1d5b79'});page.text(MARGIN,32,1200,30,'Device library',{size:24,bold:true,align:'left',color:'#1b3a4b'});
-  page.text(MARGIN,64,1600,16,'Faceplates of the built-in device catalog and generic switches. Each device is one group of plain shapes: copy it into a diagram or drag it into a stencil.',{size:11,align:'left',color:'#4a5568'});
-  plates.forEach(function(p,i){var c=i%2,x=MARGIN+c*colW,top=y[c];page.text(x,top,p.w,16,p.title,{size:11,bold:true,align:'left',color:'#1b3a4b'});
-   page.begin(p.title);p.shapes.forEach(function(s){var t=Object.assign({},s);delete t.g;delete t.node;if(t.type==='line')t.points=t.points.map(function(q){return [q[0]+x,q[1]+top+22];});else{t.x+=x;t.y+=top+22;}page.push(t);page.grow(t.x+t.w||0,t.y+t.h||0);});page.end();y[c]=top+22+p.h+36;});
-  page.rect(MARGIN,84,page.w-2*MARGIN,1,{fill:'#c9d3df',stroke:'none'});
-  return page;
+  var plates=stencilPages(),pages=[],per=6;
+  for(var start=0;start<plates.length;start+=per){var page=new Page('Device library '+(pages.length+1)),y=TOP;
+   page.text(MARGIN,16,800,14,'CONFIG INSPECTOR',{size:9.5,bold:true,align:'left',color:'#1d5b79'});page.text(MARGIN,32,900,30,'Device library',{size:24,bold:true,align:'left',color:'#1b3a4b'});
+   page.text(MARGIN,64,900,16,'Faceplates of the built-in device catalog. Each device is one group of plain shapes: copy it into a diagram or drag it into a stencil.',{size:11,align:'left',color:'#4a5568'});
+   plates.slice(start,start+per).forEach(function(p){var x=MARGIN,top=y;page.text(x,top,p.w,16,p.title,{size:11,bold:true,align:'left',color:'#1b3a4b'});
+    page.begin(p.title);p.shapes.forEach(function(s){var t=Object.assign({},s);delete t.g;delete t.node;if(t.type==='line')t.points=t.points.map(function(q){return [q[0]+x,q[1]+top+22];});else{t.x+=x;t.y+=top+22;}page.push(t);page.grow(t.x+t.w||0,t.y+t.h||0);});page.end();y=top+22+p.h+36;});
+   page.rect(MARGIN,84,page.w-2*MARGIN,1,{fill:'#c9d3df',stroke:'none'});pages.push(page);}
+  return pages;
  }
- root.SWDiagram={build:build,diagram:diagram,scope:scope,tree:tree,render:render,svg:svg,vsdx:vsdx,library:library,stencilPages:stencilPages,linkType:linkType,parsePort:parsePort,physicalPort:physicalPort,catalogFor:catalogFor,CATALOG:CATALOG,LINK_TYPES:LINK_TYPES,GRID:G};
+ root.SWDiagram={build:build,diagram:diagram,scope:scope,tree:tree,render:render,svg:svg,vsdx:vsdx,library:library,fitLetter:fitLetter,onLetter:onLetter,stencilPages:stencilPages,linkType:linkType,parsePort:parsePort,physicalPort:physicalPort,catalogFor:catalogFor,CATALOG:CATALOG,LINK_TYPES:LINK_TYPES,GRID:G};
  if(typeof module==='object'&&module.exports)module.exports=root.SWDiagram;
 })(typeof globalThis!=='undefined'?globalThis:this);

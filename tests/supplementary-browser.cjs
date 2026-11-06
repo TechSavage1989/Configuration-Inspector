@@ -7,6 +7,7 @@ for(let p=1;p<=8;p++)L.push('interface GigabitEthernet1/0/'+p,' switchport mode 
 L.push('interface TenGigabitEthernet1/1/1',' switchport mode trunk','interface Vlan99',' ip address 10.0.99.11 255.255.255.0');
 const cfg=L.join('\n')+'\n';
 const SHOW='EXAMPLE-ACCESS1#show interfaces status\n\nPort      Name               Status       Vlan       Duplex  Speed Type\nGi1/0/4   Desk 4             connected    10         a-full a-1000 10/100/1000BaseTX\n';
+const {stencil}=require('./stencil-writer.cjs');
 const file=(name,buffer,type)=>({name,mimeType:type||'text/plain',buffer:Buffer.isBuffer(buffer)?buffer:Buffer.from(buffer)});
 (async()=>{
  const browser=await playwright.chromium.launch({headless:true,args:['--no-sandbox'],...(process.env.CI_CHROME_PATH?{executablePath:process.env.CI_CHROME_PATH}:{})});
@@ -69,7 +70,7 @@ const file=(name,buffer,type)=>({name,mimeType:type||'text/plain',buffer:Buffer.
   await page.locator('[data-sitemap-zoom="reset"]').click();ok((await page.locator('.zoom-level').innerText())==='100%','back to actual size');
   // Network diagram: opens on the selected configuration's device; whole site; click a
   // device to draw from it down; choose what to include, zoom and pan, and every download.
-  await page.locator('.nav-scroll [data-view="diagram"]').click();await page.locator('.diagram-scroll svg').waitFor();
+  await page.locator('.nav-scroll [data-view="diagram"]').click();await page.locator('.diagram-scroll > svg').waitFor();
   const dtext=()=>page.locator('.diagram-scroll').textContent();
   ok((await page.locator('.diagram-panel .panel-title').innerText())==='Example Organization - Existing Topology'&&await page.locator('.diagram-toolbar [data-diagram-scope="site"][aria-pressed="true"]').count()===1,'with no configuration open the diagram shows the whole site');
   const dfit=await page.evaluate(()=>{const b=document.querySelector('.diagram-scroll'),s=b.querySelector('svg');return {sw:s.getBoundingClientRect().width,bw:b.clientWidth,sh:s.getBoundingClientRect().height,bh:b.clientHeight,page:document.getElementById('content').scrollHeight-document.getElementById('content').clientHeight};});
@@ -77,17 +78,38 @@ const file=(name,buffer,type)=>({name,mimeType:type||'text/plain',buffer:Buffer.
   await page.locator('.diagram-scroll [data-diagram-node="examplecore"]').first().click();await page.waitForTimeout(300);
   ok((await page.locator('.diagram-panel .panel-title').innerText())==='EXAMPLE-CORE and below','clicking a device draws the diagram from it down');
   ok((await dtext()).includes('EXAMPLE-AP1')&&(await dtext()).includes('EXAMPLE-ACCESS1')&&(await dtext()).includes('EXAMPLE-FW1'),'the device, its upstream device, switches and access points are drawn');
+  ok(/^Letter, (landscape|portrait)/.test(await page.locator('.diagram-paper').first().innerText()),'the diagram shows how it prints on letter paper: '+await page.locator('.diagram-paper').first().innerText());
+  ok(await page.locator('.diagram-stencil-notice [data-action="diagram-stencils"]').count()===1,'without stencils the diagram offers to import them');
+  await page.locator('#import-file').setInputFiles({name:'example-devices.vssx',mimeType:'application/octet-stream',buffer:stencil()});await page.waitForTimeout(800);
+  ok((await page.locator('.diagram-stencil-notice').innerText()).includes('match'),'stencils that match no device on the diagram are reported');
+  await page.locator('.diagram-panel [data-action="diagram-stencils"]').first().click();await page.locator('.stencil-dialog').waitFor();
+  ok((await page.locator('.stencil-dialog').innerText()).includes('example-devices.vssx'),'the stencil file is listed');
+  await page.locator('[data-stencil-device="examplecore"]').selectOption({label:'EX-SW8 8-port switch'});await page.waitForTimeout(400);await page.keyboard.press('Escape');await page.waitForTimeout(400);
+  ok(await page.locator('.diagram-scroll [data-diagram-node="examplecore"] svg').count()>=1&&await page.locator('.diagram-stencil-notice').count()===0,'a device given a stencil is drawn with it');
+  const stored=await page.evaluate(()=>new Promise(r=>{const q=indexedDB.open('config-inspector-stencils',1);q.onsuccess=()=>{const c=q.result.transaction('files','readonly').objectStore('files').count();c.onsuccess=()=>r(c.result);};q.onerror=()=>r(-1);}));ok(stored===1,'the stencil is kept for next time');
   ok(await page.locator('.diagram-trail [data-diagram-focus]').count()>=1&&(await page.locator('.diagram-trail').innerText()).includes('Whole site'),'a path leads back up');
   ok(await page.evaluate(()=>[...document.querySelectorAll('.diagram-scroll text')].some(t=>t.textContent==='1')&&[...document.querySelectorAll('.diagram-scroll text')].some(t=>t.textContent==='2')),'faceplate ports are numbered');
   await page.locator('[data-diagram-option="aps"]').uncheck();await page.waitForTimeout(300);ok(!(await dtext()).includes('EXAMPLE-AP1'),'access points can be left out');
   await page.locator('[data-diagram-option="aps"]').check();await page.waitForTimeout(300);
-  await page.locator('.diagram-choose summary').click();await page.locator('[data-diagram-device="exampleaccess1"]').uncheck();await page.waitForTimeout(300);
-  ok(!(await dtext()).includes('EXAMPLE-ACCESS1')&&/\d+ of \d+ shown/.test(await page.locator('.diagram-choose summary').innerText()),'a device can be removed from the list');
+  await page.locator('.diagram-choose:not(.diagram-meta) summary').click();await page.locator('[data-diagram-device="exampleaccess1"]').uncheck();await page.waitForTimeout(300);
+  ok(!(await dtext()).includes('EXAMPLE-ACCESS1')&&/\d+ of \d+ shown/.test(await page.locator('.diagram-choose:not(.diagram-meta) summary').innerText()),'a device can be removed from the list');
   await page.locator('.diagram-scroll [data-diagram-node="exampleaccess2"]').first().click({button:'right'});await page.waitForTimeout(300);ok(!(await dtext()).includes('EXAMPLE-ACCESS2'),'right-clicking a device removes it');
   await page.locator('[data-diagram-showall]').click();await page.waitForTimeout(300);ok((await dtext()).includes('EXAMPLE-ACCESS1')&&(await dtext()).includes('EXAMPLE-ACCESS2'),'and both come back');
   await page.locator('#diagram-focus').selectOption('exampleaccess3');await page.waitForTimeout(300);ok((await page.locator('.diagram-panel .panel-title').innerText())==='EXAMPLE-ACCESS3 and below'&&!(await dtext()).includes('EXAMPLE-ACCESS2'),'another device');
   await page.locator('[data-diagram-device="exampleaccess2"]').check();await page.waitForTimeout(300);ok((await dtext()).includes('EXAMPLE-ACCESS2'),'a device from elsewhere can be added');
   await page.locator('[data-diagram-showall]').click();await page.waitForTimeout(300);await page.locator('#diagram-focus').selectOption('examplecore');await page.waitForTimeout(300);
+  await page.locator('#diagram-device-filter').fill('access');await page.waitForTimeout(200);ok((await page.locator('.diagram-choose-row:not([hidden])').count())===3&&/3 of \d+ devices/.test(await page.locator('.diagram-choose-count').innerText()),'the device list can be searched');
+  await page.locator('#diagram-device-show').selectOption('role:firewall');await page.waitForTimeout(200);ok((await page.locator('.diagram-choose-row:not([hidden])').count())===0,'and filtered by type and search together');
+  await page.locator('#diagram-device-filter').fill('');await page.waitForTimeout(200);ok((await page.locator('.diagram-choose-row:not([hidden])').count())===1,'filter by type: '+await page.locator('.diagram-choose-count').innerText());
+  await page.locator('[data-diagram-bulk="remove"]').click();await page.waitForTimeout(400);ok(!(await dtext()).includes('EXAMPLE-FW1'),'Remove shown removes the devices shown');
+  await page.locator('[data-diagram-bulk="add"]').click();await page.waitForTimeout(400);ok((await dtext()).includes('EXAMPLE-FW1'),'Add shown adds them back');
+  await page.locator('#diagram-device-show').selectOption('all');await page.waitForTimeout(200);
+  await page.locator('.diagram-meta summary').click();await page.locator('[data-diagram-meta="title"]').fill('Core and access');await page.locator('[data-diagram-meta="company"]').fill('Example Org');await page.locator('[data-diagram-meta="author"]').fill('Example Engineer');await page.locator('[data-diagram-meta="file"]').fill('Example core diagram');await page.waitForTimeout(600);
+  ok((await page.locator('.diagram-panel .panel-title').innerText())==='Core and access'&&(await dtext()).includes('EXAMPLE ORG')&&(await dtext()).includes('Prepared by Example Engineer'),'document details appear on the drawing');
+  const [named]=await Promise.all([page.waitForEvent('download'),page.locator('[data-diagram-export="vsdx"]').click()]);const nz=require('./stencil-writer.cjs').unzip(require('node:fs').readFileSync(await named.path()));
+  ok(named.suggestedFilename()==='Example core diagram.vsdx'&&nz['docProps/core.xml'].toString().includes('<dc:title>Core and access</dc:title>')&&nz['docProps/core.xml'].toString().includes('Example Engineer')&&nz['docProps/app.xml'].toString().includes('<Company>Example Org</Company>'),'the Visio file takes the name, title, author and organization');
+  for(const k of ['title','file'])await page.locator('[data-diagram-meta="'+k+'"]').fill('');await page.waitForTimeout(400);
+  await page.locator('.diagram-meta summary').click();await page.locator('.diagram-choose:not(.diagram-meta) summary').click();await page.waitForTimeout(300);
   await page.locator('.diagram-toolbar [data-diagram-scope="neighbors"]').click();await page.waitForTimeout(300);ok((await page.locator('.diagram-panel .panel-title').innerText())==='EXAMPLE-CORE - Connections','device connections view');
   await page.locator('.diagram-toolbar [data-diagram-scope="downstream"]').click();await page.waitForTimeout(300);
   const dz0=await page.locator('.diagram-page-view .zoom-level').innerText(),dbox=await page.locator('.diagram-scroll').boundingBox();
@@ -99,11 +121,11 @@ const file=(name,buffer,type)=>({name,mimeType:type||'text/plain',buffer:Buffer.
   const dafter=await page.evaluate(()=>{const b=document.querySelector('.diagram-scroll');return [b.scrollLeft,b.scrollTop];});
   ok(dafter[0]<dbefore[0]&&dafter[1]<dbefore[1]&&(await page.locator('.diagram-panel .panel-title').innerText())==='EXAMPLE-CORE and below','dragging pans the diagram without selecting a device: '+JSON.stringify([dbefore,dafter]));
   const fs2=require('node:fs');
-  const [vsdx]=await Promise.all([page.waitForEvent('download'),page.locator('[data-diagram-export="vsdx"]').click()]);ok(/^EXAMPLE-CORE-and-below\.vsdx$/.test(vsdx.suggestedFilename())&&fs2.readFileSync(await vsdx.path()).slice(0,2).toString()==='PK','Visio download of this diagram: '+vsdx.suggestedFilename());
+  const [vsdx]=await Promise.all([page.waitForEvent('download'),page.locator('[data-diagram-export="vsdx"]').click()]);ok(/^EXAMPLE-CORE and below\.vsdx$/.test(vsdx.suggestedFilename())&&fs2.readFileSync(await vsdx.path()).slice(0,2).toString()==='PK','Visio download of this diagram: '+vsdx.suggestedFilename());
   const [svgFile]=await Promise.all([page.waitForEvent('download'),page.locator('[data-diagram-export="svg"]').click()]);ok(/\.svg$/.test(svgFile.suggestedFilename()),'SVG download');
   const [htmlFile]=await Promise.all([page.waitForEvent('download'),page.locator('[data-diagram-export="html"]').click()]);ok(fs2.readFileSync(await htmlFile.path(),'utf8').includes('Print or save as PDF'),'printable HTML download');
   const [book]=await Promise.all([page.waitForEvent('download'),page.locator('[data-diagram-export="book"]').click()]);ok(/site-book\.vsdx$/.test(book.suggestedFilename()),'site book download: '+book.suggestedFilename());
-  const [stencil]=await Promise.all([page.waitForEvent('download'),page.locator('[data-diagram-export="library"]').click()]);ok(/device-library\.vsdx$/.test(stencil.suggestedFilename())&&fs2.readFileSync(await stencil.path()).slice(0,2).toString()==='PK','device library download');
+  const [libFile]=await Promise.all([page.waitForEvent('download'),page.locator('[data-diagram-export="library"]').click()]);ok(/device-library\.vsdx$/.test(libFile.suggestedFilename())&&fs2.readFileSync(await libFile.path()).slice(0,2).toString()==='PK','device library download');
   await page.locator('.diagram-toolbar [data-diagram-scope="site"]').click();await page.waitForTimeout(300);await page.locator('#diagram-title').fill('Example Campus');await page.waitForTimeout(500);
   ok((await dtext()).includes('Example Campus - Existing Topology'),'the site name updates the diagram as you type');
   await page.locator('.nav-scroll [data-view="sitemap"]').click();await page.locator('.nav-scroll [data-view="diagram"]').click();ok((await page.locator('#diagram-title').inputValue())==='Example Campus','the site name is kept');
@@ -127,7 +149,7 @@ const file=(name,buffer,type)=>({name,mimeType:type||'text/plain',buffer:Buffer.
   ok(await page.locator('#drawer .live-panel td [data-copy-value="00:00:5e:00:53:a1"]').count()===1&&await page.locator('#drawer .live-panel td [data-copy-value="10.0.10.50"]').count()===1,'MAC and IP addresses on a port can be copied');
   ok((await page.locator('#drawer .live-copy-all').getAttribute('data-copy-value')).includes('00:00:5e:00:53:a1\t10.0.10.50'),'all devices on a port can be copied at once');
   await page.keyboard.press('Escape');
-  await page.locator('.nav-scroll [data-view="diagram"]').click();await page.locator('.diagram-scroll svg').waitFor();
+  await page.locator('.nav-scroll [data-view="diagram"]').click();await page.locator('.diagram-scroll > svg').waitFor();
   ok((await page.locator('.diagram-panel .panel-title').innerText())==='EXAMPLE-ACCESS1 and below'&&(await page.locator('#diagram-focus').inputValue())==='exampleaccess1','with a configuration selected the diagram opens on its device');
   ok((await page.locator('.diagram-scroll').textContent()).includes('EXAMPLE-CORE')&&(await page.locator('.diagram-scroll').textContent()).includes('EXAMPLE-AP1'),'with its upstream device and access points');
   // The network map shows live link state and connected devices.

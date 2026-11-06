@@ -54,6 +54,8 @@
  // Reads a stencil or drawing and returns its masters.
  async function read(bytes,fileName){
   if(bytes.length>MAX_FILE)throw new Error('The stencil is too large to open.');
+  // Visio 2003-2010 stencils (.vss) are binary compound files, not packages.
+  if(bytes[0]===0xd0&&bytes[1]===0xcf&&bytes[2]===0x11&&bytes[3]===0xe0){var e=new Error((fileName||'This file')+' is an older Visio stencil (.vss).');e.legacy=true;throw e;}
   var files=await unzip(bytes),list=files['visio/masters/masters.xml'];
   if(!list)throw new Error((fileName||'This file')+' contains no master shapes. Choose a Visio stencil (.vssx) or a drawing made with the stencil.');
   var mastersXML=text(list),rels=relsOf(files['visio/masters/_rels/masters.xml.rels']?text(files['visio/masters/_rels/masters.xml.rels']):''),masters=[];
