@@ -196,7 +196,7 @@ const boxed=Number((await page.locator('.sp-count').innerText()).split(' ')[0]);
   // The editor: move devices, align them, change a label, choose a link's ports, undo and reset.
   await page.locator('[data-diagram-tab="0"]').click();await page.locator('[data-diagram-editmode]').click();await page.waitForTimeout(300);
   ok(await page.locator('.diagram-editbar').count()===1,'the editor shows its alignment tools');
-  const devGroup=key=>page.locator('.diagram-scroll [data-diagram-node="'+key+'"]').first(),edBefore=await devGroup('exampleaccess1').boundingBox();
+  const devGroup=key=>page.locator('.diagram-scroll [data-diagram-node="'+key+'"]').first();await devGroup('exampleaccess1').scrollIntoViewIfNeeded();const edBefore=await devGroup('exampleaccess1').boundingBox();
   await page.mouse.move(edBefore.x+20,edBefore.y+edBefore.height/2);await page.mouse.down();await page.mouse.move(edBefore.x+120,edBefore.y+edBefore.height/2+40,{steps:6});await page.mouse.up();await page.waitForTimeout(400);
   const edAfter=await devGroup('exampleaccess1').boundingBox();ok(edAfter.x>edBefore.x+20,'a device can be dragged to a new place: '+Math.round(edBefore.x)+' -> '+Math.round(edAfter.x));
   const edStored=JSON.parse(await page.evaluate(()=>localStorage.getItem('config-inspector-diagram-edits')||'{}'));ok(Object.values(edStored).some(v=>v.moves&&v.moves.exampleaccess1),'the move is kept');
