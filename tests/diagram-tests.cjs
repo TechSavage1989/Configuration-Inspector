@@ -48,6 +48,10 @@ function campus(){
  ok(site.title==='Example Site - Existing Topology'&&site.devices.length===5,'whole site page: '+site.devices.map(d=>d.name).join(', '));
  const core=D.diagram(input,{scope:'downstream',focus:'examplecore'}),texts=core.shapes.filter(s=>s.type==='text').map(s=>s.text).join('\n');
  ok(core.title==='EXAMPLE-CORE and below'&&['EXAMPLE-FW1','EXAMPLE-ACCESS1','EXAMPLE-ACCESS3','EXAMPLE-AP1','VLAN 10 – USERS'].every(t=>texts.includes(t)),'device page: upstream device, switches below, access points and VLANs');
+ {// Owner request: right angles and as few bends as possible; an access point's link needs at most two.
+  const bends=pts=>pts.filter((p,k)=>k&&k<pts.length-1&&!((pts[k-1][0]===p[0]&&p[0]===pts[k+1][0])||(pts[k-1][1]===p[1]&&p[1]===pts[k+1][1]))).length;
+  const ep=core.lines.filter(l=>l.conn.ep!=null);ok(ep.length&&ep.every(l=>bends(l.points)<=2),'access point links take at most two bends: '+ep.map(l=>bends(l.points)).join(','));
+  ok(core.lines.every(l=>l.points.every((p,k)=>!k||p[0]===l.points[k-1][0]||p[1]===l.points[k-1][1])),'every link is drawn with right angles only');}
  {// Owner request: details stacked with the device (name above the faceplate, model and address below), not a card beside it.
   const sh=core.shapes,name=sh.find(t=>t.type==='text'&&t.text==='EXAMPLE-ACCESS3'),foot=sh.find(t=>t.type==='text'&&/^Example Access 24P {2}\| {2}10\.0\.99\.13$/.test(t.text||''))
   ok(name&&foot&&foot.y>name.y+40&&!sh.some(t=>t.type==='text'&&/^EXAMPLE-ACCESS3\n/.test(t.text||'')),'device name above its faceplate, model and address below it');}

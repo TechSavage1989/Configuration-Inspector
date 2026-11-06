@@ -1,5 +1,15 @@
 # Configuration Inspector development handoff
 
+## 5.46.0 — fewer bends, legend context menu
+
+- `EP_W` is a multiple of 18 so endpoint centers sit on the 9 px grid (half-step centers made
+  every endpoint route jog). Endpoint rows may overhang the device by two grid steps
+  (`lo`/`hi`) to stay square over their ports. `BEND` is 40.
+- `straightenEnd()` (after routing) moves a vertical run onto the port's column when a one- or
+  two-step jog sits beside the stub and the column is free (`freeColumn`, `overlaps`).
+- Legend entries (`[data-kind]` without `data-line`): hover style and `<title>`, right-click
+  menu (`data-legend-menu`, `data-legend-ctx`: style, highlight, reset, unkind).
+
 ## 5.45.0 — compact bands, full-render row choice, neighbor port correction
 
 - Per-device label bands `d.bt`/`d.bb` (rows use the maximum): `bandFor()` lays port labels flat
