@@ -88,11 +88,19 @@
   // A bare series number (HP 6100 for an Aruba 6100 master) is a weak match too.
   (String(model).match(/(?:^|\D)(\d{4})(?!\d)/g)||[]).forEach(function(t){var d=t.replace(/\D/g,'');if(new RegExp('(^|\\D)'+d+'(\\D|$)').test(master.name))best=Math.max(best,60);});
   // The number must end where the master's number ends (FG-120 is not FG-1200D).
-  var nm=norm(model),re=/(\d{3,5})/g,m;while((m=re.exec(nm))){for(var k=3;k>=2;k--){var letters=nm.slice(Math.max(0,m.index-k),m.index);if(!/^[a-z]{2,3}$/.test(letters))continue;if(new RegExp(letters+'[^a-z0-9]*'+m[1]+'(?!\\d)','i').test(master.name)){best=Math.max(best,61);break;}}}
-  if(best&&node.role==='ap'&&/back|rear/i.test(master.name))best+=3;
-  if(best&&/front/i.test(master.name)&&node.role!=='ap')best+=2;
+  var nm=norm(model),re=/(\d{2,5})/g,m;while((m=re.exec(nm))){var gen=(nm.charAt(m.index+m[1].length).match(/[a-z]/)||[''])[0];for(var k=3;k>=2;k--){var letters=nm.slice(Math.max(0,m.index-k),m.index);if(!/^[a-z]{2,3}$/.test(letters))continue;var hit=new RegExp(letters+'(?:/[a-z]{2,4})?[^a-z0-9]*(?:\\d+/)?'+m[1]+'(?!\\d)(?:/\\d+)?([a-z]?)','i').exec(master.name);if(hit){if(!(gen&&hit[1]&&hit[1].toLowerCase()!==gen))best=Math.max(best,61);break;}}}
+  // Another generation of the same series (FG-120/121F for a FortiGate-120G) has other
+  // ports: never matched automatically.
+  if(best&&generationDiffers(model+' '+parts.join(' '),master.name+' '+(master.part||'')))return 0;
+  // The front of the device: rear views only when nothing else matches.
+  if(best&&/\b(?:back|rear)\b/i.test(master.name))best-=5;
+  if(best&&/\bfront\b/i.test(master.name))best+=2;
   return best;
  }
+ function generationDiffers(model,name){var gens={},re=/(\d{2,5})([A-Za-z])?(?![A-Za-z0-9])/g,m,found=false;model=norm(model).replace(/(\d)([a-z])(?=[a-z]{2,})/g,'$1$2 ');
+  String(model).replace(/(\d{2,5})([a-z])(?![0-9])/g,function(_,n,l){gens[n]=l;return _;});
+  String(name).replace(/(\d{2,5})(?:\/(\d{2,5}))?([A-Za-z])?(?![A-Za-z0-9])/g,function(_,a,b,l){[a,b].forEach(function(n){if(n&&gens[n]&&l&&l.toLowerCase()!==gens[n])found=true;});return _;});
+  return found;}
  function match(node,masters){var best=null,top=0;(masters||[]).forEach(function(m){var s=score(node,m);if(s>top){top=s;best=m;}});return top>=60?best:null;}
 
  // ---------- ports from connection points ----------

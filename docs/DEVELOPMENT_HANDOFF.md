@@ -1,5 +1,24 @@
 # Configuration Inspector development handoff
 
+## 5.34.0 — real faceplates, documentation pages, diagram toolbar
+
+- Faceplates: `diagramHardware(n)` (index.html) resolves a node's hardware profile from its
+  configuration (stack members, Interfaces at a glance choice) or the model and part numbers in
+  the supplementary data, and passes `node.hw = {members, portOf(name)}`. `Device.fromProfile`
+  turns each bank into a group (`portPos`/`groupWidth`: pitch 18 px, 27 px for QSFP, 9 px gap
+  every 12 ports); `Device.place` gives the slot; `drawPort` draws RJ45 jacks with a latch notch
+  and SFP/QSFP cages. Catalog fallback: `upFirst`, `rows`, `mod`, `family`, uplink numbering
+  `base` (49-52 on 48-port boards unless named on a module).
+- Documentation pages: `docPages(input,o)` with `portMapPages`, `wirelessPages`, `routingPages`,
+  `trunkPages`; `Flow`, `docTable`, `note`, `ranges` helpers; `number()` adds page numbers.
+  `diagramDocs()` (index.html) builds `input.docs`; `diagramDocPages(offset)` caches the pages.
+  The diagram page shows them as tabs (`state.diagramTab`); **Visio** downloads all pages,
+  `vsdx-page` the page shown, printable HTML every page (named @page per orientation).
+- Toolbar: `.diagram-bar` with `.diagram-pop` menus (`state.diagramPop`, one open at a time,
+  `placePop` keeps them on screen), full screen (`state.diagramFull`, Esc).
+- Stencils: `generationDiffers()`, rear-view penalty, paired names (90/91G, FG/FWF); the
+  stencil dialog lists access points and uses a searchable `<datalist>` (`state.stencilLabels`).
+
 ## 5.33.0 — Visio compatibility, letter paper, stencil folders, document details
 
 - Visio package fixes in `diagram.js` (`documentXML`, `charSection`, `shapeXML` order, ZIP
