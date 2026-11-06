@@ -1,10 +1,10 @@
 {
   "name": "configuration-inspector",
-  "version": "5.37.0",
+  "version": "5.38.0",
   "private": true,
   "scripts": {
     "test": "node tests/run-tests.cjs",
-    "test:browser": "node tests/updates-browser.cjs && node tests/comparison-browser.cjs && node tests/search-browser.cjs && node tests/cisco-3650-browser.cjs && node tests/recent-files-browser.cjs && node tests/report-summary-browser.cjs && node tests/site-overview-browser.cjs && node tests/navigation-browser.cjs && node tests/migration-browser.cjs && node tests/polish-browser.cjs && node tests/supplementary-browser.cjs"
+    "test:browser": "node tests/updates-browser.cjs && node tests/comparison-browser.cjs && node tests/search-browser.cjs && node tests/cisco-3650-browser.cjs && node tests/recent-files-browser.cjs && node tests/report-summary-browser.cjs && node tests/site-overview-browser.cjs && node tests/navigation-browser.cjs && node tests/migration-browser.cjs && node tests/polish-browser.cjs && node tests/supplementary-browser.cjs && node tests/diagram-config-browser.cjs"
   },
   "devDependencies": {
     "@resvg/resvg-js": "2.6.2",

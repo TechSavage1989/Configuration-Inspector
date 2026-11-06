@@ -1,5 +1,21 @@
 # Configuration Inspector development handoff
 
+## 5.38.0 — diagrams from configurations, manual links, stencil picker
+
+- `siteMapAvailable()` is true with configurations alone. `configLinks()` infers links from
+  port descriptions naming another device and from default gateways (port toward the other
+  device: described port, subinterface parent, or the trunk carrying the VLAN). WAN circuits
+  come from WAN-role or WAN-zone interfaces (Show > WAN circuits, `view.wan`, link type `wan`).
+- `siteEdits()`/`saveSiteEdits()` (localStorage `config-inspector-site-edits`, per site name):
+  hand-added devices and links and removed link ids; dialogs `showAddLink`, `showAddDevice`,
+  `showSiteLinks`. `pushUndo`/`swapEdit` give Ctrl+Z / Ctrl+Shift+Z across all edits.
+- Editor: `edits.portPos` (port point offsets, dragged by a link's end), link context menu
+  (`routeWithBend`, `routeWithout`), every crossing hops (horizontal over vertical).
+- Stencils: `showStencilPicker()` (file list, shapes of the file, search across files,
+  suggestions by `score`), multi-device apply; port maps get `o.stencils` unless drawn
+  faceplates are chosen; EMF BitBlt/StretchBlt/AlphaBlend/SetDIBitsToDevice drawn, gradient
+  and EMF+ only pictures marked `partial` and not used automatically.
+
 ## 5.37.0 — diagram editor
 
 - `diagram(input,{edits})`: `edits.moves` (device offsets), `eps` (endpoint offsets, key
