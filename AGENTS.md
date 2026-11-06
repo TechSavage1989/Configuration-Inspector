@@ -65,6 +65,18 @@ existing release or its assets. Preserve the polished README layout.
   grid: keep device, port and endpoint geometry on that grid or stubs miss their nodes.
   A relaxed route (`strict:false`) means the layout ran out of room; widen the channel
   or corridor that is short instead of accepting the overlap.
+- Diagram faceplates come from the verified hardware profiles in `webview/hardware.js` (the
+  same layouts and model choice as Interfaces at a glance): `diagramHardware()` in index.html
+  passes `node.hw` ({members, portOf}) and `Device.fromProfile` draws each bank with its
+  connector (RJ45 taller than wide, SFP/QSFP cages) and real port numbers. Add new models to
+  hardware.js, not to the diagram; `tests/diagram-tests.cjs` draws every profile. The
+  `CATALOG` in diagram.js is only the fallback for models without a profile.
+- Documentation pages (`docPages` in diagram.js: port map, wireless connections, VLANs and
+  routing, trunk VLANs) are letter-sized (`p.doc`, drawn at full size by `fitLetter`) and built
+  from `input.docs` (`diagramDocs` in index.html). Visio page names must be unique.
+- Stencil matching never picks another generation of a series automatically (FG-120/121F for a
+  FortiGate-120G has other ports; `generationDiffers` in stencils.js) and prefers front views
+  over rear views.
 - The diagram opens on the selected configuration's device; `state.diagram.focusModel`
   tracks which configuration that was, so choose a new focus whenever it changes.
 - Supplementary data (`webview/evidence.js` parsing, `webview/site_map.js` layout) is

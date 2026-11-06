@@ -93,5 +93,43 @@ function campus(){
  ok(Object.entries(files).filter(([n])=>/\.(xml|rels)$/.test(n)).every(([,x])=>balanced(x)),'every part is well formed');
  ok(!Object.values(files).some(x=>/<\/Section><Cell/.test(x)),'cells come before sections in every shape, as the Visio schema requires');
  let zo=0,dates=true;while(raw.readUInt32LE(zo)===0x04034b50){if(raw.readUInt16LE(zo+12)===0)dates=false;zo+=30+raw.readUInt16LE(zo+26)+raw.readUInt16LE(zo+28)+raw.readUInt32LE(zo+18);}ok(dates,'ZIP entries carry valid dates');
+ // Faceplates from the verified hardware profiles (hardware.js): every profile draws with
+ // ports on the routing grid, in its own banks and order, without overlapping shapes.
+ {const HW=require('./harness.cjs').boot().ctx.SWHardware;let drawn=0;const problems=[];
+  HW.profiles.forEach(prof=>{const node={key:'hw'+drawn,name:'HW-'+drawn,role:'switch',model:prof.title,hw:{members:[{id:'1',profile:prof}],portOf:()=>null}};
+   const pg=D.diagram({layout:M.layout([{key:node.key,name:node.name,type:'Switch',model:prof.title,ips:[],open:-1}],[],{}),links:[],vlans:new Map(),ports:new Map(),title:'x'},{scope:'site'});drawn++;
+   const dev=new (D._Device)(node,[],[],'plate');const centers=[];dev.plates[0].groups.forEach(g=>{for(let i=0;i<g.count;i++){const sl=dev.place(dev.plates[0],g,i,g.names[i]);centers.push({x:sl.dx,row:sl.row,mid:g.mid,label:sl.number,pitch:g.pitch});}});
+   if(centers.some(c=>c.x%9))problems.push(prof.title+': off grid');
+   const byRow={};centers.forEach(c=>{(byRow[c.row]=byRow[c.row]||[]).push(c);});Object.values(byRow).forEach(r=>{r.sort((a,b)=>a.x-b.x);for(let i=1;i<r.length;i++)if(r[i].x-r[i-1].x<Math.max(r[i].pitch,r[i-1].pitch)-0.1&&!(r[i].pitch===27||r[i-1].pitch===27)&&r[i].x-r[i-1].x<18)problems.push(prof.title+': overlap at '+r[i].label);});
+   const total=prof.banks.filter(b=>!b.mirror).reduce((n,b)=>n+b.names.length,0);if(centers.length!==total)problems.push(prof.title+': '+centers.length+' of '+total+' ports');
+   if(!pg.shapes.length)problems.push(prof.title+': nothing drawn');});
+  ok(drawn>=40&&!problems.length,drawn+' hardware profiles draw cleanly: '+problems.slice(0,6).join('; '));
+  const cx=HW.profile('JL675A'),fg=HW.profile('FG-120G');ok(cx&&fg,'Aruba 6100 and FortiGate 120G profiles');
+  const sw={key:'cx',name:'CX',role:'switch',model:'JL675A',hw:{members:[{id:'1',profile:cx}],portOf:n=>{const m=/(\d+)$/.exec(n);const local=m&&m[1];const b=cx.banks.find(b=>b.names.includes(local));return b?{member:'1',bank:cx.banks.indexOf(b),index:b.names.indexOf(local)}:null;}}};
+  const d=new (D._Device)(sw,[],[],'plate'),p1=d.slot('1/1/1'),p2=d.slot('1/1/2'),p12=d.slot('1/1/12'),p13=d.slot('1/1/13'),p49=d.slot('1/1/49'),p51=d.slot('1/1/51');
+  ok(p49.dx<p1.dx&&p49.number==='49'&&p51.row===0&&p49.row===0&&d.slot('1/1/50').row===1,'Aruba 6100: 49-52 at the left as on the switch, numbered 49-52: '+JSON.stringify([p49.dx,p1.dx,p49.number]));
+  ok(p1.row===0&&p2.row===1&&p2.dx===p1.dx&&p13.dx-p12.dx===27,'odd ports on top, blocks of 12 with a gap: '+(p13.dx-p12.dx));
+  const fw={key:'fg',name:'FG',role:'firewall',model:'FortiGate-120G',hw:{members:[{id:'1',profile:fg}],portOf:n=>{const b=fg.banks.find(b=>b.names.includes(n));return b?{member:'1',bank:fg.banks.indexOf(b),index:b.names.indexOf(n)}:null;}}};
+  const f=new (D._Device)(fw,[],[],'plate'),x3=f.slot('x3'),port1=f.slot('port1'),ha=f.slot('ha');ok(ha.dx<port1.dx&&port1.dx<x3.dx&&x3.number==='X3'&&ha.number==='HA'&&f.plates[0].groups.find(g=>g.names.includes('x3')).form==='sfp','FortiGate 120G: HA/MGMT, ports, SFP and X1-X4 in order, SFP+ drawn as cages');
+  const svg=D.svg({w:900,h:200,title:'t',shapes:[],lines:[],devices:[]});ok(typeof svg==='string','svg');}
+ // Documentation pages: port map, wireless connections, VLANs and routing, trunk VLANs.
+ {const HW=require('./harness.cjs').boot().ctx.SWHardware,cx=HW.profile('JL675A');
+  const portOf=n=>{const m=/(\d+)$/.exec(n),b=m&&cx.banks.find(b=>b.names.includes(m[1]));return b?{member:'1',bank:cx.banks.indexOf(b),index:b.names.indexOf(m[1])}:null;};
+  const ports=[];for(let i=1;i<=52;i++){const p={name:'1/1/'+i,admin:'Enabled',mode:'access',native:'10',tagged:[],ip:'',lag:'',up:i<20,speed:'1 Gb/s',neighbor:null,description:''};
+   if(i>=41&&i<=48){p.mode='trunk';p.tagged=['20','30'];p.neighbor={name:'EXAMPLE-AP'+i,role:'ap',model:'Example AP',ip:'10.0.10.'+i};p.up=true;p.speed=i===43?'100 Mb/s':'1 Gb/s';}
+   if(i===49){p.mode='trunk';p.native='1';p.tagged=['10','20','30'];p.neighbor={name:'EXAMPLE-FW',role:'firewall',model:'',ip:'10.0.0.1'};}if(i===52)p.admin='Disabled';ports.push(p);}
+  const docs={devices:[{key:'fw',name:'EXAMPLE-FW',role:'firewall',model:'Example firewall',ip:'10.0.0.1',hw:null,ports:[{name:'port1',admin:'Enabled',mode:'',native:'',tagged:[],ip:'192.0.2.2/24',up:true,speed:'',neighbor:null,description:'WAN'}],vlans:[{id:'10',name:'Data',ip:'10.0.10.1/24'}],addresses:[{iface:'port1',ip:'192.0.2.2/24',note:'WAN'},{iface:'vlan10',ip:'10.0.10.1/24',note:''}],routes:[{dest:'0.0.0.0/0',gateway:'192.0.2.1',iface:'port1',note:''}]},
+   {key:'sw',name:'EXAMPLE-CORE',role:'switch',model:'Aruba 6100',ip:'10.0.10.2',hw:{members:[{id:'1',profile:cx}],portOf},ports,vlans:[{id:'10',name:'Data',ip:'10.0.10.1/24'},{id:'20',name:'Voice',ip:''},{id:'30',name:'Guest',ip:''}],addresses:[{iface:'vlan10',ip:'10.0.10.1/24',note:''}],routes:[]}]};
+  const pages=D.docPages({docs},{title:'Example Site',company:'EXAMPLE ORG',author:'Example Engineer',date:'2026-01-01',offset:1}),titles=pages.map(p=>p.title),txt=p=>p.shapes.filter(s=>s.type==='text').map(s=>s.text).join('\n');
+  ok(['Port map','Wireless connections','VLANs and routing','Trunk VLANs'].every(t=>titles.includes(t)),'documentation pages: '+titles.join(', '));
+  const pm=pages.find(p=>p.title==='Port map');ok(/1-40/.test(txt(pm))&&/41-48/.test(txt(pm))&&/Wireless access points/.test(txt(pm))&&/Disabled/.test(txt(pm))&&/To EXAMPLE-FW/.test(txt(pm)),'the port map groups ports by role with ranges and VLAN details');
+  ok(pm.shapes.some(s=>s.type==='rect'&&s.fill==='#7fd1a6'),'access point ports are coloured on the faceplate');
+  const wl=pages.find(p=>p.title==='Wireless connections');ok(/EXAMPLE-AP43/.test(txt(wl))&&/below 1 Gbps/.test(txt(wl)),'wireless page lists the access points and slow links');
+  const vr=pages.find(p=>p.title==='VLANs and routing');ok(/0\.0\.0\.0\/0/.test(txt(vr))&&/Repeated addresses: 10\.0\.10\.1/.test(txt(vr)),'routes and repeated addresses');
+  const tv=pages.find(p=>p.title==='Trunk VLANs');ok(tv.shapes.some(s=>s.type==='text'&&s.text==='N')&&tv.shapes.some(s=>s.type==='text'&&s.text==='T'),'trunk VLAN matrix');
+  ok(pages.every((p,i)=>txt(p).includes((i+2<10?'0':'')+(i+2)+' / '+(pages.length+1<10?'0':'')+(pages.length+1)))&&pages.every(p=>p.letter.landscape&&p.letter.scale===1),'numbered after the diagram, on letter paper at full size');
+  const files=unzip(Buffer.from(D.vsdx(pages,'Docs'))),names=(files['visio/pages/pages.xml'].toString().match(/NameU="[^"]*"/g)||[]);ok(new Set(names).size===names.length&&names.length===pages.length,'every Visio page has its own name: '+names.join(' '));
+  ok(D.docPages({docs:{devices:[]}},{}).length===0,'no documentation pages without configurations');}
+
  console.log(checks+' network diagram checks passed');
 })().catch(e=>{console.error(e);process.exit(1);});
