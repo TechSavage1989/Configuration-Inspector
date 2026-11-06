@@ -119,6 +119,13 @@ existing release or its assets. Preserve the polished README layout.
   so the zoom and scroll stay, and keep the auto-fit key free of edits (`cur.baseKey`).
 - Elements that use `display:flex` (such as `.site-link-row`) override the `hidden`
   attribute unless a `[hidden]` rule for them exists; check filters with `:visible`.
+- The owner's reference drawing (a Visio core page with a left legend column, thin links colored
+  by media, accent-bar boxes for handoffs, green AP summary boxes, and numbered role squares on
+  port maps) sets the diagram style; keep new drawing work consistent with it. Links avoid
+  crossings whenever any route does (strict re-route pass), even at the cost of more bends.
+- Hardware packs carry parsed stencil masters (not the stencil files); keep master fields JSON
+  friendly (no Maps or DOM nodes) and keep `m.file` as the original file name so choices and
+  port points (keyed by `masterKey`) apply to pack shapes.
 - Messages (`toast`) are a popover in the top layer so they show over dialogs; don't move
   `#toast` back into normal flow.
 - Keep one design language: side panels use `.side-panel-body` with `.device-info-row`

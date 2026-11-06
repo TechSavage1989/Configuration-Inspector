@@ -1,5 +1,30 @@
 # Configuration Inspector development handoff
 
+## 5.40.0 — fewer crossings, hardware packs
+
+- Routing: `CROSS` is 30 in the first pass. Every line that still crosses is routed again
+  against all others (`Router.rebuild(paths, skip)`) with `router.cross = CROSS_STRICT` (400)
+  and kept when `Router.score()` shows fewer crossings (owner request: avoid crossings whenever
+  any route does), or as many with fewer bends. A strict cost in the first pass made early lines
+  take long detours that blocked later ones, so it is used only in the second pass.
+- Style follows the owner's reference drawing (a client site's core page, kept outside the repository): `LINK_TYPES` colors (fiber red,
+  copper and WAN yellow, AP green), line widths 2/2.5, `legendColumn()` at the left (`LEGEND_W`,
+  devices start at `LEFT`; the router blocks the column), endpoint boxes with an accent bar,
+  the green AP group box, and numbered role squares on stencil port maps (`portNumber`).
+- The browser context menu is suppressed outside text fields (`onDoc('contextmenu')`).
+- README diagram screenshots were recaptured from the fictional `demoSite()` plus EXAMPLE-ACCESS1
+  configuration (tests/xlsx-writer.cjs).
+- Hardware packs (index.html `saveHardwarePack`/`importHardwarePack`, format
+  `config-inspector-hardware-pack`, schema 1): the masters in use (fields as `read()` gives
+  them, Uint8Arrays as `{$b64}`, `_`-prefixed caches dropped), `points` per `masterKey` and
+  `choices` per device key. Import stores each file as `<file> (hardware pack)` in the stencil
+  store with `pack:true` and the parsed form (no bytes); masters keep their original `file`, so
+  `masterKey` and saved choices still match. `packDecode` drops prototype keys.
+- Port point editor: `spSnap`/`spSwap` undo history, the `[data-sp-pick]` list and
+  `[data-sp-x]`/`[data-sp-y]` percent fields; Ctrl+arrows nudge 0.1 px.
+- Ideas taken from NetworkDiagramStudio (sibling app): hardware packs, the port list with
+  numeric positions, undo in the port editor.
+
 ## 5.39.0 — editor selection, route snapping, stencil port points
 
 - Editor (index.html): `editDrag.kind` is `move`, `box` (selection box on empty space,

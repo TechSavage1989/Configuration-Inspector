@@ -778,7 +778,7 @@ table.data th,table.data td{vertical-align:top}
 .diagram-page-view{display:flex;flex-direction:column;gap:16px}.diagram-actions{display:flex;gap:8px;align-items:center;flex-wrap:wrap}.diagram-title-field{display:flex;gap:6px;align-items:center;font-size:12px;color:var(--muted)}.diagram-title-field .diagram-title-input{width:220px;max-width:none;font-size:12px;color:var(--ink)}
 .diagram-toolbar{align-items:center;flex-wrap:wrap}.diagram-field{display:flex;gap:6px;align-items:center;font-size:12px;color:var(--muted)}.diagram-field .select{width:auto;max-width:260px;font-size:12px;color:var(--ink)}.diagram-check{display:flex;gap:5px;align-items:center;font-size:12px;color:var(--ink)}
 .entity-link{border:0;background:none;padding:0;margin:0;font:inherit;color:var(--accent);cursor:pointer;text-align:left;text-decoration:underline;text-decoration-color:color-mix(in srgb,var(--accent) 35%,transparent);text-underline-offset:2px}.entity-link:hover{text-decoration-color:var(--accent)}
-.stencil-dialog .site-link-row{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:6px 0;border-bottom:1px solid var(--line)}.stencil-device{display:flex;flex-direction:column;min-width:0}.stencil-device .muted{color:var(--muted);font-size:11px}.site-link-row[hidden],.stencil-row[hidden],.stencil-file[hidden]{display:none!important}.diagram-scroll polyline.snapped{stroke-dasharray:6 3}.sp-canvas{overflow:auto;border:1px solid var(--line);border-radius:8px;background:#fff;max-height:60vh}.sp-svg{display:block;touch-action:none;cursor:default}.sp-pt{cursor:move}.sp-tools{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-bottom:10px}.stencil-row-tools{display:flex;gap:6px;align-items:center;flex-wrap:wrap;justify-content:flex-end}#modal.wide-modal{width:min(1180px,calc(100vw - 28px))}.diagram-marquee{fill:#2f6fde14;stroke:#2f6fde;stroke-width:1;stroke-dasharray:4 3;pointer-events:none}.stencil-row .select{max-width:340px;font-size:12px}.stencil-row .stencil-pick{width:340px;flex:0 1 340px}.stencil-picker{min-width:min(860px,90vw)}.stencil-pick-bar{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:10px}.stencil-pick-bar input{flex:1 1 260px}.stencil-suggest{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-bottom:10px}
+.stencil-dialog .site-link-row{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:6px 0;border-bottom:1px solid var(--line)}.stencil-device{display:flex;flex-direction:column;min-width:0}.stencil-device .muted{color:var(--muted);font-size:11px}.site-link-row[hidden],.stencil-row[hidden],.stencil-file[hidden]{display:none!important}.diagram-scroll polyline.snapped{stroke-dasharray:6 3}.sp-canvas{overflow:auto;border:1px solid var(--line);border-radius:8px;background:#fff;max-height:60vh}.sp-svg{display:block;touch-action:none;cursor:default}.sp-pt{cursor:move}.sp-fields{display:flex;flex-wrap:wrap;gap:12px;align-items:center;margin-bottom:10px}.sp-fields input{width:90px}.sp-tools{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-bottom:10px}.stencil-row-tools{display:flex;gap:6px;align-items:center;flex-wrap:wrap;justify-content:flex-end}#modal.wide-modal{width:min(1180px,calc(100vw - 28px))}.diagram-marquee{fill:#2f6fde14;stroke:#2f6fde;stroke-width:1;stroke-dasharray:4 3;pointer-events:none}.stencil-row .select{max-width:340px;font-size:12px}.stencil-row .stencil-pick{width:340px;flex:0 1 340px}.stencil-picker{min-width:min(860px,90vw)}.stencil-pick-bar{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:10px}.stencil-pick-bar input{flex:1 1 260px}.stencil-suggest{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-bottom:10px}
 .stencil-pick-cols{display:grid;grid-template-columns:minmax(200px,1fr) 2fr;gap:12px;align-items:start}.stencil-pick-files,.stencil-pick-masters{display:flex;flex-direction:column;gap:2px;max-height:56vh;overflow:auto;border:1px solid var(--line);border-radius:8px;padding:6px}
 .stencil-pick-file,.stencil-pick-master{display:flex;flex-direction:column;align-items:flex-start;text-align:left;border:0;background:none;padding:6px 8px;border-radius:6px;font-size:12px}.stencil-pick-file .muted,.stencil-pick-master .muted{font-size:11px;color:var(--muted)}.stencil-pick-file:hover,.stencil-pick-master:hover{background:color-mix(in srgb,var(--accent) 8%,transparent)}.stencil-pick-file.active,.stencil-pick-master.active{background:color-mix(in srgb,var(--accent) 14%,transparent)}
 .stencil-bulk{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin:0 0 8px}.stencil-choose{max-width:360px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
@@ -962,7 +962,7 @@ body{font-size:14px}.brand-mark{background:linear-gradient(145deg,#287dc6,#15578
       <div id="page-heading"></div>
       <div id="workspace-tabs"></div><div id="workspace-notice"></div>
       <div id="content"></div>
-      <footer class="page-footer"><span id="version-label">Config Inspector 5.39.0</span></footer>
+      <footer class="page-footer"><span id="version-label">Config Inspector 5.40.0</span></footer>
     </main>
   </div>
   <input type="file" id="import-file" multiple accept=".exp,.txt,.json,.conf,.cfg,.xml,.tar,.set,.log,.backup,.rsc,.xlsx,.csv,.vssx,.vstx,.vsdx,.vss" hidden>
@@ -6092,16 +6092,16 @@ function pJ(L,pan){const d=E(),I={},R={},T={};
  // around devices and never run on top of each other. Pages are plain shape lists
  // rendered to SVG or written as a Visio .vsdx; the catalog also exports as a library.
  var LINK_TYPES={
-  fiber:{label:'10 Gbps+ fiber / uplink',color:'#1ba1e2'},
-  copper:{label:'1 Gbps copper',color:'#e0a92e'},
+  fiber:{label:'10 Gbps fiber / uplink',color:'#e02b20'},
+  copper:{label:'1 Gbps copper',color:'#f0c330'},
   slow:{label:'100 Mbps or slower (dashed)',color:'#8a94a6',dash:true},
-  wap:{label:'Access point copper',color:'#22b14c'},
+  wap:{label:'AP copper',color:'#18a34a'},
   other:{label:'Other / speed not reported',color:'#8a94a6'},
-  wan:{label:'WAN / provider circuit',color:'#8e44ad'}
+  wan:{label:'Local handoff (provider)',color:'#f0c330'}
  };
  var ROLE_FILL={firewall:'#c0504d',router:'#e6a23c',switch:'#4f81bd',controller:'#6b62d9',ap:'#22b14c',endpoint:'#8a94a6',circuit:'#8e44ad'};
  var ROLE_LABEL={firewall:'Firewall',router:'Router',switch:'Switch',controller:'Controller',ap:'Access point',endpoint:'Device',circuit:'Provider circuit'};
- var G=9,BAND=54,BEND=20,CROSS=2,TOP=126,EP_W=126,EP_H=54,EP_PITCH=153,MARGIN=36;
+ var G=9,BAND=54,BEND=20,CROSS=30,CROSS_STRICT=400,TOP=126,EP_W=126,EP_H=54,EP_PITCH=153,MARGIN=36;
  function speedValue(s){var m=String(s||'').match(/([\d.]+)\s*([GM])/i);if(!m)return 0;return Number(m[1])*(m[2].toUpperCase()==='G'?1000:1);}
  function linkType(l,aRole,bRole){if(aRole==='circuit'||bRole==='circuit')return 'wan';
   if(aRole==='ap'||bRole==='ap')return 'wap';
@@ -6264,8 +6264,13 @@ function pJ(L,pan){const d=E(),I={},R={},T={};
     if(pl.first)page.text(lx,ty,lw,58,clip(node.name,30)+'\n'+clip(node.model||dev.stencil.master.name||'',34)+'\n'+((node.ips||[])[0]||''),{size:10.5,align:'left',firstBold:true,lineHeight:17});else page.text(lx,y+dev.h/2-9,lw,18,'Member '+pl.member,{size:10.5,bold:true,align:'left'});});
    // Linked ports: a ring in the link color on the stencil.
    if(used)used.forEach(function(color,key){var p=dev.positions[key];if(p)page.rect(x0+p.x-6,y+p.y-6,12,12,{fill:'none',stroke:color,width:2,radius:6,pkey:dev.portKeys&&dev.portKeys[key]});});
-   // Port roles on a stencil (port map pages): a dot in the role color, a ring when down.
-   if(fills)fills.forEach(function(fl,key){var p=dev.positions[key];if(p)page.rect(x0+p.x-5,y+p.y-5,10,10,{fill:fl.up?fl.fill:'#ffffff',stroke:fl.up?'#3d4a5c':fl.fill==='#f4f5f7'?'#b6bfcc':fl.fill,width:fl.up?0.75:2,radius:5});});
+   // Port roles on a stencil (port map pages, as in the reference drawing): a numbered square
+   // over each port in the role color, sized to the port pitch; outlined only when down.
+   if(fills){var all=[];fills.forEach(function(fl,key){var p=dev.positions[key];if(p)all.push({p:p,fl:fl});});
+    all.forEach(function(a){var dx=1e9,dy=1e9;all.forEach(function(b){if(b===a)return;var ex=Math.abs(b.p.x-a.p.x),ey=Math.abs(b.p.y-a.p.y);if(ey<4&&ex>2)dx=Math.min(dx,ex);if(ex<4&&ey>2)dy=Math.min(dy,ey);});
+     var w=Math.max(9,Math.min(24,dx<1e9?dx*0.8:14)),hh=Math.max(9,Math.min(w*0.95,dy<1e9?dy*0.7:w*0.95)),fl=a.fl,down=!fl.up;
+     page.rect(x0+a.p.x-w/2,y+a.p.y-hh/2,w,hh,{fill:down?'#ffffff':fl.fill,stroke:down?(fl.fill==='#f4f5f7'?'#b6bfcc':fl.fill):'#3d4a5c',width:down?1.5:0.75});
+     if(fl.label)page.text(x0+a.p.x-w/2,y+a.p.y-hh/2+(hh-Math.min(9,hh*0.62))/2-1,w,hh,fl.label,{size:Math.min(9,hh*0.62,w/(Math.max(2,fl.label.length)*0.62)),bold:true,color:'#1f2937'});});}
    return;}
   dev.plates.forEach(function(pl){var x=x0+pl.x;
    page.rect(x,y,pl.w,72,{fill:'#dfe7f3',stroke:'#3d5a80',width:1.5,radius:4});page.rect(x+10,y+10,44,52,{fill:ROLE_FILL[node.role]||'#4f81bd',stroke:'none'});
@@ -6297,6 +6302,14 @@ function pJ(L,pan){const d=E(),I={},R={},T={};
  Page.prototype.grow=function(x,y){this.w=Math.max(this.w,x+MARGIN);this.h=Math.max(this.h,y+MARGIN);};
  Page.prototype.begin=function(node,kind){this.cur={id:++this.groupId,node:node,kind:kind||''};};
  Page.prototype.end=function(){this.cur=null;};
+ // The connection types down a column at the left, as in the reference drawing.
+ var LEGEND_W=198;
+ function legendColumn(page,x,y,types,roles){
+  page.text(x,y,LEGEND_W-36,14,'CONNECTION TYPES',{size:9.5,bold:true,align:'left',color:'#1d5b79'});y+=30;
+  types.forEach(function(t){page.line([[x,y+7],[x+30,y+7]],{color:LINK_TYPES[t].color,width:2.5,dash:LINK_TYPES[t].dash});page.text(x+40,y,LEGEND_W-80,16,LINK_TYPES[t].label,{size:10,align:'left'});y+=27;});
+  if(roles&&roles.length){y+=12;page.text(x,y,LEGEND_W-36,14,'DEVICES',{size:9.5,bold:true,align:'left',color:'#1d5b79'});y+=30;roles.forEach(function(r){page.rect(x,y+2,24,12,{fill:ROLE_FILL[r],stroke:'none'});page.text(x+40,y,LEGEND_W-80,16,ROLE_LABEL[r],{size:10,align:'left'});y+=27;});}
+  return y;
+ }
  function legendRow(page,x,y,types,roles){
   types.forEach(function(t){page.line([[x,y+8],[x+34,y+8]],{color:LINK_TYPES[t].color,width:4,dash:LINK_TYPES[t].dash});page.text(x+42,y,170,16,LINK_TYPES[t].label,{size:10.5,align:'left'});x+=42+LINK_TYPES[t].label.length*5.6+24;});
   (roles||[]).forEach(function(r){page.rect(x,y+2,24,12,{fill:ROLE_FILL[r],stroke:'none'});page.text(x+30,y,110,16,ROLE_LABEL[r],{size:10.5,align:'left'});x+=30+ROLE_LABEL[r].length*5.6+22;});
@@ -6326,10 +6339,14 @@ function pJ(L,pan){const d=E(),I={},R={},T={};
     if(u!==t&&(this.blocked[u]||this.term[u]&&this.term[u]!==net))continue;
     var e=Math.min(u,v),usedBy=nd===0||nd===2?this.hUse[e]:this.vUse[e],cost=1;
     if(usedBy&&usedBy!==net){if(!relaxed)continue;cost+=80;}
-    if(occ&&turn)cost+=40;if(this.zone[u]&&this.zone[u]!==owner)cost+=4;if(turn)cost+=BEND;if(this.node[u]&&this.node[u]!==net)cost+=CROSS;if(u===t&&nd!==tDir)cost+=BEND;
+    if(occ&&turn)cost+=40;if(this.zone[u]&&this.zone[u]!==owner)cost+=4;if(turn)cost+=BEND;if(this.node[u]&&this.node[u]!==net)cost+=this.cross||CROSS;if(u===t&&nd!==tDir)cost+=BEND;
     var ns=u*4+nd,ng=gc+cost;if(seen[ns]!==gen||ng<g[ns]){seen[ns]=gen;g[ns]=ng;prev[ns]=cur;heap.push(ng+h(u),ns);}}}
   return null;
  };
+ // Occupancy rebuilt from every committed path but one (for re-routing that one).
+ Router.prototype.rebuild=function(paths,skip){this.node.fill(0);this.hUse.fill(0);this.vUse.fill(0);var self=this;paths.forEach(function(p){if(p.net!==skip&&p.path)self.commit(p.net,p.path);});};
+ // Crossings (cells of another net) and bends of a path, for comparing two routes.
+ Router.prototype.score=function(net,path){var x=0,b=0,C=this.C;for(var i=1;i<path.length-1;i++){if(this.node[path[i]]&&this.node[path[i]]!==net)x++;var d1=path[i]-path[i-1],d2=path[i+1]-path[i];if(d1!==d2)b++;}return {cross:x,bends:b};};
  Router.prototype.commit=function(net,path){for(var i=0;i<path.length;i++){var v=path[i];if(!this.node[v])this.node[v]=net;if(i){var u=path[i-1],e=Math.min(u,v);if(Math.abs(u-v)===1)this.hUse[e]=this.hUse[e]||net;else this.vUse[e]=this.vUse[e]||net;}}};
  function compress(points){var out=[];points.forEach(function(p){if(out.length&&out[out.length-1][0]===p[0]&&out[out.length-1][1]===p[1])return;if(out.length>=2){var a=out[out.length-2],b=out[out.length-1];if((a[0]===b[0]&&b[0]===p[0])||(a[1]===b[1]&&b[1]===p[1])){out[out.length-1]=p;return;}}out.push(p);});return out;}
 
@@ -6413,7 +6430,7 @@ function pJ(L,pan){const d=E(),I={},R={},T={};
   // (owner request), so stacked devices line up.
   var widths=rowsOut.map(function(row){return row.reduce(function(w,k,i){return w+devices.get(k).cellW+(i?G*10:0);},0);}),lead=Math.max.apply(null,rowsOut.map(function(row){return devices.get(row[0]).offset;}).concat([0]));
   var maxW=Math.max.apply(null,rowsOut.map(function(row,r){return lead-devices.get(row[0]).offset+widths[r];}).concat([400]));
-  rowsOut.forEach(function(row,r){var x=MARGIN+snap(lead-devices.get(row[0]).offset);row.forEach(function(k){var d=devices.get(k);d.cellX=x;d.x=x+d.offset;x+=d.cellW+G*10;});});
+  var LEFT=MARGIN+LEGEND_W;rowsOut.forEach(function(row,r){var x=LEFT+snap(lead-devices.get(row[0]).offset);row.forEach(function(k){var d=devices.get(k);d.cellX=x;d.x=x+d.offset;x+=d.cellW+G*10;});});
   // Channel sizes from the routes that use them, then vertical placement.
   var chan=rowsOut.map(function(){return 3;});chan.push(3);
   conns.forEach(function(c){if(c.ep!=null)return;[c.ta,c.tb].forEach(function(t){if(!t)return;var r=t.dev.row;chan[t.side==='top'?r:r+1]++;});var a=Math.min(c.A.row,c.B.row),b=Math.max(c.A.row,c.B.row);for(var r=a+1;r<=b;r++)chan[r]+=0.34;});chan=chan.map(Math.ceil);
@@ -6426,23 +6443,29 @@ function pJ(L,pan){const d=E(),I={},R={},T={};
    ds.forEach(function(d){d.y=y;d.epTopY=cursor;d.epBotY=epBot;});cursor=up9(bottom)+G*Math.min(chan[r+1],40);});
   // Hand edits: devices and endpoints moved in the editor (grid steps, kept on the page).
   var ed=view.edits||{};
-  if(ed.moves)devices.forEach(function(d){var m=ed.moves[d.key];if(!m)return;var dx=snap(m[0]),dy=snap(m[1]);if(d.x+dx<MARGIN)dx=snap(MARGIN-d.x);if(d.y+dy<TOP+BAND)dy=snap(TOP+BAND-d.y);d.x+=dx;d.cellX+=dx;d.y+=dy;d.epTopY+=dy;d.epBotY+=dy;});
+  if(ed.moves)devices.forEach(function(d){var m=ed.moves[d.key];if(!m)return;var dx=snap(m[0]),dy=snap(m[1]);if(d.x+dx<LEFT)dx=snap(LEFT-d.x);if(d.y+dy<TOP+BAND)dy=snap(TOP+BAND-d.y);d.x+=dx;d.cellX+=dx;d.y+=dy;d.epTopY+=dy;d.epBotY+=dy;});
   devices.forEach(function(d){d.top.concat(d.bot).forEach(function(e){e.ox=0;e.oy=0;var m=ed.eps&&ed.eps[epKey(d,e.a)];if(m){e.ox=snap(m[0]);e.oy=snap(m[1]);e.rx+=e.ox;}});});
   // Size only (to choose a row width that suits the paper).
   function portEdit(d,p){return ed.ports&&ed.ports[d.key+'|'+short(p||'')]||p;}
   function epY(d,e){return (e.side==='top'?d.epTopY:d.epBotY)+(e.oy||0);}
-  var rightEdge=Math.max.apply(null,Array.from(devices.values()).map(function(d){return Math.max(d.cellX+d.cellW,Math.max.apply(null,[0].concat(d.top.concat(d.bot).map(function(e){return d.x+e.rx+EP_W;}))));}));maxW=Math.max(maxW,rightEdge-MARGIN);
-  if(view.measure){var lb=Math.max.apply(null,Array.from(devices.values()).map(function(d){return Math.max.apply(null,[d.y+d.h+BAND].concat(d.top.concat(d.bot).map(function(e){return epY(d,e)+EP_H;})));}));var vl=view.vlansFor&&input.vlans&&input.vlans.get(view.vlansFor);return {w:MARGIN*2+maxW+G*16+(vl&&vl.length?320:0),h:lb+G*8};}
+  var rightEdge=Math.max.apply(null,Array.from(devices.values()).map(function(d){return Math.max(d.cellX+d.cellW,Math.max.apply(null,[0].concat(d.top.concat(d.bot).map(function(e){return d.x+e.rx+EP_W;}))));}));maxW=Math.max(maxW,rightEdge-LEFT);
+  if(view.measure){var lb=Math.max.apply(null,Array.from(devices.values()).map(function(d){return Math.max.apply(null,[d.y+d.h+BAND].concat(d.top.concat(d.bot).map(function(e){return epY(d,e)+EP_H;})));}));var vl=view.vlansFor&&input.vlans&&input.vlans.get(view.vlansFor);return {w:MARGIN*2+LEGEND_W+maxW+G*16+(vl&&vl.length?320:0),h:lb+G*8};}
   // Title and legend.
   if(view.kicker)page.text(MARGIN,16,1200,14,view.kicker.toUpperCase(),{size:9.5,bold:true,align:'left',color:'#1d5b79'});
   page.text(MARGIN,32,1400,30,page.title,{size:24,bold:true,align:'left',color:'#1b3a4b'});
   if(view.subtitle)page.text(MARGIN,64,1400,16,view.subtitle,{size:11,align:'left',color:'#4a5568'});
-  var legendRight=legendRow(page,MARGIN,94,['fiber','copper','wap','wan','other','slow'].filter(function(t){return used.has(t);}),style==='box'?Array.from(new Set(Array.from(devices.values()).map(function(d){return d.node.role;}))):null);
+  // Copper links and provider handoffs share the copper color: one legend entry for both.
+  var legendTypes=['fiber','copper','wap','wan','other','slow'].filter(function(t){return used.has(t);});if(legendTypes.indexOf('copper')>=0&&legendTypes.indexOf('wan')>=0)legendTypes=legendTypes.filter(function(t){return t!=='wan';});
+  var legendBottom=legendColumn(page,MARGIN,TOP,legendTypes,style==='box'?Array.from(new Set(Array.from(devices.values()).map(function(d){return d.node.role;}))):null),legendRight=MARGIN;
   // Devices, endpoints and summaries.
   devices.forEach(function(dev){page.begin(dev.key);if(style==='box')drawBox(page,dev);else{var u=new Map();usedPorts.forEach(function(color,k){if(k.indexOf(dev.key+'|')===0)u.set(k.slice(dev.key.length+1),color);});drawPlate(page,dev,u);}page.end();
    dev.top.concat(dev.bot).forEach(function(e){var x=dev.x+e.rx,y=epY(dev,e),a=e.a;page.begin(epKey(dev,a),'ep');
-    if(a.node.group){page.rect(x,y,EP_W,EP_H,{fill:'#eef8f0',stroke:ROLE_FILL.ap,width:1.5,radius:6});var pre=commonPrefix(a.ports);page.text(x+4,y+5,EP_W-8,46,clip('Ports '+ranges(a.ports,pre),20)+'\n'+a.node.name+'\n'+clip(a.node.model||'',22),{size:9,lineHeight:14,firstBold:true});page.end();return;}page.rect(x,y,EP_W,EP_H,{fill:a.node.role==='ap'?'#eef8f0':a.node.role==='circuit'?'#f5eefa':'#eef3f9',stroke:a.node.role==='ap'?ROLE_FILL.ap:a.node.role==='circuit'?ROLE_FILL.circuit:'#9aa9bd',width:1,radius:6});var est=input.stencils&&input.stencils.get(a.node.key);
+    // Styled after the reference drawing: grouped access points in a green summary box, other
+    // devices and provider handoffs in a pale box with a dark accent bar.
+    if(a.node.group){page.rect(x,y,EP_W,EP_H,{fill:'#86d9a4',stroke:'#2f9e5b',width:1});var pre=commonPrefix(a.ports);page.text(x+4,y+11,EP_W-8,40,clip(ranges(a.ports,pre),16)+'  |  '+a.ports.length+' APs\n'+clip(a.node.model||'',22),{size:9.5,lineHeight:16,firstBold:true,color:'#123524'});page.end();return;}
+    var plain=a.node.role!=='ap';page.rect(x,y,EP_W,EP_H,{fill:plain?'#e8eef5':'#eef8f0',stroke:plain?'#c9d3df':ROLE_FILL.ap,width:1,radius:plain?0:6});if(plain)page.rect(x,y,4,EP_H,{fill:'#1d3a5c',stroke:'none'});var est=input.stencils&&input.stencils.get(a.node.key);
     if(est&&est.art){var r=est.art.w/est.art.h,ih=44,iw=ih*r;if(iw>44){iw=44;ih=iw/r;}page.image(x+5+(44-iw)/2,y+5+(44-ih)/2,iw,ih,{art:est.art,master:est.master});page.text(x+52,y+5,EP_W-56,46,clip(short(portEdit(dev,a.port)),12)+'\n'+clip(a.node.name,13)+'\n'+clip(epIP(a.node)||a.node.model||'',14),{size:8.5,lineHeight:14,firstBold:true,align:'left'});}
+    else if(plain)page.text(x+12,y+9,EP_W-16,40,clip(a.node.name,19)+'\n'+clip(short(portEdit(dev,a.port)),9)+'  |  '+clip(epIP(a.node)||a.node.model||ROLE_LABEL[a.node.role]||'',14),{size:9,lineHeight:16,firstBold:true,align:'left',color:'#1b3a4b'});
     else page.text(x+4,y+5,EP_W-8,46,clip(short(portEdit(dev,a.port)),16)+'\n'+clip(a.node.name,20)+'\n'+clip(epIP(a.node)||a.node.model||ROLE_LABEL[a.node.role]||'',22),{size:9,lineHeight:14,firstBold:true});page.end();});
    // Grouped access points: a box in the access point color around the ports they use.
    (dev.eps||[]).forEach(function(a){if(!a.node.group||!a.ports||style!=='plate')return;var pts=a.ports.map(function(p){var sl=dev.slot(p||''),pos=dev.positions&&dev.positions[sl.key];return pos?[dev.x+pos.x,dev.y+pos.y]:[dev.x+sl.dx,dev.y+(sl.py!=null?sl.py:sl.row?51:21)];});if(!pts.length)return;
@@ -6459,8 +6482,8 @@ function pJ(L,pan){const d=E(),I={},R={},T={};
   conns.forEach(function(c){if(c.ep!=null)c.tb={dev:c.A,ep:c.ep,conn:c};});
   // Router over the whole page area.
   var lastBottom=Math.max.apply(null,Array.from(devices.values()).map(function(d){return Math.max.apply(null,[d.y+d.h+BAND].concat(d.top.concat(d.bot).map(function(e){return epY(d,e)+EP_H;})));}));
-  var RW=MARGIN*2+maxW+G*16,RH=lastBottom+G*8,router=new Router(RW,RH);
-  router.block(0,0,Math.max(legendRight,600),TOP-G);
+  var RW=MARGIN*2+LEGEND_W+maxW+G*16,RH=lastBottom+G*8,router=new Router(RW,RH);
+  router.block(0,0,Math.max(legendRight,600),TOP-G);router.block(0,0,LEFT-G*3,RH);
   var zoneId=0;devices.forEach(function(d){d.zone=++zoneId;var l=d.cellX,w=d.cellW;if(d.top.length)router.reserve(l,d.epTopY+EP_H+G,w,d.y-BAND-(d.epTopY+EP_H+G),d.zone);if(d.bot.length)router.reserve(l,d.y+d.h+BAND,w,d.epBotY-G-(d.y+d.h+BAND),d.zone);});
   devices.forEach(function(d){router.block(d.x-G,d.y-BAND+G,d.w+2*G,d.h+2*BAND-2*G);d.top.forEach(function(e){router.block(d.x+e.rx-G,epY(d,e)-G,EP_W+2*G,EP_H+G);});d.bot.forEach(function(e){router.block(d.x+e.rx-G,epY(d,e),EP_W+2*G,EP_H+G);});if(d.others)router.block(d.x+d.w+G,d.y+18,EP_W+G,36);});
   // A port reported with several neighbors becomes a trunk out of its stub with one
@@ -6468,16 +6491,25 @@ function pJ(L,pan){const d=E(),I={},R={},T={};
   conns.forEach(function(c){c.ga=geo(c.ta);c.gb=geo(c.tb);[c.ga,c.gb].forEach(function(g){var v=router.at(g.sx,g.sy);if(v>=0&&!router.term[v])router.term[v]=c.net;if(g.trunk){var m=router.at(g.sx,g.sy+(g.sy>g.py?-G:G));if(m>=0&&!router.term[m])router.term[m]=c.net;}});c.len=Math.abs(c.ga.sx-c.gb.sx)+Math.abs(c.ga.sy-c.gb.sy);
    c.groups=[portGroup(c.ta),portGroup(c.tb)].filter(Boolean);});
   function portGroup(t){var o=t&&(t.shared||t);return o&&o.slot&&o.shares?o.dev.key+'|'+o.slot.key:'';}
-  var lines=[];conns.slice().sort(function(a,b){return (b.ep!=null)-(a.ep!=null)||a.len-b.len;}).forEach(function(c){
-   var s=router.at(c.ga.sx,c.ga.sy),t=router.at(c.gb.sx,c.gb.sy),tDir=(c.gb.dir+2)&3;
-   var owner=c.ep!=null?c.A.zone:0,strict=s>=0&&t>=0?router.route(c.net,s,c.ga.dir,t,tDir,false,owner):null,path=strict||(s>=0&&t>=0?router.route(c.net,s,c.ga.dir,t,tDir,true,owner):null);
-   var pts;if(path){router.commit(c.net,path);pts=path.map(function(v){return [(v%router.C)*G,((v/router.C)|0)*G];});}else pts=[[c.ga.sx,c.ga.sy],[c.ga.sx,c.gb.sy],[c.gb.sx,c.gb.sy]];
+  var lines=[],order=conns.slice().sort(function(a,b){return (b.ep!=null)-(a.ep!=null)||a.len-b.len;});
+  function routeConn(c){var s=router.at(c.ga.sx,c.ga.sy),t=router.at(c.gb.sx,c.gb.sy),tDir=(c.gb.dir+2)&3,owner=c.ep!=null?c.A.zone:0,strict=s>=0&&t>=0?router.route(c.net,s,c.ga.dir,t,tDir,false,owner):null;return {strict:strict,path:strict||(s>=0&&t>=0?router.route(c.net,s,c.ga.dir,t,tDir,true,owner):null)};}
+  order.forEach(function(c){var r=routeConn(c);c.path=r.path;c.strictPath=r.strict;if(r.path)router.commit(c.net,r.path);});
+  // Lines avoid crossing (owner request): each line routed first could not see the ones
+  // after it, so every crossing line is routed again with all the others in place and keeps
+  // the new route whenever it crosses fewer lines (owner request: a line crosses another only
+  // when no route avoids it), or crosses as many with fewer bends.
+  var all=order.map(function(c){return {net:c.net,get path(){return c.path;}};});
+  order.forEach(function(c){if(!c.path)return;router.rebuild(all,c.net);var old=router.score(c.net,c.path);if(!old.cross)return;router.cross=CROSS_STRICT;var r=routeConn(c);router.cross=0;if(!r.path||(c.strictPath&&!r.strict))return;var now=router.score(c.net,r.path);
+   if(now.cross<old.cross||now.cross===old.cross&&now.bends<old.bends){c.path=r.path;c.strictPath=r.strict;}});
+  router.rebuild(all,0);
+  order.forEach(function(c){var path=c.path,strict=c.strictPath;
+   var pts;if(path){pts=path.map(function(v){return [(v%router.C)*G,((v/router.C)|0)*G];});}else pts=[[c.ga.sx,c.ga.sy],[c.ga.sx,c.gb.sy],[c.gb.sx,c.gb.sy]];
    var points=compress([[c.ga.px,c.ga.py]].concat(pts,[[c.gb.px,c.gb.py]]));
    // A stencil's port is rarely on the 9 px routing grid: the vertical stretch into it moves
    // onto the port itself, so the line meets the port's center.
    function onPort(t,first){if(!t||t.shared||!t.slot||t.slot.ex==null||t.slot.ex===t.slot.dx)return;var x0=t.dev.x+t.slot.dx,x1=t.dev.x+t.slot.ex,list=first?points:points.slice().reverse();if(list[0][0]!==x0)return;for(var k=0;k<list.length&&list[k][0]===x0;k++)list[k]=[x1,list[k][1]];if(!first)points=list.reverse();else points=list;}
    if(style==='plate'){onPort(c.ta,true);onPort(c.tb,false);}
-   lines.push({points:points,color:LINK_TYPES[c.type].color,width:c.type==='fiber'?3.5:style==='box'&&c.aPorts.length>1?4.5:3,conn:c,routed:!!path,strict:!!strict,groups:c.groups});});
+   lines.push({points:points,color:LINK_TYPES[c.type].color,width:c.type==='fiber'?2.5:style==='box'&&c.aPorts.length>1?3.5:2,conn:c,routed:!!path,strict:!!strict,groups:c.groups});});
   // Where a line crosses one drawn before it, its horizontal run hops over in a small arc.
   // Hand-drawn routes from the editor replace the computed one while both ends still meet
   // the same port points.
@@ -6501,6 +6533,8 @@ function pJ(L,pan){const d=E(),I={},R={},T={};
    if(fitLetter(below).raw>fitLetter(right).raw){var by=up9(ch-MARGIN+G);page.text(MARGIN,by,280,20,'VLANs',{size:13,bold:true,align:'left'});for(var ci=0;ci<cols;ci++){var part=list.slice(ci*rows,(ci+1)*rows);if(part.length)page.text(MARGIN+ci*300,by+26,290,part.length*17+4,part.join('\n'),{size:11,align:'left',lineHeight:17});}}
    else{var vx=up9(cw-MARGIN+G*2),col=list.slice(0,40);page.text(vx,TOP,280,20,'VLANs',{size:13,bold:true,align:'left'});page.text(vx,TOP+26,300,Math.max(20,col.length*17+4),col.join('\n')+(list.length>40?'\n+'+(list.length-40)+' more':''),{size:11,align:'left',lineHeight:17});}}
   page.text(page.w-MARGIN-400,16,400,14,(view.company?view.company+'  /  ':'')+'NETWORK DOCUMENTATION',{size:9.5,bold:true,align:'right',color:'#1d5b79'});
+  // The legend column ends at a thin rule down the page.
+  page.rect(MARGIN+LEGEND_W-27,TOP-G,1,Math.max(legendBottom,page.h-MARGIN-20)-TOP,{fill:'#d5dde7',stroke:'none'});
   if(view.footer)page.text(MARGIN,page.h-MARGIN+6,Math.max(400,page.w-2*MARGIN),14,view.footer,{size:9,align:'left',color:'#4a5568'});
   page.rect(MARGIN,84,page.w-2*MARGIN,1,{fill:'#c9d3df',stroke:'none'});
   page.lines=lines;page.devices=Array.from(devices.values()).map(function(d){return {key:d.key,name:d.node.name,x:d.x,y:d.y,w:d.w,h:d.h};});
@@ -6563,6 +6597,8 @@ function pJ(L,pan){const d=E(),I={},R={},T={};
  // configurations and supplementary data in input.docs; a page is left out when there is
  // nothing for it.
  var DOC_W=1056,DOC_H=816,DM=40,DOC_BOTTOM=DOC_H-56;
+ // The short number printed on a port: 1/1/41 -> 41, port3 -> 3, x3 stays x3.
+ function portNumber(n){var s=String(n||'').split('/').pop();return s.replace(/^(?:port|ethernet|eth|gi|te|ge)\s*/i,'')||s;}
  var PORT_ROLES={wired:{label:'Wired data / voice',fill:'#8d9bbd'},ap:{label:'Wireless access points',fill:'#7fd1a6'},uplink:{label:'Backbone / uplink',fill:'#a9d3e6'},trunk:{label:'Trunk',fill:'#c9b6e4'},routed:{label:'Routed',fill:'#f2c38b'},access:{label:'Default access',fill:'#dfe3e8'},unused:{label:'Not configured',fill:'#f4f5f7'},disabled:{label:'Disabled',fill:'#f4f5f7'}};
  function docPage(title,sub,o){var p=new Page(title);p.doc=true;p.lines=[];p.devices=[];p.subtitle=sub||'';
   p.text(DM,22,640,14,((o.company?o.company+'  /  ':'')+(o.title||'Site')).toUpperCase(),{size:9.5,bold:true,align:'left',color:'#1d5b79'});
@@ -6605,7 +6641,7 @@ function pJ(L,pan){const d=E(),I={},R={},T={};
   var groups=[];devs.filter(function(d){return /firewall|router/.test(d.role);}).forEach(function(d){groups.push([d]);});var sw=devs.filter(function(d){return !/firewall|router/.test(d.role);});for(var gi=0;gi<sw.length;gi+=2)groups.push(sw.slice(gi,gi+2));
   for(var start=0;start<groups.length;start++){var group=groups[start],flow=new Flow('Port map',group.map(function(d){return d.name;}).join(' and ')+': front panels, configured port roles and observed link state',o,out),used={},rowsByKey=new Map();
    group.forEach(function(d){var st=o.stencils&&o.stencils.get(d.key),dev=new Device({key:d.key,name:d.name,model:d.model,role:d.role,hw:d.hw,ips:d.ip?[d.ip]:[],stencil:st},d.ports.map(function(p){return p.name;}),[],'plate'),fills=new Map();
-    d.ports.forEach(function(p){var role=portRole(p),slot=d.hw&&dev.hw&&!dev.hw.portOf(p.name)?null:dev.slot(p.name);used[role]=true;if(slot&&slot.key)fills.set(slot.key,{fill:PORT_ROLES[role].fill,up:p.up!==false,stroke:'#3d4a5c'});
+    d.ports.forEach(function(p){var role=portRole(p),slot=d.hw&&dev.hw&&!dev.hw.portOf(p.name)?null:dev.slot(p.name);used[role]=true;if(slot&&slot.key)fills.set(slot.key,{fill:PORT_ROLES[role].fill,up:p.up!==false,stroke:'#3d4a5c',label:portNumber(p.name)});
      var detail=portDetail(p,role),k=role+'|'+detail;if(!rowsByKey.has(k))rowsByKey.set(k,{role:role,detail:detail,ports:{}});(rowsByKey.get(k).ports[d.key]=rowsByKey.get(k).ports[d.key]||[]).push(p.name);});
     dev.plates.forEach(function(pl){var ph=dev.h+40,pg=flow.need(ph+14);pg.text(DM,pg.y,560,20,d.name+(dev.plates.length>1?'  ·  member '+pl.member:''),{size:15,bold:true,align:'left',color:'#1b3a4b'});pg.text(DM+420,pg.y+3,DOC_W-2*DM-420,16,[d.model,upCount(d),d.ip].filter(Boolean).join('   |   '),{size:10,align:'right',color:'#4a5568'});
      var keep=pl.x;pl.x=0;var one=Object.create(dev);one.plates=[pl];one.x=DM;one.y=pg.y+26;one.w=pl.w;drawPlate(pg,one,null,fills);pl.x=keep;pg.y+=26+dev.h+18;});});
@@ -7231,7 +7267,7 @@ function pJ(L,pan){const d=E(),I={},R={},T={};
     return {compareText:compareText,compareMode:['records','text','fields'].includes(data.compareMode)?data.compareMode:'records',models:models.slice(0,data.count),model:data.selected<0?null:models[data.selected],comparison:data.comparison<0?null:models[data.comparison],view:typeof data.view==='string'?data.view:'overview',scope:typeof data.scope==='string'?data.scope:'',categoryTabs:data.categoryTabs&&typeof data.categoryTabs==='object'&&!Array.isArray(data.categoryTabs)?data.categoryTabs:{},showUnassigned:!!data.showUnassigned,showEmpty:!!data.showEmpty};
   }
   function create(options){
-    options=options||{};var bridge=options.bridge||root.chrome&&root.chrome.webview,native=!!(bridge&&typeof bridge.postMessage==='function'&&typeof bridge.addEventListener==='function'),state={current:'5.39.0',state:'idle',message:'',automatic:true,busy:false,ready:false,available:false},handlers={},restoring=false,installing=false;
+    options=options||{};var bridge=options.bridge||root.chrome&&root.chrome.webview,native=!!(bridge&&typeof bridge.postMessage==='function'&&typeof bridge.addEventListener==='function'),state={current:'5.40.0',state:'idle',message:'',automatic:true,busy:false,ready:false,available:false},handlers={},restoring=false,installing=false;
     var commands=['update-ui-ready','update-status','update-check','update-download','update-later','update-auto-on','update-auto-off','update-restored','update-restore-failed'];
     function request(command){if(!native)throw new Error('Built-in updates are available in the Windows desktop edition.');if(!commands.includes(command))throw new Error('Unknown update action.');bridge.postMessage(command);}
     if(native)bridge.addEventListener('message',async function(event){
@@ -8932,6 +8968,8 @@ function pJ(L,pan){const d=E(),I={},R={},T={};
   function routeTidy(r){var out=[];r.forEach(function(p){var q=out[out.length-1];if(!q||Math.abs(q[0]-p[0])>0.01||Math.abs(q[1]-p[1])>0.01)out.push([p[0],p[1]]);});
     for(var i=1;i<out.length-1;){var a=out[i-1],b=out[i],c=out[i+1];if(Math.abs(a[0]-b[0])<0.01&&Math.abs(b[0]-c[0])<0.01||Math.abs(a[1]-b[1])<0.01&&Math.abs(b[1]-c[1])<0.01){out.splice(i,1);i=Math.max(1,i-1);}else i++;}return out;}
   function snapTo(v,list,tol){var best=null,bd=tol;list.forEach(function(c){var d=Math.abs(c-v);if(d<=bd){bd=d;best=c;}});return best;}
+  // The link within a few screen pixels of a point (thin links are hard to hit zoomed out).
+  function nearLine(svg,pt){var tl0=editTol(svg),bestL=null,bdL=tl0;svg.querySelectorAll('polyline[data-line]').forEach(function(pl){var rr=parseRoute(pl.getAttribute('data-route'));for(var j=0;j<rr.length-1;j++){var a=rr[j],b=rr[j+1],dd=a[1]===b[1]?(pt.x>=Math.min(a[0],b[0])-tl0&&pt.x<=Math.max(a[0],b[0])+tl0?Math.abs(pt.y-a[1]):1e9):(pt.y>=Math.min(a[1],b[1])-tl0&&pt.y<=Math.max(a[1],b[1])+tl0?Math.abs(pt.x-a[0]):1e9);if(dd<=bdL){bdL=dd;bestL=pl;}}});return bestL;}
   function editTol(svg){var m=svg.getScreenCTM&&svg.getScreenCTM();return 8/(m&&m.a||1);}
   // A middle stretch moved across: snaps to another parallel stretch of the link, or the 9 px grid.
   function routeSegMove(route,i,dx,dy,tol,grid){var r=route.map(function(q){return q.slice();}),horiz=r[i][1]===r[i+1][1],axis=horiz?1:0,v=r[i][axis]+(horiz?dy:dx),others=[];
@@ -8946,7 +8984,7 @@ function pJ(L,pan){const d=E(),I={},R={},T={};
   onDoc('pointerdown',function(event){if(!state.diagramEditing||event.button!==0)return;var box=event.target.closest&&event.target.closest('.diagram-editing .diagram-scroll');if(!box)return;var svg=box.querySelector('svg.diagram-svg');if(!svg)return;
     var g=event.target.closest('[data-diagram-node],[data-diagram-ep]'),line=event.target.closest('polyline[data-line]');var start=svgPoint(svg,event);
     // Thin links are hard to hit when zoomed out: a press within a few pixels of one takes it.
-    if(!g&&!line){var tl0=editTol(svg),bestL=null,bdL=tl0;svg.querySelectorAll('polyline[data-line]').forEach(function(pl){var rr=parseRoute(pl.getAttribute('data-route'));for(var j=0;j<rr.length-1;j++){var a=rr[j],b=rr[j+1],dd=a[1]===b[1]?(start.x>=Math.min(a[0],b[0])-tl0&&start.x<=Math.max(a[0],b[0])+tl0?Math.abs(start.y-a[1]):1e9):(start.y>=Math.min(a[1],b[1])-tl0&&start.y<=Math.max(a[1],b[1])+tl0?Math.abs(start.x-a[0]):1e9);if(dd<=bdL){bdL=dd;bestL=pl;}}});line=bestL;}
+    if(!g&&!line)line=nearLine(svg,start);
     // On empty space a drag draws a selection box (the middle button still moves the view).
     if(!g&&!line){event.stopPropagation();event.preventDefault();editDrag={kind:'box',svg:svg,start:start,add:event.shiftKey||event.ctrlKey||event.metaKey,moved:false};return;}event.stopPropagation();event.preventDefault();
     if(line){var route=parseRoute(line.getAttribute('data-route')),best=-1,bd=1e9,tol=editTol(svg),lkey=line.getAttribute('data-line'),corner=-1;
@@ -8982,7 +9020,11 @@ function pJ(L,pan){const d=E(),I={},R={},T={};
   onDoc('click',function(event){if(!state.diagramEditing)return;var box=event.target.closest&&event.target.closest('.diagram-editing .diagram-scroll');if(!box)return;var g=event.target.closest('[data-diagram-node],[data-diagram-ep]');event.stopPropagation();event.preventDefault();
     if(Date.now()-(state.diagramBoxed||0)<400)return;if(!g&&!event.shiftKey){state.diagramSel=[];markDiagramSelection(el.content);renderContentBar();}},true);
   onDoc('contextmenu',function(event){if(state.diagramEditing&&event.target.closest&&event.target.closest('.diagram-editing .diagram-scroll')){event.stopPropagation();}},true);
+  // The browser's own right-click menu (Back, Reload, Print...) kept opening by accident: it
+  // is off everywhere except in text fields, where Copy and Paste are useful.
+  onDoc('contextmenu',function(event){var t=event.target;if(t&&t.closest&&t.closest('input,textarea,[contenteditable="true"],.allow-context-menu'))return;event.preventDefault();});
   onDoc('dblclick',function(event){if(!state.diagramEditing)return;var t=event.target.closest&&event.target.closest('.diagram-editing .diagram-scroll text[data-text], .diagram-editing .diagram-scroll polyline[data-line]');
+    if(!t&&!(event.target.closest&&event.target.closest('[data-diagram-node],[data-diagram-ep]'))){var bx=event.target.closest&&event.target.closest('.diagram-editing .diagram-scroll'),sv=bx&&bx.querySelector('svg.diagram-svg');if(sv)t=nearLine(sv,svgPoint(sv,event));}
     if(!t){var dn=event.target.closest&&event.target.closest('.diagram-editing .diagram-scroll [data-diagram-node]');if(dn&&dn.querySelector('svg')){event.preventDefault();event.stopPropagation();openStencilPoints(dn.getAttribute('data-diagram-node'));}return;}event.preventDefault();event.stopPropagation();
     if(t.tagName.toLowerCase()==='text'){var k=t.getAttribute('data-text'),now=t.textContent;var v=window.prompt('Label text (leave empty to hide it)',Array.from(t.querySelectorAll('tspan')).map(function(x){return x.textContent;}).join('\n')||now);if(v==null)return;saveDiagramEdits(function(e){(e.texts=e.texts||{})[k]=v;});return;}
     showLinkPorts(t.getAttribute('data-line'));},true);
@@ -9939,7 +9981,7 @@ function pJ(L,pan){const d=E(),I={},R={},T={};
     return '<div class="site-page">'+tabs+summary+panels[current]+'</div>';
   }
   // Kept current by scripts/version.py, which replaces the release string on each bump.
-  var APP_VERSION='5.39.0';
+  var APP_VERSION='5.40.0';
   // Client report: one section per open configuration. Port states use the same
   // classification as Interfaces at a glance, evaluated with each model active.
   function withModel(m,fn){var saved={model:state.model,usage:state.interfaceUsageCache,recordMap:state.recordMap};state.model=m;state.interfaceUsageCache=null;state.recordMap=new Map(m.records.map(function(r){return [r.id,r];}));try{return fn();}finally{state.model=saved.model;state.interfaceUsageCache=saved.usage;state.recordMap=saved.recordMap;}}
@@ -10582,7 +10624,7 @@ function pJ(L,pan){const d=E(),I={},R={},T={};
     }
   }
   function showHelp(){
-    openModal(modalHeader('About Config Inspector','Firewall and switch configuration explorer / version 5.39.0')+
+    openModal(modalHeader('About Config Inspector','Firewall and switch configuration explorer / version 5.40.0')+
       '<div class="modal-body"><div class="help-section"><h3>Open and explore</h3><p>Import SonicWall EXP, FortiGate FortiOS text, Palo Alto configuration XML, Sophos Firewall XML or export TAR, Aruba AOS or AOS-CX text, Cisco IOS or NX-OS text, Juniper Junos text or XML, Meraki API JSON, or a JSON snapshot exported by this application. The device type is detected automatically. You can also drop a file anywhere in the window. Select an interface or record for a plain-language explanation and key facts. Related objects show their IP addresses or service ports. Advanced details contains all original fields. Use Copy summary for readable facts and Back to return from a related item.</p></div>'+
       '<div class="help-section"><h3>Configuration sections</h3><p>Choose a root section in the sidebar, then select one of its indented subsections. Each subsection opens its own page. Routes, objects, members and other primary definitions appear before related settings. Security pages are grouped by function, including web, applications, files, intrusion prevention and SSL/TLS inspection. Certificate objects remain under Certificates. Empty subsections are hidden by default. Use View options to show empty sections, or Configuration sections and All original fields to inspect untranslated settings. Configuration context, search and table filters apply to the selected view.</p></div>'+
       '<div class="help-section"><h3>Choose access rule zones</h3><p>In Access Rules, choose From zone and To zone independently. All zones leaves that side unrestricted. Swap reverses the direction. Clear zone filters removes the pair while keeping the table filters. Search, configured state, and IP version filters combine with the pair, and CSV includes all matching rules. A matrix cell selects its zone pair. Interface and zone details offer outgoing and incoming rules.</p></div>'+
@@ -10838,7 +10880,7 @@ function configTree(it){
       // skip reading the stencil again.
       var parsedTag=typeof APP_VERSION!=='undefined'?APP_VERSION:'1';
       stencilLib.loading=rows.length;for(var i=0;i<rows.length;i++){await new Promise(function(r){setTimeout(r,i?0:30);});var row=await readRow(rows[i]);if(!row){stencilLib.loading=rows.length-i-1;continue;}
-        try{if(row.parsed&&row.parsedTag===parsedTag&&row.parsed.masters){stencilLib.files.push(row.parsed);}
+        try{if(row.parsed&&(row.pack||row.parsedTag===parsedTag)&&row.parsed.masters){stencilLib.files.push(row.parsed);}
           else{var parsed=await window.SWStencils.read(new Uint8Array(row.bytes),row.name);stencilLib.files.push(parsed);try{await stencilStore('readwrite',function(s){s.put(Object.assign({},row,{parsed:parsed,parsedTag:parsedTag}));});}catch(e){}}}catch(e){}
         stencilLib.loading=rows.length-i-1;}}catch(e){}
     stencilLib.loading=0;if(stencilLib.files.length){stencilLib.version++;if(state.view==='diagram')renderContent();}}
@@ -10848,6 +10890,34 @@ function configTree(it){
       stencilLib.files=stencilLib.files.filter(function(x){return x.file!==f.name;});stencilLib.files.push(st);added++;masters+=st.masters.length;
       try{await stencilStore('readwrite',function(s){s.put({name:f.name,bytes:bytes.buffer.slice(bytes.byteOffset,bytes.byteOffset+bytes.byteLength),added:Date.now()});});}catch(e){}}catch(e){if(e&&e.legacy)legacy.push(f.webkitRelativePath||f.name);else if(!(files.length>1&&/no (master|device) shapes/.test(e.message||'')))errors.push(e.message||String(e));}}
     stencilLib.version++;state.stencilLegacy=legacy;if(status)status.textContent='';if(added)toast('Added '+masters+' stencil shape'+(masters===1?'':'s')+' from '+added+' file'+(added===1?'':'s')+'.');if(errors.length)toast(errors.slice(0,3).join(' ')+(errors.length>3?' ('+(errors.length-3)+' more)':''));if(legacy.length&&!el.modal.open)toast(legacy.length+' stencil'+(legacy.length===1?'':'s')+' from Visio 2002 or earlier could not be read. Open Stencils for the list.');if(state.view==='diagram')renderContent();if(el.modal.open&&el.modal.querySelector('.stencil-dialog'))showStencils();}
+  // Hardware packs: the stencil shapes in use (their Visio master data and pictures), their
+  // port points and each device's choice, in one JSON file to carry to another computer.
+  var PACK_FORMAT='config-inspector-hardware-pack';
+  function packEncode(k,v){if(k&&k.charAt(0)==='_')return undefined;if(v instanceof Uint8Array)return {$b64:packB64(v)};if(v instanceof ArrayBuffer)return {$b64:packB64(new Uint8Array(v))};return v;}
+  function packB64(u){var s='',n=0x8000;for(var i=0;i<u.length;i+=n)s+=String.fromCharCode.apply(null,u.subarray(i,i+n));return btoa(s);}
+  function packDecode(k,v){if(v&&typeof v==='object'&&typeof v.$b64==='string'&&Object.keys(v).length===1){var b=atob(v.$b64),u=new Uint8Array(b.length);for(var i=0;i<b.length;i++)u[i]=b.charCodeAt(i);return u;}if(k==='__proto__'||k==='constructor'||k==='prototype')return undefined;return v;}
+  function saveHardwarePack(){var input=diagramInput();if(!input||!stencilLib.files.length){toast('Import stencils and open configurations first.');return;}
+    var used=new Map(),choices=stencilChoices(),picks={};input.layout.all.forEach(function(n){var m=stencilMaster(n);if(!m)return;used.set(masterKey(m),m);if(choices[n.key])picks[n.key]=choices[n.key];});
+    if(!used.size){toast('No device on this site is drawn with a stencil yet.');return;}
+    var byFile=new Map(),styles=new Map(stencilLib.files.map(function(f){return [f.file,f.styles||''];}));used.forEach(function(m){if(!byFile.has(m.file))byFile.set(m.file,[]);byFile.get(m.file).push(m);});
+    var points={},all=stencilPointsAll();used.forEach(function(m,k){if(all[k])points[k]=all[k];});
+    var pack={format:PACK_FORMAT,schema:1,app:typeof APP_VERSION!=='undefined'?APP_VERSION:'',site:diagramTitle(),created:new Date().toISOString(),files:Array.from(byFile.entries()).map(function(e){return {file:e[0],styles:styles.get(e[0])||'',masters:e[1]};}),points:points,choices:picks};
+    var text=JSON.stringify(pack,packEncode),name=(diagramTitle()||'site').replace(/[\\/:*?"<>|]+/g,'-').trim()+' hardware pack.json';download(text,name,'application/json');
+    toast('Saved a hardware pack with '+used.size+' shape'+(used.size===1?'':'s')+(Object.keys(points).length?' and their port points':'')+'.');}
+  async function importHardwarePack(file){var pack;try{if(file.size>200*1024*1024)throw new Error('too large');pack=JSON.parse(await file.text(),packDecode);}catch(e){toast('That file is not a hardware pack.');return;}
+    if(!pack||pack.format!==PACK_FORMAT||pack.schema!==1||!Array.isArray(pack.files)){toast('That file is not a Config Inspector hardware pack.');return;}
+    var added=0,have=new Set(allMasters().map(masterKey));
+    for(var i=0;i<pack.files.length;i++){var f=pack.files[i];if(!f||typeof f.file!=='string'||!Array.isArray(f.masters))continue;
+      var masters=f.masters.filter(function(m){return m&&typeof m.name==='string'&&m.file===f.file&&m.id!=null&&!have.has(masterKey(m))&&Array.isArray(m.connections)&&Array.isArray(m.pictures);});if(!masters.length)continue;
+      var name=f.file+' (hardware pack)',entry={file:name,masters:masters,styles:typeof f.styles==='string'?f.styles:''};stencilLib.files=stencilLib.files.filter(function(x){return x.file!==name;});stencilLib.files.push(entry);added+=masters.length;masters.forEach(function(m){have.add(masterKey(m));});
+      try{await stencilStore('readwrite',function(s){s.put({name:name,pack:true,parsed:entry,added:Date.now()});});}catch(e){}}
+    // Port points from the pack replace this computer's for the same shapes; device choices
+    // fill in only where none was made here.
+    var pts=pack.points&&typeof pack.points==='object'?pack.points:{},allP=stencilPointsAll(),np=0;Object.keys(pts).forEach(function(k){if(pts[k]&&typeof pts[k]==='object'){allP[k]=pts[k];np++;}});try{localStorage.setItem('config-inspector-stencil-points',JSON.stringify(allP));}catch(e){}
+    var ch=stencilChoices(),nc=0;Object.keys(pack.choices||{}).forEach(function(k){if(!ch[k]&&typeof pack.choices[k]==='string'){ch[k]=pack.choices[k];nc++;}});try{localStorage.setItem('config-inspector-stencil-choice',JSON.stringify(ch));}catch(e){}
+    stencilLib.version++;state.stencilPointsVersion=(state.stencilPointsVersion||0)+1;
+    toast(added||np||nc?'Hardware pack: '+added+' shape'+(added===1?'':'s')+' added, '+np+' with port points, '+nc+' device choice'+(nc===1?'':'s')+'.':'Everything in this hardware pack is already here.');
+    if(state.view==='diagram')renderKeepingView();if(el.modal.open&&el.modal.querySelector('.stencil-dialog'))showStencils();}
   async function removeStencilFile(name){stencilLib.files=stencilLib.files.filter(function(x){return x.file!==name;});stencilLib.version++;try{await stencilStore('readwrite',function(s){s.delete(name);});}catch(e){}if(state.view==='diagram')renderContent();showStencils();}
   // Shown on the diagram until vendor stencils are in use.
   function stencilNotice(page){
@@ -10900,23 +10970,33 @@ function configTree(it){
   function openStencilPoints(key){var input=diagramInput(),node=input&&input.layout.all.find(function(n){return n.key===key;}),st=node&&stencilFor(node);if(!st){toast('This device is not drawn with a stencil. Choose one under Stencils first.');return;}
     var ports=input.ports.get(key)||[],now=window.SWDiagram.stencilPorts(Object.assign({},node,{stencil:st}),ports),base=window.SWDiagram.stencilPorts(Object.assign({},node,{stencil:Object.assign({},st,{points:null})}),ports);if(!now||!now.items.length){toast('No ports to place on this stencil.');return;}
     var defs={};base.items.forEach(function(it){defs[it.k]=[it.fx,it.fy];});
-    state.spEdit={key:key,mkey:masterKey(st.master),name:node.name,master:st.master.name,art:st.art,ratio:now.ratio,items:now.items.map(function(it){return {k:it.k,label:it.label,name:it.name,fx:it.fx,fy:it.fy,exact:it.exact};}),defs:defs,sel:[],zoom:1};
+    state.spEdit={key:key,mkey:masterKey(st.master),name:node.name,master:st.master.name,art:st.art,ratio:now.ratio,items:now.items.map(function(it){return {k:it.k,label:it.label,name:it.name,fx:it.fx,fy:it.fy,exact:it.exact};}),defs:defs,sel:[],zoom:1,hist:[],fut:[]};
     openModal(modalHeader('Port points: '+node.name,st.master.name+' · where links meet each port')+'<div class="modal-body sp-body"><div class="sp-tools" role="toolbar" aria-label="Port point tools"><span class="pop-label sp-count"></span>'+
       [['row','Same height','Line up the selected points on the first one\'s height'],['col','Same column','Line up the selected points under the first one'],['hspread','Space across','Equal spacing from left to right'],['vspread','Space down','Equal spacing from top to bottom']].map(function(x){return '<button class="button small" data-sp-align="'+x[0]+'" title="'+h(x[2])+'">'+x[1]+'</button>';}).join('')+
-      '<span class="diagram-editbar-gap"></span><button class="button small" data-sp-all>Select all</button><button class="button small" data-sp-reset title="Put the selected points (or all) back where the stencil places them">Reset</button><button class="icon-button" data-sp-zoom="-1" aria-label="Zoom out">−</button><button class="icon-button" data-sp-zoom="1" aria-label="Zoom in">+</button></div>'+
-      '<div class="sp-canvas"></div><p class="live-note">Click a point to select it, Shift-click or drag a box to select several, then drag them or use the arrow keys (Shift for bigger steps). Points apply to every device drawn with this shape.</p></div><div class="modal-foot"><button class="button" data-action="close-modal">Cancel</button><button class="button primary" data-sp-save>Save port points</button></div>');
+      '<span class="diagram-editbar-gap"></span><button class="button small" data-sp-undo title="Undo the last port change (Ctrl+Z)">Undo</button><button class="button small" data-sp-redo title="Redo (Ctrl+Shift+Z)">Redo</button><button class="button small" data-sp-all>Select all</button><button class="button small" data-sp-reset title="Put the selected points (or all) back where the stencil places them">Reset</button><button class="icon-button" data-sp-zoom="-1" aria-label="Zoom out">−</button><button class="icon-button" data-sp-zoom="1" aria-label="Zoom in">+</button></div>'+
+      '<div class="sp-fields"><label class="diagram-field">Port <select class="select" data-sp-pick aria-label="Port to select"></select></label><label class="diagram-field">Across (%) <input class="select" type="number" step="0.01" min="0" max="100" data-sp-x></label><label class="diagram-field">Down (%) <input class="select" type="number" step="0.01" min="0" max="100" data-sp-y></label></div>'+
+      '<div class="sp-canvas"></div><p class="live-note">Click a point or choose it in the list to select it, Shift-click or drag a box to select several, then drag them or use the arrow keys (Shift for 10 px, Ctrl for 0.1 px). Points apply to every device drawn with this shape.</p></div><div class="modal-foot"><button class="button" data-action="close-modal">Cancel</button><button class="button primary" data-sp-save>Save port points</button></div>');
     el.modal.classList.add('wide-modal');var cw=el.modal.querySelector('.sp-canvas'),fitW=(cw&&cw.clientWidth||1000)-2*SP_MARGIN;state.spEdit.zoom=Math.max(1,Math.min(4,Math.round(150/(fitW/now.ratio)*2)/2));drawStencilPoints();}
   function drawStencilPoints(){var e=state.spEdit,box=el.modal.querySelector('.sp-canvas');if(!e||!box)return;var M=SP_MARGIN,W=Math.max(400,(box.clientWidth||1000)-2-2*M)*e.zoom,H=Math.max(40,W/e.ratio),sel=new Set(e.sel),r=Math.max(5,Math.min(9,H/14));
     box.innerHTML='<svg class="sp-svg" width="'+(W+2*M)+'" height="'+(H+2*M)+'" data-art-w="'+W+'" data-art-h="'+H+'" viewBox="0 0 '+(W+2*M)+' '+(H+2*M)+'"><rect width="'+(W+2*M)+'" height="'+(H+2*M)+'" fill="#f4f7fb"/><svg x="'+M+'" y="'+M+'" width="'+W+'" height="'+H+'" viewBox="0 0 '+e.art.w+' '+e.art.h+'" preserveAspectRatio="none">'+e.art.body+'</svg>'+
       e.items.map(function(it,i){var x=M+it.fx*W,y=M+it.fy*H,on=sel.has(it.k),moved=e.defs[it.k]&&(Math.abs(e.defs[it.k][0]-it.fx)>0.0005||Math.abs(e.defs[it.k][1]-it.fy)>0.0005);return '<g class="sp-pt'+(on?' selected':'')+'" data-sp="'+h(it.k)+'"><circle cx="'+x+'" cy="'+y+'" r="'+r+'" fill="'+(on?'#2f6fde':moved?'#d97706':'#ffffff')+'" fill-opacity="'+(on?0.85:0.7)+'" stroke="'+(on?'#1d4ed8':'#1f2937')+'" stroke-width="1.5"/><text x="'+x+'" y="'+(y-r-2)+'" font-size="'+Math.max(8,r*1.2)+'" text-anchor="middle" fill="#111827" paint-order="stroke" stroke="#ffffff" stroke-width="3">'+h(it.label)+'</text><title>'+h(it.name||it.label)+'</title></g>';}).join('')+'</svg>';
     var c=el.modal.querySelector('.sp-count');if(c)c.textContent=e.sel.length?e.sel.length+' selected':e.items.length+' ports';
-    el.modal.querySelectorAll('[data-sp-align]').forEach(function(b){b.disabled=e.sel.length<(/spread/.test(b.getAttribute('data-sp-align'))?3:2);});}
+    el.modal.querySelectorAll('[data-sp-align]').forEach(function(b){b.disabled=e.sel.length<(/spread/.test(b.getAttribute('data-sp-align'))?3:2);});
+    var pick=el.modal.querySelector('[data-sp-pick]'),one=e.sel.length===1?e.items.find(function(it){return it.k===e.sel[0];}):null;if(pick){if(!pick.options.length)pick.innerHTML='<option value="">'+(e.items.length)+' ports</option>'+e.items.map(function(it){return '<option value="'+h(it.k)+'">'+h(it.name||it.label)+'</option>';}).join('');pick.value=one?one.k:'';}
+    [['x','fx'],['y','fy']].forEach(function(a){var inp=el.modal.querySelector('[data-sp-'+a[0]+']');if(!inp)return;inp.disabled=!one;if(one&&document.activeElement!==inp)inp.value=(one[a[1]]*100).toFixed(2);if(!one)inp.value='';});
+    var u=el.modal.querySelector('[data-sp-undo]'),r2b=el.modal.querySelector('[data-sp-redo]');if(u)u.disabled=!e.hist.length;if(r2b)r2b.disabled=!e.fut.length;}
+  // Undo and redo inside the port point editor: snapshots of every point before a change.
+  function spSnap(e){e.hist.push(e.items.map(function(it){return [it.fx,it.fy];}));if(e.hist.length>200)e.hist.shift();e.fut=[];}
+  function spSwap(e,from,to){var snap=e[from].pop();if(!snap)return;e[to].push(e.items.map(function(it){return [it.fx,it.fy];}));e.items.forEach(function(it,i){it.fx=snap[i][0];it.fy=snap[i][1];});drawStencilPoints();}
   var spDrag=null,SP_MARGIN=28;
+  onDoc('change',function(event){var t=event.target,e=state.spEdit;if(!e||!t.hasAttribute)return;
+    if(t.hasAttribute('data-sp-pick')){e.sel=t.value?[t.value]:[];drawStencilPoints();return;}
+    var ax=t.hasAttribute('data-sp-x')?'fx':t.hasAttribute('data-sp-y')?'fy':'';if(!ax||e.sel.length!==1)return;var v=Number(t.value);if(!isFinite(v))return;var it=e.items.find(function(x){return x.k===e.sel[0];});if(!it)return;spSnap(e);it[ax]=Math.max(0,Math.min(1,v/100));drawStencilPoints();});
   // A pointer position on the editor canvas, in pixels of the artwork (W x H, inside the margin).
   function spPoint(svg,ev){var b=svg.getBoundingClientRect(),TW=Number(svg.getAttribute('width')),TH=Number(svg.getAttribute('height'));return {x:(ev.clientX-b.left)*TW/b.width-SP_MARGIN,y:(ev.clientY-b.top)*TH/b.height-SP_MARGIN,W:Number(svg.getAttribute('data-art-w')),H:Number(svg.getAttribute('data-art-h'))};}
   onDoc('pointerdown',function(event){var svg=event.target.closest&&event.target.closest('.sp-svg');if(!svg||!state.spEdit||event.button!==0)return;event.preventDefault();var e=state.spEdit,g=event.target.closest('[data-sp]'),p=spPoint(svg,event);
     if(g){var k=g.getAttribute('data-sp');if(event.shiftKey||event.ctrlKey||event.metaKey){e.sel=e.sel.indexOf(k)>=0?e.sel.filter(function(x){return x!==k;}):e.sel.concat([k]);drawStencilPoints();return;}if(e.sel.indexOf(k)<0)e.sel=[k];
-      spDrag={kind:'move',start:p,orig:e.items.filter(function(it){return e.sel.indexOf(it.k)>=0;}).map(function(it){return {it:it,fx:it.fx,fy:it.fy};})};drawStencilPoints();return;}
+      spSnap(e);spDrag={kind:'move',start:p,orig:e.items.filter(function(it){return e.sel.indexOf(it.k)>=0;}).map(function(it){return {it:it,fx:it.fx,fy:it.fy};})};drawStencilPoints();return;}
     spDrag={kind:'box',start:p,add:event.shiftKey||event.ctrlKey||event.metaKey};});
   onDoc('pointermove',function(event){if(!spDrag||!state.spEdit)return;var svg=el.modal.querySelector('.sp-svg');if(!svg)return;var p=spPoint(svg,event);
     if(spDrag.kind==='move'){var dx=(p.x-spDrag.start.x)/p.W,dy=(p.y-spDrag.start.y)/p.H;spDrag.orig.forEach(function(o){o.it.fx=Math.max(0,Math.min(1,o.fx+dx));o.it.fy=Math.max(0,Math.min(1,o.fy+dy));});drawStencilPoints();return;}
@@ -10925,14 +11005,17 @@ function configTree(it){
     if(!b||Math.abs(b.x-a.x)+Math.abs(b.y-a.y)<3){if(!d.add)e.sel=[];drawStencilPoints();return;}
     var x0=Math.min(a.x,b.x)/a.W,x1=Math.max(a.x,b.x)/a.W,y0=Math.min(a.y,b.y)/a.H,y1=Math.max(a.y,b.y)/a.H,hit=e.items.filter(function(it){return it.fx>=x0&&it.fx<=x1&&it.fy>=y0&&it.fy<=y1;}).map(function(it){return it.k;});
     e.sel=(d.add?e.sel:[]).concat(hit.filter(function(k){return !d.add||e.sel.indexOf(k)<0;}));drawStencilPoints();});
-  onDoc('keydown',function(event){var e=state.spEdit;if(!e||!el.modal.open||!el.modal.querySelector('.sp-svg')||!/^Arrow/.test(event.key)||!e.sel.length)return;event.preventDefault();var svg=el.modal.querySelector('.sp-svg'),W=Number(svg.getAttribute('data-art-w')),H=Number(svg.getAttribute('data-art-h')),st=event.shiftKey?10:1,dx=event.key==='ArrowLeft'?-st:event.key==='ArrowRight'?st:0,dy=event.key==='ArrowUp'?-st:event.key==='ArrowDown'?st:0;
+  onDoc('keydown',function(event){var e=state.spEdit;if(!e||!el.modal.open||!el.modal.querySelector('.sp-svg'))return;var ae=document.activeElement;if(ae&&/^(?:input|select|textarea)$/i.test(ae.tagName))return;
+    if((event.ctrlKey||event.metaKey)&&/^[zy]$/i.test(event.key)){event.preventDefault();if(/y/i.test(event.key)||event.shiftKey)spSwap(e,'fut','hist');else spSwap(e,'hist','fut');return;}
+    if(!/^Arrow/.test(event.key)||!e.sel.length)return;event.preventDefault();if(!event.repeat)spSnap(e);var svg=el.modal.querySelector('.sp-svg'),W=Number(svg.getAttribute('data-art-w')),H=Number(svg.getAttribute('data-art-h')),st=event.shiftKey?10:event.ctrlKey||event.metaKey?0.1:1,dx=event.key==='ArrowLeft'?-st:event.key==='ArrowRight'?st:0,dy=event.key==='ArrowUp'?-st:event.key==='ArrowDown'?st:0;
     e.items.forEach(function(it){if(e.sel.indexOf(it.k)<0)return;it.fx=Math.max(0,Math.min(1,it.fx+dx/W));it.fy=Math.max(0,Math.min(1,it.fy+dy/H));});drawStencilPoints();});
-  onDoc('click',function(event){var t=event.target.closest&&event.target.closest('[data-stencil-points],[data-sp-align],[data-sp-all],[data-sp-reset],[data-sp-zoom],[data-sp-save]');if(!t||t.disabled)return;
+  onDoc('click',function(event){var t=event.target.closest&&event.target.closest('[data-stencil-points],[data-sp-align],[data-sp-all],[data-sp-reset],[data-sp-zoom],[data-sp-save],[data-sp-undo],[data-sp-redo]');if(!t||t.disabled)return;
     if(t.hasAttribute('data-stencil-points')){openStencilPoints(t.getAttribute('data-stencil-points'));return;}var e=state.spEdit;if(!e)return;
+    if(t.hasAttribute('data-sp-undo')){spSwap(e,'hist','fut');return;}if(t.hasAttribute('data-sp-redo')){spSwap(e,'fut','hist');return;}
     if(t.hasAttribute('data-sp-all')){e.sel=e.items.map(function(it){return it.k;});drawStencilPoints();return;}
     if(t.hasAttribute('data-sp-zoom')){e.zoom=Math.max(1,Math.min(6,e.zoom+Number(t.getAttribute('data-sp-zoom'))));drawStencilPoints();return;}
-    if(t.hasAttribute('data-sp-reset')){e.items.forEach(function(it){if((!e.sel.length||e.sel.indexOf(it.k)>=0)&&e.defs[it.k]){it.fx=e.defs[it.k][0];it.fy=e.defs[it.k][1];}});drawStencilPoints();return;}
-    if(t.hasAttribute('data-sp-align')){var how=t.getAttribute('data-sp-align'),list=e.sel.map(function(k){return e.items.find(function(it){return it.k===k;});}).filter(Boolean);if(list.length<2)return;
+    if(t.hasAttribute('data-sp-reset')){spSnap(e);e.items.forEach(function(it){if((!e.sel.length||e.sel.indexOf(it.k)>=0)&&e.defs[it.k]){it.fx=e.defs[it.k][0];it.fy=e.defs[it.k][1];}});drawStencilPoints();return;}
+    if(t.hasAttribute('data-sp-align')){var how=t.getAttribute('data-sp-align'),list=e.sel.map(function(k){return e.items.find(function(it){return it.k===k;});}).filter(Boolean);if(list.length<2)return;spSnap(e);
       if(how==='row')list.forEach(function(it){it.fy=list[0].fy;});else if(how==='col')list.forEach(function(it){it.fx=list[0].fx;});
       else{var ax=how==='hspread'?'fx':'fy',sorted=list.slice().sort(function(a,b){return a[ax]-b[ax];}),lo=sorted[0][ax],hi=sorted[sorted.length-1][ax];sorted.forEach(function(it,i){it[ax]=lo+(hi-lo)*i/(sorted.length-1);});}
       drawStencilPoints();return;}
@@ -10948,11 +11031,11 @@ function configTree(it){
       return '<div class="site-link-row stencil-row" data-stencil-row="'+h(n.key)+'"><label class="stencil-device"><span><input type="checkbox" data-stencil-check="'+h(n.key)+'"'+((state.stencilSel||[]).indexOf(n.key)>=0?' checked':'')+'> <b>'+h(n.name)+'</b></span><span class="muted">'+h(n.model||n.role)+'</span></label><span class="stencil-row-tools">'+(cur!=='none'&&(auto||cur!=='auto')?'<button class="button small" data-stencil-points="'+h(n.key)+'" title="Place, select and align the points where links meet this stencil\'s ports">Port points</button>':'')+'<button class="button small stencil-choose" data-stencil-choose="'+h(n.key)+'" title="Choose a stencil file, then a shape in it">'+h(chosen)+'</button></span></div>';}).join('');
     rows='<div class="stencil-bulk"><button class="button small" data-stencil-choose-selected>Choose a shape for the selected devices</button><button class="button small" data-stencil-auto-selected>Automatic for the selected</button><button class="button small" data-stencil-none-selected>Drawn faceplates for the selected</button><span class="muted stencil-sel-count"></span></div>'+rows;
     openModal(modalHeader('Vendor stencils','Draw devices with your own Visio stencils')+'<div class="modal-body stencil-dialog"><p class="live-note">Devices are matched by part number or model; each linked port is placed on the stencil when its connection points fit the device\'s ports. Visio downloads include the vendor shapes. Stencils are kept in this app on this computer and are never sent anywhere. Vendors such as HPE Aruba, Cisco and Fortinet publish Visio stencils for their products.</p>'+
-      '<div class="stencil-actions"><button class="button primary small" data-action="stencil-import">'+icon('upload')+'Import stencil files</button><button class="button small" data-action="stencil-folder">'+icon('layers')+'Import a stencil folder</button><input type="file" id="stencil-file" accept=".vssx,.vsdx,.vstx,.vss,.vst" multiple hidden><input type="file" id="stencil-folder" webkitdirectory directory multiple hidden><span class="muted stencil-status" aria-live="polite"></span></div>'+(state.stencilLegacy&&state.stencilLegacy.length?'<div class="notice neutral">'+icon('alert')+'<span><b>'+state.stencilLegacy.length+' stencil'+(state.stencilLegacy.length===1?'':'s')+' from Visio 2002 or earlier not read.</b> Open each in a newer Visio and save it as a Visio stencil (.vssx or .vss), then import that: '+h(state.stencilLegacy.slice(0,12).join(', '))+(state.stencilLegacy.length>12?' and '+(state.stencilLegacy.length-12)+' more':'')+'</span></div>':'')+stencilTabs(nodes.length&&all.length?'<p class="live-note">Choose a shape for a device: pick a stencil file, then a shape in it, or search every file at once. Tick several devices to give them one shape. Front views are chosen automatically, and a stencil of another generation (FG-120F for a FortiGate-120G) is never used without your choice because its ports differ.</p>'+rows:'',files,nodes.length,stencilLib.files.length)+'</div><div class="modal-foot"><button class="button" data-action="close-modal">Close</button></div>');
+      '<div class="stencil-actions"><button class="button primary small" data-action="stencil-import">'+icon('upload')+'Import stencil files</button><button class="button small" data-action="stencil-folder">'+icon('layers')+'Import a stencil folder</button><button class="button small" data-action="stencil-pack-save" title="Save the shapes these devices use, with their port points and choices, to one file">'+icon('download')+'Save hardware pack</button><button class="button small" data-action="stencil-pack-open" title="Open a hardware pack saved on this or another computer">'+icon('upload')+'Import hardware pack</button><input type="file" id="stencil-pack" accept=".json" hidden><input type="file" id="stencil-file" accept=".vssx,.vsdx,.vstx,.vss,.vst" multiple hidden><input type="file" id="stencil-folder" webkitdirectory directory multiple hidden><span class="muted stencil-status" aria-live="polite"></span></div>'+(state.stencilLegacy&&state.stencilLegacy.length?'<div class="notice neutral">'+icon('alert')+'<span><b>'+state.stencilLegacy.length+' stencil'+(state.stencilLegacy.length===1?'':'s')+' from Visio 2002 or earlier not read.</b> Open each in a newer Visio and save it as a Visio stencil (.vssx or .vss), then import that: '+h(state.stencilLegacy.slice(0,12).join(', '))+(state.stencilLegacy.length>12?' and '+(state.stencilLegacy.length-12)+' more':'')+'</span></div>':'')+stencilTabs(nodes.length&&all.length?'<p class="live-note">Choose a shape for a device: pick a stencil file, then a shape in it, or search every file at once. Tick several devices to give them one shape. Front views are chosen automatically, and a stencil of another generation (FG-120F for a FortiGate-120G) is never used without your choice because its ports differ.</p>'+rows:'',files,nodes.length,stencilLib.files.length)+'</div><div class="modal-foot"><button class="button" data-action="close-modal">Close</button></div>');
   }
-  document.addEventListener('click',function(event){var t=event.target.closest&&event.target.closest('[data-action="diagram-stencils"],[data-action="stencil-import"],[data-action="stencil-folder"],[data-stencil-remove]');if(!t)return;
-    var act=t.getAttribute('data-action');if(act==='diagram-stencils')showStencils();else if(act==='stencil-import'||act==='stencil-folder'){var f=document.getElementById(act==='stencil-import'?'stencil-file':'stencil-folder');if(f)f.click();}else removeStencilFile(t.getAttribute('data-stencil-remove'));});
-  document.addEventListener('change',function(event){var t=event.target;if((t.id==='stencil-file'||t.id==='stencil-folder')&&t.files&&t.files.length){importStencils(Array.from(t.files));t.value='';}else if(t.hasAttribute&&t.hasAttribute('data-stencil-device')){var v=String(t.value||'').trim(),key=!v||/^automatic$/i.test(v)?'auto':/^drawn faceplate$/i.test(v)?'none':state.stencilLabels&&state.stencilLabels.get(v);if(!key){toast('Choose a shape from the list: type part of its model or part number, then pick it.');return;}setStencilChoice(t.getAttribute('data-stencil-device'),key);if(state.view==='diagram')renderContent();}});
+  document.addEventListener('click',function(event){var t=event.target.closest&&event.target.closest('[data-action="diagram-stencils"],[data-action="stencil-import"],[data-action="stencil-folder"],[data-action="stencil-pack-save"],[data-action="stencil-pack-open"],[data-stencil-remove]');if(!t)return;
+    var act=t.getAttribute('data-action');if(act==='stencil-pack-save'){saveHardwarePack();return;}if(act==='stencil-pack-open'){var pf=document.getElementById('stencil-pack');if(pf)pf.click();return;}if(act==='diagram-stencils')showStencils();else if(act==='stencil-import'||act==='stencil-folder'){var f=document.getElementById(act==='stencil-import'?'stencil-file':'stencil-folder');if(f)f.click();}else removeStencilFile(t.getAttribute('data-stencil-remove'));});
+  document.addEventListener('change',function(event){var t=event.target;if(t.id==='stencil-pack'&&t.files&&t.files.length){importHardwarePack(t.files[0]);t.value='';return;}if((t.id==='stencil-file'||t.id==='stencil-folder')&&t.files&&t.files.length){importStencils(Array.from(t.files));t.value='';}else if(t.hasAttribute&&t.hasAttribute('data-stencil-device')){var v=String(t.value||'').trim(),key=!v||/^automatic$/i.test(v)?'auto':/^drawn faceplate$/i.test(v)?'none':state.stencilLabels&&state.stencilLabels.get(v);if(!key){toast('Choose a shape from the list: type part of its model or part number, then pick it.');return;}setStencilChoice(t.getAttribute('data-stencil-device'),key);if(state.view==='diagram')renderContent();}});
   if(window.SWStencils){var startStencils=function(){loadStencils();};if(typeof requestIdleCallback==='function')requestIdleCallback(startStencils,{timeout:3000});else setTimeout(startStencils,1500);}
   function siteMapBox(){return el.content.querySelector('.site-map-scroll');}
   // Zoom for the site map and the network diagram (each keeps its own level).
