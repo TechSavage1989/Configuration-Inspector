@@ -32,6 +32,7 @@ const {stencil,unzip,vss}=require('./stencil-writer.cjs');
  ok(T.layout(sw,24,4)===null,'no port map when the counts do not fit');
  ok(T.layout(sw,4,2)&&T.layout(sw,4,2).main.length===8,'known ports that fit a block use it');
  const art=T.artwork(sw);ok(art&&art.body.includes('data:image/png;base64,'),'PNG artwork');
+ {const {emfFile}=require('./stencil-writer.cjs'),c=T.emf(emfFile('clip'));ok(c&&/<clipPath id="[^"]+"><path d="M/.test(c.body)&&/<g clip-path="url\(#/.test(c.body)&&!/<rect /.test(c.body),'a clip path limits what follows, and a no-op BitBlt paints nothing: '+(c&&c.body.slice(0,160)));}
  {const {emfFile}=require('./stencil-writer.cjs');ok(T.emf(emfFile())&&!T.emf(emfFile()).partial&&T.emf(emfFile('gradient')).partial,'a picture with records the app cannot draw (a gradient fill) is marked partial, so it is not used automatically');}
  const apArt=T.artwork(ap);ok(apArt&&/<path d="M[^"]+" fill="#123456"/.test(apArt.body),'EMF artwork: '+(apArt&&apArt.body.slice(0,160)));
  // A diagram that uses the stencil.

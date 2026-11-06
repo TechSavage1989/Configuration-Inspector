@@ -14,8 +14,10 @@ function emfFile(extra){const recs=[];const rec=(type,body)=>{const b=Buffer.all
  const head=Buffer.alloc(100);head.writeInt32LE(0,0);head.writeInt32LE(0,4);head.writeInt32LE(99,8);head.writeInt32LE(49,12);head.writeUInt32LE(0x464D4520,32);rec(1,head.subarray(0,80));
  const br=Buffer.alloc(16);br.writeUInt32LE(1,0);br.writeUInt32LE(0,4);br[8]=0x12;br[9]=0x34;br[10]=0x56;rec(39,br);
  const sel=Buffer.alloc(4);sel.writeUInt32LE(1,0);rec(37,sel);
+ if(extra==='clip'){rec(59,Buffer.alloc(0));const rc=Buffer.alloc(16);rc.writeInt32LE(10,0);rc.writeInt32LE(10,4);rc.writeInt32LE(60,8);rc.writeInt32LE(40,12);rec(43,rc);rec(60,Buffer.alloc(0));const m=Buffer.alloc(4);m.writeUInt32LE(5,0);rec(67,m);}
  const pg=Buffer.alloc(16+4+12);pg.writeUInt32LE(3,16);[[0,0],[99,0],[50,49]].forEach((p,i)=>{pg.writeInt16LE(p[0],20+i*4);pg.writeInt16LE(p[1],22+i*4);});rec(86,pg);
  if(extra==='gradient')rec(118,Buffer.alloc(40));
+ if(extra==='clip'){const bb=Buffer.alloc(92);bb.writeInt32LE(0,16);bb.writeInt32LE(0,20);bb.writeInt32LE(99,24);bb.writeInt32LE(49,28);bb.writeUInt32LE(0x00AA0029,32);rec(76,bb);}
  rec(14,Buffer.alloc(12));const all=Buffer.concat(recs);all.writeUInt32LE(all.length,48);return all;}
 // A stencil with one 8-port switch (2 SFP uplinks) whose ports carry connection points,
 // and one access point.
