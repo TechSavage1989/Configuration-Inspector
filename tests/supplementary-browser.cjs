@@ -33,8 +33,21 @@ const file=(name,buffer,type)=>({name,mimeType:type||'text/plain',buffer:Buffer.
   const own=await page.evaluate(()=>{const d=document.querySelector('.site-map-detail'),c=document.getElementById('content');return {overflow:getComputedStyle(d).overflowY,scrollable:d.scrollHeight>d.clientHeight,panel:d.scrollTop,page:c.scrollTop,fits:d.getBoundingClientRect().height<=c.clientHeight};});
   ok(own.overflow==='auto'&&own.scrollable&&own.panel>0&&own.page===0&&own.fits,'the site map device panel scrolls on its own without moving the page: '+JSON.stringify(own));
   await page.setViewportSize({width:1440,height:900});await page.waitForTimeout(200);
+  const fits=await page.evaluate(()=>{const c=document.getElementById('content');return {scroll:c.scrollHeight,client:c.clientHeight};});
+  ok(fits.scroll<=fits.client+1,'the site map page fits the window, so only the device panel scrolls: '+JSON.stringify(fits));
+  await page.locator('.site-map-detail [data-sitemap-node=""]').click();await page.waitForTimeout(300);
+  const fits2=await page.evaluate(()=>{const c=document.getElementById('content');return {scroll:c.scrollHeight,client:c.clientHeight};});
+  ok(fits2.scroll<=fits2.client+1,'and without the device panel: '+JSON.stringify(fits2));
+  await page.locator('.site-node').filter({hasText:'EXAMPLE-CORE'}).click();await page.locator('.site-map-detail').waitFor();
   await page.locator('.site-map-detail [data-sitemap-node="exampleaccess2"]').click();ok((await page.locator('.site-map-detail .panel-title').first().innerText()).includes('EXAMPLE-ACCESS2'),'connections link to the neighboring device');
   await page.locator('#sitemap-query').fill('access3');ok(await page.locator('.site-node.match').count()===1&&await page.locator('.site-node.dim').count()===4,'find a device');await page.locator('#sitemap-query').fill('');
+  // Clicking a link between two devices shows that connection.
+  await page.locator('[data-sitemap-edge="edge:examplecore~examplefw1"] path.edge-hit').click({force:true});await page.waitForTimeout(300);
+  const conn=await page.locator('.site-map-detail').innerText();
+  ok(/EXAMPLE-CORE ↔ EXAMPLE-FW1/.test(conn)&&conn.includes('TenGigabitEthernet1/0/1')&&conn.includes('port1')&&conn.includes('00:00:5e:00:53:11')&&conn.includes('10 Gb/s'),'a link opens its connection details with both ports: '+conn);
+  ok(await page.locator('.site-edge.selected[data-sitemap-edge="edge:examplecore~examplefw1"]').count()===1,'the selected link is highlighted');
+  ok(await page.evaluate(()=>{const c=document.getElementById('content');return c.scrollHeight<=c.clientHeight+1;}),'the page still fits the window with a connection open');
+  await page.locator('.site-map-detail [data-sitemap-node="examplefw1"]').click();await page.waitForTimeout(300);ok((await page.locator('.site-map-detail .panel-title').innerText())==='EXAMPLE-FW1','from a connection to one of its devices');
   // Zoom with the buttons and the mouse wheel, and drag to move the map.
   await page.locator('[data-sitemap-node=""]').first().click().catch(()=>{});await page.waitForTimeout(200);
   const w0=Number(await page.locator('svg.site-map').getAttribute('width'));

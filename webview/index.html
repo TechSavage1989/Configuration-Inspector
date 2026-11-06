@@ -798,10 +798,11 @@ td .copy-value-icon{margin-left:4px}
 .legend-item{display:inline-flex;align-items:center;gap:6px}.legend-item i{width:10px;height:10px;border-radius:3px;background:var(--muted)}
 .site-map-panel .live-note{padding:0 16px}
 .site-map-viewport{position:relative;border-top:1px solid var(--line)}
-.site-map-scroll{overflow:hidden;height:clamp(360px,calc(100vh - 340px),1600px);background:var(--bg);cursor:grab;touch-action:none;user-select:none}.site-map-scroll.dragging{cursor:grabbing}
+.site-map-scroll{overflow:hidden;height:clamp(300px,calc(100vh - 340px),1600px);background:var(--bg);cursor:grab;touch-action:none;user-select:none}.site-map-scroll.dragging{cursor:grabbing}
 .site-map-zoom{position:absolute;top:10px;right:12px;z-index:3;display:flex;align-items:center;gap:6px;padding:4px 6px;border:1px solid var(--line);border-radius:9px;background:var(--theme-surface-ffffff,var(--paper));box-shadow:var(--shadow)}.site-map-zoom .icon-button{font-size:16px;line-height:1;width:28px;height:28px}.zoom-level{min-width:42px;text-align:center;font-size:11px;color:var(--muted)}
 .site-map{display:block;font-family:inherit}
 .site-edge path{fill:none;stroke:var(--muted);stroke-width:1.6;opacity:.55}
+.site-edge{cursor:pointer}.site-edge path.edge-hit{stroke:transparent!important;stroke-width:14!important;opacity:1!important}.site-edge:hover path:not(.edge-hit),.site-edge:focus-visible path:not(.edge-hit){stroke:var(--accent);opacity:.9}.site-edge.selected .edge-hit{stroke:transparent}
 .site-edge.multi path{stroke-width:3}
 .site-edge.selected path{stroke:var(--accent);opacity:1;stroke-width:2.4}
 .site-edge.dim{opacity:.2}
@@ -932,7 +933,7 @@ body{font-size:14px}.brand-mark{background:linear-gradient(145deg,#287dc6,#15578
       <div id="page-heading"></div>
       <div id="workspace-tabs"></div><div id="workspace-notice"></div>
       <div id="content"></div>
-      <footer class="page-footer"><span id="version-label">Config Inspector 5.29.0</span></footer>
+      <footer class="page-footer"><span id="version-label">Config Inspector 5.29.1</span></footer>
     </main>
   </div>
   <input type="file" id="import-file" multiple accept=".exp,.txt,.json,.conf,.cfg,.xml,.tar,.set,.log,.backup,.rsc,.xlsx,.csv" hidden>
@@ -6081,7 +6082,7 @@ function pJ(L,pan){const d=E(),I={},R={},T={};
     return {compareText:compareText,compareMode:['records','text','fields'].includes(data.compareMode)?data.compareMode:'records',models:models.slice(0,data.count),model:data.selected<0?null:models[data.selected],comparison:data.comparison<0?null:models[data.comparison],view:typeof data.view==='string'?data.view:'overview',scope:typeof data.scope==='string'?data.scope:'',categoryTabs:data.categoryTabs&&typeof data.categoryTabs==='object'&&!Array.isArray(data.categoryTabs)?data.categoryTabs:{},showUnassigned:!!data.showUnassigned,showEmpty:!!data.showEmpty};
   }
   function create(options){
-    options=options||{};var bridge=options.bridge||root.chrome&&root.chrome.webview,native=!!(bridge&&typeof bridge.postMessage==='function'&&typeof bridge.addEventListener==='function'),state={current:'5.29.0',state:'idle',message:'',automatic:true,busy:false,ready:false,available:false},handlers={},restoring=false,installing=false;
+    options=options||{};var bridge=options.bridge||root.chrome&&root.chrome.webview,native=!!(bridge&&typeof bridge.postMessage==='function'&&typeof bridge.addEventListener==='function'),state={current:'5.29.1',state:'idle',message:'',automatic:true,busy:false,ready:false,available:false},handlers={},restoring=false,installing=false;
     var commands=['update-ui-ready','update-status','update-check','update-download','update-later','update-auto-on','update-auto-off','update-restored','update-restore-failed'];
     function request(command){if(!native)throw new Error('Built-in updates are available in the Windows desktop edition.');if(!commands.includes(command))throw new Error('Unknown update action.');bridge.postMessage(command);}
     if(native)bridge.addEventListener('message',async function(event){
@@ -6963,11 +6964,21 @@ function pJ(L,pan){const d=E(),I={},R={},T={};
   // first, then each panel's title row and toolbars, then its table column headings.
   // (Pages with their own table scroll area already keep their toolbar and headings.)
   var PAGE_BARS='.evidence-tabs,.findings-toolbar',PANEL_HEADS='.panel-head,.toolbar,.map-collapse-all';
+  // The site map page fits the window: the map frame and the device panel take the
+  // remaining height so the page itself never scrolls (the panel scrolls on its own).
+  function fitSiteMapToWindow(root){
+    var box=root.querySelector('.site-map-page .site-map-scroll'),side=root.querySelector('.site-map-page.with-detail .site-map-detail');if(!box&&!side)return;
+    var top=root.getBoundingClientRect().top,pad=parseFloat(getComputedStyle(root).paddingBottom)||0;
+    if(box){box.style.height='';var h=Math.max(300,root.clientHeight-(box.getBoundingClientRect().top-top+root.scrollTop)-pad);box.style.height=h+'px';var over=root.scrollHeight-root.clientHeight;if(over>0)box.style.height=Math.max(300,h-over)+'px';}
+    if(side){side.style.maxHeight='';var sh=Math.max(240,root.clientHeight-(side.getBoundingClientRect().top-top+root.scrollTop)-pad);side.style.maxHeight=sh+'px';var extra=root.scrollHeight-root.clientHeight;if(extra>0)side.style.maxHeight=Math.max(240,sh-extra)+'px';}
+    for(var pass=0;pass<3;pass++){var more=root.scrollHeight-root.clientHeight;if(more<=0)break;if(box)box.style.height=Math.max(300,parseFloat(box.style.height)-more)+'px';if(side)side.style.maxHeight=Math.max(240,parseFloat(side.style.maxHeight)-more)+'px';}
+    if(root.scrollHeight<=root.clientHeight)root.scrollTop=0;
+  }
   function pinHeaders(){
     var root=el.content;if(!root||!root.querySelectorAll||typeof getComputedStyle!=='function')return;
     root.querySelectorAll('[data-pinned]').forEach(function(x){x.style.position='';x.style.top='';x.style.zIndex='';x.removeAttribute('data-pinned');});
     root.querySelectorAll('[data-unclipped]').forEach(function(x){x.style.overflow='';x.removeAttribute('data-unclipped');});
-    var side=root.querySelector('.site-map-page.with-detail .site-map-detail');if(side)side.style.maxHeight=Math.max(240,root.clientHeight-8)+'px';
+    fitSiteMapToWindow(root);
     if(root.classList.contains('list-view')||state.view==='compare')return;
     function scrollsBetween(node,stop){for(var n=node.parentElement;n&&n!==stop;n=n.parentElement){var o=getComputedStyle(n).overflowY;if(o==='auto'||o==='scroll'||o==='hidden')return true;}return false;}
     function pin(node,top,z){node.style.position='sticky';node.style.top=top+'px';node.style.zIndex=z;node.setAttribute('data-pinned','true');}
@@ -7597,11 +7608,11 @@ function pJ(L,pan){const d=E(),I={},R={},T={};
       var x1=top.x+top.w/2,y1=top.y+top.h,x2=bottom.x+bottom.w/2,y2=bottom.y,same=Math.abs(top.y-bottom.y)<2,path;
       if(same){var left=a.x<b.x?a:b,right=left===a?b:a;x1=left.x+left.w;y1=left.y+left.h/2;x2=right.x;y2=right.y+right.h/2;path='M'+x1+' '+y1+' C'+(x1+40)+' '+(y1+50)+' '+(x2-40)+' '+(y2+50)+' '+x2+' '+y2;}
       else path='M'+x1+' '+y1+' C'+x1+' '+(y1+(y2-y1)*0.5)+' '+x2+' '+(y1+(y2-y1)*0.5)+' '+x2+' '+y2;
-      var dim=q&&!(a.name.toLowerCase().includes(q)||b.name.toLowerCase().includes(q)),selected=state.siteMapSelected&&(state.siteMapSelected===a.key||state.siteMapSelected===b.key);
+      var dim=q&&!(a.name.toLowerCase().includes(q)||b.name.toLowerCase().includes(q)),edgeKey='edge:'+e.a+'~'+e.b,selected=state.siteMapSelected&&(state.siteMapSelected===a.key||state.siteMapSelected===b.key||state.siteMapSelected===edgeKey);
       var title=e.ports.map(function(p,i){return (top===a?a.name:b.name)+' '+(ports[i].top||'?')+' ↔ '+(top===a?b.name:a.name)+' '+(ports[i].bottom||'?')+' ('+p.source+')';}).join('\n');
       var pair=ports.map(function(p){return [shortPort(p.top),shortPort(p.bottom)];}).filter(function(x){return x[0]||x[1];}),text=pair.map(function(x){return (x[0]||'?')+' ↔ '+(x[1]||'?');}),label=text.slice(0,2).join(', ')+(text.length>2?' +'+(text.length-2):'');if(label.length>30)label=label.slice(0,29)+'…';
       var lx=x2+(x1-x2)*0.14,ly=y2-9;
-      return '<g class="site-edge'+(dim?' dim':'')+(selected?' selected':'')+(e.ports.length>1?' multi':'')+'"><title>'+h(title)+'</title><path d="'+path+'"/>'+(!same&&label?'<text class="port-label" text-anchor="middle" x="'+lx+'" y="'+ly+'">'+h(label)+'</text>':'')+(e.ports.length>1&&!same?'<text class="link-count" x="'+((x1+x2)/2+6)+'" y="'+((y1+y2)/2)+'">×'+e.ports.length+'</text>':'')+'</g>';}).join('');
+      return '<g class="site-edge'+(dim?' dim':'')+(selected?' selected':'')+(e.ports.length>1?' multi':'')+'" data-sitemap-edge="'+h(edgeKey)+'" role="button" tabindex="0" aria-label="'+h('Connection '+a.name+' to '+b.name)+'"><title>'+h(title+'\nClick for connection details')+'</title><path class="edge-hit" d="'+path+'"/><path d="'+path+'"/>'+(!same&&label?'<text class="port-label" text-anchor="middle" x="'+lx+'" y="'+ly+'">'+h(label)+'</text>':'')+(e.ports.length>1&&!same?'<text class="link-count" x="'+((x1+x2)/2+6)+'" y="'+((y1+y2)/2)+'">×'+e.ports.length+'</text>':'')+'</g>';}).join('');
     var nodes=map.nodes.map(function(n){var match=q&&(n.name.toLowerCase().includes(q)||(n.model||'').toLowerCase().includes(q)||n.ips.some(function(ip){return ip.includes(q);})),dim=q&&!match,aps=n.attached.filter(function(a){return a.role==='ap';}).length,others=n.attached.length-aps;
       var sub=[n.model||roleLabel[n.role],n.ips[0]||''].filter(Boolean).join(' · '),extra=[aps?aps+' AP'+(aps>1?'s':''):'',others?others+' device'+(others>1?'s':''):''].filter(Boolean).join(' · ');
       var small=n.role==='ap';
@@ -7613,9 +7624,22 @@ function pJ(L,pan){const d=E(),I={},R={},T={};
     return '<div class="site-map-page'+(detail?' with-detail':'')+'"><section class="panel site-map-panel"><div class="panel-head"><h2 class="panel-title">Site map <span class="panel-count">'+linked+' linked devices · '+map.edges.length+' connections</span></h2><div class="site-map-tools"><label class="table-search">'+icon('search')+'<input id="sitemap-query" type="search" value="'+h(state.siteMapQuery||'')+'" placeholder="Find a device..." aria-label="Find a device on the site map" autocomplete="off"></label><label class="check-row inline"><input type="checkbox" id="sitemap-access"'+(state.siteMapAccess?' checked':'')+'><span>Show access points</span></label></div></div>'+legend+
       '<p class="live-note">Built from LLDP / CDP neighbors and monitoring exports. Scroll to zoom and drag to move the map. Click a device for its connections; double-click a device marked Config to open its configuration.</p><div class="site-map-viewport"><div class="site-map-zoom" role="group" aria-label="Zoom"><button class="icon-button" data-sitemap-zoom="out" aria-label="Zoom out" title="Zoom out">−</button><span class="zoom-level" aria-live="polite">'+Math.round((state.siteMapZoom||1)*100)+'%</span><button class="icon-button" data-sitemap-zoom="in" aria-label="Zoom in" title="Zoom in">+</button><button class="button small" data-sitemap-zoom="fit" title="Fit the whole map">Fit</button><button class="button small" data-sitemap-zoom="reset" title="Actual size">100%</button></div><div class="site-map-scroll" title="Scroll to zoom, drag to move"><svg class="site-map" data-w="'+map.width+'" data-h="'+map.height+'" width="'+Math.round(map.width*(state.siteMapZoom||1))+'" height="'+Math.round(map.height*(state.siteMapZoom||1))+'" viewBox="0 0 '+map.width+' '+map.height+'" role="img" aria-label="Site map with '+map.nodes.length+' devices">'+(map.isolatedTop!=null?'<text class="isolated-label" x="24" y="'+(map.isolatedTop-10)+'">Not linked in the imported data</text>':'')+'<g class="edges">'+edges+'</g><g class="nodes">'+nodes+'</g></svg></div></div></section>'+detail+'</div>';
   }
+  // Connection panel: both ends of every link between two devices, with what the
+  // imported data says about each port.
+  function evidencePort(device,port){var X=SE(),dk=X.deviceKey(device),pk=X.interfaceKey(port),found=null;if(!pk)return null;evidenceSets.forEach(function(s){s.ev.interfaces.forEach(function(i){if(!found&&X.deviceKey(i.device)===dk&&X.interfaceKey(i.name)===pk)found=i;});});return found;}
+  function siteMapEdgeDetail(map,key){
+    var pair=key.slice(5).split('~'),a=map.all.find(function(x){return x.key===pair[0];}),b=map.all.find(function(x){return x.key===pair[1];});if(!a||!b)return '';
+    var roleLabel={firewall:'Firewall',router:'Router',switch:'Switch',controller:'Controller',ap:'Access point',endpoint:'Device'};
+    var links=a.links.filter(function(l){return (l.a===a.key&&l.b===b.key)||(l.a===b.key&&l.b===a.key);}).map(function(l){var fromA=l.a===a.key;return {aPort:fromA?l.aPort:l.bPort,bPort:fromA?l.bPort:l.aPort,source:l.source};});
+    function portFacts(device,port){var i=port?evidencePort(device,port):null;if(!i)return '';var link=liveLink(i);return [link?'Link '+link.toLowerCase():'',i.speed,i.description,i.mac,(i.vlans||[]).length?'VLANs '+i.vlans.map(function(v){return v.id;}).join(', '):''].filter(Boolean).join(' · ');}
+    function end(n){var open=n.open>=0;return '<div class="device-info-row"><span>'+h(roleLabel[n.role])+'</span><strong><button class="table-link" data-sitemap-node="'+h(n.key)+'">'+h(n.name)+'</button></strong></div>'+[['Model',n.model],['Address',(n.ips||[])[0]]].filter(function(r){return hasDetailValue(r[1]);}).map(function(r){return '<div class="device-info-row"><span>'+h(r[0])+'</span><strong>'+copyValue(r[1],r[0])+'</strong></div>';}).join('')+(open?'<div class="site-map-detail-actions"><button class="button small" data-workspace="'+n.open+'">Open '+h(n.name)+' configuration</button></div>':'');}
+    var rows=links.map(function(l){var fa=portFacts(a.name,l.aPort),fb=portFacts(b.name,l.bPort);return '<div class="site-link-row"><div class="site-link-main">'+(l.aPort?copyValue(l.aPort,a.name+' port'):'<span class="data-muted">Port not reported</span>')+'<span class="site-link-arrow" aria-hidden="true">↔</span>'+(l.bPort?copyValue(l.bPort,b.name+' port'):'<span class="data-muted">Port not reported</span>')+'</div><div class="site-link-meta">'+h(a.name)+(fa?': '+h(fa):'')+'</div><div class="site-link-meta">'+h(b.name)+(fb?': '+h(fb):'')+'</div><div class="site-link-meta">Discovered by '+h(l.source||'imported data')+'</div></div>';}).join('');
+    return '<section class="panel site-map-detail" aria-label="Connection details"><div class="panel-head"><div class="site-map-detail-title"><h2 class="panel-title">'+h(a.name)+' ↔ '+h(b.name)+'</h2><p class="panel-subtitle">'+links.length+(links.length===1?' link':' links (parallel)')+'</p></div><button class="icon-button" data-sitemap-node="" aria-label="Close connection details">'+icon('close')+'</button></div><div class="side-panel-body">'+
+      '<h3 class="detail-label">Links <span class="panel-count">'+links.length+'</span></h3><div class="site-link-list">'+rows+'</div><h3 class="detail-label">Ends</h3>'+end(a)+end(b)+'</div></section>';
+  }
   // Device panel beside the site map, in the same row style as Device information.
   function siteMapDetail(map){
-    var key=state.siteMapSelected;if(!key)return '';var n=map.all.find(function(x){return x.key===key;});if(!n)return '';
+    var key=state.siteMapSelected;if(!key)return '';if(key.indexOf('edge:')===0)return siteMapEdgeDetail(map,key);var n=map.all.find(function(x){return x.key===key;});if(!n)return '';
     var open=n.open>=0?workspace[n.open]:null,roleLabel={firewall:'Firewall',router:'Router',switch:'Switch',controller:'Controller',ap:'Access point',endpoint:'Device'};
     var links=n.links.map(function(l){var mine=l.a===n.key,other=map.all.find(function(x){return x.key===(mine?l.b:l.a);});return {local:mine?l.aPort:l.bPort,remote:mine?l.bPort:l.aPort,other:other,source:l.source};}).filter(function(x){return x.other;}).sort(function(a,b){return String(a.local).localeCompare(String(b.local),undefined,{numeric:true});});
     var infra=links.filter(function(x){return x.other.shown;}),attached=links.filter(function(x){return !x.other.shown;});
@@ -8367,7 +8391,7 @@ function pJ(L,pan){const d=E(),I={},R={},T={};
     return '<div class="site-page">'+tabs+summary+panels[current]+'</div>';
   }
   // Kept current by scripts/version.py, which replaces the release string on each bump.
-  var APP_VERSION='5.29.0';
+  var APP_VERSION='5.29.1';
   // Client report: one section per open configuration. Port states use the same
   // classification as Interfaces at a glance, evaluated with each model active.
   function withModel(m,fn){var saved={model:state.model,usage:state.interfaceUsageCache,recordMap:state.recordMap};state.model=m;state.interfaceUsageCache=null;state.recordMap=new Map(m.records.map(function(r){return [r.id,r];}));try{return fn();}finally{state.model=saved.model;state.interfaceUsageCache=saved.usage;state.recordMap=saved.recordMap;}}
@@ -9008,7 +9032,7 @@ function pJ(L,pan){const d=E(),I={},R={},T={};
     }
   }
   function showHelp(){
-    openModal(modalHeader('About Config Inspector','Firewall and switch configuration explorer / version 5.29.0')+
+    openModal(modalHeader('About Config Inspector','Firewall and switch configuration explorer / version 5.29.1')+
       '<div class="modal-body"><div class="help-section"><h3>Open and explore</h3><p>Import SonicWall EXP, FortiGate FortiOS text, Palo Alto configuration XML, Sophos Firewall XML or export TAR, Aruba AOS or AOS-CX text, Cisco IOS or NX-OS text, Juniper Junos text or XML, Meraki API JSON, or a JSON snapshot exported by this application. The device type is detected automatically. You can also drop a file anywhere in the window. Select an interface or record for a plain-language explanation and key facts. Related objects show their IP addresses or service ports. Advanced details contains all original fields. Use Copy summary for readable facts and Back to return from a related item.</p></div>'+
       '<div class="help-section"><h3>Configuration sections</h3><p>Choose a root section in the sidebar, then select one of its indented subsections. Each subsection opens its own page. Routes, objects, members and other primary definitions appear before related settings. Security pages are grouped by function, including web, applications, files, intrusion prevention and SSL/TLS inspection. Certificate objects remain under Certificates. Empty subsections are hidden by default. Use View options to show empty sections, or Configuration sections and All original fields to inspect untranslated settings. Configuration context, search and table filters apply to the selected view.</p></div>'+
       '<div class="help-section"><h3>Choose access rule zones</h3><p>In Access Rules, choose From zone and To zone independently. All zones leaves that side unrestricted. Swap reverses the direction. Clear zone filters removes the pair while keeping the table filters. Search, configured state, and IP version filters combine with the pair, and CSV includes all matching rules. A matrix cell selects its zone pair. Interface and zone details offer outgoing and incoming rules.</p></div>'+
@@ -9213,9 +9237,10 @@ function configTree(it){
     else if(t.hasAttribute('data-evidence-open')){state.evidenceTab=t.getAttribute('data-evidence-open');state.evidenceQuery='';view('evidence');}
   },true);
   function selectSiteNode(key){var scroll=el.content.querySelector('.site-map-scroll'),left=scroll?scroll.scrollLeft:0,top=scroll?scroll.scrollTop:0,page=el.content.scrollTop;state.siteMapSelected=state.siteMapSelected===key?'':key;renderContent();var next=el.content.querySelector('.site-map-scroll');if(next){next.scrollLeft=left;next.scrollTop=top;}el.content.scrollTop=page;if(key&&state.siteMapSelected){var node=el.content.querySelector('.site-node[data-sitemap-node="'+(window.CSS&&CSS.escape?CSS.escape(key):key)+'"]');if(node&&node.focus)node.focus({preventScroll:true});}}
+  document.addEventListener('click',function(event){var e=event.target.closest('[data-sitemap-edge]');if(!e||state.view!=='sitemap'||event.target.closest('[data-sitemap-node]'))return;event.preventDefault();selectSiteNode(e.getAttribute('data-sitemap-edge'));});
   document.addEventListener('click',function(event){var t=event.target.closest('[data-sitemap-node]');if(!t||state.view!=='sitemap')return;event.preventDefault();selectSiteNode(t.getAttribute('data-sitemap-node'));});
   document.addEventListener('dblclick',function(event){var t=event.target.closest('.site-node[data-sitemap-node]');if(!t)return;var n=siteMapModel().devices.find(function(d){return d.key===t.getAttribute('data-sitemap-node');});if(n&&n.open>=0)setModel(workspace[n.open]);});
-  document.addEventListener('keydown',function(event){var t=event.target.closest&&event.target.closest('.site-node[data-sitemap-node]');if(!t||(event.key!=='Enter'&&event.key!==' '))return;event.preventDefault();selectSiteNode(t.getAttribute('data-sitemap-node'));});
+  document.addEventListener('keydown',function(event){var t=event.target.closest&&event.target.closest('.site-node[data-sitemap-node],[data-sitemap-edge]');if(!t||(event.key!=='Enter'&&event.key!==' '))return;event.preventDefault();selectSiteNode(t.getAttribute('data-sitemap-node')||t.getAttribute('data-sitemap-edge'));});
   document.addEventListener('input',function(event){if(event.target.id!=='live-tab-query')return;state.liveQuery=event.target.value;state.evidenceLimit=100;var pos=event.target.selectionStart;renderContent();var input=document.getElementById('live-tab-query');if(input){input.focus();try{input.setSelectionRange(pos,pos);}catch(e){}}});
   document.addEventListener('input',function(event){if(event.target.id!=='evidence-query')return;state.evidenceQuery=event.target.value;state.evidenceLimit=100;var pos=event.target.selectionStart,top=el.content.scrollTop;renderContent();el.content.scrollTop=top;var input=document.getElementById('evidence-query');if(input){input.focus();try{input.setSelectionRange(pos,pos);}catch(e){}}});
   document.addEventListener('input',function(event){if(event.target.id!=='sitemap-query')return;state.siteMapQuery=event.target.value;var pos=event.target.selectionStart;renderContent();var input=document.getElementById('sitemap-query');if(input){input.focus();try{input.setSelectionRange(pos,pos);}catch(e){}}var match=el.content.querySelector('.site-node.match');if(match&&match.scrollIntoView)match.scrollIntoView({block:'nearest',inline:'center'});});

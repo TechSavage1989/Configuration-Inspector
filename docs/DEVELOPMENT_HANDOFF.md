@@ -1,5 +1,12 @@
 # Configuration Inspector development handoff
 
+## 5.29.1 — site map fits the window, clickable links
+
+- `fitSiteMapToWindow()` (called from `pinHeaders`) sizes `.site-map-scroll` and the
+  device panel to the remaining content height so `#content` never scrolls on the map.
+- Edges carry `data-sitemap-edge="edge:<a>~<b>"` with a wide transparent `.edge-hit`
+  path; `siteMapEdgeDetail()` lists each link with `evidencePort()` facts for both ends.
+
 ## 5.29.0 — supplementary search and map zoom
 
 - `supplementarySearch(query)` matches evidence devices, interfaces, links, ARP, MAC,
