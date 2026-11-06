@@ -83,8 +83,11 @@ const file=(name,buffer,type)=>({name,mimeType:type||'text/plain',buffer:Buffer.
   await page.locator('#import-file').setInputFiles([{name:'example-devices.vssx',mimeType:'application/octet-stream',buffer:stencil()},{name:'older-devices.vss',mimeType:'application/octet-stream',buffer:vss()}]);await page.waitForTimeout(1000);
   ok((await page.locator('.diagram-stencil-notice').innerText()).includes('match'),'stencils that match no device on the diagram are reported');
   await page.locator('.diagram-panel [data-action="diagram-stencils"]').first().click();await page.locator('.stencil-dialog').waitFor();
+  ok(await page.locator('.stencil-tabs [data-stencil-tab="devices"][aria-selected="true"]').count()===1&&await page.locator('[data-stencil-pane="files"]').isHidden(),'devices and stencil files are on separate tabs, devices first');
+  await page.locator('.stencil-device-filter').fill('core');ok(await page.locator('.stencil-row:not([hidden])').count()===1,'devices can be found by name');await page.locator('.stencil-device-filter').fill('');
+  await page.locator('[data-stencil-tab="files"]').click();
   ok((await page.locator('.stencil-dialog').innerText()).includes('example-devices.vssx')&&(await page.locator('.stencil-dialog').innerText()).includes('older-devices.vss'),'both stencil files are listed, the .vss one read natively');
-  ok(await page.locator('.stencil-dialog [data-stencil-device="exampleap1"]').count()===1,'access points are listed for a stencil too');
+  await page.locator('[data-stencil-tab="devices"]').click();ok(await page.locator('.stencil-dialog [data-stencil-device="exampleap1"]').count()===1,'access points are listed for a stencil too');
   const pick=page.locator('[data-stencil-device="examplecore"]');ok(await page.locator('#stencil-masters option').evaluateAll(o=>o.map(x=>x.value).filter(v=>/ex-sw8/i.test(v)).length)>=1,'shapes are searchable by model or part number');
   await pick.fill(await page.locator('#stencil-masters option').evaluateAll(o=>o.map(x=>x.value).find(v=>/^EX-SW8 8-port switch/.test(v))));await pick.dispatchEvent('change');await page.waitForTimeout(400);await page.keyboard.press('Escape');await page.waitForTimeout(400);
   ok(await page.locator('.diagram-scroll [data-diagram-node="examplecore"] svg').count()>=1&&await page.locator('.diagram-stencil-notice').count()===0,'a device given a stencil is drawn with it');
