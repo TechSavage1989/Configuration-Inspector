@@ -175,6 +175,21 @@ const file=(name,buffer,type)=>({name,mimeType:type||'text/plain',buffer:Buffer.
   const pmTabs=await page.locator('[data-diagram-tab]').allInnerTexts();let onPortMap=false;for(let i=0;i<pmTabs.length;i++)if(/^Port map/.test(pmTabs[i])){await page.locator('[data-diagram-tab="'+i+'"]').click();await page.waitForTimeout(200);if((await page.locator('.diagram-scroll').textContent()).includes(pmName))onPortMap=true;}
   ok(!onPortMap,'a device can be left off the port map: '+pmName);
   await page.locator('[data-diagram-tab="0"]').click();await page.locator('.diagram-pages summary').click();await page.locator('[data-diagram-portmap="'+pmKey+'"]').check();await page.waitForTimeout(300);await page.keyboard.press('Escape');
+  // The editor: move devices, align them, change a label, choose a link's ports, undo and reset.
+  await page.locator('[data-diagram-tab="0"]').click();await page.locator('[data-diagram-editmode]').click();await page.waitForTimeout(300);
+  ok(await page.locator('.diagram-editbar').count()===1,'the editor shows its alignment tools');
+  const devGroup=key=>page.locator('.diagram-scroll [data-diagram-node="'+key+'"]').first(),edBefore=await devGroup('exampleaccess1').boundingBox();
+  await page.mouse.move(edBefore.x+20,edBefore.y+edBefore.height/2);await page.mouse.down();await page.mouse.move(edBefore.x+120,edBefore.y+edBefore.height/2+40,{steps:6});await page.mouse.up();await page.waitForTimeout(400);
+  const edAfter=await devGroup('exampleaccess1').boundingBox();ok(edAfter.x>edBefore.x+20,'a device can be dragged to a new place: '+Math.round(edBefore.x)+' -> '+Math.round(edAfter.x));
+  const edStored=JSON.parse(await page.evaluate(()=>localStorage.getItem('config-inspector-diagram-edits')||'{}'));ok(Object.values(edStored).some(v=>v.moves&&v.moves.exampleaccess1),'the move is kept');
+  ok((await page.locator('.diagram-panel .panel-title').innerText())==='EXAMPLE-ACCESS1 and below','clicking in the editor does not open another view');
+  await devGroup('exampleaccess1').click();await devGroup('examplecore').click({modifiers:['Shift']});await page.waitForTimeout(200);ok(await page.locator('[data-diagram-align="left"]:not([disabled])').count()===1,'two selected devices can be aligned');
+  await page.locator('[data-diagram-align="left"]').click();await page.waitForTimeout(400);const l1=await devGroup('exampleaccess1').boundingBox(),l2=await devGroup('examplecore').boundingBox();ok(Math.abs(l1.x-l2.x)<6,'left edges aligned: '+Math.round(l1.x)+' / '+Math.round(l2.x));
+  page.once('dialog',d=>d.accept('Renamed label'));await page.locator('.diagram-scroll text[data-text]').filter({hasText:'EXAMPLE-CORE'}).first().dblclick();await page.waitForTimeout(400);ok((await dtext()).includes('Renamed label'),'a label can be changed');
+  await page.locator('.diagram-scroll polyline[data-line]').first().dblclick({force:true});await page.waitForTimeout(300);ok(await page.locator('[data-link-port]').count()>=1,'a link\'s ports can be chosen');await page.keyboard.press('Escape');await page.waitForTimeout(200);
+  await page.locator('[data-diagram-undo]').click();await page.waitForTimeout(300);ok(!(await dtext()).includes('Renamed label'),'undo');
+  await page.locator('[data-diagram-reset]').click();await page.waitForTimeout(300);ok(JSON.stringify(JSON.parse(await page.evaluate(()=>localStorage.getItem('config-inspector-diagram-edits')||'{}')))==='{}','reset removes the hand edits');
+  await page.locator('[data-diagram-editmode]').click();await page.waitForTimeout(300);
   const apBoxes=async()=>(await page.locator('.diagram-scroll text').allTextContents()).filter(x=>/EXAMPLE-AP/.test(x)).length,apBefore=await apBoxes();
   await page.locator('.diagram-show summary').click();await page.locator('[data-diagram-option="apGroup"]').check();await page.waitForTimeout(300);
   ok(await apBoxes()<=apBefore&&(apBefore<2||(await page.locator('.diagram-scroll').textContent()).match(/\d+ access points/)),'access points can be grouped into one box per switch: '+apBefore+' -> '+await apBoxes());

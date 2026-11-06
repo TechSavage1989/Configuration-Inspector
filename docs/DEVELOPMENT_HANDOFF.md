@@ -1,5 +1,16 @@
 # Configuration Inspector development handoff
 
+## 5.37.0 — diagram editor
+
+- `diagram(input,{edits})`: `edits.moves` (device offsets), `eps` (endpoint offsets, key
+  `epKey`: AP key or `group:<switch>`), `ports` (`device|short(original port)` → port),
+  `lines` (route by `lineKey`, used while its ends still meet the ports), `texts` (by
+  `tkey` = group|original text), `maxRow` (the arrangement the edits were made on).
+  `page.eps`/`page.devices` give positions for the alignment tools. Rows start on one left edge.
+- index.html: `diagramEditKey`, `diagramEdits` (localStorage `config-inspector-diagram-edits`),
+  `saveDiagramEdits`, `undoDiagramEdit`, `diagramEditBar`, pointer handlers registered with
+  `onDoc` (the node harness has no addEventListener), `showLinkPorts`.
+
 ## 5.36.0 — faster launch and loading, firewall port maps, cleaner links
 
 - Launch: `loadStencils()` starts on idle, reads one stored file at a time (`getAllKeys` then

@@ -86,6 +86,10 @@ existing release or its assets. Preserve the polished README layout.
   matching prefilters shapes by model number (`mayMatch`); imported interfaces are looked
   up through `portIndex`, not by scanning every set. Large libraries (thousands of shapes)
   and monitoring exports otherwise freeze the window for seconds.
+- Diagram hand edits are keyed by stable names (device keys, `epKey`, `lineKey`, `tkey`,
+  `device|short(port)`); keep those names stable when changing render(), or saved edits stop
+  applying. Listeners added in the main UI script before its first click listener must use
+  `onDoc` (the node harness slices the script there and has no addEventListener).
 - Stencil matching never picks another generation of a series automatically (FG-120/121F for a
   FortiGate-120G has other ports; `generationDiffers` in stencils.js) and prefers front views
   over rear views.
