@@ -80,7 +80,7 @@ source = source[:start] + marker + '\n' + (root / 'updates.js').read_text() + '\
 page.write_text(source)
 
 # Comparison modules precede the application controller in the single-file build.
-for script_id, filename in [('migration-engine', 'migration.js'), ('comparison-engine', 'comparison.js'), ('comparison-ui', 'comparison_ui.js'), ('comparison-navigation', 'comparison_navigation.js'), ('global-search-engine', 'global_search.js'), ('global-search-documents', 'search_documents.js'), ('global-search-ui', 'search_ui.js'), ('recent-files', 'recent_files.js'), ('client-report', 'client_report.js'), ('change-summary', 'change_summary.js'), ('site-overview', 'site_overview.js'), ('supplementary-data', 'evidence.js'), ('site-map', 'site_map.js')]:
+for script_id, filename in [('migration-engine', 'migration.js'), ('comparison-engine', 'comparison.js'), ('comparison-ui', 'comparison_ui.js'), ('comparison-navigation', 'comparison_navigation.js'), ('global-search-engine', 'global_search.js'), ('global-search-documents', 'search_documents.js'), ('global-search-ui', 'search_ui.js'), ('recent-files', 'recent_files.js'), ('client-report', 'client_report.js'), ('change-summary', 'change_summary.js'), ('site-overview', 'site_overview.js'), ('supplementary-data', 'evidence.js'), ('site-map', 'site_map.js'), ('network-diagram', 'diagram.js')]:
     marker = '<script id="' + script_id + '">'
     if marker not in source:
         anchor = source.index('<script id="app-updates">')

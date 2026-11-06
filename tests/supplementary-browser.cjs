@@ -64,6 +64,18 @@ const file=(name,buffer,type)=>({name,mimeType:type||'text/plain',buffer:Buffer.
   await page.locator('[data-sitemap-zoom="fit"]').click();const fit=await page.evaluate(()=>{const b=document.querySelector('.site-map-scroll'),s=b.querySelector('svg');return {sw:s.getBoundingClientRect().width,bw:b.clientWidth,sh:s.getBoundingClientRect().height,bh:b.clientHeight};});
   ok(fit.sw<=fit.bw&&fit.sh<=fit.bh,'Fit shows the whole map: '+JSON.stringify(fit));
   await page.locator('[data-sitemap-zoom="reset"]').click();ok((await page.locator('.zoom-level').innerText())==='100%','back to actual size');
+  // Network diagram: overview and building pages, Visio, SVG and printable downloads.
+  await page.locator('.nav-scroll [data-view="diagram"]').click();await page.locator('.diagram-preview svg').waitFor();
+  const dpages=await page.locator('[data-diagram-page]').allInnerTexts();ok(dpages[0]==='Overview'&&dpages.includes('EXAMPLE-CORE'),'diagram pages: '+dpages.join(' | '));
+  ok((await page.locator('.diagram-preview').textContent()).includes('Example Organization - Existing Topology'),'the overview is titled after the site');
+  await page.locator('[data-diagram-page="1"]').click();await page.waitForTimeout(200);ok((await page.locator('.diagram-preview').textContent()).includes('EXAMPLE-AP1'),'a building page shows its access points');
+  const [vsdx]=await Promise.all([page.waitForEvent('download'),page.locator('[data-diagram-export="vsdx"]').click()]);ok(/network-diagram\.vsdx$/.test(vsdx.suggestedFilename()),'Visio download: '+vsdx.suggestedFilename());
+  const pk=require('node:fs').readFileSync(await vsdx.path()).slice(0,2).toString();ok(pk==='PK','the Visio file is a package');
+  const [svgFile]=await Promise.all([page.waitForEvent('download'),page.locator('[data-diagram-export="svg"]').click()]);ok(/\.svg$/.test(svgFile.suggestedFilename()),'SVG download');
+  const [htmlFile]=await Promise.all([page.waitForEvent('download'),page.locator('[data-diagram-export="html"]').click()]);ok(require('node:fs').readFileSync(await htmlFile.path(),'utf8').includes('Print or save as PDF'),'printable HTML download');
+  await page.locator('[data-diagram-page="0"]').click();await page.locator('#diagram-title').fill('Example Campus');await page.waitForTimeout(400);
+  ok((await page.locator('.diagram-preview').textContent()).includes('Example Campus - Existing Topology'),'the title updates the preview as you type');
+  await page.locator('[data-diagram-page="1"]').click();await page.locator('[data-diagram-page="0"]').click();ok((await page.locator('#diagram-title').inputValue())==='Example Campus','the title is kept');
   // Search works on supplementary data alone, grouped by type.
   await page.locator('#global-search').fill('example-access');await page.waitForTimeout(500);
   ok(await page.locator('.gs-sup-group[data-sup-group="devices"] .gs-sup-item').count()===3,'devices found by name without a configuration open');
