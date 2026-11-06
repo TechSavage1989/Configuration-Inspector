@@ -114,6 +114,13 @@ existing release or its assets. Preserve the polished README layout.
   Panels there use `overflow:clip` (not `hidden`) so sticky works; don't add
   `overflow:hidden/auto` around new tables without a real scroll need. Node tests that
   copy `renderContent` must stub `pinHeaders`.
+- Diagram editor gestures (`editDrag` kinds `move`, `box`, `port`, `corner`, `line`) snap to
+  the same route and tidy it with `routeTidy()`; re-render edits with `renderKeepingView()`
+  so the zoom and scroll stay, and keep the auto-fit key free of edits (`cur.baseKey`).
+- Elements that use `display:flex` (such as `.site-link-row`) override the `hidden`
+  attribute unless a `[hidden]` rule for them exists; check filters with `:visible`.
+- Messages (`toast`) are a popover in the top layer so they show over dialogs; don't move
+  `#toast` back into normal flow.
 - Keep one design language: side panels use `.side-panel-body` with `.device-info-row`
   label/value rows, details drawers use `.detail-summary`/`.detail-cell`, and lists in
   narrow panels are rows (`.site-link-row`), never multi-column tables.

@@ -25,11 +25,17 @@ const file=(name,text)=>({name,mimeType:'text/plain',buffer:Buffer.from(text)});
   ok((await text()).includes('EXAMPLE-CORE')&&(await text()).includes('EXAMPLE-EDGE'),'both devices are drawn');
   ok(await page.locator('.diagram-scroll polyline[data-line]').count()===1,'the link their port descriptions imply is drawn');
   await page.locator('[data-diagram-editmode]').click();await page.waitForTimeout(300);
+  await page.locator('.diagram-page-view [data-sitemap-zoom="in"]').click();await page.locator('.diagram-page-view [data-sitemap-zoom="in"]').click();await page.waitForTimeout(200);const zoomed=await page.locator('.diagram-page-view .zoom-level').innerText();
   await page.locator('[data-site-links]').click();await page.waitForTimeout(300);const links=await page.locator('#modal .modal-body').innerText();
   ok(/From the configurations/.test(links)&&/Gi1\/0\/1/.test(links)&&/Gi1\/0\/24/.test(links),'the link says where it comes from, with both ports: '+links.split('\n')[0]);
   await page.keyboard.press('Escape');await page.waitForTimeout(200);
   await page.locator('[data-site-add="device"]').click();await page.locator('[data-add-dev="name"]').fill('EXAMPLE-ISP');await page.locator('[data-add-dev="type"]').selectOption('Router');await page.locator('[data-add-dev-save]').click();await page.waitForTimeout(400);
   ok((await text()).includes('EXAMPLE-ISP'),'a device can be added by hand');
+  ok(await page.locator('.diagram-page-view .zoom-level').innerText()===zoomed,'an edit keeps the zoom ('+zoomed+'), the view does not reset');
+  await page.locator('.diagram-page-view [data-sitemap-zoom="fit"]').click();await page.waitForTimeout(200);
+  // A box drawn on empty space selects the devices inside it.
+  const sb=await page.locator('.diagram-scroll > svg').boundingBox();await page.mouse.move(sb.x+sb.width-3,sb.y+sb.height-3);await page.mouse.down();await page.mouse.move(sb.x+3,sb.y+3,{steps:5});await page.mouse.up();await page.waitForTimeout(200);
+  ok(await page.locator('.diagram-scroll .selected').count()>=2&&/selected/i.test(await page.locator('.diagram-editbar .pop-label').first().innerText()),'a selection box selects several devices');
   await page.locator('[data-site-add="link"]').click();await page.locator('[data-add-link-dev="0"]').selectOption('EXAMPLE-ISP');await page.locator('[data-add-link-dev="1"]').selectOption('EXAMPLE-CORE');await page.locator('[data-add-link-port="1"]').fill('GigabitEthernet1/0/2');await page.locator('[data-add-link-save]').click();await page.waitForTimeout(400);
   ok(await page.locator('.diagram-scroll polyline[data-line]').count()===2,'a link can be added by hand');
   await page.keyboard.press('Control+z');await page.waitForTimeout(300);ok(await page.locator('.diagram-scroll polyline[data-line]').count()===1,'Ctrl+Z undoes it');
@@ -39,8 +45,22 @@ const file=(name,text)=>({name,mimeType:'text/plain',buffer:Buffer.from(text)});
   await page.evaluate(()=>{const ls=[...document.querySelectorAll('.diagram-scroll polyline[data-line]')].sort((a,b)=>b.getAttribute('data-route').split(' ').length-a.getAttribute('data-route').split(' ').length),l=ls[0],r=l.getAttribute('data-route').split(' ').map(q=>q.split(',').map(Number)),i=Math.floor((r.length-2)/2),m=[(r[i][0]+r[i+1][0])/2,(r[i][1]+r[i+1][1])/2],svg=l.ownerSVGElement,p=svg.createSVGPoint();p.x=m[0];p.y=m[1];const c=p.matrixTransform(svg.getScreenCTM());l.dispatchEvent(new MouseEvent('contextmenu',{bubbles:true,cancelable:true,clientX:c.x,clientY:c.y,button:2}));});
   await page.locator('.diagram-ctx [data-ctx="bend"]').click();await page.waitForTimeout(300);ok(await pts()>before,'a bend can be added to a link');
   await page.keyboard.press('Control+z');await page.waitForTimeout(300);ok(await pts()===before,'and undone');
+  // A stretch dragged onto the line of another stretch snaps to it and merges.
+  const routeOf=()=>page.locator('.diagram-scroll polyline[data-line]').evaluateAll(ls=>ls.map(l=>l.getAttribute('data-route')).sort((a,b)=>b.split(' ').length-a.split(' ').length)[0]);const r0=await routeOf();
+  await page.evaluate(()=>{const ls=[...document.querySelectorAll('.diagram-scroll polyline[data-line]')].sort((a,b)=>b.getAttribute('data-route').split(' ').length-a.getAttribute('data-route').split(' ').length),l=ls[0],r=l.getAttribute('data-route').split(' ').map(q=>q.split(',').map(Number)),i=Math.floor((r.length-2)/2),m=[(r[i][0]+r[i+1][0])/2,(r[i][1]+r[i+1][1])/2],svg=l.ownerSVGElement,p=svg.createSVGPoint();p.x=m[0];p.y=m[1];const c=p.matrixTransform(svg.getScreenCTM());l.dispatchEvent(new MouseEvent('contextmenu',{bubbles:true,cancelable:true,clientX:c.x,clientY:c.y,button:2}));});
+  await page.locator('.diagram-ctx [data-ctx="bend"]').click();await page.waitForTimeout(300);const r1=await routeOf();
+  const drag=await page.evaluate(([a,b])=>{const P=s=>s.split(' ').map(q=>q.split(',').map(Number)),old=new Set(a.split(' ')),nr=P(b),fresh=nr.filter(p=>!old.has(p.join(',')));if(fresh.length<4)return null;const h=fresh[1][1]===fresh[2][1],mid=[(fresh[1][0]+fresh[2][0])/2,(fresh[1][1]+fresh[2][1])/2],to=h?[mid[0],fresh[0][1]]:[fresh[0][0],mid[1]];
+    const svg=document.querySelector('.diagram-scroll > svg'),M=svg.getScreenCTM(),sc=q=>{const p=svg.createSVGPoint();p.x=q[0];p.y=q[1];const c=p.matrixTransform(M);return [c.x,c.y];};return [sc(mid),sc(to)];},[r0,r1]);
+  ok(drag,'the bend adds a jog to drag');
+  await page.mouse.move(drag[0][0],drag[0][1]);await page.mouse.down();await page.mouse.move((drag[0][0]+drag[1][0])/2,(drag[0][1]+drag[1][1])/2+1,{steps:3});await page.mouse.move(drag[1][0]+1,drag[1][1]+1,{steps:3});await page.mouse.up();await page.waitForTimeout(400);
+ok((await routeOf()).split(' ').length===r0.split(' ').length,'dragging the jog back onto the line merges it: '+(await routeOf()));
+  // Ctrl+click on a link adds a point (a jog to drag), Ctrl+click on a corner removes it.
+  const mid2=await page.evaluate(()=>{const ls=[...document.querySelectorAll('.diagram-scroll polyline[data-line]')].sort((a,b)=>b.getAttribute('data-route').split(' ').length-a.getAttribute('data-route').split(' ').length),r=ls[0].getAttribute('data-route').split(' ').map(q=>q.split(',').map(Number));let k=0,best=0;for(let i=0;i<r.length-1;i++){const d=Math.abs(r[i][0]-r[i+1][0])+Math.abs(r[i][1]-r[i+1][1]);if(i>0&&i<r.length-2&&d>best){best=d;k=i;}}if(!best)k=Math.floor((r.length-2)/2);const m=[(r[k][0]+r[k+1][0])/2,(r[k][1]+r[k+1][1])/2],svg=ls[0].ownerSVGElement,p=svg.createSVGPoint();p.x=m[0];p.y=m[1];const c=p.matrixTransform(svg.getScreenCTM());return [c.x,c.y];});
+  await page.keyboard.down('Control');await page.mouse.click(mid2[0],mid2[1]);await page.keyboard.up('Control');await page.waitForTimeout(300);ok((await routeOf()).split(' ').length>r0.split(' ').length,'Ctrl+click adds a point to a link');
+  await page.keyboard.press('Control+z');await page.waitForTimeout(300);
   await page.locator('[data-site-links]').click();await page.waitForTimeout(200);await page.locator('#modal [data-site-link-remove][data-manual="0"]').first().click();await page.waitForTimeout(300);await page.keyboard.press('Escape');await page.waitForTimeout(200);
   ok(await page.locator('.diagram-scroll polyline[data-line]').count()===1,'a wrong link from the configurations can be removed');
+  const theme=()=>page.locator('html').getAttribute('data-theme');const t0=await theme();await page.locator('#theme-choice').click();ok(await theme()!==t0&&await page.locator('#theme-choice').getAttribute('aria-pressed')===String(await theme()==='dark'),'the theme is one button that switches light and dark');await page.locator('#theme-choice').click();ok(await theme()===t0,'and back');
   ok(!errors.length,'no page errors: '+errors.join('; '));
   console.log(checks+' configuration-only diagram browser checks passed');
  }finally{await browser.close();}
