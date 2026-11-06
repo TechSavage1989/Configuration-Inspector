@@ -35,6 +35,28 @@ const file=(name,buffer,type)=>({name,mimeType:type||'text/plain',buffer:Buffer.
   await page.setViewportSize({width:1440,height:900});await page.waitForTimeout(200);
   await page.locator('.site-map-detail [data-sitemap-node="exampleaccess2"]').click();ok((await page.locator('.site-map-detail .panel-title').first().innerText()).includes('EXAMPLE-ACCESS2'),'connections link to the neighboring device');
   await page.locator('#sitemap-query').fill('access3');ok(await page.locator('.site-node.match').count()===1&&await page.locator('.site-node.dim').count()===4,'find a device');await page.locator('#sitemap-query').fill('');
+  // Zoom with the buttons and the mouse wheel, and drag to move the map.
+  await page.locator('[data-sitemap-node=""]').first().click().catch(()=>{});await page.waitForTimeout(200);
+  const w0=Number(await page.locator('svg.site-map').getAttribute('width'));
+  await page.locator('[data-sitemap-zoom="in"]').click();ok((await page.locator('.zoom-level').innerText())==='120%'&&Number(await page.locator('svg.site-map').getAttribute('width'))>w0,'zoom in with the button');
+  const box=await page.locator('.site-map-scroll').boundingBox(),pageTop=await page.evaluate(()=>document.getElementById('content').scrollTop);
+  await page.mouse.move(box.x+box.width/2,box.y+box.height/2);await page.mouse.wheel(0,-600);await page.waitForTimeout(200);
+  const zoomed=await page.evaluate(()=>({zoom:document.querySelector('.zoom-level').innerText,page:document.getElementById('content').scrollTop}));
+  ok(parseInt(zoomed.zoom)>120&&zoomed.page===pageTop,'the mouse wheel zooms the map instead of scrolling the page: '+JSON.stringify(zoomed));
+  const before=await page.evaluate(()=>{const b=document.querySelector('.site-map-scroll');return [b.scrollLeft,b.scrollTop];});
+  await page.mouse.move(box.x+box.width/2,box.y+box.height/2);await page.mouse.down();await page.mouse.move(box.x+box.width/2+150,box.y+box.height/2+80,{steps:6});await page.mouse.up();await page.waitForTimeout(150);
+  const after=await page.evaluate(()=>{const b=document.querySelector('.site-map-scroll');return [b.scrollLeft,b.scrollTop];});
+  ok(after[0]<before[0]&&after[1]<before[1],'dragging moves the map: '+JSON.stringify([before,after]));
+  ok(await page.locator('.site-map-detail').count()===0,'a drag does not select a device');
+  await page.locator('[data-sitemap-zoom="fit"]').click();const fit=await page.evaluate(()=>{const b=document.querySelector('.site-map-scroll'),s=b.querySelector('svg');return {sw:s.getBoundingClientRect().width,bw:b.clientWidth,sh:s.getBoundingClientRect().height,bh:b.clientHeight};});
+  ok(fit.sw<=fit.bw&&fit.sh<=fit.bh,'Fit shows the whole map: '+JSON.stringify(fit));
+  await page.locator('[data-sitemap-zoom="reset"]').click();ok((await page.locator('.zoom-level').innerText())==='100%','back to actual size');
+  // Search works on supplementary data alone, grouped by type.
+  await page.locator('#global-search').fill('example-access');await page.waitForTimeout(500);
+  ok(await page.locator('.gs-sup-group[data-sup-group="devices"] .gs-sup-item').count()===3,'devices found by name without a configuration open');
+  await page.locator('#global-search').fill('10.0.99.2');await page.waitForTimeout(500);
+  ok((await page.locator('.gs-sup-group[data-sup-group="devices"]').innerText()).includes('EXAMPLE-CORE'),'a device is found by its IP address');
+  await page.locator('#global-search').fill('');await page.waitForTimeout(400);
   // The configuration joins with the export by name.
   await page.locator('#import-file').setInputFiles(file('example-access1.conf',cfg));
   await page.waitForFunction(()=>document.querySelectorAll('[data-remove-workspace]').length===1);await page.waitForTimeout(400);
@@ -73,6 +95,18 @@ const file=(name,buffer,type)=>({name,mimeType:type||'text/plain',buffer:Buffer.
   await page.locator('.nav-scroll [data-view="system"]').click();await page.waitForTimeout(300);
   if(await page.locator('.nav-subsection').filter({hasText:'Monitoring data (live)'}).count())await page.locator('.nav-subsection').filter({hasText:'Monitoring data (live)'}).click();await page.waitForTimeout(300);
   ok((await page.locator('[data-live-tab="live-device"]').innerText()).includes('Example Access 48P'),'collected device facts under System & management');
+  // Search with a configuration open: configuration results plus supplementary data by type.
+  await page.locator('#global-search').fill('00:00:5e:00:53:a1');await page.waitForTimeout(800);
+  const types=await page.locator('[data-gs-type]').allInnerTexts();ok(types.some(t=>t.startsWith('Supplementary data')),'type tabs include supplementary data: '+types.join(' | '));
+  const groups=await page.locator('.gs-sup-group').evaluateAll(g=>g.map(x=>x.dataset.supGroup));ok(groups.includes('mac')&&groups.includes('arp'),'a MAC address is found in the MAC table and ARP: '+groups.join(','));
+  await page.locator('#global-search').fill('0000.5e00.53a1');await page.waitForTimeout(800);
+  ok(await page.locator('.gs-sup-group[data-sup-group="mac"] .gs-sup-item').count()===1,'Cisco MAC notation matches too');
+  await page.locator('[data-gs-type="supplementary"]').click();await page.waitForTimeout(300);
+  ok(await page.locator('.global-search-page.gs-sup-only').count()===1&&await page.locator('.gs-result:visible').count()===0,'the supplementary tab shows only supplementary matches');
+  await page.locator('.gs-sup-group[data-sup-group="mac"] [data-sup-interface]').first().click();await page.locator('#drawer .live-panel').waitFor();
+  ok((await page.locator('#drawer h2').first().innerText()).includes('GigabitEthernet1/0/7'),'a MAC table match opens its interface');
+  await page.keyboard.press('Escape');await page.locator('#global-search').fill('');await page.waitForTimeout(400);
+  await page.locator('.nav-scroll [data-view="overview"]').click();await page.waitForTimeout(300);
   // Command output pasted for the open configuration.
   await page.locator('.workspace-add [data-action="paste-settings"]').click();await page.locator('#paste-config').fill(SHOW);await page.locator('#paste-submit').click();await page.waitForTimeout(500);
   ok(!(await page.locator('#modal').evaluate(m=>m.open)),'pasted command output is accepted');

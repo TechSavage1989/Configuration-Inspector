@@ -1,5 +1,16 @@
 # Configuration Inspector development handoff
 
+## 5.29.0 — supplementary search and map zoom
+
+- `supplementarySearch(query)` matches evidence devices, interfaces, links, ARP, MAC,
+  routes and networks (MAC by normalized hex) and groups them; `searchPageHTML()` adds the
+  `data-gs-type` tab row and the grouped block to `SWSearchUI.render` output without
+  changing search_ui.js (`state.search.supOnly` hides configuration results via CSS).
+  `supplementaryOnlySearch()` serves the search box when no configuration is open.
+- Site map: `.site-map-scroll` is a fixed-height viewport with `overflow:hidden`;
+  `applySiteZoom()` resizes the SVG around the pointer (wheel, `data-sitemap-zoom`
+  buttons), pointer drag pans and swallows the following click.
+
 ## 5.28.1 — tabbed site overview
 
 - `sitePage()` renders a `.site-tabs` row (`data-site-tab`, `state.siteTab`) and one

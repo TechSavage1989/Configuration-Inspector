@@ -774,7 +774,15 @@ table.data th,table.data td{vertical-align:top}
 .tab-count{opacity:.7;font-weight:500;margin-left:4px}
 .evidence-search{max-width:280px}
 .evidence-head-actions{display:flex;gap:8px;align-items:center}
-.site-page{display:flex;flex-direction:column;gap:16px}.site-page>.site-summary{margin:0}
+.site-page{display:flex;flex-direction:column;gap:16px}
+.gs-type-tabs{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 10px}
+.gs-sup{margin:0 0 14px;padding:12px 14px;border:1px solid var(--line);border-radius:10px;background:var(--theme-surface-ffffff,var(--paper))}
+.gs-sup-title{display:flex;align-items:center;gap:8px;font-size:13px;margin:0 0 8px}.gs-sup-title span,.gs-sup-group h4 span{color:var(--muted);font-weight:500}
+.gs-sup-group h4{font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin:12px 0 4px}
+.gs-sup-item{padding:8px 0;border-bottom:1px solid var(--theme-edge-f0f1f6,var(--line))}.gs-sup-main{display:flex;flex-wrap:wrap;align-items:center;gap:10px}.gs-sup-main .copy-value{width:auto;font-family:ui-monospace,Consolas,monospace;font-size:11px}
+.gs-sup-meta{color:var(--muted);font-size:11px;margin-top:2px}.gs-sup-item .gs-actions{margin-top:6px}
+.gs-sup-only .gs-result,.gs-sup-only .gs-results>p,.gs-sup-only .gs-pagination,.gs-sup-only .gs-coverage{display:none}
+.gs-sup-standalone .gs-sup{border:0;padding:6px 0}.site-page>.site-summary{margin:0}
 .evidence-page td .copy-value,.live-tab-panel td .copy-value,.live-table td .copy-value,.neighbor-details td .copy-value,.site-map-links td .copy-value{width:auto;font:inherit;color:inherit;background:none;border:0;padding:0;display:inline-flex;gap:6px;align-items:center;text-align:left;cursor:copy}
 td .copy-value .icon{opacity:0;transition:opacity .12s}
 tr:hover td .copy-value .icon,td .copy-value:focus-visible .icon,td .copy-value-icon .icon{opacity:.75}
@@ -789,7 +797,9 @@ td .copy-value-icon{margin-left:4px}
 .site-map-legend{display:flex;gap:14px;flex-wrap:wrap;padding:0 16px;font-size:12px;color:var(--muted)}
 .legend-item{display:inline-flex;align-items:center;gap:6px}.legend-item i{width:10px;height:10px;border-radius:3px;background:var(--muted)}
 .site-map-panel .live-note{padding:0 16px}
-.site-map-scroll{overflow-x:auto;overflow-y:hidden;min-height:320px;border-top:1px solid var(--line);background:var(--bg)}
+.site-map-viewport{position:relative;border-top:1px solid var(--line)}
+.site-map-scroll{overflow:hidden;height:clamp(360px,calc(100vh - 340px),1600px);background:var(--bg);cursor:grab;touch-action:none;user-select:none}.site-map-scroll.dragging{cursor:grabbing}
+.site-map-zoom{position:absolute;top:10px;right:12px;z-index:3;display:flex;align-items:center;gap:6px;padding:4px 6px;border:1px solid var(--line);border-radius:9px;background:var(--theme-surface-ffffff,var(--paper));box-shadow:var(--shadow)}.site-map-zoom .icon-button{font-size:16px;line-height:1;width:28px;height:28px}.zoom-level{min-width:42px;text-align:center;font-size:11px;color:var(--muted)}
 .site-map{display:block;font-family:inherit}
 .site-edge path{fill:none;stroke:var(--muted);stroke-width:1.6;opacity:.55}
 .site-edge.multi path{stroke-width:3}
@@ -922,7 +932,7 @@ body{font-size:14px}.brand-mark{background:linear-gradient(145deg,#287dc6,#15578
       <div id="page-heading"></div>
       <div id="workspace-tabs"></div><div id="workspace-notice"></div>
       <div id="content"></div>
-      <footer class="page-footer"><span id="version-label">Config Inspector 5.28.1</span></footer>
+      <footer class="page-footer"><span id="version-label">Config Inspector 5.29.0</span></footer>
     </main>
   </div>
   <input type="file" id="import-file" multiple accept=".exp,.txt,.json,.conf,.cfg,.xml,.tar,.set,.log,.backup,.rsc,.xlsx,.csv" hidden>
@@ -6071,7 +6081,7 @@ function pJ(L,pan){const d=E(),I={},R={},T={};
     return {compareText:compareText,compareMode:['records','text','fields'].includes(data.compareMode)?data.compareMode:'records',models:models.slice(0,data.count),model:data.selected<0?null:models[data.selected],comparison:data.comparison<0?null:models[data.comparison],view:typeof data.view==='string'?data.view:'overview',scope:typeof data.scope==='string'?data.scope:'',categoryTabs:data.categoryTabs&&typeof data.categoryTabs==='object'&&!Array.isArray(data.categoryTabs)?data.categoryTabs:{},showUnassigned:!!data.showUnassigned,showEmpty:!!data.showEmpty};
   }
   function create(options){
-    options=options||{};var bridge=options.bridge||root.chrome&&root.chrome.webview,native=!!(bridge&&typeof bridge.postMessage==='function'&&typeof bridge.addEventListener==='function'),state={current:'5.28.1',state:'idle',message:'',automatic:true,busy:false,ready:false,available:false},handlers={},restoring=false,installing=false;
+    options=options||{};var bridge=options.bridge||root.chrome&&root.chrome.webview,native=!!(bridge&&typeof bridge.postMessage==='function'&&typeof bridge.addEventListener==='function'),state={current:'5.29.0',state:'idle',message:'',automatic:true,busy:false,ready:false,available:false},handlers={},restoring=false,installing=false;
     var commands=['update-ui-ready','update-status','update-check','update-download','update-later','update-auto-on','update-auto-off','update-restored','update-restore-failed'];
     function request(command){if(!native)throw new Error('Built-in updates are available in the Windows desktop edition.');if(!commands.includes(command))throw new Error('Unknown update action.');bridge.postMessage(command);}
     if(native)bridge.addEventListener('message',async function(event){
@@ -6891,7 +6901,7 @@ function pJ(L,pan){const d=E(),I={},R={},T={};
     var ci=categoryInfo(state.view),title=ci?[ci.label,ci.description]:titles[state.view]||titles.overview;
     var demo=state.model&&state.model.meta.demo,subsection=ci&&state.model?availableTabs(state.view).find(function(t){return t.id===activeTab();}):null,parentLabel=subsection&&subsection.label!==ci.label?ci.label:'';
     if(subsection)title=[subsection.label,ci.description];
-    el.global.disabled=!state.model;
+    el.global.disabled=!state.model&&!evidenceSets.length;
     el.heading.innerHTML='<div class="heading"><div><div class="eyebrow"><span class="tiny-dot"></span>'+(state.model?h(deviceIdentity().name):'NETWORK CONFIGURATION')+' '+(state.model?chip(state.model.meta.vendor||'SonicWall','blue'):'')+' '+(state.model&&deviceIdentity().model?chip(deviceIdentity().model,''):'')+' '+(demo?chip('DEMO','purple'):'')+'</div>'+(parentLabel?'<div class="section-context">'+h(parentLabel)+'</div>':'')+'<h1 id="page-title" tabindex="-1">'+h(title[0])+'</h1>'+(state.model?'':'<p>'+h(title[1])+'</p>')+'</div>'+
       '<div class="heading-actions">'+(state.model?'':'<div class="configuration-import-actions" role="group" aria-label="Import configuration"><button class="button primary" data-action="open-file">'+icon('upload')+'Open configuration file</button><button class="button" data-action="paste-settings">'+icon('code')+'Paste settings</button></div>')+'</div></div>';
     if(demo)el.notice.innerHTML='<div class="notice">'+icon('info')+'<span>You are exploring an example configuration. Import a configuration to inspect your device.</span><button data-action="import">Import your file '+icon('chevron')+'</button></div>';
@@ -6989,8 +6999,9 @@ function pJ(L,pan){const d=E(),I={},R={},T={};
     if(state.view==='compare'){el.content.innerHTML=comparePage();if(state.compareMode==='text'&&window.SWTextComparison)window.SWTextComparison.mount(el.content,state.compareText,renderContent);else {mountObjectComparisonScroll(el.content);if(typeof window!=='undefined'&&window.SWComparisonNavigation)state.comparisonNavigationCleanup=window.SWComparisonNavigation.mount(el.content,{collapsedSections:state.compareCollapsedSections||(state.compareCollapsedSections=new Set())});}return;}
     if(state.view==='sitemap'){el.content.innerHTML=siteMapPage();return;}
     if(state.view==='evidence'){el.content.innerHTML=evidencePage();return;}
+    if(state.view==='search'&&!state.model&&evidenceSets.length){el.content.innerHTML=supplementaryOnlySearch();return;}
     if(!state.model){el.content.innerHTML=welcome();return;}
-    if(state.view==='search'){el.content.classList.remove('list-view');el.content.innerHTML=window.SWSearchUI.render(globalSearchSession());return;}
+    if(state.view==='search'){el.content.classList.remove('list-view');el.content.innerHTML=searchPageHTML(globalSearchSession());return;}
     if(state.view==='findings'){el.content.innerHTML=findingsPage();return;}
     if(state.view==='deviceinfo'){el.content.innerHTML=deviceInformationPage();return;}
     if(state.view==='overview'){el.content.innerHTML=overview();queueMapConnections();return;}
@@ -7528,6 +7539,56 @@ function pJ(L,pan){const d=E(),I={},R={},T={};
       '<div class="data-wrap"><table class="data"><thead><tr>'+data.headers.map(function(x){return '<th scope="col">'+h(x)+'</th>';}).join('')+'</tr></thead><tbody>'+evidenceRowsHTML(shown,data.headers)+'</tbody></table>'+(rows.length?'':'<div class="table-empty">'+icon('search')+'<div>No matching rows</div></div>')+'</div>'+
       (rows.length>shown.length?'<div class="evidence-more"><span>Showing '+shown.length.toLocaleString()+' of '+rows.length.toLocaleString()+'</span><button class="button small" data-evidence-more="100">Show 100 more</button><button class="button small" data-evidence-more="all">Show all</button></div>':'')+'</section>';
   }
+  // Search over supplementary data: devices, live interfaces, neighbors, ARP, MAC table,
+  // routes and networks, matched by name, IP or MAC (any MAC notation) and grouped by type.
+  function supplementarySearch(query){
+    var q=String(query||'').trim().toLowerCase();if(!q||!evidenceSets.length||!SE())return [];
+    var X=SE(),hex=q.replace(/[^0-9a-f]/g,''),macLike=/^[0-9a-f]{2,4}([:.\-][0-9a-f]{1,4})+$|^[0-9a-f]{12}$/.test(q)&&hex.length>=4,terms=q.split(/\s+/).filter(Boolean);
+    function hit(values,macs){var text=values.filter(Boolean).join(' ').toLowerCase();if(terms.every(function(t){return text.includes(t);}))return true;return macLike&&(macs||[]).some(function(m){return String(m||'').replace(/[^0-9a-f]/gi,'').toLowerCase().includes(hex);});}
+    var groups={devices:[],interfaces:[],neighbors:[],arp:[],mac:[],routes:[],networks:[]},ipByMac=new Map();
+    evidenceSets.forEach(function(set){set.ev.arp.forEach(function(a){if(a.mac&&a.ip&&!ipByMac.has(a.mac))ipByMac.set(a.mac,a.ip);});});
+    evidenceDeviceInfo().forEach(function(d){if(hit([d.name,d.type,d.model,d.serial,d.software].concat(d.ips||[]).concat(d.macs||[]),d.macs))groups.devices.push(d);});
+    evidenceSets.forEach(function(set){var ev=set.ev;
+      ev.interfaces.forEach(function(i){var n=i.neighbor||{};if(hit([i.device,i.name,i.description,i.mac,i.ip,n.device,n.port],[i.mac]))groups.interfaces.push(i);});
+      ev.links.forEach(function(l){if(hit([l.a.device,l.a.port,l.b.device,l.b.port,l.ip,l.platform],[l.chassis]))groups.neighbors.push(l);});
+      ev.arp.forEach(function(a){if(hit([a.device,a.ip,a.mac,a.iface],[a.mac]))groups.arp.push(a);});
+      ev.mac.forEach(function(m){if(hit([m.device,m.mac,m.iface,m.vlan,ipByMac.get(m.mac)],[m.mac]))groups.mac.push(m);});
+      ev.routes.forEach(function(r){if(hit([r.device,r.prefix,r.nextHop,r.iface,r.protocol]))groups.routes.push(r);});
+      ev.networks.forEach(function(n){if(hit([n.network,n.name,n.type]))groups.networks.push(n);});});
+    var seenMac=new Set();groups.mac=groups.mac.filter(function(m){var k=X.deviceKey(m.device)+'|'+m.mac+'|'+X.interfaceKey(m.iface);if(seenMac.has(k))return false;seenMac.add(k);return true;});
+    var seenArp=new Set();groups.arp=groups.arp.filter(function(a){var k=X.deviceKey(a.device)+'|'+a.ip+'|'+a.mac;if(seenArp.has(k))return false;seenArp.add(k);return true;});
+    function deviceActions(name){var m=modelForDevice(name),key=X.deviceKey(name);return '<button class="button small" data-neighbor-device="'+h(name)+'" data-neighbor-local="">Details</button>'+(siteMapAvailable()?'<button class="button small" data-neighbor-sitemap="'+h(key)+'">Show on site map</button>':'')+(m?'<button class="button small" data-workspace="'+workspace.indexOf(m)+'">Open configuration</button>':'');}
+    function interfaceAction(device,name){var m=modelForDevice(device);if(!m)return '';var rec=(m.categories.interfaces||[]).find(function(r){return X.interfaceKey(r.name)===X.interfaceKey(name);});return rec?'<button class="button small" data-sup-interface="'+workspace.indexOf(m)+'" data-sup-record="'+h(rec.id)+'">Open interface</button>':'';}
+    function item(title,copy,meta,actions){return '<article class="gs-sup-item"><div class="gs-sup-main"><strong>'+h(title)+'</strong>'+(copy||[]).filter(Boolean).map(function(v){return copyValue(v,'value',false);}).join('')+'</div>'+(meta?'<div class="gs-sup-meta">'+h(meta)+'</div>':'')+(actions?'<div class="gs-actions">'+actions+'</div>':'')+'</article>';}
+    var defs=[
+      ['devices','Devices',function(d){return item(d.name,[(d.ips||[])[0],(d.macs||[])[0]],[d.type,d.model,(d.ips||[]).slice(1,4).join(', '),d.serial?'Serial '+d.serial:''].filter(Boolean).join(' · '),deviceActions(d.name));}],
+      ['interfaces','Interfaces (live)',function(i){var n=i.neighbor;return item(i.device+' · '+i.name,[i.mac,i.ip],[i.description,i.oper?'Link '+(/down/i.test(i.admin||'')?'admin down':i.oper.toLowerCase()):'',i.speed,n&&n.device?'Connected to '+n.device+(n.port?' '+n.port:''):''].filter(Boolean).join(' · '),interfaceAction(i.device,i.name));}],
+      ['neighbors','Neighbors and links',function(l){return item(l.a.device+' '+(l.a.port||'')+' ↔ '+l.b.device+' '+(l.b.port||''),[l.ip],[l.platform,l.source].filter(Boolean).join(' · '),deviceActions(l.b.device));}],
+      ['arp','ARP entries',function(a){return item(a.ip+' → '+a.mac,[a.ip,a.mac],[a.device,a.iface].filter(Boolean).join(' · '),'');}],
+      ['mac','MAC address table',function(m){var ip=ipByMac.get(m.mac);return item(m.mac+' on '+m.device+' '+m.iface,[m.mac,ip],['VLAN '+(m.vlan||'—'),ip?'IP '+ip+' (ARP)':''].filter(Boolean).join(' · '),interfaceAction(m.device,m.iface));}],
+      ['routes','Routes (live)',function(r){return item(r.prefix+(r.nextHop?' via '+r.nextHop:''),[r.prefix,r.nextHop],[r.device,r.protocol,r.iface].filter(Boolean).join(' · '),'');}],
+      ['networks','Networks',function(n){return item(n.network+(n.name?' ('+n.name+')':''),[n.network],[n.type,n.devices?n.devices+' devices':''].filter(Boolean).join(' · '),'');}]];
+    return defs.map(function(d){return {id:d[0],label:d[1],items:groups[d[0]],render:d[2]};}).filter(function(g){return g.items.length;});
+  }
+  function supplementarySearchHTML(query,limit){
+    var groups=supplementarySearch(query);if(!groups.length)return '';var total=groups.reduce(function(n,g){return n+g.items.length;},0);limit=limit||25;
+    return '<section class="gs-sup" aria-label="Supplementary data matches"><h3 class="gs-sup-title">'+icon('layers')+'Supplementary data <span>'+total.toLocaleString()+' matches</span></h3>'+groups.map(function(g){return '<div class="gs-sup-group" data-sup-group="'+g.id+'"><h4>'+h(g.label)+' <span>'+g.items.length.toLocaleString()+'</span></h4>'+g.items.slice(0,limit).map(g.render).join('')+(g.items.length>limit?'<p class="live-note">'+(g.items.length-limit).toLocaleString()+' more. Refine the search to narrow them down.</p>':'')+'</div>';}).join('')+'</section>';
+  }
+  // The search page: type tabs above the results, supplementary matches grouped by type.
+  function searchPageHTML(s){
+    var html=window.SWSearchUI.render(s),q=s.query||'',sup=evidenceSets.length?supplementarySearch(q):[],supCount=sup.reduce(function(n,g){return n+g.items.length;},0);
+    var labels={object:'Parsed objects',field:'Original fields',section:'Configuration sections',finding:'Findings',source:'Configuration text'},counts={};(s.allResults||[]).forEach(function(r){counts[r.sourceKind]=(counts[r.sourceKind]||0)+1;});
+    var active=s.supOnly?'supplementary':s.source||'all';
+    var tabs='<div class="compare-mode-toolbar gs-type-tabs" role="group" aria-label="Result types"><button class="button'+(active==='all'?' primary':'')+'" data-gs-type="all" aria-pressed="'+(active==='all')+'">All <span class="tab-count">'+((s.allResults||[]).length+supCount).toLocaleString()+'</span></button>'+Object.keys(labels).filter(function(k){return counts[k];}).map(function(k){return '<button class="button'+(active===k?' primary':'')+'" data-gs-type="'+k+'" aria-pressed="'+(active===k)+'">'+labels[k]+' <span class="tab-count">'+counts[k].toLocaleString()+'</span></button>';}).join('')+(supCount?'<button class="button'+(active==='supplementary'?' primary':'')+'" data-gs-type="supplementary" aria-pressed="'+(active==='supplementary')+'">Supplementary data <span class="tab-count">'+supCount.toLocaleString()+'</span></button>':'')+'</div>';
+    var block=active==='all'||active==='supplementary'?supplementarySearchHTML(q,active==='supplementary'?200:10):'';
+    var i=html.indexOf('<div class="gs-results"');if(i<0)return html;var j=html.indexOf('>',i)+1;
+    if(active==='supplementary')html=html.replace('<section class="global-search-page"','<section class="global-search-page gs-sup-only"');
+    return html.slice(0,i)+tabs+html.slice(i,j)+block+html.slice(j);
+  }
+  function supplementaryOnlySearch(){
+    var q=state.globalQuery||el.global.value||'',block=supplementarySearchHTML(q,200);
+    return '<section class="panel"><div class="panel-head"><h2 class="panel-title">Search supplementary data</h2></div><div class="side-panel-body gs-sup-standalone">'+(block||'<p class="live-note">No supplementary data matches "'+h(q)+'". Search covers device names, IP and MAC addresses, ports, routes and networks. Open a configuration to search it too.</p>')+'</div></section>';
+  }
   function siteMapPage(){
     if(!window.SWSiteMap)return '';var data=siteMapModel(),map=window.SWSiteMap.layout(data.devices,data.links,{showAccess:!!state.siteMapAccess}),q=String(state.siteMapQuery||'').trim().toLowerCase();
     var byKey=new Map(map.nodes.map(function(n){return [n.key,n];})),roleLabel={firewall:'Firewall',router:'Router',switch:'Switch',controller:'Controller',ap:'Access point',endpoint:'Device'};
@@ -7549,8 +7610,8 @@ function pJ(L,pan){const d=E(),I={},R={},T={};
     var legend='<div class="site-map-legend">'+['firewall','router','switch','controller','ap','endpoint'].filter(function(r){return counts[r];}).map(function(r){return '<span class="legend-item role-'+r+'"><i></i>'+(counts[r]>1?{firewall:'Firewalls',router:'Routers',switch:'Switches',controller:'Controllers',ap:'Access points',endpoint:'Devices'}[r]:roleLabel[r])+' '+counts[r]+'</span>';}).join('')+'<span class="legend-item open"><i></i>Configuration open</span></div>';
     var detail=siteMapDetail(map);
     var linked=map.nodes.filter(function(n){return !n.isolated;}).length;
-    return '<div class="site-map-page'+(detail?' with-detail':'')+'"><section class="panel site-map-panel"><div class="panel-head"><h2 class="panel-title">Site map <span class="panel-count">'+linked+' linked devices · '+map.edges.length+' connections</span></h2><div class="site-map-tools"><label class="table-search">'+icon('search')+'<input id="sitemap-query" type="search" value="'+h(state.siteMapQuery||'')+'" placeholder="Find a device..." aria-label="Find a device on the site map" autocomplete="off"></label><label class="check-row inline"><input type="checkbox" id="sitemap-access"'+(state.siteMapAccess?' checked':'')+'><span>Show access points</span></label><select class="select" id="sitemap-zoom" aria-label="Site map zoom">'+[0.5,0.75,1,1.25].map(function(z){return '<option value="'+z+'"'+((state.siteMapZoom||1)===z?' selected':'')+'>'+Math.round(z*100)+'%</option>';}).join('')+'</select></div></div>'+legend+
-      '<p class="live-note">Built from LLDP / CDP neighbors and monitoring exports. Click a device for its connections. Devices with an open configuration are marked Config; double-click one to open it.</p><div class="site-map-scroll"><svg class="site-map" width="'+Math.round(map.width*(state.siteMapZoom||1))+'" height="'+Math.round(map.height*(state.siteMapZoom||1))+'" viewBox="0 0 '+map.width+' '+map.height+'" role="img" aria-label="Site map with '+map.nodes.length+' devices">'+(map.isolatedTop!=null?'<text class="isolated-label" x="24" y="'+(map.isolatedTop-10)+'">Not linked in the imported data</text>':'')+'<g class="edges">'+edges+'</g><g class="nodes">'+nodes+'</g></svg></div></section>'+detail+'</div>';
+    return '<div class="site-map-page'+(detail?' with-detail':'')+'"><section class="panel site-map-panel"><div class="panel-head"><h2 class="panel-title">Site map <span class="panel-count">'+linked+' linked devices · '+map.edges.length+' connections</span></h2><div class="site-map-tools"><label class="table-search">'+icon('search')+'<input id="sitemap-query" type="search" value="'+h(state.siteMapQuery||'')+'" placeholder="Find a device..." aria-label="Find a device on the site map" autocomplete="off"></label><label class="check-row inline"><input type="checkbox" id="sitemap-access"'+(state.siteMapAccess?' checked':'')+'><span>Show access points</span></label></div></div>'+legend+
+      '<p class="live-note">Built from LLDP / CDP neighbors and monitoring exports. Scroll to zoom and drag to move the map. Click a device for its connections; double-click a device marked Config to open its configuration.</p><div class="site-map-viewport"><div class="site-map-zoom" role="group" aria-label="Zoom"><button class="icon-button" data-sitemap-zoom="out" aria-label="Zoom out" title="Zoom out">−</button><span class="zoom-level" aria-live="polite">'+Math.round((state.siteMapZoom||1)*100)+'%</span><button class="icon-button" data-sitemap-zoom="in" aria-label="Zoom in" title="Zoom in">+</button><button class="button small" data-sitemap-zoom="fit" title="Fit the whole map">Fit</button><button class="button small" data-sitemap-zoom="reset" title="Actual size">100%</button></div><div class="site-map-scroll" title="Scroll to zoom, drag to move"><svg class="site-map" data-w="'+map.width+'" data-h="'+map.height+'" width="'+Math.round(map.width*(state.siteMapZoom||1))+'" height="'+Math.round(map.height*(state.siteMapZoom||1))+'" viewBox="0 0 '+map.width+' '+map.height+'" role="img" aria-label="Site map with '+map.nodes.length+' devices">'+(map.isolatedTop!=null?'<text class="isolated-label" x="24" y="'+(map.isolatedTop-10)+'">Not linked in the imported data</text>':'')+'<g class="edges">'+edges+'</g><g class="nodes">'+nodes+'</g></svg></div></div></section>'+detail+'</div>';
   }
   // Device panel beside the site map, in the same row style as Device information.
   function siteMapDetail(map){
@@ -8306,7 +8367,7 @@ function pJ(L,pan){const d=E(),I={},R={},T={};
     return '<div class="site-page">'+tabs+summary+panels[current]+'</div>';
   }
   // Kept current by scripts/version.py, which replaces the release string on each bump.
-  var APP_VERSION='5.28.1';
+  var APP_VERSION='5.29.0';
   // Client report: one section per open configuration. Port states use the same
   // classification as Interfaces at a glance, evaluated with each model active.
   function withModel(m,fn){var saved={model:state.model,usage:state.interfaceUsageCache,recordMap:state.recordMap};state.model=m;state.interfaceUsageCache=null;state.recordMap=new Map(m.records.map(function(r){return [r.id,r];}));try{return fn();}finally{state.model=saved.model;state.interfaceUsageCache=saved.usage;state.recordMap=saved.recordMap;}}
@@ -8947,7 +9008,7 @@ function pJ(L,pan){const d=E(),I={},R={},T={};
     }
   }
   function showHelp(){
-    openModal(modalHeader('About Config Inspector','Firewall and switch configuration explorer / version 5.28.1')+
+    openModal(modalHeader('About Config Inspector','Firewall and switch configuration explorer / version 5.29.0')+
       '<div class="modal-body"><div class="help-section"><h3>Open and explore</h3><p>Import SonicWall EXP, FortiGate FortiOS text, Palo Alto configuration XML, Sophos Firewall XML or export TAR, Aruba AOS or AOS-CX text, Cisco IOS or NX-OS text, Juniper Junos text or XML, Meraki API JSON, or a JSON snapshot exported by this application. The device type is detected automatically. You can also drop a file anywhere in the window. Select an interface or record for a plain-language explanation and key facts. Related objects show their IP addresses or service ports. Advanced details contains all original fields. Use Copy summary for readable facts and Back to return from a related item.</p></div>'+
       '<div class="help-section"><h3>Configuration sections</h3><p>Choose a root section in the sidebar, then select one of its indented subsections. Each subsection opens its own page. Routes, objects, members and other primary definitions appear before related settings. Security pages are grouped by function, including web, applications, files, intrusion prevention and SSL/TLS inspection. Certificate objects remain under Certificates. Empty subsections are hidden by default. Use View options to show empty sections, or Configuration sections and All original fields to inspect untranslated settings. Configuration context, search and table filters apply to the selected view.</p></div>'+
       '<div class="help-section"><h3>Choose access rule zones</h3><p>In Access Rules, choose From zone and To zone independently. All zones leaves that side unrestricted. Swap reverses the direction. Clear zone filters removes the pair while keeping the table filters. Search, configured state, and IP version filters combine with the pair, and CSV includes all matching rules. A matrix cell selects its zone pair. Interface and zone details offer outgoing and incoming rules.</p></div>'+
@@ -9133,6 +9194,16 @@ function configTree(it){
   }
   document.addEventListener('click',function(event){if(event.target.closest('[data-overview-routes]')){state.categoryTabs.routes='routes';view('routes');}});
   // Site map and supplementary data controls.
+  // Zoom around a point (wheel, buttons) by resizing the SVG and keeping that point fixed.
+  function siteMapBox(){return el.content.querySelector('.site-map-scroll');}
+  function applySiteZoom(z,cx,cy){var box=siteMapBox(),svg=box&&box.querySelector('svg.site-map');if(!svg)return;z=Math.max(0.2,Math.min(2.5,z));var old=state.siteMapZoom||1;if(cx==null)cx=box.clientWidth/2;if(cy==null)cy=box.clientHeight/2;var px=(box.scrollLeft+cx)/old,py=(box.scrollTop+cy)/old;state.siteMapZoom=z;svg.setAttribute('width',Math.round(Number(svg.dataset.w)*z));svg.setAttribute('height',Math.round(Number(svg.dataset.h)*z));box.scrollLeft=px*z-cx;box.scrollTop=py*z-cy;var label=el.content.querySelector('.zoom-level');if(label)label.textContent=Math.round(z*100)+'%';}
+  function fitSiteZoom(){var box=siteMapBox(),svg=box&&box.querySelector('svg.site-map');if(!svg)return;applySiteZoom(Math.min(box.clientWidth/Number(svg.dataset.w),box.clientHeight/Number(svg.dataset.h))*0.98);box.scrollLeft=0;box.scrollTop=0;}
+  document.addEventListener('click',function(event){var t=event.target.closest('[data-sitemap-zoom]');if(!t)return;var z=state.siteMapZoom||1,a=t.getAttribute('data-sitemap-zoom');if(a==='in')applySiteZoom(z*1.2);else if(a==='out')applySiteZoom(z/1.2);else if(a==='fit')fitSiteZoom();else applySiteZoom(1);});
+  document.addEventListener('wheel',function(event){var box=event.target.closest&&event.target.closest('.site-map-scroll');if(!box)return;event.preventDefault();var r=box.getBoundingClientRect();applySiteZoom((state.siteMapZoom||1)*Math.exp(-event.deltaY*0.0015),event.clientX-r.left,event.clientY-r.top);},{passive:false});
+  var siteDrag=null;
+  document.addEventListener('pointerdown',function(event){var box=event.target.closest&&event.target.closest('.site-map-scroll');if(!box||event.button!==0)return;siteDrag={box:box,x:event.clientX,y:event.clientY,left:box.scrollLeft,top:box.scrollTop,moved:false};});
+  document.addEventListener('pointermove',function(event){if(!siteDrag)return;var dx=event.clientX-siteDrag.x,dy=event.clientY-siteDrag.y;if(!siteDrag.moved&&Math.abs(dx)+Math.abs(dy)<5)return;siteDrag.moved=true;siteDrag.box.classList.add('dragging');siteDrag.box.scrollLeft=siteDrag.left-dx;siteDrag.box.scrollTop=siteDrag.top-dy;event.preventDefault();});
+  document.addEventListener('pointerup',function(){if(!siteDrag)return;siteDrag.box.classList.remove('dragging');var moved=siteDrag.moved;siteDrag=null;if(moved){var swallow=function(e){e.stopPropagation();e.preventDefault();document.removeEventListener('click',swallow,true);};document.addEventListener('click',swallow,true);setTimeout(function(){document.removeEventListener('click',swallow,true);},0);}});
   document.addEventListener('click',function(event){
     var t=event.target.closest('[data-neighbor-device],[data-neighbor-sitemap],[data-neighbor-open],[data-neighbor-record],[data-evidence-open]');if(!t)return;event.preventDefault();event.stopPropagation();
     if(t.hasAttribute('data-neighbor-device'))showNeighbor(t.getAttribute('data-neighbor-device'),t.getAttribute('data-neighbor-local'));
@@ -9150,7 +9221,6 @@ function configTree(it){
   document.addEventListener('input',function(event){if(event.target.id!=='sitemap-query')return;state.siteMapQuery=event.target.value;var pos=event.target.selectionStart;renderContent();var input=document.getElementById('sitemap-query');if(input){input.focus();try{input.setSelectionRange(pos,pos);}catch(e){}}var match=el.content.querySelector('.site-node.match');if(match&&match.scrollIntoView)match.scrollIntoView({block:'nearest',inline:'center'});});
   document.addEventListener('change',function(event){
     if(event.target.id==='sitemap-access'){state.siteMapAccess=event.target.checked;renderContent();return;}
-    if(event.target.id==='sitemap-zoom'){state.siteMapZoom=Number(event.target.value)||1;renderContent();return;}
     var assign=event.target.getAttribute&&event.target.getAttribute('data-evidence-assign');if(assign){var set=evidenceSets.find(function(s){return String(s.id)===assign;});if(set){set.assigned=event.target.value===''?null:workspace[Number(event.target.value)]||null;liveCache=new Map();render();}}
   });
   function sectionNavigation(){
@@ -9194,6 +9264,8 @@ function configTree(it){
     if(t.hasAttribute('data-workspace')){setModel(workspace[Number(t.dataset.workspace)]);}
     else if(t.hasAttribute('data-remove-workspace')){var i=Number(t.dataset.removeWorkspace);var removed=workspace.splice(i,1)[0];evidenceSets.forEach(function(s){if(s.assigned===removed)s.assigned=null;});liveCache=new Map();if(!workspace.length)clearWorkspace(true);else if(removed===state.model)setModel(workspace[Math.min(i,workspace.length-1)]);else {if(state.comparison===removed)state.comparison=null;render();}}
     else if(t.hasAttribute('data-remove-evidence')){removeEvidence(Number(t.dataset.removeEvidence));}
+    else if(t.hasAttribute('data-gs-type')&&state.search){var type=t.dataset.gsType;state.search.supOnly=type==='supplementary';state.search.source=type==='supplementary'||type==='all'?'all':type;state.search.page=1;filterGlobalResults();renderContent();}
+    else if(t.hasAttribute('data-sup-interface')){var m=workspace[Number(t.dataset.supInterface)],rid=t.dataset.supRecord;if(m){if(m!==state.model)setModel(m);showRecord(rid);}}
     else if(t.hasAttribute('data-site-tab')){state.siteTab=t.dataset.siteTab;renderContent();el.content.scrollTop=0;}
     else if(t.hasAttribute('data-evidence-tab')){state.evidenceTab=t.dataset.evidenceTab;state.evidenceQuery='';state.evidenceLimit=100;renderContent();el.content.scrollTop=0;}
     else if(t.hasAttribute('data-evidence-more')){var top=el.content.scrollTop;state.evidenceLimit=t.dataset.evidenceMore==='all'?1e9:(state.evidenceLimit||100)+100;renderContent();el.content.scrollTop=top;}
@@ -9254,6 +9326,7 @@ function configTree(it){
   var globalTimer;
   document.addEventListener('input',function(event){
     if(event.target.hasAttribute('data-filter-category-query')){filterCategoryRows(event.target);return;}
+    if(event.target.id==='global-search'&&!state.model){state.globalQuery=el.global.value;clearTimeout(globalTimer);globalTimer=setTimeout(function(){if(el.global.value.trim()){state.view='search';renderNav();renderHeading();renderContent();}else {state.view=siteMapAvailable()?'sitemap':'evidence';render();}},160);return;}
     if(event.target.id==='global-search'){
       if(state.search&&el.global.value!==state.search.query){if(state.search.abort)state.search.abort.abort();state.search.generation++;state.search.status='searching';state.search.error='';state.search.results=[];state.search.allResults=[];renderGlobalSearch();}
       clearTimeout(globalTimer);globalTimer=setTimeout(function(){
