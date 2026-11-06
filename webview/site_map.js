@@ -8,6 +8,7 @@
  function role(d){
   var t=String(d.type||'').toLowerCase(),text=(d.name+' '+(d.model||'')+' '+(d.platform||'')).toLowerCase();
   if(d.vendorRole)return d.vendorRole;
+  if(/^circuit$/.test(t))return 'circuit';
   if(/firewall|security appliance|utm/.test(t))return 'firewall';
   if(/router/.test(t))return 'router';
   if(/switch|stack/.test(t))return 'switch';

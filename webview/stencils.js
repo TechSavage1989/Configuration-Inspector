@@ -209,11 +209,11 @@
  // pictures, or null when none can be shown.
  function artwork(master){
   if(master._art!==undefined)return master._art;
-  var W=master.w*96,H=master.h*96,parts=[];
+  var W=master.w*96,H=master.h*96,parts=[],partial=false;
   master.pictures.forEach(function(p){var x=p.x*96,y=(master.h-p.y-p.h)*96,w=p.w*96,h=p.h*96;
    if(MIME[p.ext])parts.push('<image x="'+r2(x)+'" y="'+r2(y)+'" width="'+r2(w)+'" height="'+r2(h)+'" preserveAspectRatio="none" href="data:'+MIME[p.ext]+';base64,'+base64(p.data)+'"/>');
-   else if(p.ext==='emf'){var e=emf(p.data);if(e)parts.push('<svg x="'+r2(x)+'" y="'+r2(y)+'" width="'+r2(w)+'" height="'+r2(h)+'" viewBox="'+e.viewBox+'" preserveAspectRatio="none" overflow="hidden">'+e.body+'</svg>');}});
-  master._art=parts.length?{w:W,h:H,body:parts.join('')}:null;return master._art;
+   else if(p.ext==='emf'){var e=emf(p.data);if(e&&e.partial)partial=true;if(!e)partial=true;if(e)parts.push('<svg x="'+r2(x)+'" y="'+r2(y)+'" width="'+r2(w)+'" height="'+r2(h)+'" viewBox="'+e.viewBox+'" preserveAspectRatio="none" overflow="hidden">'+e.body+'</svg>');}});
+  master._art=parts.length?{w:W,h:H,body:parts.join(''),partial:partial}:null;return master._art;
  }
  function r2(v){return Math.round(v*100)/100;}
 
@@ -240,7 +240,7 @@
   function poly(o,n,is16,close,fill,stroke,move){var d=[],sz=is16?4:8;for(var k=0;k<n;k++){var x=is16?i16(o+k*sz):i32(o+k*sz),y=is16?i16(o+k*sz+2):i32(o+k*sz+4),p=pt(x,y);d.push((k===0&&move!==false?'M':'L')+p[0]+' '+p[1]);}if(!n)return;var s=d.join('')+(close?'Z':'');if(!add(s))paint(s,fill,stroke);}
   function bez(o,n,is16,from){var d=[],sz=is16?4:8;for(var k=0;k+2<n+(from?0:0);k+=3){var ps=[0,1,2].map(function(j){var q=o+(k+j)*sz;return pt(is16?i16(q):i32(q),is16?i16(q+2):i32(q+4));});d.push('C'+ps.map(function(p){return p[0]+' '+p[1];}).join(' '));}return d.join('');}
   function stockObject(i){var k=i&0x7fffffff;if(k<=5)st.brush={color:['#ffffff','#c0c0c0','#808080','#404040','#000000','none'][k],none:k===5};else if(k<=8)st.pen={color:k===6?'#ffffff':'#000000',width:1,none:k===8};}
-  var o=0,guard=0;
+  var o=0,guard=0,unsupported=0,emfPlus=false,emfPlusOnly=false;
   while(o+8<=b.length&&guard++<200000){var type=u(o),size=u(o+4);if(size<8||o+size>b.length)break;var r=o;
    switch(type){
     case 9:st.we=[i32(r+8),i32(r+12)];break;case 10:st.wo=[i32(r+8),i32(r+12)];break;case 11:st.ve=[i32(r+8),i32(r+12)];break;case 12:st.vo=[i32(r+8),i32(r+12)];break;
@@ -274,11 +274,22 @@
     case 84:{var rx=i32(r+36),ry=i32(r+40),nc=u(r+44),os=u(r+48),str='';for(var t=0;t<nc&&os+t*2+1<size;t++)str+=String.fromCharCode(u16(b,r+os+t*2));str=str.replace(/[\u0000-\u001f]/g,'');if(!str.trim())break;
       var tp=pt(rx,ry),fs=r2(st.font.size*scale()),al=st.align,anchor=(al&6)===6?'middle':(al&2)?'end':'start',base2=(al&24)===24?'':(al&8)?' dominant-baseline="text-after-edge"':' dominant-baseline="text-before-edge"';
       out.push('<text x="'+tp[0]+'" y="'+tp[1]+'" font-size="'+fs+'" font-family="'+esc(st.font.face)+', Arial, sans-serif"'+(st.font.weight>=600?' font-weight="700"':'')+(st.font.italic?' font-style="italic"':'')+' fill="'+st.textColor+'" text-anchor="'+anchor+'"'+base2+(st.font.esc?' transform="rotate('+r2(-st.font.esc*(st.we&&st.ve&&st.ve[1]/st.we[1]<0?-1:1))+' '+tp[0]+' '+tp[1]+')"':'')+'>'+esc(str)+'</text>');break;}
+    // Other bitmap operations: BitBlt, StretchBlt, TransparentBlt, AlphaBlend (a rectangle
+    // without a bitmap is a brush fill) and SetDIBitsToDevice.
+    case 76:case 77:case 114:case 116:{var bx=i32(r+24),by=i32(r+28),bw=i32(r+32),bh=i32(r+36),oB=u(r+84),cB=u(r+88),oBits=u(r+92),cBits=u(r+96);
+      if(cB>=40&&oB+cB<=size&&oBits+cBits<=size){var hr=dib(b.subarray(r+oB,r+oB+cB),b.subarray(r+oBits,r+oBits+cBits));if(hr){var a1=pt(bx,by),a2=pt(bx+bw,by+bh);out.push('<image x="'+Math.min(a1[0],a2[0])+'" y="'+Math.min(a1[1],a2[1])+'" width="'+r2(Math.abs(a2[0]-a1[0]))+'" height="'+r2(Math.abs(a2[1]-a1[1]))+'" preserveAspectRatio="none" href="'+hr+'"/>');}else unsupported++;}
+      else if(!cB&&type===76){var c1=pt(bx,by),c2=pt(bx+bw,by+bh);if(!st.brush.none)out.push('<rect x="'+Math.min(c1[0],c2[0])+'" y="'+Math.min(c1[1],c2[1])+'" width="'+r2(Math.abs(c2[0]-c1[0]))+'" height="'+r2(Math.abs(c2[1]-c1[1]))+'" fill="'+st.brush.color+'"/>');}break;}
+    case 80:{var sx=i32(r+24),sy=i32(r+28),scx=i32(r+40),scy=i32(r+44),oB2=u(r+48),cB2=u(r+52),oBt=u(r+56),cBt=u(r+60);if(cB2>=40&&oB2+cB2<=size&&oBt+cBt<=size){var h2=dib(b.subarray(r+oB2,r+oB2+cB2),b.subarray(r+oBt,r+oBt+cBt));if(h2){var e1=pt(sx,sy),e2=pt(sx+scx,sy+scy);out.push('<image x="'+Math.min(e1[0],e2[0])+'" y="'+Math.min(e1[1],e2[1])+'" width="'+r2(Math.abs(e2[0]-e1[0]))+'" height="'+r2(Math.abs(e2[1]-e1[1]))+'" preserveAspectRatio="none" href="'+h2+'"/>');}else unsupported++;}break;}
+    // Not drawn here: gradient fills, region fills and masked or parallelogram blits; and
+    // an EMF+ only picture (its GDI records are only a stub). The artwork is then marked
+    // partial and not used automatically.
+    case 71:case 72:case 74:case 78:case 79:case 118:unsupported++;break;
+    case 70:{if(size>=20&&u(r+12)===0x2B464D45&&dv.getUint16(r+16,true)===0x4001){var flags=u(r+28+4);emfPlus=true;if(!(dv.getUint16(r+18,true)&1))emfPlusOnly=true;}break;}
     case 14:o=b.length;continue;
    }
    o+=size;}
   if(!out.length)return null;
-  return {viewBox:bounds[0]+' '+bounds[1]+' '+Math.max(1,bounds[2]-bounds[0]+1)+' '+Math.max(1,bounds[3]-bounds[1]+1),body:out.join('')};
+  return {partial:unsupported>0||emfPlusOnly,viewBox:bounds[0]+' '+bounds[1]+' '+Math.max(1,bounds[2]-bounds[0]+1)+' '+Math.max(1,bounds[3]-bounds[1]+1),body:out.join('')};
  }
  function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
  // A device-independent bitmap as an image URL: JPEG and PNG pass through; others become

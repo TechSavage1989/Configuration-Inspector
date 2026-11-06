@@ -90,6 +90,10 @@ existing release or its assets. Preserve the polished README layout.
   `device|short(port)`); keep those names stable when changing render(), or saved edits stop
   applying. Listeners added in the main UI script before its first click listener must use
   `onDoc` (the node harness slices the script there and has no addEventListener).
+- Site links come from `siteMapModel()`: imported links, then `configLinks()` (described
+  ports, default gateways) where no imported link joins the pair, WAN circuits (`wan:` keys,
+  role `circuit`), and `siteEdits()` (hand-added devices and links, removed link ids from
+  `linkId`). Undo/redo (`pushUndo`, `swapEdit`) covers both diagram and site edits.
 - Stencil matching never picks another generation of a series automatically (FG-120/121F for a
   FortiGate-120G has other ports; `generationDiffers` in stencils.js) and prefers front views
   over rear views.
