@@ -197,6 +197,14 @@ Values in these tables (MAC and IP addresses, ports, device names) can be copied
   - **Devices**: every device of the site, with a search box (name, model or address) and a filter (on or off the diagram, or by type). Untick one to remove it (or right-click it on the diagram), tick one from elsewhere to add it, or use **Add shown** / **Remove shown** for everything the search shows.
   - **Stencils**, **Document** (site name, title, subtitle, file name, **Prepared by** and **Organization**, used on the drawing, in the Visio document properties and in download names), **Visio** and more downloads, and **Full screen** (Esc to leave), which gives the diagram the whole window.
   - Click any device to draw the diagram from it down, and use the path under the toolbar to go back up. Scroll to zoom, drag to move, or use the zoom buttons and **Fit**.
+  - **Edit** makes the drawing yours to correct (press **Done** to go back):
+    - Drag devices and access points to move them; Shift-click selects several.
+    - Drag the middle of a link to move that stretch.
+    - Double-click a label to change it (empty hides it).
+    - Double-click a link to choose the port each end uses.
+    - Align the selected items on their left edges, centers or tops, or space them evenly. **Straighten access point links** moves access points over their ports.
+    - **Undo** and **Reset layout** are there too.
+    - Edits are kept on this computer for each view of the site and go into every download. Devices that start rows line up on one left edge by default.
   - **Pages:** tabs under the toolbar show the documentation pages that follow the diagram, built from the open configurations and supplementary data. Each is a letter page:
     - **Port map**: each firewall on a page of its own and switches two to a page: the front panel with ports colored by role (wired data, access points, uplinks, trunks, default access, disabled) and filled when the link is up, and a table of the ports in each role with their VLANs and link details.
     - **Wireless connections**: each switch drawn with its access points wired to their own ports (odd ports above, even ports below), then every access point with its switch port, model, address, speed and link state; links below 1 Gbps are listed.

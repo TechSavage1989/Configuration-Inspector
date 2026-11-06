@@ -54,6 +54,17 @@ function campus(){
  const hidden=D.diagram(input,{scope:'downstream',focus:'examplecore',hidden:new Set(['exampleaccess2'])});ok(!hidden.devices.some(d=>d.name==='EXAMPLE-ACCESS2'),'single devices can be left out');
  const near=D.diagram(input,{scope:'neighbors',focus:'exampleaccess1'});ok(near.title==='EXAMPLE-ACCESS1 - Connections'&&near.devices.some(d=>d.name==='EXAMPLE-CORE'),'device connections page');
  [site,core,near].forEach(p=>{const r=routing(p);ok(!r.length,p.title+': '+r.join('; '));});
+ // Rows start on one left edge; hand edits move devices, change labels, ports and routes.
+ {const firsts=new Map();core.devices.forEach(d=>{const row=d.y;if(!firsts.has(row)||d.x<firsts.get(row))firsts.set(row,d.x);});ok(new Set(firsts.values()).size===1,'the first device of every row starts on the same left edge: '+JSON.stringify([...firsts.values()]));
+  const d0=core.devices.find(d=>d.key==='exampleaccess1'),moved=D.diagram(input,{scope:'downstream',focus:'examplecore',edits:{maxRow:core.maxRow,moves:{exampleaccess1:[90,45]},texts:{[core.shapes.find(x=>x.type==='text'&&x.node==='exampleaccess1'&&/^EXAMPLE-ACCESS1/.test(x.text)).tkey]:'Edited name'}}}),d1=moved.devices.find(d=>d.key==='exampleaccess1');
+  ok(d1.x-d0.x===90&&d1.y-d0.y===45,'a moved device is drawn where it was put: '+[d1.x-d0.x,d1.y-d0.y]);ok(moved.shapes.some(s=>s.type==='text'&&s.text==='Edited name'),'an edited label replaces the text');
+  ok(!routing(moved).filter(x=>!/relaxed/.test(x)).length,'links still follow the routing rules after a move: '+routing(moved).slice(0,3).join('; '));
+  const l0=core.lines.find(l=>l.key&&l.key.indexOf('examplecore|')===0&&l.conn.B),alt=l0.points.map((p,i)=>i>0&&i<l0.points.length-1?[p[0],p[1]]:p);
+  const custom=l0.points.length>=4?l0.points.map((p,i)=>i===1||i===2?[p[0]+(l0.points[1][1]===l0.points[2][1]?0:18),p[1]+(l0.points[1][1]===l0.points[2][1]?18:0)]:p):l0.points;
+  const routed=D.diagram(input,{scope:'downstream',focus:'examplecore',edits:{maxRow:core.maxRow,lines:{[l0.key]:custom}}});ok(JSON.stringify(routed.lines.find(l=>l.key===l0.key).points)===JSON.stringify(custom),'a hand-drawn route is kept');
+  const side=l0.key.split('~')[0],dev=side.slice(0,side.lastIndexOf('|')),port=side.slice(side.lastIndexOf('|')+1),swapped=D.diagram(input,{scope:'downstream',focus:'examplecore',edits:{maxRow:core.maxRow,ports:{[dev+'|'+port]:'GigabitEthernet1/0/20'}}});
+  ok(swapped.shapes.some(s=>s.type==='text'&&s.rotate&&s.text==='Gi1/0/20'),'a link can be moved to another port');}
+
 
  // A larger campus: every view follows the routing rules.
  const big=campus(),keys=big.layout.nodes.map(n=>n.key);let lines=0;
