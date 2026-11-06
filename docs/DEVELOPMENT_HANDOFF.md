@@ -1,5 +1,11 @@
 # Configuration Inspector development handoff
 
+## 5.34.1 — stencil dialog tabs
+
+- `stencilTabs()` splits the stencil dialog into Devices and Stencil files panes
+  (`state.stencilTab`, `data-stencil-tab`/`data-stencil-pane`), each with a search box
+  (`.stencil-device-filter`, `.stencil-file-filter`, filtered in place without a re-render).
+
 ## 5.34.0 — real faceplates, documentation pages, diagram toolbar
 
 - Faceplates: `diagramHardware(n)` (index.html) resolves a node's hardware profile from its
