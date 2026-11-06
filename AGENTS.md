@@ -51,7 +51,8 @@ existing release or its assets. Preserve the polished README layout.
 - Microsoft Visio is stricter than LibreOffice (error 271 on open): document settings are
   elements, FaceName uses `Panose`, Font cells name a declared face, a shape's cells come
   before its sections, cell names must be real Visio cells, and ZIP dates must be valid.
-  `tests/diagram-tests.cjs` checks these; LibreOffice also refuses invalid cell values such
+  The document must end with a `DocumentSheet` ("TheDoc") after `StyleSheets`, or Visio
+  reports error 271 while LibreOffice opens it fine. `tests/diagram-tests.cjs` checks these; LibreOffice also refuses invalid cell values such
   as `FillForegnd="none"` (write a cell only when it has a real value).
 - Neighbor ports from monitoring exports can be wrong; `correctLinkPort()` in index.html
   swaps in the port that the far end's description names when link state agrees.

@@ -1,5 +1,16 @@
 # Configuration Inspector development handoff
 
+## 5.43.0 — Visio 271 fixed, readable pages
+
+- Visio error 271: `documentXML()` was missing `<DocumentSheet NameU="TheDoc">` after
+  `StyleSheets` (Visio-saved files and NetworkDiagramStudio both write it). Also removed
+  `DefaultGuideStyle="0"`, text now starts `<cp IX="0"/><pp IX="0"/>`, ZIP entries set the
+  UTF-8 name flag. `tests/diagram-tests.cjs` checks the DocumentSheet.
+- `fitLetter` fits the area shared by A4 and letter (11 x 8.27 in) while pages stay letter.
+- `splitDiagram()` in index.html (`READABLE = 0.7`): an oversized downstream diagram becomes a
+  depth-1 overview plus one continuation page per branch with its own children.
+- Port labels on links are 12 px bold (`BAND` 72).
+
 ## 5.42.0 — per-link types, full endpoint names, cage clusters
 
 - `diagram()` builds `view` field by field: pass new options through it (`linkStyles` was missing,
