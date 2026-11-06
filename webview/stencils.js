@@ -224,11 +224,16 @@
  function emf(bytes){
   try{return emfSVG(bytes);}catch(e){return null;}
  }
+ var emfSeq=0;
  function emfSVG(b){
   var dv=new DataView(b.buffer,b.byteOffset,b.byteLength);if(b.length<88||dv.getUint32(0,true)!==1||dv.getUint32(40,true)!==0x464D4520)return null;
   function i32(o){return dv.getInt32(o,true);}function u(o){return dv.getUint32(o,true);}function i16(o){return dv.getInt16(o,true);}function f32(o){return dv.getFloat32(o,true);}
-  var bounds=[i32(8),i32(12),i32(16),i32(20)],out=[],objects={},stack=[];
-  var st={xf:[1,0,0,1,0,0],wo:[0,0],we:null,vo:[0,0],ve:null,pen:{color:'#000',width:1,none:false},brush:{color:'#fff',none:false},font:{size:12,weight:400,italic:false,face:'Arial'},textColor:'#000',align:0,fill:'evenodd',pos:[0,0],bk:1};
+  var bounds=[i32(8),i32(12),i32(16),i32(20)],out=[],objects={},stack=[],clipN=0,tag='e'+(++emfSeq)+'c';
+  // Drawing is clipped to the clip path in force (SelectClipPath, IntersectClipRect); pictures
+  // made of clipped bitmap pieces otherwise draw every piece as a full rectangle.
+  function emit(x){out.push(st.clip?'<g clip-path="url(#'+st.clip+')">'+x+'</g>':x);}
+  function setClip(d,mode){var id=tag+(++clipN),prev=st.clip;out.push('<clipPath id="'+id+'"'+(prev&&mode===1?' clip-path="url(#'+prev+')"':'')+'><path d="'+d+'"/></clipPath>');st.clip=id;}
+  var st={clip:null,xf:[1,0,0,1,0,0],wo:[0,0],we:null,vo:[0,0],ve:null,pen:{color:'#000',width:1,none:false},brush:{color:'#fff',none:false},font:{size:12,weight:400,italic:false,face:'Arial'},textColor:'#000',align:0,fill:'evenodd',pos:[0,0],bk:1};
   function clone(s){return JSON.parse(JSON.stringify(s));}
   function color(o){return '#'+[dv.getUint8(o),dv.getUint8(o+1),dv.getUint8(o+2)].map(function(x){return ('0'+x.toString(16)).slice(-2);}).join('');}
   function mul(a,c){return [a[0]*c[0]+a[1]*c[2],a[0]*c[1]+a[1]*c[3],a[2]*c[0]+a[3]*c[2],a[2]*c[1]+a[3]*c[3],a[4]*c[0]+a[5]*c[2]+c[4],a[4]*c[1]+a[5]*c[3]+c[5]];}
@@ -236,7 +241,7 @@
   function scale(){var m=st.xf,s=Math.sqrt(Math.abs(m[0]*m[3]-m[1]*m[2]))||1;if(st.we&&st.ve)s*=Math.abs(st.ve[0]/st.we[0]);return s;}
   var path=null;
   function add(cmd){if(path!==null)path.push(cmd);return path!==null;}
-  function paint(d,fill,stroke){var p=st.pen,br=st.brush,f=fill&&!br.none?br.color:'none',s=stroke&&!p.none?p.color:'none';if(f==='none'&&s==='none')return;out.push('<path d="'+d+'" fill="'+f+'"'+(f!=='none'?' fill-rule="'+st.fill+'"':'')+' stroke="'+s+'"'+(s!=='none'?' stroke-width="'+r2(Math.max(0.5,p.width*scale()))+'"':'')+'/>');}
+  function paint(d,fill,stroke){var p=st.pen,br=st.brush,f=fill&&!br.none?br.color:'none',s=stroke&&!p.none?p.color:'none';if(f==='none'&&s==='none')return;emit('<path d="'+d+'" fill="'+f+'"'+(f!=='none'?' fill-rule="'+st.fill+'"':'')+' stroke="'+s+'"'+(s!=='none'?' stroke-width="'+r2(Math.max(0.5,p.width*scale()))+'"':'')+'/>');}
   function poly(o,n,is16,close,fill,stroke,move){var d=[],sz=is16?4:8;for(var k=0;k<n;k++){var x=is16?i16(o+k*sz):i32(o+k*sz),y=is16?i16(o+k*sz+2):i32(o+k*sz+4),p=pt(x,y);d.push((k===0&&move!==false?'M':'L')+p[0]+' '+p[1]);}if(!n)return;var s=d.join('')+(close?'Z':'');if(!add(s))paint(s,fill,stroke);}
   function bez(o,n,is16,from){var d=[],sz=is16?4:8;for(var k=0;k+2<n+(from?0:0);k+=3){var ps=[0,1,2].map(function(j){var q=o+(k+j)*sz;return pt(is16?i16(q):i32(q),is16?i16(q+2):i32(q+4));});d.push('C'+ps.map(function(p){return p[0]+' '+p[1];}).join(' '));}return d.join('');}
   function stockObject(i){var k=i&0x7fffffff;if(k<=5)st.brush={color:['#ffffff','#c0c0c0','#808080','#404040','#000000','none'][k],none:k===5};else if(k<=8)st.pen={color:k===6?'#ffffff':'#000000',width:1,none:k===8};}
@@ -258,6 +263,9 @@
     case 27:st.pos=[i32(r+8),i32(r+12)];add('M'+pt(st.pos[0],st.pos[1]).join(' '));break;
     case 54:{var a=pt(st.pos[0],st.pos[1]),e=pt(i32(r+8),i32(r+12));st.pos=[i32(r+8),i32(r+12)];if(!add('L'+e.join(' ')))paint('M'+a.join(' ')+'L'+e.join(' '),false,true);break;}
     case 59:path=[];break;case 60:break;case 61:add('Z');break;
+    case 67:{var mode=u(r+8);if(path&&path.length){setClip(path.join(''),mode);}path=null;break;}
+    case 75:{var cb=u(r+8),rm=u(r+12);if(!cb&&rm===5)st.clip=null;break;}
+    case 30:{var c1=pt(i32(r+8),i32(r+12)),c2=pt(i32(r+16),i32(r+20));setClip('M'+Math.min(c1[0],c2[0])+' '+Math.min(c1[1],c2[1])+'H'+Math.max(c1[0],c2[0])+'V'+Math.max(c1[1],c2[1])+'H'+Math.min(c1[0],c2[0])+'Z',1);break;}
     case 62:case 63:case 64:if(path&&path.length){var dd=path.join('');path=null;paint(dd,type!==64,type!==62);}else path=null;break;
     case 3:case 86:poly(r+28,u(r+24),type===86,true,true,true);break;
     case 4:case 87:poly(r+28,u(r+24),type===87,false,false,true);break;
@@ -270,16 +278,18 @@
     case 42:case 43:case 44:{var L=i32(r+8),T=i32(r+12),R=i32(r+16),B=i32(r+20),p1=pt(L,T),p2=pt(R,B),x0=Math.min(p1[0],p2[0]),y0=Math.min(p1[1],p2[1]),w=Math.abs(p2[0]-p1[0]),h=Math.abs(p2[1]-p1[1]),d;
       if(type===42)d='M'+(x0)+' '+(y0+h/2)+'a'+w/2+' '+h/2+' 0 1 0 '+w+' 0a'+w/2+' '+h/2+' 0 1 0 '+(-w)+' 0Z';else d='M'+x0+' '+y0+'h'+w+'v'+h+'h'+(-w)+'Z';if(!add(d))paint(d,true,true);break;}
     case 81:{var xd=i32(r+24),yd=i32(r+28),offBmi=u(r+48),cbBmi=u(r+52),offBits=u(r+56),cbBits=u(r+60),cxd=i32(r+72),cyd=i32(r+76);
-      if(cbBmi>=40&&offBmi+cbBmi<=size&&offBits+cbBits<=size){var href=dib(b.subarray(r+offBmi,r+offBmi+cbBmi),b.subarray(r+offBits,r+offBits+cbBits));if(href){var q1=pt(xd,yd),q2=pt(xd+cxd,yd+cyd);out.push('<image x="'+Math.min(q1[0],q2[0])+'" y="'+Math.min(q1[1],q2[1])+'" width="'+r2(Math.abs(q2[0]-q1[0]))+'" height="'+r2(Math.abs(q2[1]-q1[1]))+'" preserveAspectRatio="none" href="'+href+'"/>');}}break;}
+      if(cbBmi>=40&&offBmi+cbBmi<=size&&offBits+cbBits<=size){var href=dib(b.subarray(r+offBmi,r+offBmi+cbBmi),b.subarray(r+offBits,r+offBits+cbBits));if(href){var q1=pt(xd,yd),q2=pt(xd+cxd,yd+cyd);emit('<image x="'+Math.min(q1[0],q2[0])+'" y="'+Math.min(q1[1],q2[1])+'" width="'+r2(Math.abs(q2[0]-q1[0]))+'" height="'+r2(Math.abs(q2[1]-q1[1]))+'" preserveAspectRatio="none" href="'+href+'"/>');}}break;}
     case 84:{var rx=i32(r+36),ry=i32(r+40),nc=u(r+44),os=u(r+48),str='';for(var t=0;t<nc&&os+t*2+1<size;t++)str+=String.fromCharCode(u16(b,r+os+t*2));str=str.replace(/[\u0000-\u001f]/g,'');if(!str.trim())break;
       var tp=pt(rx,ry),fs=r2(st.font.size*scale()),al=st.align,anchor=(al&6)===6?'middle':(al&2)?'end':'start',base2=(al&24)===24?'':(al&8)?' dominant-baseline="text-after-edge"':' dominant-baseline="text-before-edge"';
-      out.push('<text x="'+tp[0]+'" y="'+tp[1]+'" font-size="'+fs+'" font-family="'+esc(st.font.face)+', Arial, sans-serif"'+(st.font.weight>=600?' font-weight="700"':'')+(st.font.italic?' font-style="italic"':'')+' fill="'+st.textColor+'" text-anchor="'+anchor+'"'+base2+(st.font.esc?' transform="rotate('+r2(-st.font.esc*(st.we&&st.ve&&st.ve[1]/st.we[1]<0?-1:1))+' '+tp[0]+' '+tp[1]+')"':'')+'>'+esc(str)+'</text>');break;}
+      emit('<text x="'+tp[0]+'" y="'+tp[1]+'" font-size="'+fs+'" font-family="'+esc(st.font.face)+', Arial, sans-serif"'+(st.font.weight>=600?' font-weight="700"':'')+(st.font.italic?' font-style="italic"':'')+' fill="'+st.textColor+'" text-anchor="'+anchor+'"'+base2+(st.font.esc?' transform="rotate('+r2(-st.font.esc*(st.we&&st.ve&&st.ve[1]/st.we[1]<0?-1:1))+' '+tp[0]+' '+tp[1]+')"':'')+'>'+esc(str)+'</text>');break;}
     // Other bitmap operations: BitBlt, StretchBlt, TransparentBlt, AlphaBlend (a rectangle
     // without a bitmap is a brush fill) and SetDIBitsToDevice.
     case 76:case 77:case 114:case 116:{var bx=i32(r+24),by=i32(r+28),bw=i32(r+32),bh=i32(r+36),oB=u(r+84),cB=u(r+88),oBits=u(r+92),cBits=u(r+96);
-      if(cB>=40&&oB+cB<=size&&oBits+cBits<=size){var hr=dib(b.subarray(r+oB,r+oB+cB),b.subarray(r+oBits,r+oBits+cBits));if(hr){var a1=pt(bx,by),a2=pt(bx+bw,by+bh);out.push('<image x="'+Math.min(a1[0],a2[0])+'" y="'+Math.min(a1[1],a2[1])+'" width="'+r2(Math.abs(a2[0]-a1[0]))+'" height="'+r2(Math.abs(a2[1]-a1[1]))+'" preserveAspectRatio="none" href="'+hr+'"/>');}else unsupported++;}
-      else if(!cB&&type===76){var c1=pt(bx,by),c2=pt(bx+bw,by+bh);if(!st.brush.none)out.push('<rect x="'+Math.min(c1[0],c2[0])+'" y="'+Math.min(c1[1],c2[1])+'" width="'+r2(Math.abs(c2[0]-c1[0]))+'" height="'+r2(Math.abs(c2[1]-c1[1]))+'" fill="'+st.brush.color+'"/>');}break;}
-    case 80:{var sx=i32(r+24),sy=i32(r+28),scx=i32(r+40),scy=i32(r+44),oB2=u(r+48),cB2=u(r+52),oBt=u(r+56),cBt=u(r+60);if(cB2>=40&&oB2+cB2<=size&&oBt+cBt<=size){var h2=dib(b.subarray(r+oB2,r+oB2+cB2),b.subarray(r+oBt,r+oBt+cBt));if(h2){var e1=pt(sx,sy),e2=pt(sx+scx,sy+scy);out.push('<image x="'+Math.min(e1[0],e2[0])+'" y="'+Math.min(e1[1],e2[1])+'" width="'+r2(Math.abs(e2[0]-e1[0]))+'" height="'+r2(Math.abs(e2[1]-e1[1]))+'" preserveAspectRatio="none" href="'+h2+'"/>');}else unsupported++;}break;}
+      if(cB>=40&&oB+cB<=size&&oBits+cBits<=size){var hr=dib(b.subarray(r+oB,r+oB+cB),b.subarray(r+oBits,r+oBits+cBits));if(hr){var a1=pt(bx,by),a2=pt(bx+bw,by+bh);emit('<image x="'+Math.min(a1[0],a2[0])+'" y="'+Math.min(a1[1],a2[1])+'" width="'+r2(Math.abs(a2[0]-a1[0]))+'" height="'+r2(Math.abs(a2[1]-a1[1]))+'" preserveAspectRatio="none" href="'+hr+'"/>');}else unsupported++;}
+      // Without a bitmap only the brush raster operations paint (PATCOPY, WHITENESS,
+      // BLACKNESS); others, such as the no-op Visio writes at the end, draw nothing.
+      else if(!cB&&type===76&&[0x00F00021,0x00FF0062,0x00000042].indexOf(u(r+40))>=0){var rop=u(r+40),c1=pt(bx,by),c2=pt(bx+bw,by+bh);var fillC=rop===0x00FF0062?'#ffffff':rop===0x00000042?'#000000':st.brush.none?null:st.brush.color;if(fillC)emit('<rect x="'+Math.min(c1[0],c2[0])+'" y="'+Math.min(c1[1],c2[1])+'" width="'+r2(Math.abs(c2[0]-c1[0]))+'" height="'+r2(Math.abs(c2[1]-c1[1]))+'" fill="'+fillC+'"/>');}break;}
+    case 80:{var sx=i32(r+24),sy=i32(r+28),scx=i32(r+40),scy=i32(r+44),oB2=u(r+48),cB2=u(r+52),oBt=u(r+56),cBt=u(r+60);if(cB2>=40&&oB2+cB2<=size&&oBt+cBt<=size){var h2=dib(b.subarray(r+oB2,r+oB2+cB2),b.subarray(r+oBt,r+oBt+cBt));if(h2){var e1=pt(sx,sy),e2=pt(sx+scx,sy+scy);emit('<image x="'+Math.min(e1[0],e2[0])+'" y="'+Math.min(e1[1],e2[1])+'" width="'+r2(Math.abs(e2[0]-e1[0]))+'" height="'+r2(Math.abs(e2[1]-e1[1]))+'" preserveAspectRatio="none" href="'+h2+'"/>');}else unsupported++;}break;}
     // Not drawn here: gradient fills, region fills and masked or parallelogram blits; and
     // an EMF+ only picture (its GDI records are only a stub). The artwork is then marked
     // partial and not used automatically.

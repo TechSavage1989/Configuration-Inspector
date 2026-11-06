@@ -1,5 +1,12 @@
 # Configuration Inspector development handoff
 
+## 5.38.1 — EMF clipping
+
+- `emfSVG()` emits through `emit()`, which wraps drawing in the clip path in force
+  (`SelectClipPath` 67, `IntersectClipRect` 30, reset by `ExtSelectClipRgn` 75 with RGN_COPY
+  and no region; saved with SaveDC/RestoreDC). Clip ids are unique per picture (`emfSeq`).
+  BitBlt without a bitmap paints only for PATCOPY, WHITENESS and BLACKNESS.
+
 ## 5.38.0 — diagrams from configurations, manual links, stencil picker
 
 - `siteMapAvailable()` is true with configurations alone. `configLinks()` infers links from
