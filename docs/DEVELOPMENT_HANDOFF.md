@@ -1,5 +1,22 @@
 # Configuration Inspector development handoff
 
+## 5.40.0 — fewer crossings, hardware packs
+
+- Routing: `CROSS` is 30 (above a bend). After the first pass every crossing line is routed
+  again against all others (`Router.rebuild(paths, skip)`, `Router.score()` = crossings and
+  bends); the new route is kept when it crosses fewer lines with at most one more bend.
+  A second pass gained nothing on the test site, so there is one.
+- Hardware packs (index.html `saveHardwarePack`/`importHardwarePack`, format
+  `config-inspector-hardware-pack`, schema 1): the masters in use (fields as `read()` gives
+  them, Uint8Arrays as `{$b64}`, `_`-prefixed caches dropped), `points` per `masterKey` and
+  `choices` per device key. Import stores each file as `<file> (hardware pack)` in the stencil
+  store with `pack:true` and the parsed form (no bytes); masters keep their original `file`, so
+  `masterKey` and saved choices still match. `packDecode` drops prototype keys.
+- Port point editor: `spSnap`/`spSwap` undo history, the `[data-sp-pick]` list and
+  `[data-sp-x]`/`[data-sp-y]` percent fields; Ctrl+arrows nudge 0.1 px.
+- Ideas taken from NetworkDiagramStudio (sibling app): hardware packs, the port list with
+  numeric positions, undo in the port editor.
+
 ## 5.39.0 — editor selection, route snapping, stencil port points
 
 - Editor (index.html): `editDrag.kind` is `move`, `box` (selection box on empty space,
