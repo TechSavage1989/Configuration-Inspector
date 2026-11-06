@@ -122,7 +122,8 @@ function campus(){
    {key:'sw',name:'EXAMPLE-CORE',role:'switch',model:'Aruba 6100',ip:'10.0.10.2',hw:{members:[{id:'1',profile:cx}],portOf},ports,vlans:[{id:'10',name:'Data',ip:'10.0.10.1/24'},{id:'20',name:'Voice',ip:''},{id:'30',name:'Guest',ip:''}],addresses:[{iface:'vlan10',ip:'10.0.10.1/24',note:''}],routes:[]}]};
   const pages=D.docPages({docs},{title:'Example Site',company:'EXAMPLE ORG',author:'Example Engineer',date:'2026-01-01',offset:1}),titles=pages.map(p=>p.title),txt=p=>p.shapes.filter(s=>s.type==='text').map(s=>s.text).join('\n');
   ok(['Port map','Wireless connections','VLANs and routing','Trunk VLANs'].every(t=>titles.includes(t)),'documentation pages: '+titles.join(', '));
-  const pm=pages.find(p=>p.title==='Port map');ok(/1-40/.test(txt(pm))&&/41-48/.test(txt(pm))&&/Wireless access points/.test(txt(pm))&&/Disabled/.test(txt(pm))&&/To EXAMPLE-FW/.test(txt(pm)),'the port map groups ports by role with ranges and VLAN details');
+  const pms=pages.filter(p=>p.title==='Port map');ok(pms.length===2&&txt(pms[0]).includes('EXAMPLE-FW')&&!txt(pms[0]).includes('EXAMPLE-CORE')&&txt(pms[1]).includes('EXAMPLE-CORE'),'the firewall has a port map page of its own');
+  const pm=pms[1];ok(/1-40/.test(txt(pm))&&/41-48/.test(txt(pm))&&/Wireless access points/.test(txt(pm))&&/Disabled/.test(txt(pm))&&/To EXAMPLE-FW/.test(txt(pm)),'the port map groups ports by role with ranges and VLAN details');
   ok(pm.shapes.some(s=>s.type==='rect'&&s.fill==='#7fd1a6'),'access point ports are coloured on the faceplate');
   const wl=pages.find(p=>p.title==='Wireless connections');ok(/EXAMPLE-AP43/.test(txt(wl))&&/below 1 Gbps/.test(txt(wl)),'wireless page lists the access points and slow links');
   const vr=pages.find(p=>p.title==='VLANs and routing');ok(/0\.0\.0\.0\/0/.test(txt(vr))&&/Repeated addresses: 10\.0\.10\.1/.test(txt(vr)),'routes and repeated addresses');
