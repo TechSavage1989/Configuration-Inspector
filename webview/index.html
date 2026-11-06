@@ -778,6 +778,7 @@ table.data th,table.data td{vertical-align:top}
 .diagram-page-view{display:flex;flex-direction:column;gap:16px}.diagram-actions{display:flex;gap:8px;align-items:center;flex-wrap:wrap}.diagram-title-field{display:flex;gap:6px;align-items:center;font-size:12px;color:var(--muted)}.diagram-title-field .diagram-title-input{width:220px;max-width:none;font-size:12px;color:var(--ink)}
 .diagram-toolbar{align-items:center;flex-wrap:wrap}.diagram-field{display:flex;gap:6px;align-items:center;font-size:12px;color:var(--muted)}.diagram-field .select{width:auto;max-width:260px;font-size:12px;color:var(--ink)}.diagram-check{display:flex;gap:5px;align-items:center;font-size:12px;color:var(--ink)}
 .entity-link{border:0;background:none;padding:0;margin:0;font:inherit;color:var(--accent);cursor:pointer;text-align:left;text-decoration:underline;text-decoration-color:color-mix(in srgb,var(--accent) 35%,transparent);text-underline-offset:2px}.entity-link:hover{text-decoration-color:var(--accent)}
+.diagram-scroll text[data-kind],.diagram-scroll polyline[data-kind]:not([data-line]){cursor:pointer!important}.diagram-scroll text[data-kind]:hover{fill:var(--accent);text-decoration:underline}.diagram-scroll polyline[data-kind]:not([data-line]):hover{stroke-width:5}
 .stencil-dialog .site-link-row{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:6px 0;border-bottom:1px solid var(--line)}.stencil-device{display:flex;flex-direction:column;min-width:0}.stencil-device .muted{color:var(--muted);font-size:11px}.site-link-row[hidden],.stencil-row[hidden],.stencil-file[hidden],#modal [hidden]{display:none!important}.diagram-scroll polyline.snapped{stroke-dasharray:6 3}.sp-canvas{overflow:hidden;border:1px solid var(--line);border-radius:8px;background:#fff;max-height:60vh}.sp-svg{display:block;touch-action:none;cursor:default}.sp-pt{cursor:move}.sp-fields{display:flex;flex-wrap:wrap;gap:12px;align-items:center;margin-bottom:10px}.sp-fields input{width:90px}.sp-tools{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-bottom:10px}.stencil-row-tools{display:flex;gap:6px;align-items:center;flex-wrap:wrap;justify-content:flex-end}#modal.wide-modal{width:min(1180px,calc(100vw - 28px))}.label-edit{width:100%;min-height:110px;font:12px/1.5 'Segoe UI',Arial,sans-serif;resize:vertical;padding:8px}.link-color{width:64px;height:34px;padding:2px;border:1px solid var(--line);border-radius:6px;background:none}.link-swatch{display:inline-block;width:12px;height:12px;border-radius:2px;vertical-align:-1px}.diagram-scroll text[data-kind]{cursor:pointer}.diagram-marquee{fill:#2f6fde14;stroke:#2f6fde;stroke-width:1;stroke-dasharray:4 3;pointer-events:none}.stencil-row .select{max-width:340px;font-size:12px}.stencil-row .stencil-pick{width:340px;flex:0 1 340px}.stencil-picker{min-width:min(860px,90vw)}.stencil-pick-bar{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:10px}.stencil-pick-bar input{flex:1 1 260px}.stencil-suggest{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-bottom:10px}
 .stencil-pick-cols{display:grid;grid-template-columns:minmax(200px,1fr) 2fr;gap:12px;align-items:start}.stencil-pick-files,.stencil-pick-masters{display:flex;flex-direction:column;gap:2px;max-height:56vh;overflow:auto;border:1px solid var(--line);border-radius:8px;padding:6px}
 .stencil-pick-file,.stencil-pick-master{display:flex;flex-direction:column;align-items:flex-start;text-align:left;border:0;background:none;padding:6px 8px;border-radius:6px;font-size:12px}.stencil-pick-file .muted,.stencil-pick-master .muted{font-size:11px;color:var(--muted)}.stencil-pick-file:hover,.stencil-pick-master:hover{background:color-mix(in srgb,var(--accent) 8%,transparent)}.stencil-pick-file.active,.stencil-pick-master.active{background:color-mix(in srgb,var(--accent) 14%,transparent)}
@@ -962,7 +963,7 @@ body{font-size:14px}.brand-mark{background:linear-gradient(145deg,#287dc6,#15578
       <div id="page-heading"></div>
       <div id="workspace-tabs"></div><div id="workspace-notice"></div>
       <div id="content"></div>
-      <footer class="page-footer"><span id="version-label">Config Inspector 5.45.0</span></footer>
+      <footer class="page-footer"><span id="version-label">Config Inspector 5.46.0</span></footer>
     </main>
   </div>
   <input type="file" id="import-file" multiple accept=".exp,.txt,.json,.conf,.cfg,.xml,.tar,.set,.log,.backup,.rsc,.xlsx,.csv,.vssx,.vstx,.vsdx,.vss" hidden>
@@ -6101,7 +6102,7 @@ function pJ(L,pan){const d=E(),I={},R={},T={};
  };
  var ROLE_FILL={firewall:'#c0504d',router:'#e6a23c',switch:'#4f81bd',controller:'#6b62d9',ap:'#22b14c',endpoint:'#8a94a6',circuit:'#8e44ad'};
  var ROLE_LABEL={firewall:'Firewall',router:'Router',switch:'Switch',controller:'Controller',ap:'Access point',endpoint:'Device',circuit:'Provider circuit'};
- var G=9,BAND=72,BEND=20,CROSS=30,CROSS_STRICT=20000,TOP=126,EP_W=126,EP_H=54,EP_PITCH=153,MARGIN=36,HEAD=18,FOOT=18;
+ var G=9,BAND=72,BEND=40,CROSS=30,CROSS_STRICT=20000,TOP=126,EP_W=126,EP_H=54,EP_PITCH=153,MARGIN=36,HEAD=18,FOOT=18;
  function speedValue(s){var m=String(s||'').match(/([\d.]+)\s*([GM])/i);if(!m)return 0;return Number(m[1])*(m[2].toUpperCase()==='G'?1000:1);}
  function linkType(l,aRole,bRole){if(aRole==='circuit'||bRole==='circuit')return 'wan';
   if(aRole==='ap'||bRole==='ap')return 'wap';
@@ -6440,7 +6441,8 @@ function pJ(L,pan){const d=E(),I={},R={},T={};
   // Endpoint boxes are wide enough for the longest full name on the page (owner request: access
   // points show their whole name); the image takes 52 px when a stencil draws the endpoint.
   var longest=0;devices.forEach(function(dev){(dev.eps||[]).forEach(function(a){if(!a.node.group)longest=Math.max(longest,String(a.node.name||'').length);});});
-  if(longest){EP_W=Math.max(126,up9(60+longest*9*0.56));EP_PITCH=EP_W+27;}
+  // Even grid steps, so an endpoint's center (where its link lands) is on the routing grid.
+  if(longest){EP_W=Math.max(126,Math.ceil((60+longest*9*0.56)/18)*18);EP_PITCH=EP_W+27;}
   // Connections: one per physical link on faceplates, one per device pair on boxes.
   var conns=[],seenLinks=new Set();
   (input.links||[]).forEach(function(l){var A=devices.get(l.a),B=devices.get(l.b);if(!A||!B||A===B)return;var key=[l.a+'|'+short(l.aPort),l.b+'|'+short(l.bPort)].sort().join('~');if(seenLinks.has(key))return;seenLinks.add(key);
@@ -6476,7 +6478,7 @@ function pJ(L,pan){const d=E(),I={},R={},T={};
   // Compact (owner request): a row of endpoints stays within the device's width where it fits,
   // each as near its port as its neighbors allow, instead of running off to one side.
   devices.forEach(function(d){[d.top,d.bot].forEach(function(list){var x=null;list.sort(function(p,q){return p.dx-q.dx;}).forEach(function(e){var ideal=snap(e.dx-EP_W/2);x=x==null?ideal:Math.max(ideal,x+EP_PITCH);e.rx=x;});
-    var body=d.w,n=list.length,span=n?(n-1)*EP_PITCH+EP_W:0,lo=0,hi=Math.max(0,snap(body-EP_W));if(n&&span<=body){for(var i=n-1;i>=0;i--){var cap=i===n-1?hi:list[i+1].rx-EP_PITCH;if(list[i].rx>cap)list[i].rx=cap;}for(var j=0;j<n;j++){var floor=j?list[j-1].rx+EP_PITCH:lo;if(list[j].rx<floor)list[j].rx=floor;}}
+    var body=d.w,n=list.length,span=n?(n-1)*EP_PITCH+EP_W:0,lo=-2*G,hi=Math.max(0,snap(body-EP_W))+2*G;if(n&&span<=body){for(var i=n-1;i>=0;i--){var cap=i===n-1?hi:list[i+1].rx-EP_PITCH;if(list[i].rx>cap)list[i].rx=cap;}for(var j=0;j<n;j++){var floor=j?list[j-1].rx+EP_PITCH:lo;if(list[j].rx<floor)list[j].rx=floor;}}
     // A row wider than the body still starts where it stays within the device's width if it can.
     else if(n){var start=Math.max(0,Math.min(list[0].rx,snap(d.w-span)));list.forEach(function(e,k){e.rx=start+k*EP_PITCH;});}});
    var left=Math.min.apply(null,[0].concat(d.top.concat(d.bot).map(function(e){return e.rx;}))),right=Math.max.apply(null,[d.w+(d.others?G*2+EP_W:0)].concat(d.top.concat(d.bot).map(function(e){return e.rx+EP_W;})));d.offset=-left;d.cellW=right-left;});
@@ -6571,6 +6573,18 @@ function pJ(L,pan){const d=E(),I={},R={},T={};
    function onPort(t,first){if(!t||t.shared||!t.slot||t.slot.ex==null||t.slot.ex===t.slot.dx)return;var x0=t.dev.x+t.slot.dx,x1=t.dev.x+t.slot.ex,list=first?points:points.slice().reverse();if(list[0][0]!==x0)return;for(var k=0;k<list.length&&list[k][0]===x0;k++)list[k]=[x1,list[k][1]];if(!first)points=list.reverse();else points=list;}
    if(style==='plate'){onPort(c.ta,true);onPort(c.tb,false);}
    lines.push({points:points,color:kindStyle(c.type,view).color,width:isFiberKind(c.type)?2.5:style==='box'&&c.aPorts.length>1?3.5:2,conn:c,routed:!!path,strict:!!strict,groups:c.groups});});
+  // Fewest bends (owner request): a short sideways step next to a port (stub, step of one or two
+  // grid units, vertical run) is removed by moving that run onto the port's column when the
+  // column is free of devices and of other lines' collinear stretches.
+  function overlaps(l0,x0,y0,x1,y1){return lines.some(function(l){if(l===l0)return false;for(var k=1;k<l.points.length;k++){var a=l.points[k-1],b=l.points[k];
+    if(x0===x1&&a[0]===b[0]&&Math.abs(a[0]-x0)<1&&Math.min(a[1],b[1])<Math.max(y0,y1)-0.5&&Math.max(a[1],b[1])>Math.min(y0,y1)+0.5)return true;
+    if(y0===y1&&a[1]===b[1]&&Math.abs(a[1]-y0)<1&&Math.min(a[0],b[0])<Math.max(x0,x1)-0.5&&Math.max(a[0],b[0])>Math.min(x0,x1)+0.5)return true;}return false;});}
+  function freeColumn(x,y0,y1){for(var y=Math.min(y0,y1)+G;y<Math.max(y0,y1);y+=G){var v=router.at(x,y);if(v<0||router.blocked[v])return false;}return true;}
+  function straightenEnd(l,rev){var p=rev?l.points.slice().reverse():l.points;if(p.length<5)return false;var P0=p[0],P1=p[1],P2=p[2],P3=p[3],P4=p[4];
+   if(!(P0[0]===P1[0]&&P1[1]===P2[1]&&P2[0]===P3[0]&&P3[1]===P4[1]))return false;var a=P1[0],step=Math.abs(P2[0]-a);if(step===0||step>2*G)return false;
+   if(!freeColumn(a,P1[1],P3[1])||overlaps(l,a,P1[1],a,P3[1])||overlaps(l,a,P3[1],P3[0],P3[1]))return false;
+   var q=[P0,[a,P3[1]]].concat(p.slice(4));l.points=compress(rev?q.reverse():q);return true;}
+  lines.forEach(function(l){for(var i=0;i<3;i++){if(!straightenEnd(l,false)&&!straightenEnd(l,true))break;}});
   // Where a line crosses one drawn before it, its horizontal run hops over in a small arc.
   // Hand-drawn routes from the editor replace the computed one while both ends still meet
   // the same port points.
@@ -7397,7 +7411,7 @@ function pJ(L,pan){const d=E(),I={},R={},T={};
     return {compareText:compareText,compareMode:['records','text','fields'].includes(data.compareMode)?data.compareMode:'records',models:models.slice(0,data.count),model:data.selected<0?null:models[data.selected],comparison:data.comparison<0?null:models[data.comparison],view:typeof data.view==='string'?data.view:'overview',scope:typeof data.scope==='string'?data.scope:'',categoryTabs:data.categoryTabs&&typeof data.categoryTabs==='object'&&!Array.isArray(data.categoryTabs)?data.categoryTabs:{},showUnassigned:!!data.showUnassigned,showEmpty:!!data.showEmpty};
   }
   function create(options){
-    options=options||{};var bridge=options.bridge||root.chrome&&root.chrome.webview,native=!!(bridge&&typeof bridge.postMessage==='function'&&typeof bridge.addEventListener==='function'),state={current:'5.45.0',state:'idle',message:'',automatic:true,busy:false,ready:false,available:false},handlers={},restoring=false,installing=false;
+    options=options||{};var bridge=options.bridge||root.chrome&&root.chrome.webview,native=!!(bridge&&typeof bridge.postMessage==='function'&&typeof bridge.addEventListener==='function'),state={current:'5.46.0',state:'idle',message:'',automatic:true,busy:false,ready:false,available:false},handlers={},restoring=false,installing=false;
     var commands=['update-ui-ready','update-status','update-check','update-download','update-later','update-auto-on','update-auto-off','update-restored','update-restore-failed'];
     function request(command){if(!native)throw new Error('Built-in updates are available in the Windows desktop edition.');if(!commands.includes(command))throw new Error('Unknown update action.');bridge.postMessage(command);}
     if(native)bridge.addEventListener('message',async function(event){
@@ -9203,6 +9217,20 @@ function pJ(L,pan){const d=E(),I={},R={},T={};
       if(act==='point'){saveDiagramEdits(function(e2){ends.forEach(function(pk){if(e2.portPos)delete e2.portPos[pk];});if(e2.lines)delete e2.lines[key];});}});},true);
   onDoc('pointerdown',function(event){if(ctxMenu&&!ctxMenu.contains(event.target))closeCtx();},true);
   onDoc('keydown',function(event){if(event.key==='Escape')closeCtx();});
+  // The connection types legend (owner request): right-click an entry for its options; it shows
+  // it is editable on hover (accent color, underline, tooltip).
+  function legendKind(t){var e=t&&t.closest&&t.closest('.diagram-scroll text[data-kind], .diagram-scroll polyline[data-kind]:not([data-line])');return e?e.getAttribute('data-kind'):'';}
+  function highlightKind(kind){var svg=document.querySelector('.diagram-scroll > svg');if(!svg)return;var on=kind&&svg.getAttribute('data-highlight')!==kind;svg.querySelectorAll('polyline[data-line]').forEach(function(l){l.style.opacity=on&&l.getAttribute('data-kind')!==kind?'0.15':'';});if(on)svg.setAttribute('data-highlight',kind);else svg.removeAttribute('data-highlight');}
+  onDoc('contextmenu',function(event){var kind=legendKind(event.target);if(!kind)return;event.preventDefault();event.stopPropagation();closeCtx();
+    var cur=diagramCurrent(),ed=cur&&diagramEdits()[editKeyOf(cur)]||{},custom=kind.indexOf('custom:')===0,styled=!!linkStyles()[kind],lit=(document.querySelector('.diagram-scroll > svg')||{getAttribute:function(){return null;}}).getAttribute('data-highlight')===kind;
+    var items=[['style','Change color and name…'],['highlight',lit?'Show every link again':'Highlight links of this type'],styled?['reset','Reset to the default color and name']:null,custom?['unkind','Return its links to their own types']:null].filter(Boolean);
+    ctxMenu=document.createElement('div');ctxMenu.className='diagram-ctx pop-body';ctxMenu.setAttribute('data-legend-menu',kind);ctxMenu.style.cssText='position:fixed;left:'+Math.max(4,Math.min(event.clientX,window.innerWidth-260))+'px;top:'+Math.max(4,Math.min(event.clientY,window.innerHeight-200))+'px;z-index:100;min-width:220px';ctxMenu.innerHTML='<div class="pop-menu" role="menu">'+items.map(function(x){return '<button class="pop-item" role="menuitem" data-legend-ctx="'+x[0]+'"><b>'+x[1]+'</b></button>';}).join('')+'</div>';document.body.appendChild(ctxMenu);
+    ctxMenu.addEventListener('click',function(e){var b=e.target.closest('[data-legend-ctx]');if(!b)return;var act=b.getAttribute('data-legend-ctx');closeCtx();
+      if(act==='style'){showLinkStyle(kind);return;}
+      if(act==='highlight'){highlightKind(kind);return;}
+      if(act==='reset'){var all=linkStyles();delete all[kind];try{localStorage.setItem('config-inspector-link-styles',JSON.stringify(all));}catch(err){}renderKeepingView();return;}
+      if(act==='unkind'){var label=kind.slice(7);saveDiagramEdits(function(e2){Object.keys(e2.lineKinds||{}).forEach(function(k){if(String(e2.lineKinds[k].label||'').toLowerCase()===label)delete e2.lineKinds[k];});});}});},true);
+  onDoc('mouseover',function(event){var e=event.target.closest&&event.target.closest('.diagram-scroll text[data-kind], .diagram-scroll polyline[data-kind]:not([data-line])');if(e&&!e.querySelector('title')){var t=document.createElementNS('http://www.w3.org/2000/svg','title');t.textContent='Connection type: double-click to change its color and name, right-click for more';e.appendChild(t);}});
   // Colors and names of link types (by cable or fiber type and speed), kept on this computer for
   // every diagram: changing one recolors its links and its legend entry together.
   function linkStyles(){if(!state.linkStyles){try{state.linkStyles=JSON.parse(localStorage.getItem('config-inspector-link-styles')||'{}');}catch(e){state.linkStyles={};}}return state.linkStyles;}
@@ -10153,7 +10181,7 @@ function pJ(L,pan){const d=E(),I={},R={},T={};
     return '<div class="site-page">'+tabs+summary+panels[current]+'</div>';
   }
   // Kept current by scripts/version.py, which replaces the release string on each bump.
-  var APP_VERSION='5.45.0';
+  var APP_VERSION='5.46.0';
   // Client report: one section per open configuration. Port states use the same
   // classification as Interfaces at a glance, evaluated with each model active.
   function withModel(m,fn){var saved={model:state.model,usage:state.interfaceUsageCache,recordMap:state.recordMap};state.model=m;state.interfaceUsageCache=null;state.recordMap=new Map(m.records.map(function(r){return [r.id,r];}));try{return fn();}finally{state.model=saved.model;state.interfaceUsageCache=saved.usage;state.recordMap=saved.recordMap;}}
@@ -10796,7 +10824,7 @@ function pJ(L,pan){const d=E(),I={},R={},T={};
     }
   }
   function showHelp(){
-    openModal(modalHeader('About Config Inspector','Firewall and switch configuration explorer / version 5.45.0')+
+    openModal(modalHeader('About Config Inspector','Firewall and switch configuration explorer / version 5.46.0')+
       '<div class="modal-body"><div class="help-section"><h3>Open and explore</h3><p>Import SonicWall EXP, FortiGate FortiOS text, Palo Alto configuration XML, Sophos Firewall XML or export TAR, Aruba AOS or AOS-CX text, Cisco IOS or NX-OS text, Juniper Junos text or XML, Meraki API JSON, or a JSON snapshot exported by this application. The device type is detected automatically. You can also drop a file anywhere in the window. Select an interface or record for a plain-language explanation and key facts. Related objects show their IP addresses or service ports. Advanced details contains all original fields. Use Copy summary for readable facts and Back to return from a related item.</p></div>'+
       '<div class="help-section"><h3>Configuration sections</h3><p>Choose a root section in the sidebar, then select one of its indented subsections. Each subsection opens its own page. Routes, objects, members and other primary definitions appear before related settings. Security pages are grouped by function, including web, applications, files, intrusion prevention and SSL/TLS inspection. Certificate objects remain under Certificates. Empty subsections are hidden by default. Use View options to show empty sections, or Configuration sections and All original fields to inspect untranslated settings. Configuration context, search and table filters apply to the selected view.</p></div>'+
       '<div class="help-section"><h3>Choose access rule zones</h3><p>In Access Rules, choose From zone and To zone independently. All zones leaves that side unrestricted. Swap reverses the direction. Clear zone filters removes the pair while keeping the table filters. Search, configured state, and IP version filters combine with the pair, and CSV includes all matching rules. A matrix cell selects its zone pair. Interface and zone details offer outgoing and incoming rules.</p></div>'+
