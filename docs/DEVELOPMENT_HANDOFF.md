@@ -1,5 +1,17 @@
 # Configuration Inspector development handoff
 
+## 5.47.0 — Visio package in NetworkDiagramStudio's form
+
+- The owner confirmed NetworkDiagramStudio's .vsdx files open in their Visio while ours gave
+  error 271, so `packageFiles()`/`documentXML()` now follow NDS's `writePackage()`
+  (`src/web/diagram/visio.mjs`): no docProps, minimal document.xml (attribute-only
+  DocumentSettings, FaceName NameU only, one StyleSheet, self-closing DocumentSheet),
+  `boxGeom()` MoveTo/LineTo with Width/Height formulas, pages at ViewScale 0.75 without
+  PrintPageOrientation, page rels only for masters used on that page.
+- The diagnostic set (`visio-271-tests.zip`: minimal shapes and package variants) is in the
+  owner's hands if this still fails; vendor stencil masters copied from .vssx/.vss are the
+  remaining difference from NDS (which synthesizes its own masters).
+
 ## 5.46.0 — fewer bends, legend context menu
 
 - `EP_W` is a multiple of 18 so endpoint centers sit on the 9 px grid (half-step centers made
