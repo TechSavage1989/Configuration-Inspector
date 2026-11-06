@@ -57,6 +57,9 @@ const cfg='version 16.12\nhostname MAP-SW1\nspanning-tree mode rapid-pvst\nvlan 
   await page.locator('[data-map-collapse-all="collapse"]').first().click();ok(await page.locator('.compact-zone .compact-interface').count()===0,'compact Collapse all');
   // Delete stored data forgets collapsed sections.
   ok(await page.evaluate(()=>JSON.parse(localStorage.getItem('config-inspector-nav-collapsed')||'[]').includes('switching')),'collapsed sections are stored locally');
+  const icons=await page.evaluate(()=>{const seen={};document.querySelectorAll('.nav-scroll .nav-item[data-view]').forEach(n=>{const v=n.getAttribute('data-view'),svg=n.querySelector('svg.icon');if(svg&&!(v in seen))seen[v]=svg.innerHTML;});return seen;});
+  const dupes=Object.entries(icons).filter(([v,svg])=>Object.entries(icons).some(([w,o])=>w!==v&&o===svg)).map(([v])=>v);
+  ok(Object.keys(icons).length>=10&&dupes.length===0,'every tool in the navigation has its own icon: '+(dupes.join(', ')||Object.keys(icons).length+' tools'));
   ok(errors.length===0,errors.join('\n'));
   console.log(checks+' navigation and map collapse browser checks passed');
  }finally{await browser.close();}
