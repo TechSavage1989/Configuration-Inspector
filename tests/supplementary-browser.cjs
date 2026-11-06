@@ -25,7 +25,10 @@ const file=(name,buffer,type)=>({name,mimeType:type||'text/plain',buffer:Buffer.
   ok((await page.locator('.site-node').filter({hasText:'EXAMPLE-ACCESS1'}).textContent()).includes('1 AP · 1 device'),'attached access points and devices are summarized');
   ok(await page.locator('.site-edge').count()===4,'links between infrastructure devices');
   await page.locator('#sitemap-access').check();ok(await page.locator('.site-node').count()===7,'access points can be shown');await page.locator('#sitemap-access').uncheck();
+  await page.setViewportSize({width:1440,height:560});await page.waitForTimeout(300);const mh0=await page.evaluate(()=>document.querySelector('.site-map-scroll').getBoundingClientRect().height);
   await page.locator('.site-node').filter({hasText:'EXAMPLE-CORE'}).click();await page.locator('.site-map-detail').waitFor();
+  const mh1=await page.evaluate(()=>document.querySelector('.site-map-scroll').getBoundingClientRect().height);ok(Math.abs(mh1-mh0)<3,'selecting a device with a long panel keeps the map height: '+mh0+' -> '+mh1);
+  await page.setViewportSize({width:1440,height:900});await page.waitForTimeout(300);
   const detail=await page.locator('.site-map-detail').innerText();ok(detail.includes('EXAMPLE-CORE-0001')&&detail.includes('TenGigabitEthernet1/0/11'),'device details list its connections');
   ok(await page.locator('.site-map-detail table').count()===0&&await page.locator('.site-map-detail .device-info-row').count()>=3&&await page.locator('.site-map-detail .site-link-row').count()===4,'the device panel uses the standard side panel rows, with one row per connection');
   await page.setViewportSize({width:1440,height:420});await page.waitForTimeout(200);
@@ -78,9 +81,13 @@ const file=(name,buffer,type)=>({name,mimeType:type||'text/plain',buffer:Buffer.
   ok(await page.evaluate(()=>[...document.querySelectorAll('.diagram-scroll text')].some(t=>t.textContent==='1')&&[...document.querySelectorAll('.diagram-scroll text')].some(t=>t.textContent==='2')),'faceplate ports are numbered');
   await page.locator('[data-diagram-option="aps"]').uncheck();await page.waitForTimeout(300);ok(!(await dtext()).includes('EXAMPLE-AP1'),'access points can be left out');
   await page.locator('[data-diagram-option="aps"]').check();await page.waitForTimeout(300);
-  await page.locator('.diagram-choose summary').click();await page.locator('[data-diagram-hide="exampleaccess1"]').uncheck();await page.waitForTimeout(300);
-  ok(!(await dtext()).includes('EXAMPLE-ACCESS1')&&(await page.locator('.diagram-choose summary').innerText()).includes('1 left out'),'single devices can be left out');
-  await page.locator('[data-diagram-showall]').click();await page.waitForTimeout(300);ok((await dtext()).includes('EXAMPLE-ACCESS1'),'and included again');
+  await page.locator('.diagram-choose summary').click();await page.locator('[data-diagram-device="exampleaccess1"]').uncheck();await page.waitForTimeout(300);
+  ok(!(await dtext()).includes('EXAMPLE-ACCESS1')&&/\d+ of \d+ shown/.test(await page.locator('.diagram-choose summary').innerText()),'a device can be removed from the list');
+  await page.locator('.diagram-scroll [data-diagram-node="exampleaccess2"]').first().click({button:'right'});await page.waitForTimeout(300);ok(!(await dtext()).includes('EXAMPLE-ACCESS2'),'right-clicking a device removes it');
+  await page.locator('[data-diagram-showall]').click();await page.waitForTimeout(300);ok((await dtext()).includes('EXAMPLE-ACCESS1')&&(await dtext()).includes('EXAMPLE-ACCESS2'),'and both come back');
+  await page.locator('#diagram-focus').selectOption('exampleaccess3');await page.waitForTimeout(300);ok((await page.locator('.diagram-panel .panel-title').innerText())==='EXAMPLE-ACCESS3 and below'&&!(await dtext()).includes('EXAMPLE-ACCESS2'),'another device');
+  await page.locator('[data-diagram-device="exampleaccess2"]').check();await page.waitForTimeout(300);ok((await dtext()).includes('EXAMPLE-ACCESS2'),'a device from elsewhere can be added');
+  await page.locator('[data-diagram-showall]').click();await page.waitForTimeout(300);await page.locator('#diagram-focus').selectOption('examplecore');await page.waitForTimeout(300);
   await page.locator('.diagram-toolbar [data-diagram-scope="neighbors"]').click();await page.waitForTimeout(300);ok((await page.locator('.diagram-panel .panel-title').innerText())==='EXAMPLE-CORE - Connections','device connections view');
   await page.locator('.diagram-toolbar [data-diagram-scope="downstream"]').click();await page.waitForTimeout(300);
   const dz0=await page.locator('.diagram-page-view .zoom-level').innerText(),dbox=await page.locator('.diagram-scroll').boundingBox();
