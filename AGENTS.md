@@ -123,6 +123,11 @@ existing release or its assets. Preserve the polished README layout.
   by media, accent-bar boxes for handoffs, green AP summary boxes, and numbered role squares on
   port maps) sets the diagram style; keep new drawing work consistent with it. Links avoid
   crossings whenever any route does (strict re-route pass), even at the cost of more bends.
+- Link types are kinds by media and speed (`linkKind`/`kindStyle` in diagram.js); never color a
+  link from a fixed type list. Owner-edited colors and names (`view.linkStyles`) must reach both the
+  lines and the legend. Text must fit its box (`fitTexts`); grow boxes rather than clipping edits.
+- Stencil port points: exact group mapping (`bankLayout`) first, then `fitPorts` (in-order column
+  matching); keep hand edits rare by improving these, not by adding per-model offsets.
 - Hardware packs carry parsed stencil masters (not the stencil files); keep master fields JSON
   friendly (no Maps or DOM nodes) and keep `m.file` as the original file name so choices and
   port points (keyed by `masterKey`) apply to pack shapes.

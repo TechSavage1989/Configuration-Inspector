@@ -1,5 +1,26 @@
 # Configuration Inspector development handoff
 
+## 5.41.0 — link kinds, wireless editing, port fitting
+
+- Link kinds (`linkKind`, `KINDS`, `LINK_MEDIA` in diagram.js): media from `l.aMedia/bMedia`
+  (evidence `media`, set beside `aSpeed` in `diagramInput`) via `mediaOf()`, else the port's
+  connector (`slot().fiber`) or name; key `media-speed` (e.g. `sr-10000`). `kindStyle(key, view)`
+  applies `view.linkStyles` (localStorage `config-inspector-link-styles`, `showLinkStyle()`);
+  lines and legend entries carry `data-kind`. `LINK_TYPES` stays for legacy keys only.
+- Strict re-route crossing cost is 20000, so any crossing-free route wins.
+- Wireless pages are editable: `editKeyOf`/`editPageOf`/`editableTab` pick the edited page; its
+  edits are stored under `["wireless", site, switchKey]` and passed to `docPages` as
+  `wirelessEdits` (and `linkStyles`).
+- `fitTexts(page)` grows a group's box (and accent bar) to fit edited or long labels; labels are
+  edited in a textarea dialog (`showLabelEdit`).
+- Endpoint rows stay within the device width where they fit (backward and forward pass).
+- `fitPorts(groups, cand)`: when `bankLayout` cannot map one to one, stencil points (`edgePorts`
+  via `st.edges()`) become columns split into blocks; a DP maps device columns to stencil columns
+  in order (skip cost 1, a group start off a block start costs 3), ignoring rack-ear columns.
+- Port points editor: fixed 1000-unit drawing fitted to the box (`spGeom`), viewBox zoom/pan
+  (`spZoom`, wheel, middle button, Space+drag), marker size constant on screen (`e.upp`).
+- Fix: the aggregate-port filter in `diagramDocs` matched FortiGate `port1` (`/^po/`).
+
 ## 5.40.0 — fewer crossings, hardware packs
 
 - Routing: `CROSS` is 30 in the first pass. Every line that still crosses is routed again

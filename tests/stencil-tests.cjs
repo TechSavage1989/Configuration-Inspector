@@ -22,7 +22,14 @@ const {stencil,unzip,vss}=require('./stencil-writer.cjs');
  {const r=(p,a,b)=>Array.from({length:b-a+1},(_,i)=>p+(a+i)),prof={title:'EX-FW',banks:[{label:'HA',names:['ha','mgmt'],form:'RJ45',rows:2},{label:'1G',names:r('port',1,16),form:'RJ45',rows:2},{label:'10G',names:r('x',1,4),form:'SFP+',rows:2}]};
   const node={key:'fw',name:'FW',role:'firewall',model:'EX-FW',hw:{members:[{id:'1',profile:prof}],portOf:n=>{const b=prof.banks.find(b=>b.names.includes(n));return b?{member:'1',bank:prof.banks.indexOf(b),index:b.names.indexOf(n)}:null;}},stencil:{art:{w:240,h:80,body:''},master:bm,banks:c=>T.bankLayout(bm,c)}};
   const dev=new (D._Device)(node,[],[],'plate'),x3=dev.slot('x3'),p1=dev.slot('port1');
-  ok(dev.positions[x3.key].exact&&Math.abs(dev.positions[x3.key].x-(dev.plates[0].x+9+2.0/2.4*dev.img.w))<0.01&&x3.row===0&&p1.dx<x3.dx,'a known device on a stencil: X3 lands exactly on its cage: '+JSON.stringify([x3.dx,p1.dx]));}
+  ok(dev.positions[x3.key].exact&&Math.abs(dev.positions[x3.key].x-(dev.plates[0].x+9+2.0/2.4*dev.img.w))<0.01&&x3.row===0&&p1.dx<x3.dx,'a known device on a stencil: X3 lands exactly on its cage: '+JSON.stringify([x3.dx,p1.dx]));
+  // Extra chassis points at both ends (so the groups do not map one to one): the device's layout
+  // is fitted onto the stencil's points and every port still lands on its own point.
+  const bm2=Object.assign({},bm,{connections:bm.connections.concat([{x:0.02,y:0.6},{x:0.02,y:0.2},{x:2.38,y:0.6},{x:2.38,y:0.2}])});ok(T.bankLayout(bm2,[2,16,4])===null,'extra points defeat the one-to-one group mapping');
+  const node2=Object.assign({},node,{stencil:{art:{w:240,h:80,body:''},master:bm2,banks:c=>T.bankLayout(bm2,c),edges:()=>(T.edgePorts(bm2)||[]).map(p=>({fx:p.x/bm2.w,fy:1-p.y/bm2.h,row:p.row}))}});
+  const d2=new (D._Device)(node2,[],[],'plate'),at=n=>{const sl=d2.slot(n),p=d2.positions[sl.key];return p&&{fx:Math.round((p.x-d2.plates[0].x-9)/d2.img.w*2.4*100)/100,row:sl.row,exact:p.exact};};
+  const got=['ha','mgmt','port1','port2','port16','x1','x2','x3','x4'].map(n=>[n,at(n)]);
+  ok(got.every(([n,p])=>p&&p.exact)&&at('ha').fx===0.2&&at('mgmt').row===1&&at('port1').fx===0.6&&at('port16').fx===1.5&&at('x1').fx===1.9&&at('x3').fx===2&&at('x4').row===1,'ports are fitted onto the stencil despite extra points: '+JSON.stringify(got));}
  const aps=[{name:'EX-AP900 side',part:'EXAP900',w:3,h:0.4,connections:[]},{name:'EX-AP900',part:'EXAP900',w:3.2,h:0.45,connections:[]},{name:'EX-AP900 top',part:'EXAP900',w:2,h:2,connections:[]}];
  ok(T.match({model:'EX-AP900',parts:['EXAP900'],role:'ap'},aps)===aps[2],'an access point is drawn face-on, not from the side');
  ok(T.match({model:'EXSW48',role:'switch'},fam)===fam[4]&&T.match({model:'EXSW48',role:'ap'},fam)===fam[4],'the front view is chosen over the rear view');

@@ -143,5 +143,9 @@ function campus(){
   const files=unzip(Buffer.from(D.vsdx(pages,'Docs'))),names=(files['visio/pages/pages.xml'].toString().match(/NameU="[^"]*"/g)||[]);ok(new Set(names).size===names.length&&names.length===pages.length,'every Visio page has its own name: '+names.join(' '));
   ok(D.docPages({docs:{devices:[]}},{}).length===0,'no documentation pages without configurations');}
 
- console.log(checks+' network diagram checks passed');
+   // Link kinds by cable or fiber type and speed, named as in the reference drawing.
+  {const K=(l,a,b,fa)=>{const k=D.linkKind(l,a||'switch',b||'switch',fa,false);return D.kindStyle(k,{}).label;};
+   ok(K({aPort:'1/1/49',bPort:'x3',aSpeed:'10G',aMedia:'SFP+ 10GBase-SR'})==='10 Gbps SR fiber'&&K({aPort:'1/1/51',bPort:'1/1/51',aMedia:'SFP-H10GB-CU1M'})==='10 Gbps SFP+ DAC'&&K({aPort:'Gi1/0/1',bPort:'Gi1/0/2',aSpeed:'1000'.replace('1000','1G')})==='1 Gbps copper'&&K({aPort:'port2'},'firewall','circuit')==='Local handoff'&&K({aPort:'1/1/41'},'switch','ap')==='AP copper'&&K({aPort:'1/1/50',aMedia:'10GBase-LR'})==='10 Gbps LR fiber','link kinds name the cable or fiber type and speed');
+   const k=D.linkKind({aPort:'Gi1/0/1',bPort:'Gi1/0/2',aSpeed:'1G'},'switch','switch');ok(D.kindStyle(k,{linkStyles:{[k]:{color:'#123456',label:'Office copper'}}}).color==='#123456'&&D.kindStyle(k,{linkStyles:{[k]:{label:'Office copper'}}}).label==='Office copper','a link kind\'s color and name can be changed');}
+console.log(checks+' network diagram checks passed');
 })().catch(e=>{console.error(e);process.exit(1);});
