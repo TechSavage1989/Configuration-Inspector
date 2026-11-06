@@ -81,6 +81,11 @@ existing release or its assets. Preserve the polished README layout.
   are read per level of connection points (cages often sit lower than jacks and carry two
   points, one per edge). Stencil product properties (`NetZoomMfgProdNo`, `NetZoomMfgDesc`)
   outrank the shape name when matching.
+- Keep work off the launch path: stored stencils load after the first paint, one file at a
+  time, from their cached parsed form (`parsedTag` = app version) in IndexedDB; stencil
+  matching prefilters shapes by model number (`mayMatch`); imported interfaces are looked
+  up through `portIndex`, not by scanning every set. Large libraries (thousands of shapes)
+  and monitoring exports otherwise freeze the window for seconds.
 - Stencil matching never picks another generation of a series automatically (FG-120/121F for a
   FortiGate-120G has other ports; `generationDiffers` in stencils.js) and prefers front views
   over rear views.

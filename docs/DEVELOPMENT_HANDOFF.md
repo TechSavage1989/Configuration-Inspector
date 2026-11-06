@@ -1,5 +1,14 @@
 # Configuration Inspector development handoff
 
+## 5.36.0 — faster launch and loading, firewall port maps, cleaner links
+
+- Launch: `loadStencils()` starts on idle, reads one stored file at a time (`getAllKeys` then
+  `get`), yields between files and stores the parsed stencil with the file (`parsedTag`).
+- `evidencePort()` uses `portIndex` (device|interface map, rebuilt when the sets change).
+- `SWStencils.match` prefilters by model-number runs (`masterRuns`, `mayMatch`).
+- Routing: `BEND` is 20; terminals on stencils keep the exact port x (`slot.ex`, `onPort`)
+  for their vertical stretch. Port maps: firewalls and routers alone, switches in pairs.
+
 ## 5.35.0 — stencil ports, wireless drawings, AP groups, page choices
 
 - `layout.nodes` now carry `hw` as well (index.html `diagramInput`); before, the diagram itself

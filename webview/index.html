@@ -956,7 +956,7 @@ body{font-size:14px}.brand-mark{background:linear-gradient(145deg,#287dc6,#15578
       <div id="page-heading"></div>
       <div id="workspace-tabs"></div><div id="workspace-notice"></div>
       <div id="content"></div>
-      <footer class="page-footer"><span id="version-label">Config Inspector 5.35.0</span></footer>
+      <footer class="page-footer"><span id="version-label">Config Inspector 5.36.0</span></footer>
     </main>
   </div>
   <input type="file" id="import-file" multiple accept=".exp,.txt,.json,.conf,.cfg,.xml,.tar,.set,.log,.backup,.rsc,.xlsx,.csv,.vssx,.vstx,.vsdx,.vss" hidden>
@@ -6093,7 +6093,7 @@ function pJ(L,pan){const d=E(),I={},R={},T={};
  };
  var ROLE_FILL={firewall:'#c0504d',router:'#e6a23c',switch:'#4f81bd',controller:'#6b62d9',ap:'#22b14c',endpoint:'#8a94a6'};
  var ROLE_LABEL={firewall:'Firewall',router:'Router',switch:'Switch',controller:'Controller',ap:'Access point',endpoint:'Device'};
- var G=9,BAND=54,BEND=6,CROSS=2,TOP=126,EP_W=126,EP_H=54,EP_PITCH=153,MARGIN=36;
+ var G=9,BAND=54,BEND=20,CROSS=2,TOP=126,EP_W=126,EP_H=54,EP_PITCH=153,MARGIN=36;
  function speedValue(s){var m=String(s||'').match(/([\d.]+)\s*([GM])/i);if(!m)return 0;return Number(m[1])*(m[2].toUpperCase()==='G'?1000:1);}
  function linkType(l,aRole,bRole){
   if(aRole==='ap'||bRole==='ap')return 'wap';
@@ -6242,8 +6242,8 @@ function pJ(L,pan){const d=E(),I={},R={},T={};
    // across the middle 80% of the artwork.
    else if(this.hw){var gs2=plate.groups.filter(function(x){return !x.rear&&x.count;}),first=gs2[0],last=gs2[gs2.length-1],x0=first?first.x:81,x1=last?last.x+groupWidth(last):x0+1;dx=plate.x+G+img.w*(0.1+0.8*(pp.dx-x0)/Math.max(1,x1-x0));py=row?this.imgTop+img.h:this.imgTop;}
    else{var cols=plate.groups.reduce(function(c,x){return Math.max(c,x.col+Math.ceil(x.count/2));},1);dx=plate.x+G+(col+0.5)/cols*img.w;py=row?this.imgTop+img.h:this.imgTop;}
-   dx=snap(dx);this.positions[key]={x:dx,y:py,exact:!!pos};
-   return {key:key,plate:plate,dx:dx,py:py,row:row,fiber:g.fiber,number:'',name:p.name};}
+   var ex=dx;dx=snap(dx);this.positions[key]={x:ex,y:py,exact:!!pos};
+   return {key:key,plate:plate,dx:dx,ex:ex,py:py,row:row,fiber:g.fiber,number:'',name:p.name};}
   return {key:key,plate:plate,dx:plate.x+pp.dx,row:row,fiber:g.fiber,py:g.mid?36:null,number:g.labels?g.labels[idx]:g.name==='other'?'':String((g.base||0)+(g.zero?idx:idx+1)),name:p.name};
  };
  Device.prototype.fit=function(){if(this.style!=='box')return;var top=this.terms.filter(function(t){return t.side==='top';}).length,bottom=this.terms.length-top;this.w=Math.max(198,up9(36+18*Math.max(top,bottom)));};
@@ -6420,6 +6420,9 @@ function pJ(L,pan){const d=E(),I={},R={},T={};
     if(a.node.group){page.rect(x,y,EP_W,EP_H,{fill:'#eef8f0',stroke:ROLE_FILL.ap,width:1.5,radius:6});var pre=commonPrefix(a.ports);page.text(x+4,y+5,EP_W-8,46,clip('Ports '+ranges(a.ports,pre),20)+'\n'+a.node.name+'\n'+clip(a.node.model||'',22),{size:9,lineHeight:14,firstBold:true});page.end();return;}page.rect(x,y,EP_W,EP_H,{fill:a.node.role==='ap'?'#eef8f0':'#eef3f9',stroke:a.node.role==='ap'?ROLE_FILL.ap:'#9aa9bd',width:1,radius:6});var est=input.stencils&&input.stencils.get(a.node.key);
     if(est&&est.art){var r=est.art.w/est.art.h,ih=44,iw=ih*r;if(iw>44){iw=44;ih=iw/r;}page.image(x+5+(44-iw)/2,y+5+(44-ih)/2,iw,ih,{art:est.art,master:est.master});page.text(x+52,y+5,EP_W-56,46,clip(short(a.port),12)+'\n'+clip(a.node.name,13)+'\n'+clip(epIP(a.node)||a.node.model||'',14),{size:8.5,lineHeight:14,firstBold:true,align:'left'});}
     else page.text(x+4,y+5,EP_W-8,46,clip(short(a.port),16)+'\n'+clip(a.node.name,20)+'\n'+clip(epIP(a.node)||a.node.model||ROLE_LABEL[a.node.role]||'',22),{size:9,lineHeight:14,firstBold:true});page.end();});
+   // Grouped access points: a box in the access point color around the ports they use.
+   (dev.eps||[]).forEach(function(a){if(!a.node.group||!a.ports||style!=='plate')return;var pts=a.ports.map(function(p){var sl=dev.slot(p||''),pos=dev.positions&&dev.positions[sl.key];return pos?[dev.x+pos.x,dev.y+pos.y]:[dev.x+sl.dx,dev.y+(sl.py!=null?sl.py:sl.row?51:21)];});if(!pts.length)return;
+    var xs=pts.map(function(p){return p[0];}),ys=pts.map(function(p){return p[1];}),x0=Math.min.apply(null,xs)-9,x1=Math.max.apply(null,xs)+9,y0=Math.min.apply(null,ys)-11,y1=Math.max.apply(null,ys)+11;page.rect(x0,y0,x1-x0,y1-y0,{fill:'none',stroke:ROLE_FILL.ap,width:2,radius:4});});
    if(dev.others)page.text(dev.x+dev.w+G*2,dev.y+27,EP_W,18,'+'+dev.others+' other device'+(dev.others>1?'s':''),{size:10,align:'left',color:'#4a5568'});});
   // Box terminals: sorted by the far end so routes do not cross needlessly.
   if(style==='box')devices.forEach(function(dev){['top','bottom'].forEach(function(side){var list=dev.terms.filter(function(t){return t.side===side;});list.forEach(function(t){var o=t.conn.ta===t?t.conn.tb:t.conn.ta;t.order=o.dev.x+o.dev.w/2;});list.sort(function(a,b){return a.order-b.order;});var n=list.length,slots=Math.floor((dev.w-36)/18)+1;list.forEach(function(t,i){var s=n>=slots?i:Math.round((i+0.5)*slots/n-0.5);t.dx=18+18*Math.min(s,slots-1);});});});
@@ -6446,6 +6449,10 @@ function pJ(L,pan){const d=E(),I={},R={},T={};
    var owner=c.ep!=null?c.A.zone:0,strict=s>=0&&t>=0?router.route(c.net,s,c.ga.dir,t,tDir,false,owner):null,path=strict||(s>=0&&t>=0?router.route(c.net,s,c.ga.dir,t,tDir,true,owner):null);
    var pts;if(path){router.commit(c.net,path);pts=path.map(function(v){return [(v%router.C)*G,((v/router.C)|0)*G];});}else pts=[[c.ga.sx,c.ga.sy],[c.ga.sx,c.gb.sy],[c.gb.sx,c.gb.sy]];
    var points=compress([[c.ga.px,c.ga.py]].concat(pts,[[c.gb.px,c.gb.py]]));
+   // A stencil's port is rarely on the 9 px routing grid: the vertical stretch into it moves
+   // onto the port itself, so the line meets the port's center.
+   function onPort(t,first){if(!t||t.shared||!t.slot||t.slot.ex==null||t.slot.ex===t.slot.dx)return;var x0=t.dev.x+t.slot.dx,x1=t.dev.x+t.slot.ex,list=first?points:points.slice().reverse();if(list[0][0]!==x0)return;for(var k=0;k<list.length&&list[k][0]===x0;k++)list[k]=[x1,list[k][1]];if(!first)points=list.reverse();else points=list;}
+   if(style==='plate'){onPort(c.ta,true);onPort(c.tb,false);}
    lines.push({points:points,color:LINK_TYPES[c.type].color,width:c.type==='fiber'?3.5:style==='box'&&c.aPorts.length>1?4.5:3,conn:c,routed:!!path,strict:!!strict,groups:c.groups});});
   // Where a line crosses one drawn before it, its horizontal run hops over in a small arc.
   lines.forEach(function(l,i){var out=[l.points[0]];for(var k=1;k<l.points.length;k++){var a=l.points[k-1],b=l.points[k];if(a[1]===b[1]&&Math.abs(b[0]-a[0])>2*G){var y=a[1],dir=b[0]>a[0]?1:-1,xs=[];
@@ -6557,7 +6564,9 @@ function pJ(L,pan){const d=E(),I={},R={},T={};
  function upCount(d){var known=d.ports.filter(function(p){return p.up!=null;});return known.length?known.filter(function(p){return p.up;}).length+' of '+d.ports.length+' ports up':'';}
  function portMapPages(docs,o,out){
   var devs=docs.devices.filter(function(d){return d.ports.length&&/switch|router|firewall|controller/.test(d.role);});if(!devs.length)return;
-  for(var start=0;start<devs.length;start+=2){var group=devs.slice(start,start+2),flow=new Flow('Port map',group.map(function(d){return d.name;}).join(' and ')+': front panels, configured port roles and observed link state',o,out),used={},rowsByKey=new Map();
+  // Firewalls and routers each on a page of their own; switches two to a page.
+  var groups=[];devs.filter(function(d){return /firewall|router/.test(d.role);}).forEach(function(d){groups.push([d]);});var sw=devs.filter(function(d){return !/firewall|router/.test(d.role);});for(var gi=0;gi<sw.length;gi+=2)groups.push(sw.slice(gi,gi+2));
+  for(var start=0;start<groups.length;start++){var group=groups[start],flow=new Flow('Port map',group.map(function(d){return d.name;}).join(' and ')+': front panels, configured port roles and observed link state',o,out),used={},rowsByKey=new Map();
    group.forEach(function(d){var dev=new Device({key:d.key,name:d.name,model:d.model,role:d.role,hw:d.hw,ips:d.ip?[d.ip]:[]},d.ports.map(function(p){return p.name;}),[],'plate'),fills=new Map();
     d.ports.forEach(function(p){var role=portRole(p),slot=d.hw&&dev.hw&&!dev.hw.portOf(p.name)?null:dev.slot(p.name);used[role]=true;if(slot&&slot.key)fills.set(slot.key,{fill:PORT_ROLES[role].fill,up:p.up!==false,stroke:'#3d4a5c'});
      var detail=portDetail(p,role),k=role+'|'+detail;if(!rowsByKey.has(k))rowsByKey.set(k,{role:role,detail:detail,ports:{}});(rowsByKey.get(k).ports[d.key]=rowsByKey.get(k).ports[d.key]||[]).push(p.name);});
@@ -6859,7 +6868,14 @@ function pJ(L,pan){const d=E(),I={},R={},T={};
   String(model).replace(/(\d{2,5})([a-z])(?![0-9])/g,function(_,n,l){gens[n]=l;return _;});
   String(name).replace(/(\d{2,5})(?:\/(\d{2,5}))?([A-Za-z])?(?![A-Za-z0-9])/g,function(_,a,b,l){[a,b].forEach(function(n){if(n&&gens[n]&&l&&l.toLowerCase()!==gens[n])found=true;});return _;});
   return found;}
- function match(node,masters){var best=null,top=0;(masters||[]).forEach(function(m){var s=score(node,m);if(s>top){top=s;best=m;}});return top>=60?best:null;}
+ // A quick filter before scoring: a shape can only match when one of its model numbers
+ // (FG-12xG gives 12) starts or is started by one of the device's (120). Libraries of
+ // thousands of shapes are scored only where it can matter.
+ var runsOf=typeof WeakMap==='function'?new WeakMap():null;
+ function masterRuns(m){var r=runsOf&&runsOf.get(m);if(r)return r;r=(String(m.name||'')+' '+(m.part||'')+' '+(m.product||'')).match(/\d{2,}/g)||[];r=r.filter(function(x,i,a){return a.indexOf(x)===i;});if(runsOf)runsOf.set(m,r);return r;}
+ function mayMatch(runs,m){var mr=masterRuns(m);if(!mr.length||!runs.length)return true;for(var i=0;i<mr.length;i++)for(var j=0;j<runs.length;j++)if(runs[j].indexOf(mr[i])===0||mr[i].indexOf(runs[j])===0)return true;return false;}
+ function match(node,masters){var best=null,top=0,runs=(String(node.model||'')+' '+(node.parts||[]).join(' ')+' '+(node.name||'')).match(/\d{2,}/g)||[];
+  (masters||[]).forEach(function(m){if(!mayMatch(runs,m))return;var s=score(node,m);if(s>top){top=s;best=m;}});return top>=60?best:null;}
 
  // ---------- ports from connection points ----------
  // Vendor network stencils carry a connection point on each port. Points are grouped
@@ -6927,6 +6943,9 @@ function pJ(L,pan){const d=E(),I={},R={},T={};
  // the stencil has them; a group past its last port gets null.
  function bankLayout(master,counts){
   var list=edgePorts(master);if(!list||!counts||!counts.length)return null;var at=0,found=0;
+  // Only when the stencil's ports are exactly the device's: any extra or missing port would
+  // shift every port after it (a 6100 shape read with extra points put port 41 on 35).
+  if(list.length!==counts.reduce(function(a,b){return a+(b||0);},0))return null;
   function frac(p){return {fx:p.x/master.w,fy:1-p.y/master.h,row:p.row};}
   var out=counts.map(function(c){if(!c)return null;if(at+c>list.length)return null;var part=list.slice(at,at+c);at+=c;found++;return part.map(frac);});
   return found?out:null;
@@ -7144,7 +7163,7 @@ function pJ(L,pan){const d=E(),I={},R={},T={};
     return {compareText:compareText,compareMode:['records','text','fields'].includes(data.compareMode)?data.compareMode:'records',models:models.slice(0,data.count),model:data.selected<0?null:models[data.selected],comparison:data.comparison<0?null:models[data.comparison],view:typeof data.view==='string'?data.view:'overview',scope:typeof data.scope==='string'?data.scope:'',categoryTabs:data.categoryTabs&&typeof data.categoryTabs==='object'&&!Array.isArray(data.categoryTabs)?data.categoryTabs:{},showUnassigned:!!data.showUnassigned,showEmpty:!!data.showEmpty};
   }
   function create(options){
-    options=options||{};var bridge=options.bridge||root.chrome&&root.chrome.webview,native=!!(bridge&&typeof bridge.postMessage==='function'&&typeof bridge.addEventListener==='function'),state={current:'5.35.0',state:'idle',message:'',automatic:true,busy:false,ready:false,available:false},handlers={},restoring=false,installing=false;
+    options=options||{};var bridge=options.bridge||root.chrome&&root.chrome.webview,native=!!(bridge&&typeof bridge.postMessage==='function'&&typeof bridge.addEventListener==='function'),state={current:'5.36.0',state:'idle',message:'',automatic:true,busy:false,ready:false,available:false},handlers={},restoring=false,installing=false;
     var commands=['update-ui-ready','update-status','update-check','update-download','update-later','update-auto-on','update-auto-off','update-restored','update-restore-failed'];
     function request(command){if(!native)throw new Error('Built-in updates are available in the Windows desktop edition.');if(!commands.includes(command))throw new Error('Unknown update action.');bridge.postMessage(command);}
     if(native)bridge.addEventListener('message',async function(event){
@@ -8879,7 +8898,12 @@ function pJ(L,pan){const d=E(),I={},R={},T={};
   }
   // Connection panel: both ends of every link between two devices, with what the
   // imported data says about each port.
-  function evidencePort(device,port){var X=SE(),dk=X.deviceKey(device),pk=X.interfaceKey(port),found=null;if(!pk)return null;evidenceSets.forEach(function(s){s.ev.interfaces.forEach(function(i){if(!found&&X.deviceKey(i.device)===dk&&X.interfaceKey(i.name)===pk)found=i;});});return found;}
+  // An index of every imported interface by device and port, rebuilt when the imported
+  // files change (looking ports up one by one re-read every interface each time).
+  var portIndex={key:'',map:null};
+  function evidencePort(device,port){var X=SE(),pk=X.interfaceKey(port);if(!pk)return null;var key=evidenceSets.length+'|'+evidenceSets.map(function(s){return s.name+':'+s.ev.interfaces.length;}).join(',');
+    if(portIndex.key!==key||!portIndex.map){var map=new Map();evidenceSets.forEach(function(s){s.ev.interfaces.forEach(function(i){var k=X.deviceKey(i.device)+'|'+X.interfaceKey(i.name);if(!map.has(k))map.set(k,i);});});portIndex={key:key,map:map};}
+    return portIndex.map.get(X.deviceKey(device)+'|'+pk)||null;}
   function siteMapEdgeDetail(map,key){
     var pair=key.slice(5).split('~'),a=map.all.find(function(x){return x.key===pair[0];}),b=map.all.find(function(x){return x.key===pair[1];});if(!a||!b)return '';
     var roleLabel={firewall:'Firewall',router:'Router',switch:'Switch',controller:'Controller',ap:'Access point',endpoint:'Device'};
@@ -9644,7 +9668,7 @@ function pJ(L,pan){const d=E(),I={},R={},T={};
     return '<div class="site-page">'+tabs+summary+panels[current]+'</div>';
   }
   // Kept current by scripts/version.py, which replaces the release string on each bump.
-  var APP_VERSION='5.35.0';
+  var APP_VERSION='5.36.0';
   // Client report: one section per open configuration. Port states use the same
   // classification as Interfaces at a glance, evaluated with each model active.
   function withModel(m,fn){var saved={model:state.model,usage:state.interfaceUsageCache,recordMap:state.recordMap};state.model=m;state.interfaceUsageCache=null;state.recordMap=new Map(m.records.map(function(r){return [r.id,r];}));try{return fn();}finally{state.model=saved.model;state.interfaceUsageCache=saved.usage;state.recordMap=saved.recordMap;}}
@@ -10286,7 +10310,7 @@ function pJ(L,pan){const d=E(),I={},R={},T={};
     }
   }
   function showHelp(){
-    openModal(modalHeader('About Config Inspector','Firewall and switch configuration explorer / version 5.35.0')+
+    openModal(modalHeader('About Config Inspector','Firewall and switch configuration explorer / version 5.36.0')+
       '<div class="modal-body"><div class="help-section"><h3>Open and explore</h3><p>Import SonicWall EXP, FortiGate FortiOS text, Palo Alto configuration XML, Sophos Firewall XML or export TAR, Aruba AOS or AOS-CX text, Cisco IOS or NX-OS text, Juniper Junos text or XML, Meraki API JSON, or a JSON snapshot exported by this application. The device type is detected automatically. You can also drop a file anywhere in the window. Select an interface or record for a plain-language explanation and key facts. Related objects show their IP addresses or service ports. Advanced details contains all original fields. Use Copy summary for readable facts and Back to return from a related item.</p></div>'+
       '<div class="help-section"><h3>Configuration sections</h3><p>Choose a root section in the sidebar, then select one of its indented subsections. Each subsection opens its own page. Routes, objects, members and other primary definitions appear before related settings. Security pages are grouped by function, including web, applications, files, intrusion prevention and SSL/TLS inspection. Certificate objects remain under Certificates. Empty subsections are hidden by default. Use View options to show empty sections, or Configuration sections and All original fields to inspect untranslated settings. Configuration context, search and table filters apply to the selected view.</p></div>'+
       '<div class="help-section"><h3>Choose access rule zones</h3><p>In Access Rules, choose From zone and To zone independently. All zones leaves that side unrestricted. Swap reverses the direction. Clear zone filters removes the pair while keeping the table filters. Search, configured state, and IP version filters combine with the pair, and CSV includes all matching rules. A matrix cell selects its zone pair. Interface and zone details offer outgoing and incoming rules.</p></div>'+
@@ -10530,9 +10554,19 @@ function configTree(it){
   function stencilNode(n){var m=modelForDevice(n.name),id=m?deviceIdentityFor(m):'';return {name:n.name,role:n.role,model:[n.model,id].filter(Boolean).join(' '),parts:id?[id]:[]};}
   function stencilMaster(n){var choice=stencilChoices()[n.key];if(choice==='none')return null;var all=allMasters();if(choice){var picked=all.find(function(m){return masterKey(m)===choice;});if(picked)return picked;}return window.SWStencils?window.SWStencils.match(stencilNode(n),all):null;}
   function stencilFor(n){if(!stencilLib.files.length||!window.SWStencils)return null;var m=stencilMaster(n);if(!m)return null;var art=window.SWStencils.artwork(m);if(!art)return null;return {master:m,art:art,layout:function(main,up){return window.SWStencils.layout(m,main,up);},banks:function(counts){return window.SWStencils.bankLayout?window.SWStencils.bankLayout(m,counts):null;}};}
-  async function loadStencils(){try{var rows=await stencilStore('readonly',function(s){var out=[],q=s.getAll();q.onsuccess=function(){out.push.apply(out,q.result||[]);};return out;});
-      for(var i=0;i<rows.length;i++){try{stencilLib.files.push(await window.SWStencils.read(new Uint8Array(rows[i].bytes),rows[i].name));}catch(e){}}}catch(e){}
-    if(stencilLib.files.length){stencilLib.version++;if(state.view==='diagram')renderContent();}}
+  async function loadStencils(){try{var keys=await stencilStore('readonly',function(s){var out=[],q=s.getAllKeys();q.onsuccess=function(){out.push.apply(out,q.result||[]);};return out;});
+      function readRow(k){return stencilStore('readonly',function(s){var out={},q=s.get(k);q.onsuccess=function(){out.row=q.result;};return out;}).then(function(o){return o.row;});}
+      var rows=keys;
+      // One file at a time, letting the window paint and respond between them: a large
+      // stencil library used to hold the app for seconds at launch.
+            // The parsed result is kept with the file (for this app version), so later launches
+      // skip reading the stencil again.
+      var parsedTag=typeof APP_VERSION!=='undefined'?APP_VERSION:'1';
+      stencilLib.loading=rows.length;for(var i=0;i<rows.length;i++){await new Promise(function(r){setTimeout(r,i?0:30);});var row=await readRow(rows[i]);if(!row){stencilLib.loading=rows.length-i-1;continue;}
+        try{if(row.parsed&&row.parsedTag===parsedTag&&row.parsed.masters){stencilLib.files.push(row.parsed);}
+          else{var parsed=await window.SWStencils.read(new Uint8Array(row.bytes),row.name);stencilLib.files.push(parsed);try{await stencilStore('readwrite',function(s){s.put(Object.assign({},row,{parsed:parsed,parsedTag:parsedTag}));});}catch(e){}}}catch(e){}
+        stencilLib.loading=rows.length-i-1;}}catch(e){}
+    stencilLib.loading=0;if(stencilLib.files.length){stencilLib.version++;if(state.view==='diagram')renderContent();}}
   async function importStencils(files){var added=0,masters=0,errors=[],legacy=[],status=el.modal.open&&el.modal.querySelector('.stencil-status');
     files=files.filter(function(f){return /\.(vssx|vstx|vsdx|vss|vst)$/i.test(f.name||'');});if(!files.length){toast('No Visio stencils (.vssx, .vsdx, .vss) were found there.');return;}
     for(var i=0;i<files.length;i++){var f=files[i];if(status)status.textContent='Reading '+(i+1)+' of '+files.length+': '+(f.webkitRelativePath||f.name);try{var bytes=new Uint8Array(await f.arrayBuffer()),st=await window.SWStencils.read(bytes,f.name);if(!st.masters.length)throw new Error(f.name+' contains no device shapes.');
@@ -10543,6 +10577,7 @@ function configTree(it){
   // Shown on the diagram until vendor stencils are in use.
   function stencilNotice(page){
     if(!window.SWStencils||page.style!=='plate')return '';var d=state.diagram||{};if(d.style==='plate')return '';
+    if(stencilLib.loading)return '<span class="diagram-stencil-notice">'+icon('layers')+'Loading your stencils ('+stencilLib.loading+' file'+(stencilLib.loading===1?'':'s')+' to go)</span>';
     if(!stencilLib.files.length)return '<span class="diagram-stencil-notice" title="Import your vendor Visio stencils (.vss or .vssx), or a Visio drawing that already uses them (.vsdx), to draw each device with its real front panel. Vendors such as HPE Aruba, Cisco and Fortinet publish Visio stencils for their products.">'+icon('layers')+'Drawn faceplates · <button class="link-button" data-action="diagram-stencils">Import vendor stencils</button></span>';
     var used=page.shapes.some(function(x){return x.type==='image';});
     if(!used)return '<span class="diagram-stencil-notice" title="Choose a shape for a device under Stencils, or import the vendor\'s stencil for these models.">'+icon('layers')+'None of the '+allMasters().length+' stencil shapes match these devices · <button class="link-button" data-action="diagram-stencils">Choose shapes</button></span>';
@@ -10574,7 +10609,7 @@ function configTree(it){
   document.addEventListener('click',function(event){var t=event.target.closest&&event.target.closest('[data-action="diagram-stencils"],[data-action="stencil-import"],[data-action="stencil-folder"],[data-stencil-remove]');if(!t)return;
     var act=t.getAttribute('data-action');if(act==='diagram-stencils')showStencils();else if(act==='stencil-import'||act==='stencil-folder'){var f=document.getElementById(act==='stencil-import'?'stencil-file':'stencil-folder');if(f)f.click();}else removeStencilFile(t.getAttribute('data-stencil-remove'));});
   document.addEventListener('change',function(event){var t=event.target;if((t.id==='stencil-file'||t.id==='stencil-folder')&&t.files&&t.files.length){importStencils(Array.from(t.files));t.value='';}else if(t.hasAttribute&&t.hasAttribute('data-stencil-device')){var v=String(t.value||'').trim(),key=!v||/^automatic$/i.test(v)?'auto':/^drawn faceplate$/i.test(v)?'none':state.stencilLabels&&state.stencilLabels.get(v);if(!key){toast('Choose a shape from the list: type part of its model or part number, then pick it.');return;}setStencilChoice(t.getAttribute('data-stencil-device'),key);if(state.view==='diagram')renderContent();}});
-  if(window.SWStencils)loadStencils();
+  if(window.SWStencils){var startStencils=function(){loadStencils();};if(typeof requestIdleCallback==='function')requestIdleCallback(startStencils,{timeout:3000});else setTimeout(startStencils,1500);}
   function siteMapBox(){return el.content.querySelector('.site-map-scroll');}
   // Zoom for the site map and the network diagram (each keeps its own level).
   function zoomKey(box){return box&&box.classList.contains('diagram-scroll')?'diagramZoom':'siteMapZoom';}

@@ -15,7 +15,7 @@
  };
  var ROLE_FILL={firewall:'#c0504d',router:'#e6a23c',switch:'#4f81bd',controller:'#6b62d9',ap:'#22b14c',endpoint:'#8a94a6'};
  var ROLE_LABEL={firewall:'Firewall',router:'Router',switch:'Switch',controller:'Controller',ap:'Access point',endpoint:'Device'};
- var G=9,BAND=54,BEND=6,CROSS=2,TOP=126,EP_W=126,EP_H=54,EP_PITCH=153,MARGIN=36;
+ var G=9,BAND=54,BEND=20,CROSS=2,TOP=126,EP_W=126,EP_H=54,EP_PITCH=153,MARGIN=36;
  function speedValue(s){var m=String(s||'').match(/([\d.]+)\s*([GM])/i);if(!m)return 0;return Number(m[1])*(m[2].toUpperCase()==='G'?1000:1);}
  function linkType(l,aRole,bRole){
   if(aRole==='ap'||bRole==='ap')return 'wap';
@@ -164,8 +164,8 @@
    // across the middle 80% of the artwork.
    else if(this.hw){var gs2=plate.groups.filter(function(x){return !x.rear&&x.count;}),first=gs2[0],last=gs2[gs2.length-1],x0=first?first.x:81,x1=last?last.x+groupWidth(last):x0+1;dx=plate.x+G+img.w*(0.1+0.8*(pp.dx-x0)/Math.max(1,x1-x0));py=row?this.imgTop+img.h:this.imgTop;}
    else{var cols=plate.groups.reduce(function(c,x){return Math.max(c,x.col+Math.ceil(x.count/2));},1);dx=plate.x+G+(col+0.5)/cols*img.w;py=row?this.imgTop+img.h:this.imgTop;}
-   dx=snap(dx);this.positions[key]={x:dx,y:py,exact:!!pos};
-   return {key:key,plate:plate,dx:dx,py:py,row:row,fiber:g.fiber,number:'',name:p.name};}
+   var ex=dx;dx=snap(dx);this.positions[key]={x:ex,y:py,exact:!!pos};
+   return {key:key,plate:plate,dx:dx,ex:ex,py:py,row:row,fiber:g.fiber,number:'',name:p.name};}
   return {key:key,plate:plate,dx:plate.x+pp.dx,row:row,fiber:g.fiber,py:g.mid?36:null,number:g.labels?g.labels[idx]:g.name==='other'?'':String((g.base||0)+(g.zero?idx:idx+1)),name:p.name};
  };
  Device.prototype.fit=function(){if(this.style!=='box')return;var top=this.terms.filter(function(t){return t.side==='top';}).length,bottom=this.terms.length-top;this.w=Math.max(198,up9(36+18*Math.max(top,bottom)));};
@@ -342,6 +342,9 @@
     if(a.node.group){page.rect(x,y,EP_W,EP_H,{fill:'#eef8f0',stroke:ROLE_FILL.ap,width:1.5,radius:6});var pre=commonPrefix(a.ports);page.text(x+4,y+5,EP_W-8,46,clip('Ports '+ranges(a.ports,pre),20)+'\n'+a.node.name+'\n'+clip(a.node.model||'',22),{size:9,lineHeight:14,firstBold:true});page.end();return;}page.rect(x,y,EP_W,EP_H,{fill:a.node.role==='ap'?'#eef8f0':'#eef3f9',stroke:a.node.role==='ap'?ROLE_FILL.ap:'#9aa9bd',width:1,radius:6});var est=input.stencils&&input.stencils.get(a.node.key);
     if(est&&est.art){var r=est.art.w/est.art.h,ih=44,iw=ih*r;if(iw>44){iw=44;ih=iw/r;}page.image(x+5+(44-iw)/2,y+5+(44-ih)/2,iw,ih,{art:est.art,master:est.master});page.text(x+52,y+5,EP_W-56,46,clip(short(a.port),12)+'\n'+clip(a.node.name,13)+'\n'+clip(epIP(a.node)||a.node.model||'',14),{size:8.5,lineHeight:14,firstBold:true,align:'left'});}
     else page.text(x+4,y+5,EP_W-8,46,clip(short(a.port),16)+'\n'+clip(a.node.name,20)+'\n'+clip(epIP(a.node)||a.node.model||ROLE_LABEL[a.node.role]||'',22),{size:9,lineHeight:14,firstBold:true});page.end();});
+   // Grouped access points: a box in the access point color around the ports they use.
+   (dev.eps||[]).forEach(function(a){if(!a.node.group||!a.ports||style!=='plate')return;var pts=a.ports.map(function(p){var sl=dev.slot(p||''),pos=dev.positions&&dev.positions[sl.key];return pos?[dev.x+pos.x,dev.y+pos.y]:[dev.x+sl.dx,dev.y+(sl.py!=null?sl.py:sl.row?51:21)];});if(!pts.length)return;
+    var xs=pts.map(function(p){return p[0];}),ys=pts.map(function(p){return p[1];}),x0=Math.min.apply(null,xs)-9,x1=Math.max.apply(null,xs)+9,y0=Math.min.apply(null,ys)-11,y1=Math.max.apply(null,ys)+11;page.rect(x0,y0,x1-x0,y1-y0,{fill:'none',stroke:ROLE_FILL.ap,width:2,radius:4});});
    if(dev.others)page.text(dev.x+dev.w+G*2,dev.y+27,EP_W,18,'+'+dev.others+' other device'+(dev.others>1?'s':''),{size:10,align:'left',color:'#4a5568'});});
   // Box terminals: sorted by the far end so routes do not cross needlessly.
   if(style==='box')devices.forEach(function(dev){['top','bottom'].forEach(function(side){var list=dev.terms.filter(function(t){return t.side===side;});list.forEach(function(t){var o=t.conn.ta===t?t.conn.tb:t.conn.ta;t.order=o.dev.x+o.dev.w/2;});list.sort(function(a,b){return a.order-b.order;});var n=list.length,slots=Math.floor((dev.w-36)/18)+1;list.forEach(function(t,i){var s=n>=slots?i:Math.round((i+0.5)*slots/n-0.5);t.dx=18+18*Math.min(s,slots-1);});});});
@@ -368,6 +371,10 @@
    var owner=c.ep!=null?c.A.zone:0,strict=s>=0&&t>=0?router.route(c.net,s,c.ga.dir,t,tDir,false,owner):null,path=strict||(s>=0&&t>=0?router.route(c.net,s,c.ga.dir,t,tDir,true,owner):null);
    var pts;if(path){router.commit(c.net,path);pts=path.map(function(v){return [(v%router.C)*G,((v/router.C)|0)*G];});}else pts=[[c.ga.sx,c.ga.sy],[c.ga.sx,c.gb.sy],[c.gb.sx,c.gb.sy]];
    var points=compress([[c.ga.px,c.ga.py]].concat(pts,[[c.gb.px,c.gb.py]]));
+   // A stencil's port is rarely on the 9 px routing grid: the vertical stretch into it moves
+   // onto the port itself, so the line meets the port's center.
+   function onPort(t,first){if(!t||t.shared||!t.slot||t.slot.ex==null||t.slot.ex===t.slot.dx)return;var x0=t.dev.x+t.slot.dx,x1=t.dev.x+t.slot.ex,list=first?points:points.slice().reverse();if(list[0][0]!==x0)return;for(var k=0;k<list.length&&list[k][0]===x0;k++)list[k]=[x1,list[k][1]];if(!first)points=list.reverse();else points=list;}
+   if(style==='plate'){onPort(c.ta,true);onPort(c.tb,false);}
    lines.push({points:points,color:LINK_TYPES[c.type].color,width:c.type==='fiber'?3.5:style==='box'&&c.aPorts.length>1?4.5:3,conn:c,routed:!!path,strict:!!strict,groups:c.groups});});
   // Where a line crosses one drawn before it, its horizontal run hops over in a small arc.
   lines.forEach(function(l,i){var out=[l.points[0]];for(var k=1;k<l.points.length;k++){var a=l.points[k-1],b=l.points[k];if(a[1]===b[1]&&Math.abs(b[0]-a[0])>2*G){var y=a[1],dir=b[0]>a[0]?1:-1,xs=[];
@@ -479,7 +486,9 @@
  function upCount(d){var known=d.ports.filter(function(p){return p.up!=null;});return known.length?known.filter(function(p){return p.up;}).length+' of '+d.ports.length+' ports up':'';}
  function portMapPages(docs,o,out){
   var devs=docs.devices.filter(function(d){return d.ports.length&&/switch|router|firewall|controller/.test(d.role);});if(!devs.length)return;
-  for(var start=0;start<devs.length;start+=2){var group=devs.slice(start,start+2),flow=new Flow('Port map',group.map(function(d){return d.name;}).join(' and ')+': front panels, configured port roles and observed link state',o,out),used={},rowsByKey=new Map();
+  // Firewalls and routers each on a page of their own; switches two to a page.
+  var groups=[];devs.filter(function(d){return /firewall|router/.test(d.role);}).forEach(function(d){groups.push([d]);});var sw=devs.filter(function(d){return !/firewall|router/.test(d.role);});for(var gi=0;gi<sw.length;gi+=2)groups.push(sw.slice(gi,gi+2));
+  for(var start=0;start<groups.length;start++){var group=groups[start],flow=new Flow('Port map',group.map(function(d){return d.name;}).join(' and ')+': front panels, configured port roles and observed link state',o,out),used={},rowsByKey=new Map();
    group.forEach(function(d){var dev=new Device({key:d.key,name:d.name,model:d.model,role:d.role,hw:d.hw,ips:d.ip?[d.ip]:[]},d.ports.map(function(p){return p.name;}),[],'plate'),fills=new Map();
     d.ports.forEach(function(p){var role=portRole(p),slot=d.hw&&dev.hw&&!dev.hw.portOf(p.name)?null:dev.slot(p.name);used[role]=true;if(slot&&slot.key)fills.set(slot.key,{fill:PORT_ROLES[role].fill,up:p.up!==false,stroke:'#3d4a5c'});
      var detail=portDetail(p,role),k=role+'|'+detail;if(!rowsByKey.has(k))rowsByKey.set(k,{role:role,detail:detail,ports:{}});(rowsByKey.get(k).ports[d.key]=rowsByKey.get(k).ports[d.key]||[]).push(p.name);});

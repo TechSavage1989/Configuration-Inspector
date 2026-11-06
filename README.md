@@ -193,12 +193,12 @@ Values in these tables (MAC and IP addresses, ports, device names) can be copied
 
 - **Network diagram** (sidebar, once any file contains links): opens on the device of the selected configuration and everything below it, with the device above it for context. One toolbar holds everything:
   - **Device and below**, **Connections** or **Whole site**, the device and the number of levels.
-  - **Show**: the upstream device, access points (optionally **grouped into one box per switch**, with their ports still marked) and other devices, and whether devices are drawn with stencils, drawn faceplates or boxes.
+  - **Show**: the upstream device, access points (optionally **grouped into one box per switch**, with their ports outlined on the switch) and other devices, and whether devices are drawn with stencils, drawn faceplates or boxes.
   - **Devices**: every device of the site, with a search box (name, model or address) and a filter (on or off the diagram, or by type). Untick one to remove it (or right-click it on the diagram), tick one from elsewhere to add it, or use **Add shown** / **Remove shown** for everything the search shows.
   - **Stencils**, **Document** (site name, title, subtitle, file name, **Prepared by** and **Organization**, used on the drawing, in the Visio document properties and in download names), **Visio** and more downloads, and **Full screen** (Esc to leave), which gives the diagram the whole window.
   - Click any device to draw the diagram from it down, and use the path under the toolbar to go back up. Scroll to zoom, drag to move, or use the zoom buttons and **Fit**.
   - **Pages:** tabs under the toolbar show the documentation pages that follow the diagram, built from the open configurations and supplementary data. Each is a letter page:
-    - **Port map**: each switch and firewall front panel with ports colored by role (wired data, access points, uplinks, trunks, default access, disabled) and filled when the link is up, and a table of the ports in each role with their VLANs and link details.
+    - **Port map**: each firewall on a page of its own and switches two to a page: the front panel with ports colored by role (wired data, access points, uplinks, trunks, default access, disabled) and filled when the link is up, and a table of the ports in each role with their VLANs and link details.
     - **Wireless connections**: each switch drawn with its access points wired to their own ports (odd ports above, even ports below), then every access point with its switch port, model, address, speed and link state; links below 1 Gbps are listed.
     - **VLANs and routing**: VLANs with their addresses and devices, routed interfaces and routes, and any address used on two devices.
     - **Trunk VLANs**: native (N) and tagged (T) VLANs for each group of trunk, access point and uplink ports.

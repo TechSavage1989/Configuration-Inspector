@@ -108,7 +108,14 @@
   String(model).replace(/(\d{2,5})([a-z])(?![0-9])/g,function(_,n,l){gens[n]=l;return _;});
   String(name).replace(/(\d{2,5})(?:\/(\d{2,5}))?([A-Za-z])?(?![A-Za-z0-9])/g,function(_,a,b,l){[a,b].forEach(function(n){if(n&&gens[n]&&l&&l.toLowerCase()!==gens[n])found=true;});return _;});
   return found;}
- function match(node,masters){var best=null,top=0;(masters||[]).forEach(function(m){var s=score(node,m);if(s>top){top=s;best=m;}});return top>=60?best:null;}
+ // A quick filter before scoring: a shape can only match when one of its model numbers
+ // (FG-12xG gives 12) starts or is started by one of the device's (120). Libraries of
+ // thousands of shapes are scored only where it can matter.
+ var runsOf=typeof WeakMap==='function'?new WeakMap():null;
+ function masterRuns(m){var r=runsOf&&runsOf.get(m);if(r)return r;r=(String(m.name||'')+' '+(m.part||'')+' '+(m.product||'')).match(/\d{2,}/g)||[];r=r.filter(function(x,i,a){return a.indexOf(x)===i;});if(runsOf)runsOf.set(m,r);return r;}
+ function mayMatch(runs,m){var mr=masterRuns(m);if(!mr.length||!runs.length)return true;for(var i=0;i<mr.length;i++)for(var j=0;j<runs.length;j++)if(runs[j].indexOf(mr[i])===0||mr[i].indexOf(runs[j])===0)return true;return false;}
+ function match(node,masters){var best=null,top=0,runs=(String(node.model||'')+' '+(node.parts||[]).join(' ')+' '+(node.name||'')).match(/\d{2,}/g)||[];
+  (masters||[]).forEach(function(m){if(!mayMatch(runs,m))return;var s=score(node,m);if(s>top){top=s;best=m;}});return top>=60?best:null;}
 
  // ---------- ports from connection points ----------
  // Vendor network stencils carry a connection point on each port. Points are grouped
@@ -176,6 +183,9 @@
  // the stencil has them; a group past its last port gets null.
  function bankLayout(master,counts){
   var list=edgePorts(master);if(!list||!counts||!counts.length)return null;var at=0,found=0;
+  // Only when the stencil's ports are exactly the device's: any extra or missing port would
+  // shift every port after it (a 6100 shape read with extra points put port 41 on 35).
+  if(list.length!==counts.reduce(function(a,b){return a+(b||0);},0))return null;
   function frac(p){return {fx:p.x/master.w,fy:1-p.y/master.h,row:p.row};}
   var out=counts.map(function(c){if(!c)return null;if(at+c>list.length)return null;var part=list.slice(at,at+c);at+=c;found++;return part.map(frac);});
   return found?out:null;
