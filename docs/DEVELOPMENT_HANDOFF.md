@@ -1,5 +1,17 @@
 # Configuration Inspector development handoff
 
+## 5.30.0 — network diagrams
+
+- `webview/diagram.js` (embedded `network-diagram`, `window.SWDiagram`) builds page models
+  (rect/text/line shapes in px) from `SWSiteMap.layout`: an overview, then building pages
+  (`buildingPage`: upstream device, faceplate stack, AP cables into faceplate ports,
+  VLANs, legend). Subtrees of up to 8 switches share a page; larger ones split per child.
+  `svg(page)` renders; `vsdx(pages,title)` writes a minimal Visio package (stored ZIP,
+  96 px = 1 in, font size px*0.75 pt). LibreOffice opens the output (`soffice --convert-to pdf`).
+- index.html: view `diagram`, `diagramBuild()` adds port speeds and VLANs (config VLANs, else
+  evidence VLANs); `exportDiagram()` downloads vsdx/svg/printable HTML. The title input
+  updates only the preview (re-rendering on change broke focus handling).
+
 ## 5.29.1 — site map fits the window, clickable links
 
 - `fitSiteMapToWindow()` (called from `pinHeaders`) sizes `.site-map-scroll` and the

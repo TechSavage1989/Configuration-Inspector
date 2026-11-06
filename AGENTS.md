@@ -38,6 +38,8 @@ existing release or its assets. Preserve the polished README layout.
   (the view list in `renderContent`), or every panel collapses to one screen.
 - The detailed network map renderer already has a `collapsed` variable in scope;
   shadowing it breaks every import. Browser tests catch this, `npm test` does not.
+- Network diagrams (`webview/diagram.js`) must stay editable in Visio: write plain shapes
+  (no embedded images) and check generated .vsdx files open in LibreOffice.
 - Supplementary data (`webview/evidence.js` parsing, `webview/site_map.js` layout) is
   joined with configurations in `index.html` (`liveFor`, `evidenceOwner`). Never commit
   real monitoring exports or command output: build test data with `tests/xlsx-writer.cjs`
