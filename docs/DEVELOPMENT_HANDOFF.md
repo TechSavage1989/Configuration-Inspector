@@ -1,5 +1,18 @@
 # Configuration Inspector development handoff
 
+## 5.45.0 — compact bands, full-render row choice, neighbor port correction
+
+- Per-device label bands `d.bt`/`d.bb` (rows use the maximum): `bandFor()` lays port labels flat
+  (36 px band) when neighbors leave room, else rotated in a band sized to the longest label.
+  `geo()` carries `flat`/`band` to the label drawing. `BAND` remains for box style.
+- `diagram()` shortlists row widths by measured size, then renders the best three in full and
+  keeps the largest `fitLetter(page).raw`.
+- `splitDiagram()`: the first page is the full-depth diagram with `apGroup:true` (never a
+  depth-1 overview that drops devices). `window.DIAGRAM_READABLE` overrides the 0.7 threshold
+  for tests and is part of the page cache key.
+- `liveFor()` applies `correctLinkPort()` to live neighbors (`n.reported`, `n.correction`); both
+  Neighbors tables show "(reported …)".
+
 ## 5.44.0 — details above and below devices, tall access points
 
 - Plates have no side label column: `dev.h = HEAD + plateH + FOOT` (18 + 72 or stencil height + 18);

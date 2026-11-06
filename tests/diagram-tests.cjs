@@ -66,7 +66,7 @@ function campus(){
   const custom=l0.points.length>=4?l0.points.map((p,i)=>i===1||i===2?[p[0]+(l0.points[1][1]===l0.points[2][1]?0:18),p[1]+(l0.points[1][1]===l0.points[2][1]?18:0)]:p):l0.points;
   const routed=D.diagram(input,{scope:'downstream',focus:'examplecore',edits:{maxRow:core.maxRow,lines:{[l0.key]:custom}}});ok(JSON.stringify(routed.lines.find(l=>l.key===l0.key).points)===JSON.stringify(custom),'a hand-drawn route is kept');
   const side=l0.key.split('~')[0],dev=side.slice(0,side.lastIndexOf('|')),port=side.slice(side.lastIndexOf('|')+1),swapped=D.diagram(input,{scope:'downstream',focus:'examplecore',edits:{maxRow:core.maxRow,ports:{[dev+'|'+port]:'GigabitEthernet1/0/20'}}});
-  ok(swapped.shapes.some(s=>s.type==='text'&&s.rotate&&s.text==='Gi1/0/20'),'a link can be moved to another port');}
+  ok(swapped.shapes.some(s=>s.type==='text'&&s.text==='Gi1/0/20'),'a link can be moved to another port');}
 
 
  // A larger campus: every view follows the routing rules.
