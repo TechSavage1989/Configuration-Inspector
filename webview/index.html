@@ -778,7 +778,7 @@ table.data th,table.data td{vertical-align:top}
 .diagram-page-view{display:flex;flex-direction:column;gap:16px}.diagram-actions{display:flex;gap:8px;align-items:center;flex-wrap:wrap}.diagram-title-field{display:flex;gap:6px;align-items:center;font-size:12px;color:var(--muted)}.diagram-title-field .diagram-title-input{width:220px;max-width:none;font-size:12px;color:var(--ink)}
 .diagram-toolbar{align-items:center;flex-wrap:wrap}.diagram-field{display:flex;gap:6px;align-items:center;font-size:12px;color:var(--muted)}.diagram-field .select{width:auto;max-width:260px;font-size:12px;color:var(--ink)}.diagram-check{display:flex;gap:5px;align-items:center;font-size:12px;color:var(--ink)}
 .entity-link{border:0;background:none;padding:0;margin:0;font:inherit;color:var(--accent);cursor:pointer;text-align:left;text-decoration:underline;text-decoration-color:color-mix(in srgb,var(--accent) 35%,transparent);text-underline-offset:2px}.entity-link:hover{text-decoration-color:var(--accent)}
-.stencil-dialog .site-link-row{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:6px 0;border-bottom:1px solid var(--line)}.stencil-device{display:flex;flex-direction:column;min-width:0}.stencil-device .muted{color:var(--muted);font-size:11px}.site-link-row[hidden],.stencil-row[hidden],.stencil-file[hidden]{display:none!important}.diagram-scroll polyline.snapped{stroke-dasharray:6 3}.sp-canvas{overflow:auto;border:1px solid var(--line);border-radius:8px;background:#fff;max-height:60vh}.sp-svg{display:block;touch-action:none;cursor:default}.sp-pt{cursor:move}.sp-fields{display:flex;flex-wrap:wrap;gap:12px;align-items:center;margin-bottom:10px}.sp-fields input{width:90px}.sp-tools{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-bottom:10px}.stencil-row-tools{display:flex;gap:6px;align-items:center;flex-wrap:wrap;justify-content:flex-end}#modal.wide-modal{width:min(1180px,calc(100vw - 28px))}.diagram-marquee{fill:#2f6fde14;stroke:#2f6fde;stroke-width:1;stroke-dasharray:4 3;pointer-events:none}.stencil-row .select{max-width:340px;font-size:12px}.stencil-row .stencil-pick{width:340px;flex:0 1 340px}.stencil-picker{min-width:min(860px,90vw)}.stencil-pick-bar{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:10px}.stencil-pick-bar input{flex:1 1 260px}.stencil-suggest{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-bottom:10px}
+.stencil-dialog .site-link-row{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:6px 0;border-bottom:1px solid var(--line)}.stencil-device{display:flex;flex-direction:column;min-width:0}.stencil-device .muted{color:var(--muted);font-size:11px}.site-link-row[hidden],.stencil-row[hidden],.stencil-file[hidden]{display:none!important}.diagram-scroll polyline.snapped{stroke-dasharray:6 3}.sp-canvas{overflow:hidden;border:1px solid var(--line);border-radius:8px;background:#fff;max-height:60vh}.sp-svg{display:block;touch-action:none;cursor:default}.sp-pt{cursor:move}.sp-fields{display:flex;flex-wrap:wrap;gap:12px;align-items:center;margin-bottom:10px}.sp-fields input{width:90px}.sp-tools{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-bottom:10px}.stencil-row-tools{display:flex;gap:6px;align-items:center;flex-wrap:wrap;justify-content:flex-end}#modal.wide-modal{width:min(1180px,calc(100vw - 28px))}.label-edit{width:100%;min-height:110px;font:12px/1.5 'Segoe UI',Arial,sans-serif;resize:vertical;padding:8px}.link-color{width:64px;height:34px;padding:2px;border:1px solid var(--line);border-radius:6px;background:none}.link-swatch{display:inline-block;width:12px;height:12px;border-radius:2px;vertical-align:-1px}.diagram-scroll text[data-kind]{cursor:pointer}.diagram-marquee{fill:#2f6fde14;stroke:#2f6fde;stroke-width:1;stroke-dasharray:4 3;pointer-events:none}.stencil-row .select{max-width:340px;font-size:12px}.stencil-row .stencil-pick{width:340px;flex:0 1 340px}.stencil-picker{min-width:min(860px,90vw)}.stencil-pick-bar{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:10px}.stencil-pick-bar input{flex:1 1 260px}.stencil-suggest{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-bottom:10px}
 .stencil-pick-cols{display:grid;grid-template-columns:minmax(200px,1fr) 2fr;gap:12px;align-items:start}.stencil-pick-files,.stencil-pick-masters{display:flex;flex-direction:column;gap:2px;max-height:56vh;overflow:auto;border:1px solid var(--line);border-radius:8px;padding:6px}
 .stencil-pick-file,.stencil-pick-master{display:flex;flex-direction:column;align-items:flex-start;text-align:left;border:0;background:none;padding:6px 8px;border-radius:6px;font-size:12px}.stencil-pick-file .muted,.stencil-pick-master .muted{font-size:11px;color:var(--muted)}.stencil-pick-file:hover,.stencil-pick-master:hover{background:color-mix(in srgb,var(--accent) 8%,transparent)}.stencil-pick-file.active,.stencil-pick-master.active{background:color-mix(in srgb,var(--accent) 14%,transparent)}
 .stencil-bulk{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin:0 0 8px}.stencil-choose{max-width:360px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
@@ -962,7 +962,7 @@ body{font-size:14px}.brand-mark{background:linear-gradient(145deg,#287dc6,#15578
       <div id="page-heading"></div>
       <div id="workspace-tabs"></div><div id="workspace-notice"></div>
       <div id="content"></div>
-      <footer class="page-footer"><span id="version-label">Config Inspector 5.40.0</span></footer>
+      <footer class="page-footer"><span id="version-label">Config Inspector 5.41.0</span></footer>
     </main>
   </div>
   <input type="file" id="import-file" multiple accept=".exp,.txt,.json,.conf,.cfg,.xml,.tar,.set,.log,.backup,.rsc,.xlsx,.csv,.vssx,.vstx,.vsdx,.vss" hidden>
@@ -6101,7 +6101,7 @@ function pJ(L,pan){const d=E(),I={},R={},T={};
  };
  var ROLE_FILL={firewall:'#c0504d',router:'#e6a23c',switch:'#4f81bd',controller:'#6b62d9',ap:'#22b14c',endpoint:'#8a94a6',circuit:'#8e44ad'};
  var ROLE_LABEL={firewall:'Firewall',router:'Router',switch:'Switch',controller:'Controller',ap:'Access point',endpoint:'Device',circuit:'Provider circuit'};
- var G=9,BAND=54,BEND=20,CROSS=30,CROSS_STRICT=400,TOP=126,EP_W=126,EP_H=54,EP_PITCH=153,MARGIN=36;
+ var G=9,BAND=54,BEND=20,CROSS=30,CROSS_STRICT=20000,TOP=126,EP_W=126,EP_H=54,EP_PITCH=153,MARGIN=36;
  function speedValue(s){var m=String(s||'').match(/([\d.]+)\s*([GM])/i);if(!m)return 0;return Number(m[1])*(m[2].toUpperCase()==='G'?1000:1);}
  function linkType(l,aRole,bRole){if(aRole==='circuit'||bRole==='circuit')return 'wan';
   if(aRole==='ap'||bRole==='ap')return 'wap';
@@ -6110,6 +6110,23 @@ function pJ(L,pan){const d=E(),I={},R={},T={};
   if(speed>=100||/gigabit|\bgi\s*\d|\bfa\s*\d|fastethernet|\beth\d|port\d/i.test(ports))return 'copper';
   return 'other';
  }
+ // Link kinds by cable or fiber type and speed, as the reference drawing names them ("10 Gbps
+ // SR fiber", "10 Gbps SFP+ DAC", "1 Gbps local handoff", "AP copper"). The media comes from
+ // the port's reported media (show interfaces status) or else its connector (SFP cage or RJ45).
+ var LINK_MEDIA={sr:{name:'SR fiber',color:'#e02b20',order:1},lr:{name:'LR fiber',color:'#00a3e0',order:2},fiber:{name:'fiber',color:'#e02b20',order:3},dac:{name:'DAC',color:'#111111',order:4},wan:{name:'local handoff',color:'#f0c330',order:5},copper:{name:'copper',color:'#f0c330',order:6},wap:{name:'AP copper',color:'#18a34a',order:7},other:{name:'Media unspecified',color:'#8a94a6',order:8}};
+ var KINDS={};
+ function speedText(v){return v>=1000?(Math.round(v/100)/10)+' Gbps':v>0?v+' Mbps':'';}
+ function mediaOf(s){s=String(s||'');if(!s)return '';if(/twinax|\bDAC\b|-CU\d|CU\d+M|copper.*sfp|sfp.*copper/i.test(s))return 'dac';if(/(?:base-?|-|\b)(?:LR|LX|ER|ZR|LRM)\d?\b/i.test(s))return 'lr';if(/(?:base-?|-|\b)(?:SR|SX)\d?\b/i.test(s))return 'sr';if(/base-?T\b|RJ-?45|10\/100|BaseTX/i.test(s))return 'copper';if(/sfp|fiber|fibre|optic/i.test(s))return 'fiber';return '';}
+ function linkKind(l,aRole,bRole,aFiber,bFiber){var speed=Math.max(speedValue(l.aSpeed),speedValue(l.bSpeed)),ports=(l.aPort||'')+' '+(l.bPort||''),m;
+  if(aRole==='circuit'||bRole==='circuit')m='wan';else if(aRole==='ap'||bRole==='ap')m='wap';
+  else m=mediaOf(l.aMedia)||mediaOf(l.bMedia)||((aFiber||bFiber||/\b(?:te|ten|tw|twe|twenty|fo|forty|hu|hundred|xe|et)\s*\d|tengig|twentyfive|forty|hundred|sfp|^x\d|\sx\d/i.test(ports)?'fiber':speed>=10||/gigabit|\bgi\s*\d|\bfa\s*\d|fastethernet|\beth\d|port\d/i.test(ports)?'copper':'other'));
+  if(!speed&&/^(?:sr|lr|fiber|dac)$/.test(m))speed=/\bhu|hundred/i.test(ports)?100000:/\bfo|forty/i.test(ports)?40000:/\btw|twe|twentyfive/i.test(ports)?25000:10000;
+  // Access point links are one kind at 1 Gbps or an unreported speed (one legend entry).
+  if(m==='wap'&&speed===1000)speed=0;var st=speedText(speed),key=m+(speed?'-'+speed:''),label=m==='wap'?'AP copper'+(speed&&speed!==1000?', '+st:''):m==='other'?'Media unspecified'+(st?', '+st:''):m==='dac'?st+' '+(speed>=40000?'QSFP':speed>=25000?'SFP28':'SFP+')+' DAC':(st?st+' ':'')+LINK_MEDIA[m].name;
+  if(!KINDS[key])KINDS[key]={label:label.charAt(0).toUpperCase()+label.slice(1),color:LINK_MEDIA[m].color,dash:speed>0&&speed<1000,media:m,speed:speed};return key;}
+ // A kind's look, with the colors and names changed by hand (view.linkStyles, kept per kind).
+ function kindStyle(key,view){var k=KINDS[key]||LINK_TYPES[key]||LINK_TYPES.other,o=view&&view.linkStyles&&view.linkStyles[key]||{};return {label:o.label||k.label,color:o.color||k.color,dash:k.dash,media:k.media||key};}
+ function isFiberKind(key){return /^(?:sr|lr|fiber|dac)(?:-|$)/.test(key);}
  function slowLink(l){var s=Math.max(speedValue(l.aSpeed),speedValue(l.bSpeed));return s>0&&s<1000;}
  function short(p){var s=String(p||'').trim(),m=s.match(/\bport:?\s*(\d+)/i);if(m&&/unit|slot/i.test(s))return 'Port '+m[1];
   return s.replace(/^TwentyFiveGigE/i,'Twe').replace(/^TenGigabitEthernet/i,'Te').replace(/^GigabitEthernet/i,'Gi').replace(/^FastEthernet/i,'Fa').replace(/^FortyGigabitEthernet/i,'Fo').replace(/^HundredGigE/i,'Hu').replace(/^Port-channel/i,'Po').replace(/^Ethernet/i,'Eth').replace(/\s*\(.*\)$/,'');}
@@ -6227,6 +6244,8 @@ function pJ(L,pan){const d=E(),I={},R={},T={};
    this.stencil=st;this.img={w:Math.round(iw*100)/100,h:Math.round(ih*100)/100};this.h=Math.max(54,up9(ih+G));this.imgTop=(this.h-this.img.h)/2;this.map=st.layout?st.layout(main?main.count:0,upg?upg.count:0):null;
    // Known port groups: each group on its own run of the stencil's ports (front groups only).
    if(this.hw&&st.banks){var bm=st.banks(gs.map(function(g){return g.rear?0:g.count;}));if(bm){this.bankMap={};gs.forEach(function(g,i){if(bm[i])this.bankMap[g.name]=bm[i];},this);}}
+   // Otherwise the device's real port layout is fitted onto the stencil's ports.
+   if(this.hw&&!this.bankMap&&st.edges){var cand=st.edges();if(cand&&cand.length>=3)this.fitMap=fitPorts(gs,cand);}
    x=0;this.plates.forEach(function(pl,i){pl.stencil=true;pl.x=x;pl.labelX=up9(iw+G*2);pl.w=pl.labelX+(i===0?216:117);x+=pl.w+27;});this.w=x-27;this.positions={};}
  }
  // The port slot for a port name: plate, column center and row (0 top, 1 bottom).
@@ -6244,14 +6263,14 @@ function pJ(L,pan){const d=E(),I={},R={},T={};
  };
  Device.prototype.place=function(plate,g,idx,portName){
   var p={name:portName},pp=portPos(g,idx),col=g.col+Math.floor(idx/(g.rows===1?1:2)),row=pp.row,key=plate.member+'|'+g.name+'|'+idx;
-  if(plate.stencil){var list=this.bankMap?this.bankMap[g.name]:this.map&&((g.role||g.name)==='main'?this.map.main:(g.role||g.name)==='up'?this.map.up:null),own=this.stencil&&this.stencil.points&&this.stencil.points[g.name+'|'+idx],pos=own?{fx:own[0],fy:own[1],row:own[1]>0.5?1:0}:list&&list[idx],img=this.img,dx,py;
+  if(plate.stencil){var list=this.bankMap?this.bankMap[g.name]:this.map&&((g.role||g.name)==='main'?this.map.main:(g.role||g.name)==='up'?this.map.up:null),own=this.stencil&&this.stencil.points&&this.stencil.points[g.name+'|'+idx],pos=own?{fx:own[0],fy:own[1],row:own[1]>0.5?1:0}:!this.bankMap&&this.fitMap?this.fitMap[g.name+'|'+idx]:list&&list[idx],img=this.img,dx,py;
    // Port points placed by hand on this stencil (by port group and index, for every member) come first.
    if(pos){dx=plate.x+G+pos.fx*img.w;py=this.imgTop+pos.fy*img.h;row=pos.row;}
    // A known group the stencil has no ports for: where it sits on the drawn faceplate,
    // across the middle 80% of the artwork.
    else if(this.hw){var gs2=plate.groups.filter(function(x){return !x.rear&&x.count;}),first=gs2[0],last=gs2[gs2.length-1],x0=first?first.x:81,x1=last?last.x+groupWidth(last):x0+1;dx=plate.x+G+img.w*(0.1+0.8*(pp.dx-x0)/Math.max(1,x1-x0));py=row?this.imgTop+img.h:this.imgTop;}
    else{var cols=plate.groups.reduce(function(c,x){return Math.max(c,x.col+Math.ceil(x.count/2));},1);dx=plate.x+G+(col+0.5)/cols*img.w;py=row?this.imgTop+img.h:this.imgTop;}
-   var ex=dx;dx=snap(dx);this.positions[key]={x:ex,y:py,exact:!!pos};
+   var ex=dx;dx=snap(dx);this.positions[key]={x:ex,y:py,exact:!!pos&&pos.exact!==false};
    return {key:key,plate:plate,dx:dx,ex:ex,py:py,row:row,fiber:g.fiber,number:'',name:p.name};}
   return {key:key,plate:plate,dx:plate.x+pp.dx,row:row,fiber:g.fiber,py:g.mid?36:null,number:g.labels?g.labels[idx]:g.name==='other'?'':String((g.base||0)+(g.zero?idx:idx+1)),name:p.name};
  };
@@ -6304,9 +6323,9 @@ function pJ(L,pan){const d=E(),I={},R={},T={};
  Page.prototype.end=function(){this.cur=null;};
  // The connection types down a column at the left, as in the reference drawing.
  var LEGEND_W=198;
- function legendColumn(page,x,y,types,roles){
+ function legendColumn(page,x,y,types,roles,view){
   page.text(x,y,LEGEND_W-36,14,'CONNECTION TYPES',{size:9.5,bold:true,align:'left',color:'#1d5b79'});y+=30;
-  types.forEach(function(t){page.line([[x,y+7],[x+30,y+7]],{color:LINK_TYPES[t].color,width:2.5,dash:LINK_TYPES[t].dash});page.text(x+40,y,LEGEND_W-80,16,LINK_TYPES[t].label,{size:10,align:'left'});y+=27;});
+  types.forEach(function(t){var k=kindStyle(t,view);page.line([[x,y+7],[x+30,y+7]],{color:k.color,width:2.5,dash:k.dash,lkind:t});page.text(x+40,y,LEGEND_W-80,16,k.label,{size:10,align:'left',lkind:t});y+=27;});
   if(roles&&roles.length){y+=12;page.text(x,y,LEGEND_W-36,14,'DEVICES',{size:9.5,bold:true,align:'left',color:'#1d5b79'});y+=30;roles.forEach(function(r){page.rect(x,y+2,24,12,{fill:ROLE_FILL[r],stroke:'none'});page.text(x+40,y,LEGEND_W-80,16,ROLE_LABEL[r],{size:10,align:'left'});y+=27;});}
   return y;
  }
@@ -6403,11 +6422,11 @@ function pJ(L,pan){const d=E(),I={},R={},T={};
   // Connections: one per physical link on faceplates, one per device pair on boxes.
   var conns=[],seenLinks=new Set();
   (input.links||[]).forEach(function(l){var A=devices.get(l.a),B=devices.get(l.b);if(!A||!B||A===B)return;var key=[l.a+'|'+short(l.aPort),l.b+'|'+short(l.bPort)].sort().join('~');if(seenLinks.has(key))return;seenLinks.add(key);
-   var type=linkType(l,A.node.role,B.node.role),dash=slowLink(l);
-   if(style==='box'){var pk=[l.a,l.b].sort().join('~'),c=conns.find(function(x){return x.pair===pk;});if(c){c.aPorts.push(l.a===c.A.key?l.aPort:l.bPort);c.bPorts.push(l.a===c.A.key?l.bPort:l.aPort);if(type==='fiber')c.type=type;return;}conns.push({pair:pk,A:A,B:B,aPorts:[l.aPort],bPorts:[l.bPort],type:type,dash:dash});return;}
+   var fa=false,fb=false;if(style==='plate'){try{fa=!!A.slot(l.aPort||'').fiber;fb=!!B.slot(l.bPort||'').fiber;}catch(e){}}var type=linkKind(l,A.node.role,B.node.role,fa,fb),dash=slowLink(l);
+   if(style==='box'){var pk=[l.a,l.b].sort().join('~'),c=conns.find(function(x){return x.pair===pk;});if(c){c.aPorts.push(l.a===c.A.key?l.aPort:l.bPort);c.bPorts.push(l.a===c.A.key?l.bPort:l.aPort);if(isFiberKind(type))c.type=type;return;}conns.push({pair:pk,A:A,B:B,aPorts:[l.aPort],bPorts:[l.bPort],type:type,dash:dash});return;}
    conns.push({A:A,B:B,aPorts:[l.aPort],bPorts:[l.bPort],type:type,dash:dash});});
-  devices.forEach(function(dev){dev.eps.forEach(function(a,j){var l=(input.links||[]).find(function(x){return x.a===dev.key&&x.b===a.node.key&&short(x.aPort)===short(a.port)||x.b===dev.key&&x.a===a.node.key&&short(x.bPort)===short(a.port);})||{aPort:a.port};conns.push({A:dev,ep:j,aPorts:[a.port],bPorts:[],type:a.node.role==='ap'?'wap':linkType(l,dev.node.role,a.node.role),dash:slowLink(l)});});});
-  conns.forEach(function(c){used.add(c.type);if(c.dash)used.add('slow');});
+  devices.forEach(function(dev){dev.eps.forEach(function(a,j){var l=(input.links||[]).find(function(x){return x.a===dev.key&&x.b===a.node.key&&short(x.aPort)===short(a.port)||x.b===dev.key&&x.a===a.node.key&&short(x.bPort)===short(a.port);})||{aPort:a.port};conns.push({A:dev,ep:j,aPorts:[a.port],bPorts:[],type:linkKind(l,dev.node.role,a.node.role,false,false),dash:slowLink(l)});});});
+  conns.forEach(function(c){used.add(c.type);});
   // Terminals on faceplates come from the port slot; boxes get a side per direction.
   var usedPorts=new Map();
   conns.forEach(function(c,i){c.net=i+1;
@@ -6416,14 +6435,17 @@ function pJ(L,pan){const d=E(),I={},R={},T={};
   function portList(list){var s=list.filter(Boolean).map(short);return s.length?clip(s[0],10)+(s.length>1?' +'+(s.length-1):''):'';}
   function termPlate(dev,port,c){var po=view.edits&&view.edits.ports&&view.edits.ports[dev.key+'|'+short(port||'')];if(po){port=po;}var s=dev.slot(port||'');
    // A port's link point moved by hand (a stencil whose marks miss its ports).
-   var pp=view.edits&&view.edits.portPos&&view.edits.portPos[dev.key+'|'+short(port||'')];if(pp&&style==='plate'){s=Object.assign({},s);var ex=(s.ex!=null?s.ex:s.dx)+pp[0];s.ex=ex;s.dx=snap(ex);s.py=(s.py!=null?s.py:s.row?51:21)+pp[1];if(dev.positions&&dev.positions[s.key])dev.positions[s.key]={x:ex,y:s.py,exact:true};}var t={dev:dev,slot:s,side:s.row?'bottom':'top',label:clip(short(port),10),conn:c};(dev.portKeys=dev.portKeys||{})[s.key]=dev.portKeys[s.key]||dev.key+'|'+short(port||'');var prior=dev.terms.find(function(x){return x.slot.key===s.key;});if(prior){t.shared=prior;prior.shares=(prior.shares||0)+1;t.k=prior.shares;t.label='';}else{dev.terms.push(t);usedPorts.set(dev.key+'|'+s.key,LINK_TYPES[c.type].color);}return t;}
-  devices.forEach(function(dev){(dev.eps||[]).forEach(function(a){(a.ports||[]).forEach(function(p){if(style!=='plate')return;var sl=dev.slot(p||'');if(!usedPorts.has(dev.key+'|'+sl.key))usedPorts.set(dev.key+'|'+sl.key,LINK_TYPES.wap.color);});});});
+   var pp=view.edits&&view.edits.portPos&&view.edits.portPos[dev.key+'|'+short(port||'')];if(pp&&style==='plate'){s=Object.assign({},s);var ex=(s.ex!=null?s.ex:s.dx)+pp[0];s.ex=ex;s.dx=snap(ex);s.py=(s.py!=null?s.py:s.row?51:21)+pp[1];if(dev.positions&&dev.positions[s.key])dev.positions[s.key]={x:ex,y:s.py,exact:true};}var t={dev:dev,slot:s,side:s.row?'bottom':'top',label:clip(short(port),10),conn:c};(dev.portKeys=dev.portKeys||{})[s.key]=dev.portKeys[s.key]||dev.key+'|'+short(port||'');var prior=dev.terms.find(function(x){return x.slot.key===s.key;});if(prior){t.shared=prior;prior.shares=(prior.shares||0)+1;t.k=prior.shares;t.label='';}else{dev.terms.push(t);usedPorts.set(dev.key+'|'+s.key,kindStyle(c.type,view).color);}return t;}
+  devices.forEach(function(dev){(dev.eps||[]).forEach(function(a){(a.ports||[]).forEach(function(p){if(style!=='plate')return;var sl=dev.slot(p||'');if(!usedPorts.has(dev.key+'|'+sl.key))usedPorts.set(dev.key+'|'+sl.key,kindStyle(linkKind({},dev.node.role,'ap'),view).color);});});});
   devices.forEach(function(dev){dev.fit();});
   // Endpoints sit above their switch when cabled to a top-row port and below it for a
   // bottom-row port, each near its port.
   devices.forEach(function(d){d.top=[];d.bot=[];});
   conns.forEach(function(c){if(c.ep==null)return;var t=c.ta.shared||c.ta,e={conn:c,a:c.A.eps[c.ep],dx:t.slot.dx,side:c.ta.side};(e.side==='top'?c.A.top:c.A.bot).push(e);});
-  devices.forEach(function(d){[d.top,d.bot].forEach(function(list){var x=null;list.sort(function(p,q){return p.dx-q.dx;}).forEach(function(e){var ideal=snap(e.dx-EP_W/2);x=x==null?ideal:Math.max(ideal,x+EP_PITCH);e.rx=x;});});
+  // Compact (owner request): a row of endpoints stays within the device's width where it fits,
+  // each as near its port as its neighbors allow, instead of running off to one side.
+  devices.forEach(function(d){[d.top,d.bot].forEach(function(list){var x=null;list.sort(function(p,q){return p.dx-q.dx;}).forEach(function(e){var ideal=snap(e.dx-EP_W/2);x=x==null?ideal:Math.max(ideal,x+EP_PITCH);e.rx=x;});
+    var n=list.length,span=n?(n-1)*EP_PITCH+EP_W:0,lo=0,hi=Math.max(0,snap(d.w-EP_W));if(n&&span<=d.w){for(var i=n-1;i>=0;i--){var cap=i===n-1?hi:list[i+1].rx-EP_PITCH;if(list[i].rx>cap)list[i].rx=cap;}for(var j=0;j<n;j++){var floor=j?list[j-1].rx+EP_PITCH:lo;if(list[j].rx<floor)list[j].rx=floor;}}});
    var left=Math.min.apply(null,[0].concat(d.top.concat(d.bot).map(function(e){return e.rx;}))),right=Math.max.apply(null,[d.w+(d.others?G*2+EP_W:0)].concat(d.top.concat(d.bot).map(function(e){return e.rx+EP_W;})));d.offset=-left;d.cellW=right-left;});
   // Horizontal placement: cells left to right, rows centered.
   // Rows start on one vertical line: the first device of every row has the same left edge
@@ -6455,8 +6477,8 @@ function pJ(L,pan){const d=E(),I={},R={},T={};
   page.text(MARGIN,32,1400,30,page.title,{size:24,bold:true,align:'left',color:'#1b3a4b'});
   if(view.subtitle)page.text(MARGIN,64,1400,16,view.subtitle,{size:11,align:'left',color:'#4a5568'});
   // Copper links and provider handoffs share the copper color: one legend entry for both.
-  var legendTypes=['fiber','copper','wap','wan','other','slow'].filter(function(t){return used.has(t);});if(legendTypes.indexOf('copper')>=0&&legendTypes.indexOf('wan')>=0)legendTypes=legendTypes.filter(function(t){return t!=='wan';});
-  var legendBottom=legendColumn(page,MARGIN,TOP,legendTypes,style==='box'?Array.from(new Set(Array.from(devices.values()).map(function(d){return d.node.role;}))):null),legendRight=MARGIN;
+  var legendTypes=Array.from(used).sort(function(a,b){var ka=KINDS[a]||{},kb=KINDS[b]||{};return ((LINK_MEDIA[ka.media]||{order:9}).order-(LINK_MEDIA[kb.media]||{order:9}).order)||((kb.speed||0)-(ka.speed||0));});
+  var legendBottom=legendColumn(page,MARGIN,TOP,legendTypes,style==='box'?Array.from(new Set(Array.from(devices.values()).map(function(d){return d.node.role;}))):null,view),legendRight=MARGIN;
   // Devices, endpoints and summaries.
   devices.forEach(function(dev){page.begin(dev.key);if(style==='box')drawBox(page,dev);else{var u=new Map();usedPorts.forEach(function(color,k){if(k.indexOf(dev.key+'|')===0)u.set(k.slice(dev.key.length+1),color);});drawPlate(page,dev,u);}page.end();
    dev.top.concat(dev.bot).forEach(function(e){var x=dev.x+e.rx,y=epY(dev,e),a=e.a;page.begin(epKey(dev,a),'ep');
@@ -6499,7 +6521,7 @@ function pJ(L,pan){const d=E(),I={},R={},T={};
   // the new route whenever it crosses fewer lines (owner request: a line crosses another only
   // when no route avoids it), or crosses as many with fewer bends.
   var all=order.map(function(c){return {net:c.net,get path(){return c.path;}};});
-  order.forEach(function(c){if(!c.path)return;router.rebuild(all,c.net);var old=router.score(c.net,c.path);if(!old.cross)return;router.cross=CROSS_STRICT;var r=routeConn(c);router.cross=0;if(!r.path||(c.strictPath&&!r.strict))return;var now=router.score(c.net,r.path);
+  order.forEach(function(c){if(!c.path)return;router.rebuild(all,c.net);var old=router.score(c.net,c.path);if(typeof window!=='undefined'&&old.cross)(window.__rr=window.__rr||[]).push({pre:c.A.key+'|'+c.aPorts[0],old:old});if(!old.cross)return;router.cross=CROSS_STRICT;var r=routeConn(c);router.cross=0;if(!r.path||(c.strictPath&&!r.strict))return;var now=router.score(c.net,r.path);if(typeof window!=='undefined'){(window.__rr=window.__rr||[]).push({a:c.A.key+'|'+c.aPorts[0],b:c.B?c.B.key+'|'+c.bPorts[0]:'ep',old:old,now:now,strict:!!r.strict,olds:!!c.strictPath});}
    if(now.cross<old.cross||now.cross===old.cross&&now.bends<old.bends){c.path=r.path;c.strictPath=r.strict;}});
   router.rebuild(all,0);
   order.forEach(function(c){var path=c.path,strict=c.strictPath;
@@ -6509,7 +6531,7 @@ function pJ(L,pan){const d=E(),I={},R={},T={};
    // onto the port itself, so the line meets the port's center.
    function onPort(t,first){if(!t||t.shared||!t.slot||t.slot.ex==null||t.slot.ex===t.slot.dx)return;var x0=t.dev.x+t.slot.dx,x1=t.dev.x+t.slot.ex,list=first?points:points.slice().reverse();if(list[0][0]!==x0)return;for(var k=0;k<list.length&&list[k][0]===x0;k++)list[k]=[x1,list[k][1]];if(!first)points=list.reverse();else points=list;}
    if(style==='plate'){onPort(c.ta,true);onPort(c.tb,false);}
-   lines.push({points:points,color:LINK_TYPES[c.type].color,width:c.type==='fiber'?2.5:style==='box'&&c.aPorts.length>1?3.5:2,conn:c,routed:!!path,strict:!!strict,groups:c.groups});});
+   lines.push({points:points,color:kindStyle(c.type,view).color,width:isFiberKind(c.type)?2.5:style==='box'&&c.aPorts.length>1?3.5:2,conn:c,routed:!!path,strict:!!strict,groups:c.groups});});
   // Where a line crosses one drawn before it, its horizontal run hops over in a small arc.
   // Hand-drawn routes from the editor replace the computed one while both ends still meet
   // the same port points.
@@ -6521,7 +6543,7 @@ function pJ(L,pan){const d=E(),I={},R={},T={};
     for(var j=0;j<lines.length;j++){if(j===i||lines[j].conn===l.conn)continue;var q=lines[j].points;for(var m=1;m<q.length;m++){var c=q[m-1],e=q[m];if(c[0]!==e[0])continue;var x=c[0];if((x-a[0])*dir>G&&(b[0]-x)*dir>G&&y>Math.min(c[1],e[1])&&y<Math.max(c[1],e[1])&&xs.indexOf(x)<0)xs.push(x);}}
     xs.sort(function(p,q){return (p-q)*dir;}).forEach(function(x){for(var t=0;t<=6;t++){var ang=Math.PI*t/6;out.push([Math.round((x-dir*5*Math.cos(ang))*100)/100,Math.round((y-5*Math.sin(ang))*100)/100]);}});}out.push(b);}
    l.drawn=out;});
-  lines.forEach(function(l){page.line(l.drawn,{color:l.color,width:l.width,dash:l.conn.dash,lineKey:l.key,route:l.points});});
+  lines.forEach(function(l){page.line(l.drawn,{color:l.color,width:l.width,dash:l.conn.dash||kindStyle(l.conn.type,view).dash,lineKey:l.key,route:l.points,lkind:l.conn.type});});
   conns.forEach(function(c){[c.ga,c.gb].forEach(function(g){if(g&&g.trunk&&Math.abs(g.sy-g.py)===2*G)page.rect(g.px-4,g.py-4,8,8,{fill:'#2d3748',stroke:'none',radius:4});});});
   // Port labels in the bands.
   conns.forEach(function(c){[c.ta,c.tb].forEach(function(t,i){if(!t||t.ep!=null||t.shared||!t.label)return;var g=i?c.gb:c.ga;page.text(g.lx,g.ly,10,BAND-8,t.label,{size:8,rotate:true,align:g.lalign,color:'#2d3748'});});});
@@ -6557,6 +6579,7 @@ function pJ(L,pan){const d=E(),I={},R={},T={};
   view.edits=o.edits||null;var page=render(input,view);
   // Every text gets a key (its group and original wording) so the editor can change it.
   var te=o.edits&&o.edits.texts||{};page.shapes.forEach(function(s){if(s.type!=='text')return;s.tkey=(s.node||'')+'|'+s.text;if(te[s.tkey]!=null)s.text=te[s.tkey];});
+  fitTexts(page);
   page.scope=o;page.style=style;page.maxRow=view.maxRow;page.letter=fitLetter(page);return page;
  }
  // Letter paper (11 x 8.5 in at 96 px per inch) with 0.35 in margins: the orientation
@@ -6586,7 +6609,7 @@ function pJ(L,pan){const d=E(),I={},R={},T={};
    if(tree2.length<=6){pages.push(diagram(input,Object.assign({scope:'downstream',focus:k,depth:0,title:input.title},extra)));tree2.forEach(function(x){visited.add(x);});return;}
    pages.push(diagram(input,Object.assign({scope:'downstream',focus:k,depth:1,title:input.title},extra)));kids.forEach(visit);}
   map.nodes.filter(function(n){return isSwitch(n.key);}).sort(function(a,b){return a.y-b.y||a.x-b.x;}).forEach(function(n){visit(n.key);});
-  return {pages:pages,linkTypes:LINK_TYPES};
+  return {pages:pages,linkTypes:LINK_TYPES,kinds:KINDS};
  }
 
 
@@ -6657,7 +6680,7 @@ function pJ(L,pan){const d=E(),I={},R={},T={};
   // Each switch drawn with its access points wired to their own ports (odd ports above,
   // even ports below), as on a hand-drawn wireless page; then the table of them all.
   if(input&&input.layout){var keys=input.layout.nodes.map(function(n){return n.key;});devs.forEach(function(d){if(keys.indexOf(d.key)<0)return;try{
-   var n=d.ports.filter(function(p){return p.neighbor&&p.neighbor.role==='ap';}).length,pg=diagram(input,{scope:'downstream',focus:d.key,depth:0,style:'auto',upstream:false,aps:true,others:false,hidden:new Set(keys.filter(function(k){return k!==d.key;})),added:new Set(),title:o.title,customTitle:'Wireless connections',customSubtitle:d.name+'  |  '+[d.model,d.ip,n+' access point'+(n===1?'':'s')].filter(Boolean).join('  /  '),company:o.company,noVlans:true});
+   var n=d.ports.filter(function(p){return p.neighbor&&p.neighbor.role==='ap';}).length,pg=diagram(input,{scope:'downstream',focus:d.key,depth:0,style:'auto',upstream:false,aps:true,others:false,hidden:new Set(keys.filter(function(k){return k!==d.key;})),added:new Set(),title:o.title,edits:o.wirelessEdits&&o.wirelessEdits[d.key]||undefined,linkStyles:o.linkStyles,customTitle:'Wireless connections',customSubtitle:d.name+'  |  '+[d.model,d.ip,n+' access point'+(n===1?'':'s')].filter(Boolean).join('  /  '),company:o.company,noVlans:true});
    pg.h+=30;pg.wireless=d.key;out.push(pg);}catch(e){}});}
   var flow=new Flow('Wireless connections','Access points, the switch ports they connect to and their addresses',o,out);
   devs.forEach(function(d){var aps=d.ports.filter(function(p){return p.neighbor&&p.neighbor.role==='ap';}).sort(function(a,b){return (splitName(a.name).n||0)-(splitName(b.name).n||0);});
@@ -6701,14 +6724,55 @@ function pJ(L,pan){const d=E(),I={},R={},T={};
  function shapeSVG(s){
   if(s.type==='rect')return '<rect x="'+s.x+'" y="'+s.y+'" width="'+s.w+'" height="'+s.h+'" rx="'+(s.radius||0)+'" fill="'+(s.fill||'none')+'" stroke="'+(s.stroke&&s.stroke!=='none'?s.stroke:'none')+'" stroke-width="'+(s.width||1)+'"'+(s.pkey?' data-port="'+esc(s.pkey)+'"':'')+'/>';
   if(s.type==='image')return s.art?'<svg x="'+s.x+'" y="'+s.y+'" width="'+s.w+'" height="'+s.h+'" viewBox="0 0 '+s.art.w+' '+s.art.h+'" preserveAspectRatio="none" overflow="hidden">'+s.art.body+'</svg>':'';
-  if(s.type==='line')return '<polyline'+(s.lineKey?' data-line="'+esc(s.lineKey)+'" data-route="'+(s.route||[]).map(function(p){return p[0]+','+p[1];}).join(' ')+'"':'')+' points="'+s.points.map(function(p){return p[0]+','+p[1];}).join(' ')+'" fill="none" stroke="'+s.color+'" stroke-width="'+(s.width||2)+'"'+(s.dash?' stroke-dasharray="8 5"':'')+' stroke-linejoin="round" stroke-linecap="'+(s.dash?'butt':'round')+'"/>';
-  var t=textSVG(s);return s.tkey?t.replace(/^<text /,'<text data-text="'+esc(s.tkey)+'" '):t;}
+  if(s.type==='line')return '<polyline'+(s.lkind?' data-kind="'+esc(s.lkind)+'"':'')+(s.lineKey?' data-line="'+esc(s.lineKey)+'" data-route="'+(s.route||[]).map(function(p){return p[0]+','+p[1];}).join(' ')+'"':'')+' points="'+s.points.map(function(p){return p[0]+','+p[1];}).join(' ')+'" fill="none" stroke="'+s.color+'" stroke-width="'+(s.width||2)+'"'+(s.dash?' stroke-dasharray="8 5"':'')+' stroke-linejoin="round" stroke-linecap="'+(s.dash?'butt':'round')+'"/>';
+  var t=textSVG(s);if(s.lkind)t=t.replace(/^<text /,'<text data-kind="'+esc(s.lkind)+'" ');return s.tkey?t.replace(/^<text /,'<text data-text="'+esc(s.tkey)+'" '):t;}
  // Where each port of a device sits on its stencil, as fractions of the artwork (for the
  // port point editor): every front port of the first member, by group and index.
  function stencilPorts(node,ports){var dev=new Device(node,ports||[],[],'plate');if(!dev.stencil||!dev.img)return null;var pl=dev.plates[0],out=[];
   pl.groups.forEach(function(g){if(g.rear)return;for(var i=0;i<g.count;i++){var name=g.names&&g.names[i]||'',s=dev.place(pl,g,i,name),label=g.labels?g.labels[i]:name?short(name):String((g.base||0)+(g.zero?i:i+1));
    out.push({k:g.name+'|'+i,label:label,name:name,fx:(s.ex-pl.x-G)/dev.img.w,fy:(s.py-dev.imgTop)/dev.img.h,exact:!!(dev.positions[s.key]&&dev.positions[s.key].exact)});}});
   return {items:out,ratio:dev.img.w/dev.img.h};}
+ // Text always fits its box (owner request): a label longer or with more lines than its box
+ // grows the box (and its accent bar) to the right, and up or down away from where its link
+ // meets it, so links stay attached.
+ function textSize(t){var size=t.size||11,lines=String(t.text).split('\n'),lh=t.lineHeight||size*1.3,w=0;lines.forEach(function(l,i){var b=t.bold||t.firstBold&&i===0;w=Math.max(w,l.length*size*(b?0.6:0.55));});return {w:w,h:(lines.length-1)*lh+size*1.25};}
+ function fitTexts(page){var groups={};page.shapes.forEach(function(s){if(!s.g)return;(groups[s.g]=groups[s.g]||[]).push(s);});
+  Object.keys(groups).forEach(function(g){var list=groups[g],box=list.find(function(s){return s.type==='rect'&&s.w>20&&s.h>20;});if(!box)return;var bar=list.find(function(s){return s.type==='rect'&&s!==box&&s.w===4&&s.x===box.x;});
+   list.forEach(function(t){if(t.type!=='text'||t.rotate)return;if(t.x<box.x-1||t.x>box.x+box.w||t.y<box.y-1||t.y>box.y+box.h)return;var m=textSize(t),pad=6;
+    var left=t.align==='left'?t.x:t.align==='right'?t.x+t.w-m.w:t.x+t.w/2-m.w/2,right=left+m.w,needW=right-(box.x+box.w-pad);
+    if(needW>0){box.w+=Math.ceil(needW);if(t.align!=='left')t.x+=0;t.w=Math.max(t.w,m.w);if(t.align==='center')t.x=box.x+(box.w-t.w)/2;}
+    var needH=t.y+m.h-(box.y+box.h-pad);if(needH>0){needH=Math.ceil(needH);
+     // Grow away from the link: up when a line ends on the box's bottom edge.
+     var bottom=box.y+box.h,up=page.shapes.some(function(l){if(l.type!=='line')return false;var a=l.points[0],z=l.points[l.points.length-1];return [a,z].some(function(q){return Math.abs(q[1]-bottom)<2&&q[0]>=box.x-1&&q[0]<=box.x+box.w+1;});});
+     if(up){box.y-=needH;list.forEach(function(x){if(x!==box&&x!==bar&&x.type==='text')x.y-=needH;});}box.h+=needH;if(bar){bar.y=box.y;bar.h=box.h;}}
+    page.grow(box.x+box.w,box.y+box.h);});});}
+ // Fits a device's known port groups onto a stencil's port points when their counts differ
+ // (rack-ear points, a missing or merged port): the stencil's points become columns (top and
+ // bottom), split into blocks at wide gaps; the device's columns take stencil columns in order,
+ // each group starting where a block starts, skipping as few stencil columns as possible.
+ function fitPorts(groups,cand){var banks=[];groups.forEach(function(g){if(g.rear||!g.count)return;var rows=g.mid?1:(g.rows||2);banks.push({g:g,rows:rows,ncols:rows===1?g.count:Math.ceil(g.count/2)});});if(!banks.length)return null;
+  var pts=cand.slice().sort(function(a,b){return a.fx-b.fx;}),cols=[];
+  var gx=[];for(var i=1;i<pts.length;i++){var d=pts[i].fx-pts[i-1].fx;if(d>0.002)gx.push(d);}gx.sort(function(a,b){return a-b;});var pitch=gx.length?gx[Math.floor(gx.length/4)]:0.02,tol=pitch*0.45;
+  pts.forEach(function(p){var c=cols[cols.length-1];if(c&&p.fx-c.x<=tol){c.pts.push(p);c.x=c.pts.reduce(function(a,q){return a+q.fx;},0)/c.pts.length;}else cols.push({x:p.fx,pts:[p]});});
+  cols.forEach(function(c){c.top=c.pts.filter(function(p){return !p.row;}).sort(function(a,b){return a.fy-b.fy;})[0]||null;c.bottom=c.pts.filter(function(p){return p.row;}).sort(function(a,b){return b.fy-a.fy;})[0]||null;});
+  var N=banks.reduce(function(a,b){return a+b.ncols;},0);
+  // Points on the rack ears or chassis edges are not ports.
+  if(cols.length>N)cols=cols.filter(function(c,k){return !((k===0&&c.x<0.03)||(k===cols.length-1&&c.x>0.97));});
+  var M=cols.length;if(M<N)return null;
+  var cg=[];for(var k=1;k<M;k++)cg.push(cols[k].x-cols[k-1].x);var sg=cg.slice().sort(function(a,b){return a-b;}),step=sg[Math.floor(sg.length/2)]||pitch;
+  var blockStart=cols.map(function(c,k){return k===0||cols[k].x-cols[k-1].x>step*1.6;});
+  var E=[];banks.forEach(function(b,bi){for(var c=0;c<b.ncols;c++)E.push({bank:bi,col:c,first:c===0});});
+  // dp[i][j]: least cost with the first i device columns placed on the first j stencil columns.
+  var INF=1e9,dp=[],from=[];for(var a=0;a<=N;a++){dp.push(new Array(M+1).fill(INF));from.push(new Array(M+1).fill(0));}dp[0][0]=0;
+  for(var a2=0;a2<=N;a2++)for(var j=0;j<=M;j++){var v=dp[a2][j];if(v>=INF)continue;
+   if(j<M&&v+1<dp[a2][j+1]){dp[a2][j+1]=v+1;from[a2][j+1]=1;}
+   if(a2<N&&j<M){var e=E[a2],c2=v+(e.first&&!blockStart[j]?3:0)+(!e.first&&blockStart[j]?0.5:0);if(c2<dp[a2+1][j+1]){dp[a2+1][j+1]=c2;from[a2+1][j+1]=2;}}}
+  var bestJ=-1,bv=INF;for(var j2=N;j2<=M;j2++)if(dp[N][j2]+(M-j2)<bv){bv=dp[N][j2]+(M-j2);bestJ=j2;}if(bestJ<0)return null;
+  var take=new Array(N),ii=N,jj=bestJ;while(ii>0||jj>0){var f=from[ii][jj];if(f===2){take[ii-1]=jj-1;ii--;jj--;}else if(f===1){jj--;}else break;}if(ii>0)return null;
+  var out={},ys=[[],[]];cols.forEach(function(c){if(c.top)ys[0].push(c.top.fy);if(c.bottom)ys[1].push(c.bottom.fy);});var my=ys.map(function(v,r){v.sort(function(p,q){return p-q;});return v.length?v[Math.floor(v.length/2)]:r?0.65:0.35;});
+  var at=0;banks.forEach(function(b){var g=b.g;for(var idx=0;idx<g.count;idx++){var c=b.rows===1?idx:Math.floor(idx/2),row=b.rows===1?0:portPos(g,idx).row,col=cols[take[at+c]],pt=row?col.bottom:col.top;
+    out[g.name+'|'+idx]=pt?{fx:pt.fx,fy:pt.fy,row:row,exact:true}:{fx:col.x,fy:b.rows===1&&!col.top&&col.bottom?col.bottom.fy:my[row],row:row,exact:!!(b.rows===1&&(col.top||col.bottom))};}at+=b.ncols;});
+  return out;}
  function svg(page){
   var out=[],open=0;page.shapes.forEach(function(s){if(s.g!==open){if(open)out.push('</g>');open=s.g||0;if(open)out.push(s.kind==='ep'?'<g class="diagram-ep" data-diagram-ep="'+esc(s.node)+'">':'<g class="diagram-node" data-diagram-node="'+esc(s.node)+'">');}out.push(shapeSVG(s));});if(open)out.push('</g>');
   return '<svg xmlns="http://www.w3.org/2000/svg" width="'+page.w+'" height="'+page.h+'" viewBox="0 0 '+page.w+' '+page.h+'" font-family="Segoe UI, Arial, sans-serif"><rect width="100%" height="100%" fill="#ffffff"/>'+out.join('')+'</svg>';
@@ -6831,7 +6895,7 @@ function pJ(L,pan){const d=E(),I={},R={},T={};
    page.rect(MARGIN,84,page.w-2*MARGIN,1,{fill:'#c9d3df',stroke:'none'});pages.push(page);}
   return pages;
  }
- root.SWDiagram={build:build,diagram:diagram,scope:scope,tree:tree,render:render,svg:svg,vsdx:vsdx,library:library,fitLetter:fitLetter,onLetter:onLetter,stencilPages:stencilPages,linkType:linkType,parsePort:parsePort,physicalPort:physicalPort,catalogFor:catalogFor,_Device:Device,stencilPorts:stencilPorts,shortPort:short,docPages:docPages,number:number,CATALOG:CATALOG,LINK_TYPES:LINK_TYPES,GRID:G};
+ root.SWDiagram={build:build,diagram:diagram,scope:scope,tree:tree,render:render,svg:svg,vsdx:vsdx,library:library,fitLetter:fitLetter,onLetter:onLetter,stencilPages:stencilPages,linkType:linkType,parsePort:parsePort,physicalPort:physicalPort,catalogFor:catalogFor,_Device:Device,stencilPorts:stencilPorts,kinds:KINDS,kindStyle:kindStyle,linkKind:linkKind,shortPort:short,docPages:docPages,number:number,CATALOG:CATALOG,LINK_TYPES:LINK_TYPES,GRID:G};
  if(typeof module==='object'&&module.exports)module.exports=root.SWDiagram;
 })(typeof globalThis!=='undefined'?globalThis:this);
 
@@ -7267,7 +7331,7 @@ function pJ(L,pan){const d=E(),I={},R={},T={};
     return {compareText:compareText,compareMode:['records','text','fields'].includes(data.compareMode)?data.compareMode:'records',models:models.slice(0,data.count),model:data.selected<0?null:models[data.selected],comparison:data.comparison<0?null:models[data.comparison],view:typeof data.view==='string'?data.view:'overview',scope:typeof data.scope==='string'?data.scope:'',categoryTabs:data.categoryTabs&&typeof data.categoryTabs==='object'&&!Array.isArray(data.categoryTabs)?data.categoryTabs:{},showUnassigned:!!data.showUnassigned,showEmpty:!!data.showEmpty};
   }
   function create(options){
-    options=options||{};var bridge=options.bridge||root.chrome&&root.chrome.webview,native=!!(bridge&&typeof bridge.postMessage==='function'&&typeof bridge.addEventListener==='function'),state={current:'5.40.0',state:'idle',message:'',automatic:true,busy:false,ready:false,available:false},handlers={},restoring=false,installing=false;
+    options=options||{};var bridge=options.bridge||root.chrome&&root.chrome.webview,native=!!(bridge&&typeof bridge.postMessage==='function'&&typeof bridge.addEventListener==='function'),state={current:'5.41.0',state:'idle',message:'',automatic:true,busy:false,ready:false,available:false},handlers={},restoring=false,installing=false;
     var commands=['update-ui-ready','update-status','update-check','update-download','update-later','update-auto-on','update-auto-off','update-restored','update-restore-failed'];
     function request(command){if(!native)throw new Error('Built-in updates are available in the Windows desktop edition.');if(!commands.includes(command))throw new Error('Unknown update action.');bridge.postMessage(command);}
     if(native)bridge.addEventListener('message',async function(event){
@@ -8909,7 +8973,7 @@ function pJ(L,pan){const d=E(),I={},R={},T={};
       (m.categories.vlans||[]).forEach(function(r){var v=r.summary||{};if(!/^\d+$/.test(String(v.vlan||'')))return;vl.set(String(v.vlan),{id:String(v.vlan),name:val(v.vlanName),ip:val(v.ip)?val(v.ip)+prefix(v.mask):''});});
       recs.forEach(function(r){var s=r.summary||{},ip=val(s.ip),vm=String(r.name).match(/^(?:vlan|vl|interface vlan)\s*(\d+)$/i);
         if(ip){var full=ip.indexOf('/')>=0?ip:ip+prefix(s.mask);if(vm){var e=vl.get(vm[1])||{id:vm[1],name:'',ip:''};e.ip=full;vl.set(vm[1],e);}addresses.push({iface:r.name+(val(s.vlan)?'  |  VLAN '+val(s.vlan):''),ip:full,note:[val(s.role)?val(s.role).toUpperCase():'',val(s.comment)].filter(Boolean).join('  |  ')});}
-        if(!window.SWDiagram.physicalPort(r.name)||/^(?:lag|trk|po|port-channel|vlan|loopback)/i.test(r.name)||vm||val(s.parent))return;
+        if(!window.SWDiagram.physicalPort(r.name)||/^(?:lag|trk|po|port-channel|vlan|loopback)[\s-]?\d/i.test(r.name)||vm||val(s.parent))return;
         var ev=evidencePort(n.name,r.name),oper=ev&&String(ev.oper||''),up=/^up/i.test(oper)?true:/down/i.test(oper)?false:null,nb=null;
         links.forEach(function(l){var mine=l.a===n.key?l.aPort:l.b===n.key?l.bPort:null;if(nb||mine==null||X.interfaceKey(mine)!==X.interfaceKey(r.name))return;var o=byKey.get(l.a===n.key?l.b:l.a);if(o)nb={name:o.name,role:o.role,model:o.model||'',ip:ownIP(o)};});
         var native=val(s.nativeVLAN)||list(s.untaggedVLANs)[0]||(/^\d+$/.test(val(s.vlan))?val(s.vlan):'');
@@ -8921,7 +8985,7 @@ function pJ(L,pan){const d=E(),I={},R={},T={};
   function diagramInput(){
     if(!window.SWDiagram||!window.SWSiteMap)return null;var key=evidenceSets.length+'|'+workspace.length+'|'+evidenceSets.map(function(s){return s.name;}).join(',')+'|'+stencilLib.version+'|'+(state.stencilPointsVersion||0)+'|'+(state.siteEditsVersion||0)+'|'+JSON.stringify(siteEdits())+'|'+workspace.map(function(m){return JSON.stringify(m.meta&&m.meta.hardwareModels||[]);}).join(',');if(diagramCache.key===key)return diagramCache.input;
     var data=siteMapModel(),X=SE();
-    data.links.forEach(function(l){var a=data.devices.find(function(d){return d.key===l.a;}),b=data.devices.find(function(d){return d.key===l.b;});var pa=a&&evidencePort(a.name,l.aPort),pb=b&&evidencePort(b.name,l.bPort);l.aSpeed=pa&&pa.speed||'';l.bSpeed=pb&&pb.speed||'';});
+    data.links.forEach(function(l){var a=data.devices.find(function(d){return d.key===l.a;}),b=data.devices.find(function(d){return d.key===l.b;});var pa=a&&evidencePort(a.name,l.aPort),pb=b&&evidencePort(b.name,l.bPort);l.aSpeed=pa&&pa.speed||'';l.bSpeed=pb&&pb.speed||'';l.aMedia=pa&&(pa.media||pa.type)||'';l.bMedia=pb&&(pb.media||pb.type)||'';});
     var layout=window.SWSiteMap.layout(data.devices,data.links,{showAccess:false}),vlans=new Map(),ports=new Map();
     layout.nodes.forEach(function(n){var m=modelForDevice(n.name),list=[],names=[];if(m){(m.categories.vlans||[]).forEach(function(r){var v=r.summary||{};if(r.summary.featureRoot||!/^\d+$/.test(String(v.vlan||'')))return;if(!list.some(function(x){return x.id===String(v.vlan);}))list.push({id:String(v.vlan),name:v.vlanName||v.label||''});});(m.categories.interfaces||[]).forEach(function(r){if(r.name)names.push(r.name);});}
       evidenceSets.forEach(function(set){set.ev.interfaces.forEach(function(i){if(X.deviceKey(i.device)!==n.key)return;if(i.name)names.push(i.name);if(!m)(i.vlans||[]).forEach(function(v){if(!list.some(function(x){return x.id===v.id;}))list.push({id:v.id,name:v.name||''});});});});
@@ -8942,7 +9006,7 @@ function pJ(L,pan){const d=E(),I={},R={},T={};
   }
   function diagramCurrent(){
     var input=diagramInput(),d=diagramOptions();if(!input||!d)return null;
-    var meta=diagramMeta(),o={scope:d.scope,focus:d.focus,depth:d.depth,style:d.style,upstream:d.upstream,aps:d.aps,apGroup:!!d.apGroup,others:d.others,wan:d.wan,hidden:d.hidden,added:d.added,title:diagramTitle(),customTitle:meta.title,customSubtitle:meta.subtitle,author:meta.author,company:meta.company,date:meta.date},key=JSON.stringify([o.scope,o.focus,o.depth,o.style,o.upstream,o.aps,o.apGroup,o.others,o.wan,Array.from(d.hidden).sort(),Array.from(d.added).sort(),o.title,meta]);
+    var meta=diagramMeta(),o={linkStyles:linkStyles(),scope:d.scope,focus:d.focus,depth:d.depth,style:d.style,upstream:d.upstream,aps:d.aps,apGroup:!!d.apGroup,others:d.others,wan:d.wan,hidden:d.hidden,added:d.added,title:diagramTitle(),customTitle:meta.title,customSubtitle:meta.subtitle,author:meta.author,company:meta.company,date:meta.date},key=JSON.stringify([o.scope,o.focus,o.depth,o.style,o.upstream,o.aps,o.apGroup,o.others,o.wan,Array.from(d.hidden).sort(),Array.from(d.added).sort(),o.title,meta,o.linkStyles]);
     var ek=diagramEditKey(d),edits=diagramEdits()[ek],baseKey=key;if(edits){o.edits=edits;key+='#'+JSON.stringify(edits);}
     if(!diagramCache.pages.has(key)){if(diagramCache.pages.size>12)diagramCache.pages.clear();diagramCache.pages.set(key,window.SWDiagram.diagram(d.style==='plate'?Object.assign({},input,{stencils:null}):input,o));}
     var page=diagramCache.pages.get(key),docs=diagramDocPages(1),tab=Math.max(0,Math.min(state.diagramTab||0,docs.length));
@@ -8950,7 +9014,7 @@ function pJ(L,pan){const d=E(),I={},R={},T={};
   }
   // Hand edits of a diagram (moved devices and access points, routes, labels, ports), kept
   // per view of the site on this computer.
-  function diagramEditBar(cur){var sel=(state.diagramSel||[]).filter(function(k){return cur.page.devices.some(function(d){return d.key===k;})||(cur.page.eps||[]).some(function(e){return e.key===k;});}),n=sel.length,has=!!diagramEdits()[diagramEditKey(cur.options)];
+  function diagramEditBar(cur){var sel=(state.diagramSel||[]).filter(function(k){return editPageOf(cur).devices.some(function(d){return d.key===k;})||(editPageOf(cur).eps||[]).some(function(e){return e.key===k;});}),n=sel.length,has=!!diagramEdits()[editKeyOf(cur)];
     function b(attr,label,title,off){return '<button class="button small" '+attr+(off?' disabled':'')+' title="'+h(title)+'">'+label+'</button>';}
     return '<div class="diagram-editbar" role="toolbar" aria-label="Edit the diagram"><span class="pop-label">Align '+(n?n+' selected':'')+'</span>'+
       b('data-diagram-align="left"','Left edges','Line up the selected items on their left edges',n<2)+b('data-diagram-align="center"','Centers','Line up the selected items on one vertical center line',n<2)+b('data-diagram-align="top"','Tops','Line up the selected items on their top edges',n<2)+b('data-diagram-align="spread"','Space evenly','Equal vertical spacing between the selected items',n<3)+
@@ -9023,32 +9087,46 @@ function pJ(L,pan){const d=E(),I={},R={},T={};
   // The browser's own right-click menu (Back, Reload, Print...) kept opening by accident: it
   // is off everywhere except in text fields, where Copy and Paste are useful.
   onDoc('contextmenu',function(event){var t=event.target;if(t&&t.closest&&t.closest('input,textarea,[contenteditable="true"],.allow-context-menu'))return;event.preventDefault();});
-  onDoc('dblclick',function(event){if(!state.diagramEditing)return;var t=event.target.closest&&event.target.closest('.diagram-editing .diagram-scroll text[data-text], .diagram-editing .diagram-scroll polyline[data-line]');
+  onDoc('dblclick',function(event){var lk=event.target.closest&&event.target.closest('.diagram-scroll text[data-kind], .diagram-scroll polyline[data-kind]:not([data-line])');if(lk){event.preventDefault();event.stopPropagation();showLinkStyle(lk.getAttribute('data-kind'));return;}if(!state.diagramEditing)return;var t=event.target.closest&&event.target.closest('.diagram-editing .diagram-scroll text[data-text], .diagram-editing .diagram-scroll polyline[data-line]');
     if(!t&&!(event.target.closest&&event.target.closest('[data-diagram-node],[data-diagram-ep]'))){var bx=event.target.closest&&event.target.closest('.diagram-editing .diagram-scroll'),sv=bx&&bx.querySelector('svg.diagram-svg');if(sv)t=nearLine(sv,svgPoint(sv,event));}
     if(!t){var dn=event.target.closest&&event.target.closest('.diagram-editing .diagram-scroll [data-diagram-node]');if(dn&&dn.querySelector('svg')){event.preventDefault();event.stopPropagation();openStencilPoints(dn.getAttribute('data-diagram-node'));}return;}event.preventDefault();event.stopPropagation();
-    if(t.tagName.toLowerCase()==='text'){var k=t.getAttribute('data-text'),now=t.textContent;var v=window.prompt('Label text (leave empty to hide it)',Array.from(t.querySelectorAll('tspan')).map(function(x){return x.textContent;}).join('\n')||now);if(v==null)return;saveDiagramEdits(function(e){(e.texts=e.texts||{})[k]=v;});return;}
+    if(t.tagName.toLowerCase()==='text'){showLabelEdit(t.getAttribute('data-text'),Array.from(t.querySelectorAll('tspan')).map(function(x){return x.textContent;}).join('\n')||t.textContent);return;}
     showLinkPorts(t.getAttribute('data-line'));},true);
+  // A label edited in a dialog: several lines, its box grows to fit (empty hides the label).
+  function showLabelEdit(key,text){state.labelEdit=key;openModal(modalHeader('Label','Each line is a line of the label; its box grows to fit')+'<div class="modal-body"><textarea class="select label-edit" rows="5" data-label-edit>'+h(text)+'</textarea><p class="live-note">Leave it empty to hide the label. Enter starts a new line; Ctrl+Enter applies.</p></div><div class="modal-foot"><button class="button" data-label-reset>Original text</button><span class="diagram-editbar-gap"></span><button class="button" data-action="close-modal">Cancel</button><button class="button primary" data-label-save>Apply</button></div>');var ta=el.modal.querySelector('[data-label-edit]');if(ta){ta.focus();ta.select();}}
+  function applyLabel(reset){var k=state.labelEdit,ta=el.modal.querySelector('[data-label-edit]');if(k==null||!ta)return;var v=ta.value.replace(/\s+$/,'');state.labelEdit=null;el.modal.close();saveDiagramEdits(function(e){e.texts=e.texts||{};if(reset)delete e.texts[k];else e.texts[k]=v;});}
+  onDoc('click',function(event){var t=event.target.closest&&event.target.closest('[data-label-save],[data-label-reset]');if(!t)return;applyLabel(t.hasAttribute('data-label-reset'));});
+  onDoc('keydown',function(event){if(event.key==='Enter'&&(event.ctrlKey||event.metaKey)&&event.target&&event.target.hasAttribute&&event.target.hasAttribute('data-label-edit')){event.preventDefault();applyLabel(false);}});
   // The device|port name of one end of a link (after a port chosen by hand), or '' for an
   // access point end.
-  function linkEnd(lineKey,end){var parts=String(lineKey||'').split('~'),p=parts[end]||'';if(!p||p.indexOf('ep:')===0)return '';var i=p.lastIndexOf('|'),dev=p.slice(0,i),port=p.slice(i+1),cur=diagramCurrent(),ed=cur&&diagramEdits()[diagramEditKey(cur.options)]||{},over=ed.ports&&ed.ports[dev+'|'+port];return dev+'|'+(over?window.SWDiagram.shortPort(over):port);}
+  function linkEnd(lineKey,end){var parts=String(lineKey||'').split('~'),p=parts[end]||'';if(!p||p.indexOf('ep:')===0)return '';var i=p.lastIndexOf('|'),dev=p.slice(0,i),port=p.slice(i+1),cur=diagramCurrent(),ed=cur&&diagramEdits()[editKeyOf(cur)]||{},over=ed.ports&&ed.ports[dev+'|'+port];return dev+'|'+(over?window.SWDiagram.shortPort(over):port);}
   function routeWithout(r,at){var best=-1,bd=1e9;for(var i=1;i<r.length-1;i++){var d=Math.abs(r[i][0]-at.x)+Math.abs(r[i][1]-at.y);if(d<bd){bd=d;best=i;}}if(best<1||r.length<=3)return null;var out=r.slice(0,best).concat(r.slice(best+1)),a=out[best-1],b=out[best];if(a[0]!==b[0]&&a[1]!==b[1])out.splice(best,0,[b[0],a[1]]);
     return out.filter(function(p,i){if(!i||i===out.length-1)return true;var q=out[i-1],n=out[i+1];return !((q[0]===p[0]&&p[0]===n[0])||(q[1]===p[1]&&p[1]===n[1]));});}
   function routeWithBend(r,at){var best=-1,bd=1e9;for(var i=0;i<r.length-1;i++){var a=r[i],b=r[i+1],d=a[1]===b[1]?Math.abs(at.y-a[1]):Math.abs(at.x-a[0]);if(d<bd){bd=d;best=i;}}if(best<0)return null;var a=r[best],b=r[best+1],out=r.slice(0,best+1);
     if(a[1]===b[1]){var x=Math.round(at.x/9)*9,dir=b[0]>a[0]?1:-1,x2=x+dir*18;out.push([x,a[1]],[x,a[1]+18],[x2,a[1]+18],[x2,a[1]]);}else{var y=Math.round(at.y/9)*9,dy=b[1]>a[1]?1:-1,y2=y+dy*18;out.push([a[0],y],[a[0]+18,y],[a[0]+18,y2],[a[0],y2]);}return out.concat(r.slice(best+1));}
   var ctxMenu=null;function closeCtx(){if(ctxMenu){ctxMenu.remove();ctxMenu=null;}}
   onDoc('contextmenu',function(event){if(!state.diagramEditing)return;var line=event.target.closest&&event.target.closest('.diagram-editing .diagram-scroll polyline[data-line]');if(!line)return;event.preventDefault();event.stopPropagation();closeCtx();
-    var svg=line.ownerSVGElement,at=svgPoint(svg,event),key=line.getAttribute('data-line'),route=parseRoute(line.getAttribute('data-route')),ends=[linkEnd(key,0),linkEnd(key,1)].filter(Boolean),cur=diagramCurrent(),ed=cur&&diagramEdits()[diagramEditKey(cur.options)]||{};
-    var items=[['bend','Add a bend here'],['unbend','Remove the nearest bend'],['ports','Choose ports…'],ed.lines&&ed.lines[key]?['route','Reset this link\'s route']:null,ends.some(function(e){return ed.portPos&&ed.portPos[e];})?['point','Reset its port points']:null].filter(Boolean);
+    var svg=line.ownerSVGElement,at=svgPoint(svg,event),key=line.getAttribute('data-line'),route=parseRoute(line.getAttribute('data-route')),ends=[linkEnd(key,0),linkEnd(key,1)].filter(Boolean),cur=diagramCurrent(),ed=cur&&diagramEdits()[editKeyOf(cur)]||{};
+    var items=[['bend','Add a bend here'],['unbend','Remove the nearest bend'],['ports','Choose ports…'],['style','Color and name of this link type…'],ed.lines&&ed.lines[key]?['route','Reset this link\'s route']:null,ends.some(function(e){return ed.portPos&&ed.portPos[e];})?['point','Reset its port points']:null].filter(Boolean);
     ctxMenu=document.createElement('div');ctxMenu.className='diagram-ctx pop-body';ctxMenu.style.cssText='position:fixed;left:'+Math.max(4,Math.min(event.clientX,window.innerWidth-240))+'px;top:'+Math.max(4,Math.min(event.clientY,window.innerHeight-220))+'px;z-index:100;min-width:200px';ctxMenu.innerHTML='<div class="pop-menu" role="menu">'+items.map(function(x){return '<button class="pop-item" role="menuitem" data-ctx="'+x[0]+'"><b>'+x[1]+'</b></button>';}).join('')+'</div>';document.body.appendChild(ctxMenu);
     ctxMenu.addEventListener('click',function(e){var b=e.target.closest('[data-ctx]');if(!b)return;var act=b.getAttribute('data-ctx');closeCtx();
       if(act==='ports'){showLinkPorts(key);return;}
+      if(act==='style'){showLinkStyle(line.getAttribute('data-kind'));return;}
       if(act==='bend'||act==='unbend'){var r=act==='bend'?routeWithBend(route,at):routeWithout(route,at);if(!r){toast(act==='bend'?'No stretch to add a bend to.':'This link has no bend to remove.');return;}saveDiagramEdits(function(e2){(e2.lines=e2.lines||{})[key]=r;});return;}
       if(act==='route'){saveDiagramEdits(function(e2){if(e2.lines)delete e2.lines[key];});return;}
       if(act==='point'){saveDiagramEdits(function(e2){ends.forEach(function(pk){if(e2.portPos)delete e2.portPos[pk];});if(e2.lines)delete e2.lines[key];});}});},true);
   onDoc('pointerdown',function(event){if(ctxMenu&&!ctxMenu.contains(event.target))closeCtx();},true);
   onDoc('keydown',function(event){if(event.key==='Escape')closeCtx();});
+  // Colors and names of link types (by cable or fiber type and speed), kept on this computer for
+  // every diagram: changing one recolors its links and its legend entry together.
+  function linkStyles(){if(!state.linkStyles){try{state.linkStyles=JSON.parse(localStorage.getItem('config-inspector-link-styles')||'{}');}catch(e){state.linkStyles={};}}return state.linkStyles;}
+  function showLinkStyle(kind){if(!kind||!window.SWDiagram.kindStyle)return;var cur=diagramCurrent();var base=window.SWDiagram.kindStyle(kind,{}),now=window.SWDiagram.kindStyle(kind,{linkStyles:linkStyles()});state.linkStyleEdit=kind;
+    openModal(modalHeader('Link type','Color and name of every link of this type, on the drawing and in its legend')+'<div class="modal-body"><div class="diagram-meta-grid"><label class="diagram-field stacked"><span class="pop-label">Name in the legend</span><input class="select" data-link-style="label" value="'+h(now.label)+'" placeholder="'+h(base.label)+'"></label><label class="diagram-field stacked"><span class="pop-label">Color</span><input type="color" class="link-color" data-link-style="color" value="'+h(now.color)+'"></label></div><p class="live-note">Default: '+h(base.label)+', <span class="link-swatch" style="background:'+h(base.color)+'"></span> '+h(base.color)+'. Kept on this computer for every diagram.</p></div><div class="modal-foot"><button class="button" data-link-style-reset>Default</button><span class="diagram-editbar-gap"></span><button class="button" data-action="close-modal">Cancel</button><button class="button primary" data-link-style-save>Apply</button></div>');}
+  onDoc('click',function(event){var t=event.target.closest&&event.target.closest('[data-link-style-save],[data-link-style-reset]');if(!t||!state.linkStyleEdit)return;var k=state.linkStyleEdit,all=linkStyles(),base=window.SWDiagram.kindStyle(k,{});
+    if(t.hasAttribute('data-link-style-reset'))delete all[k];else{var lab=el.modal.querySelector('[data-link-style="label"]').value.trim(),col=el.modal.querySelector('[data-link-style="color"]').value,o={};if(lab&&lab!==base.label)o.label=lab;if(col&&col.toLowerCase()!==String(base.color).toLowerCase())o.color=col;if(Object.keys(o).length)all[k]=o;else delete all[k];}
+    try{localStorage.setItem('config-inspector-link-styles',JSON.stringify(all));}catch(e){}state.linkStyleEdit=null;el.modal.close();renderKeepingView();});
   // The ports a link uses, chosen from each device's ports.
-  function showLinkPorts(lineKey){var cur=diagramCurrent();if(!cur)return;var ends=lineKey.split('~').filter(function(p){return p.indexOf('ep:')!==0;}).map(function(p){var i=p.lastIndexOf('|');return {dev:p.slice(0,i),port:p.slice(i+1)};}),edits=diagramEdits()[diagramEditKey(cur.options)]||{},ports=edits.ports||{},S=window.SWDiagram;
+  function showLinkPorts(lineKey){var cur=diagramCurrent();if(!cur)return;var ends=lineKey.split('~').filter(function(p){return p.indexOf('ep:')!==0;}).map(function(p){var i=p.lastIndexOf('|');return {dev:p.slice(0,i),port:p.slice(i+1)};}),edits=diagramEdits()[editKeyOf(cur)]||{},ports=edits.ports||{},S=window.SWDiagram;
     var rows=ends.map(function(e,i){var node=cur.input.layout.all.find(function(n){return n.key===e.dev;}),list=(cur.input.ports.get(e.dev)||[]).filter(S.physicalPort),hw=node&&node.hw;if(hw)hw.members.forEach(function(m){if(m.profile)m.profile.banks.forEach(function(b){b.names.forEach(function(n){list.push(n);});});});
       list=list.filter(function(x,j,a){return a.indexOf(x)===j;});var now=ports[e.dev+'|'+e.port]||e.port;if(list.indexOf(now)<0)list.unshift(now);
       return '<label class="diagram-field stacked"><span class="pop-label">'+h(node?node.name:e.dev)+' port</span><select class="select" data-link-port="'+i+'">'+list.map(function(x){return '<option'+(S.shortPort(x)===S.shortPort(now)?' selected':'')+'>'+h(x)+'</option>';}).join('')+'</select></label>';}).join('');
@@ -9063,11 +9141,11 @@ function pJ(L,pan){const d=E(),I={},R={},T={};
     if(t.hasAttribute('data-diagram-reset')){saveDiagramEdits(function(e){Object.keys(e).forEach(function(k){delete e[k];});});return;}
     // Each access point as close as it can be over its port, never overlapping its neighbor
     // in the same row (a row is held to one side of its switch).
-    if(t.hasAttribute('data-diagram-straighten')){saveDiagramEdits(function(e,cur){e.eps=e.eps||{};var rows={};(cur.page.eps||[]).forEach(function(p){if(p.portX==null)return;(rows[p.y]=rows[p.y]||[]).push(p);});
+    if(t.hasAttribute('data-diagram-straighten')){saveDiagramEdits(function(e,cur){e.eps=e.eps||{};var rows={};(editPageOf(cur).eps||[]).forEach(function(p){if(p.portX==null)return;(rows[p.y]=rows[p.y]||[]).push(p);});
       Object.keys(rows).forEach(function(y){var list=rows[y].sort(function(a,b){return a.portX-b.portX;}),xs=list.map(function(p){return p.portX-p.w/2;});for(var i=1;i<xs.length;i++)xs[i]=Math.max(xs[i],xs[i-1]+list[i-1].w+18);
         for(var j=xs.length-2;j>=0;j--){var want=list[j].portX-list[j].w/2;if(xs[j]<want)xs[j]=Math.min(want,xs[j+1]-list[j].w-18);}
         list.forEach(function(p,i){var d=Math.round((xs[i]-p.x)/9)*9;if(!d)return;var o=e.eps[p.key]||[0,0];e.eps[p.key]=[o[0]+d,o[1]];});});});return;}
-    var how=t.getAttribute('data-diagram-align');saveDiagramEdits(function(e,cur){var items=(state.diagramSel||[]).map(function(k){var d=cur.page.devices.find(function(x){return x.key===k;});if(d)return {k:k,bag:'moves',x:d.x,y:d.y,w:d.w,h:d.h};var p=(cur.page.eps||[]).find(function(x){return x.key===k;});return p?{k:k,bag:'eps',x:p.x,y:p.y,w:p.w,h:p.h}:null;}).filter(Boolean);if(items.length<2)return;
+    var how=t.getAttribute('data-diagram-align');saveDiagramEdits(function(e,cur){var items=(state.diagramSel||[]).map(function(k){var d=editPageOf(cur).devices.find(function(x){return x.key===k;});if(d)return {k:k,bag:'moves',x:d.x,y:d.y,w:d.w,h:d.h};var p=(editPageOf(cur).eps||[]).find(function(x){return x.key===k;});return p?{k:k,bag:'eps',x:p.x,y:p.y,w:p.w,h:p.h}:null;}).filter(Boolean);if(items.length<2)return;
       var first=items[0];function shift(it,dx,dy){var bag=e[it.bag]=e[it.bag]||{},o=bag[it.k]||[0,0];bag[it.k]=[o[0]+Math.round(dx/9)*9,o[1]+Math.round(dy/9)*9];}
       if(how==='left'){var x0=Math.min.apply(null,items.map(function(i){return i.x;}));items.forEach(function(i){shift(i,x0-i.x,0);});}
       else if(how==='center'){var c=first.x+first.w/2;items.forEach(function(i){shift(i,c-(i.x+i.w/2),0);});}
@@ -9099,10 +9177,15 @@ function pJ(L,pan){const d=E(),I={},R={},T={};
     if(t.hasAttribute('data-site-links-restore')){saveSiteEdits(function(e){e.removed=[];});showSiteLinks();return;}
     if(t.hasAttribute('data-site-dev-remove')){var i=Number(t.getAttribute('data-site-dev-remove'));saveSiteEdits(function(e){var gone=e.devices[i];e.devices=e.devices.filter(function(_,j){return j!==i;});if(gone)e.links=e.links.filter(function(l){return l.a!==gone.name&&l.b!==gone.name;});});showSiteLinks();}});
   function renderContentBar(){var bar=el.content.querySelector('.diagram-editbar'),cur=diagramCurrent();if(bar&&cur){var tmp=document.createElement('div');tmp.innerHTML=diagramEditBar(cur);bar.replaceWith(tmp.firstChild);}}
+  // The page being edited: the diagram, or a wireless connections page (its own hand edits).
+  function editKeyOf(cur){return cur&&cur.tab&&cur.shown&&cur.shown.wireless?JSON.stringify(['wireless',diagramTitle(),cur.shown.wireless]):diagramEditKey(cur.options);}
+  function editPageOf(cur){return cur&&cur.tab&&cur.shown&&cur.shown.wireless?cur.shown:cur.page;}
+  function editableTab(cur){return !cur.tab||!!(cur.shown&&cur.shown.wireless);}
+  function wirelessEdits(){var all=diagramEdits(),pre=JSON.stringify(['wireless',diagramTitle(),'']).slice(0,-2),out={};Object.keys(all).forEach(function(k){if(k.indexOf(pre)===0){try{out[JSON.parse(k)[2]]=all[k];}catch(e){}}});return out;}
   function diagramEditKey(d){return JSON.stringify([diagramTitle(),d.scope,d.focus,d.depth,d.style,d.upstream!==false,d.aps!==false,!!d.apGroup,d.wan!==false,d.others!==false,Array.from(d.hidden||[]).sort(),Array.from(d.added||[]).sort()]);}
   function diagramEdits(){if(!state.diagramEdits){try{state.diagramEdits=JSON.parse(localStorage.getItem('config-inspector-diagram-edits')||'{}');}catch(e){state.diagramEdits={};}}return state.diagramEdits;}
-  function saveDiagramEdits(change){var cur=diagramCurrent();if(!cur)return;var all=diagramEdits(),k=diagramEditKey(cur.options),before=all[k]?JSON.parse(JSON.stringify(all[k])):null,e=all[k]?JSON.parse(JSON.stringify(all[k])):{};
-    if(!e.maxRow)e.maxRow=cur.page.maxRow;change(e,cur);['moves','eps','lines','texts','ports','portPos'].forEach(function(x){if(e[x]&&!Object.keys(e[x]).length)delete e[x];});
+  function saveDiagramEdits(change){var cur=diagramCurrent();if(!cur)return;var all=diagramEdits(),k=editKeyOf(cur),before=all[k]?JSON.parse(JSON.stringify(all[k])):null,e=all[k]?JSON.parse(JSON.stringify(all[k])):{};
+    if(!e.maxRow)e.maxRow=editPageOf(cur).maxRow;change(e,cur);['moves','eps','lines','texts','ports','portPos'].forEach(function(x){if(e[x]&&!Object.keys(e[x]).length)delete e[x];});
     pushUndo({type:'diagram',k:k,v:before});
     if(Object.keys(e).filter(function(x){return x!=='maxRow';}).length)all[k]=e;else delete all[k];try{localStorage.setItem('config-inspector-diagram-edits',JSON.stringify(all));}catch(err){}renderKeepingView();}
   // Re-render after an edit where the view was: same zoom, same scrolled position.
@@ -9118,8 +9201,8 @@ function pJ(L,pan){const d=E(),I={},R={},T={};
     event.preventDefault();if(k==='y'||event.shiftKey)redoDiagramEdit();else undoDiagramEdit();});
   // The documentation pages that follow the diagram (port map, wireless, VLANs and routing,
   // trunk VLANs), numbered after the pages before them.
-  function diagramDocPages(offset){var input=diagramInput();if(!input||!window.SWDiagram.docPages)return [];var meta=diagramMeta(),drawn=!!(state.diagram&&state.diagram.style==='plate'),k=JSON.stringify([offset,diagramTitle(),meta.company,meta.author,meta.date,state.diagramPages||{},Array.from(state.diagramPortMapSkip||[]).sort(),drawn]);
-    if(!diagramCache.docPages||diagramCache.docPages.key!==k){var pages=[];try{pages=window.SWDiagram.docPages(input,{title:diagramTitle(),company:meta.company?String(meta.company).toUpperCase():'',author:meta.author,date:meta.date,offset:offset,pages:state.diagramPages||{},portMapSkip:state.diagramPortMapSkip||new Set(),styleDrawn:drawn});}catch(e){console.error(e);}diagramCache.docPages={key:k,pages:pages};}
+  function diagramDocPages(offset){var input=diagramInput();if(!input||!window.SWDiagram.docPages)return [];var meta=diagramMeta(),drawn=!!(state.diagram&&state.diagram.style==='plate'),we=wirelessEdits(),k=JSON.stringify([offset,diagramTitle(),meta.company,meta.author,meta.date,state.diagramPages||{},Array.from(state.diagramPortMapSkip||[]).sort(),drawn,we,linkStyles()]);
+    if(!diagramCache.docPages||diagramCache.docPages.key!==k){var pages=[];try{pages=window.SWDiagram.docPages(input,{title:diagramTitle(),company:meta.company?String(meta.company).toUpperCase():'',author:meta.author,date:meta.date,offset:offset,pages:state.diagramPages||{},portMapSkip:state.diagramPortMapSkip||new Set(),styleDrawn:drawn,wirelessEdits:we,linkStyles:linkStyles()});}catch(e){console.error(e);}diagramCache.docPages={key:k,pages:pages};}
     return diagramCache.docPages.pages;}
   // How the diagram prints: letter paper, orientation and scale (small text warned).
   function paperChip(page){var f=page.letter||window.SWDiagram.fitLetter(page),pct=Math.round(f.scale*100);return '<span class="panel-count diagram-paper" title="Visio, SVG and printable downloads are laid out on letter paper">Letter, '+(f.landscape?'landscape':'portrait')+(pct<100?', '+pct+'%':'')+'</span>'+(f.scale<0.45?'<span class="panel-count diagram-paper small-text" title="Text will be small on paper">Small text: show fewer levels or devices, or use the site book</span>':'');}
@@ -9167,9 +9250,9 @@ function pJ(L,pan){const d=E(),I={},R={},T={};
     var tools='<span class="diagram-bar-gap"></span>'+choose+'<button class="button small" data-action="diagram-stencils" title="Use your vendor Visio stencils (.vss, .vssx) for the devices">'+icon('layers')+'Stencils'+(stencilLib.files.length?' <span class="tab-count">'+stencilLib.files.reduce(function(n,f){return n+f.masters.length;},0)+'</span>':'')+'</button>'+details+download+
       '<button class="button small'+(state.diagramEditing?' primary':'')+'" data-diagram-editmode aria-pressed="'+!!state.diagramEditing+'" title="Move devices, access points, links and labels by hand">'+icon('sliders')+(state.diagramEditing?'Done':'Edit')+'</button>'+
       '<button class="icon-button diagram-full-button" data-diagram-full aria-pressed="'+!!full+'" title="'+(full?'Exit full screen (Esc)':'Full screen')+'" aria-label="'+(full?'Exit full screen':'Full screen')+'">'+icon(full?'minimize':'maximize')+'</button>';
-    return '<div class="diagram-page-view'+(full?' full':'')+(state.diagramEditing&&!cur.tab?' diagram-editing':'')+'"><section class="panel diagram-panel">'+bar+tools+'</div>'+
+    return '<div class="diagram-page-view'+(full?' full':'')+(state.diagramEditing&&editableTab(cur)?' diagram-editing':'')+'"><section class="panel diagram-panel">'+bar+tools+'</div>'+
       tabs+'<div class="diagram-subbar"><h2 class="panel-title">'+h(shown.title)+'</h2>'+paperChip(shown)+(cur.tab?'<span class="diagram-hint">Scroll to zoom · drag to move</span></div>':crumbs+stencilNotice(page)+'<span class="diagram-hint" title="Click a device to draw the diagram from it. Right-click a device to remove it. Scroll to zoom and drag to move. Linked ports are outlined in the link color and named above or below the device.">Click a device to draw from it · right-click to remove · scroll to zoom · drag to move</span></div>')+
-      (state.diagramEditing&&!cur.tab?diagramEditBar(cur):'')+
+      (state.diagramEditing&&editableTab(cur)?diagramEditBar(cur):'')+
       '<div class="site-map-viewport"><div class="site-map-zoom" role="group" aria-label="Zoom"><button class="icon-button" data-sitemap-zoom="out" aria-label="Zoom out" title="Zoom out">−</button><span class="zoom-level" aria-live="polite">'+Math.round(z*100)+'%</span><button class="icon-button" data-sitemap-zoom="in" aria-label="Zoom in" title="Zoom in">+</button><button class="button small" data-sitemap-zoom="fit" title="Fit the whole diagram">Fit</button><button class="button small" data-sitemap-zoom="reset" title="Actual size">100%</button></div><div class="site-map-scroll diagram-scroll"'+(fit?' data-autofit="1"':'')+' title="Scroll to zoom, drag to move">'+svg+'</div></div></section></div>';
   }
   function exportDiagram(kind){
@@ -9981,7 +10064,7 @@ function pJ(L,pan){const d=E(),I={},R={},T={};
     return '<div class="site-page">'+tabs+summary+panels[current]+'</div>';
   }
   // Kept current by scripts/version.py, which replaces the release string on each bump.
-  var APP_VERSION='5.40.0';
+  var APP_VERSION='5.41.0';
   // Client report: one section per open configuration. Port states use the same
   // classification as Interfaces at a glance, evaluated with each model active.
   function withModel(m,fn){var saved={model:state.model,usage:state.interfaceUsageCache,recordMap:state.recordMap};state.model=m;state.interfaceUsageCache=null;state.recordMap=new Map(m.records.map(function(r){return [r.id,r];}));try{return fn();}finally{state.model=saved.model;state.interfaceUsageCache=saved.usage;state.recordMap=saved.recordMap;}}
@@ -10624,7 +10707,7 @@ function pJ(L,pan){const d=E(),I={},R={},T={};
     }
   }
   function showHelp(){
-    openModal(modalHeader('About Config Inspector','Firewall and switch configuration explorer / version 5.40.0')+
+    openModal(modalHeader('About Config Inspector','Firewall and switch configuration explorer / version 5.41.0')+
       '<div class="modal-body"><div class="help-section"><h3>Open and explore</h3><p>Import SonicWall EXP, FortiGate FortiOS text, Palo Alto configuration XML, Sophos Firewall XML or export TAR, Aruba AOS or AOS-CX text, Cisco IOS or NX-OS text, Juniper Junos text or XML, Meraki API JSON, or a JSON snapshot exported by this application. The device type is detected automatically. You can also drop a file anywhere in the window. Select an interface or record for a plain-language explanation and key facts. Related objects show their IP addresses or service ports. Advanced details contains all original fields. Use Copy summary for readable facts and Back to return from a related item.</p></div>'+
       '<div class="help-section"><h3>Configuration sections</h3><p>Choose a root section in the sidebar, then select one of its indented subsections. Each subsection opens its own page. Routes, objects, members and other primary definitions appear before related settings. Security pages are grouped by function, including web, applications, files, intrusion prevention and SSL/TLS inspection. Certificate objects remain under Certificates. Empty subsections are hidden by default. Use View options to show empty sections, or Configuration sections and All original fields to inspect untranslated settings. Configuration context, search and table filters apply to the selected view.</p></div>'+
       '<div class="help-section"><h3>Choose access rule zones</h3><p>In Access Rules, choose From zone and To zone independently. All zones leaves that side unrestricted. Swap reverses the direction. Clear zone filters removes the pair while keeping the table filters. Search, configured state, and IP version filters combine with the pair, and CSV includes all matching rules. A matrix cell selects its zone pair. Interface and zone details offer outgoing and incoming rules.</p></div>'+
@@ -10870,7 +10953,7 @@ function configTree(it){
   function stencilFor(n){if(!stencilLib.files.length||!window.SWStencils)return null;var m=stencilMaster(n);if(!m)return null;var art=window.SWStencils.artwork(m);if(!art)return null;
     // Artwork the app cannot draw in full (gradient or EMF+ only pictures) is not used
     // automatically; choosing the shape under Stencils still uses it.
-    if(art.partial&&!stencilChoices()[n.key])return null;return {master:m,art:art,points:stencilPointsAll()[masterKey(m)]||null,layout:function(main,up){return window.SWStencils.layout(m,main,up);},banks:function(counts){return window.SWStencils.bankLayout?window.SWStencils.bankLayout(m,counts):null;}};}
+    if(art.partial&&!stencilChoices()[n.key])return null;return {master:m,art:art,points:stencilPointsAll()[masterKey(m)]||null,layout:function(main,up){return window.SWStencils.layout(m,main,up);},banks:function(counts){return window.SWStencils.bankLayout?window.SWStencils.bankLayout(m,counts):null;},edges:function(){var e=window.SWStencils.edgePorts?window.SWStencils.edgePorts(m):null;return e?e.map(function(p){return {fx:p.x/m.w,fy:1-p.y/m.h,row:p.row};}):null;}};}
   async function loadStencils(){try{var keys=await stencilStore('readonly',function(s){var out=[],q=s.getAllKeys();q.onsuccess=function(){out.push.apply(out,q.result||[]);};return out;});
       function readRow(k){return stencilStore('readonly',function(s){var out={},q=s.get(k);q.onsuccess=function(){out.row=q.result;};return out;}).then(function(o){return o.row;});}
       var rows=keys;
@@ -10973,13 +11056,17 @@ function configTree(it){
     state.spEdit={key:key,mkey:masterKey(st.master),name:node.name,master:st.master.name,art:st.art,ratio:now.ratio,items:now.items.map(function(it){return {k:it.k,label:it.label,name:it.name,fx:it.fx,fy:it.fy,exact:it.exact};}),defs:defs,sel:[],zoom:1,hist:[],fut:[]};
     openModal(modalHeader('Port points: '+node.name,st.master.name+' · where links meet each port')+'<div class="modal-body sp-body"><div class="sp-tools" role="toolbar" aria-label="Port point tools"><span class="pop-label sp-count"></span>'+
       [['row','Same height','Line up the selected points on the first one\'s height'],['col','Same column','Line up the selected points under the first one'],['hspread','Space across','Equal spacing from left to right'],['vspread','Space down','Equal spacing from top to bottom']].map(function(x){return '<button class="button small" data-sp-align="'+x[0]+'" title="'+h(x[2])+'">'+x[1]+'</button>';}).join('')+
-      '<span class="diagram-editbar-gap"></span><button class="button small" data-sp-undo title="Undo the last port change (Ctrl+Z)">Undo</button><button class="button small" data-sp-redo title="Redo (Ctrl+Shift+Z)">Redo</button><button class="button small" data-sp-all>Select all</button><button class="button small" data-sp-reset title="Put the selected points (or all) back where the stencil places them">Reset</button><button class="icon-button" data-sp-zoom="-1" aria-label="Zoom out">−</button><button class="icon-button" data-sp-zoom="1" aria-label="Zoom in">+</button></div>'+
+      '<span class="diagram-editbar-gap"></span><button class="button small" data-sp-undo title="Undo the last port change (Ctrl+Z)">Undo</button><button class="button small" data-sp-redo title="Redo (Ctrl+Shift+Z)">Redo</button><button class="button small" data-sp-all>Select all</button><button class="button small" data-sp-reset title="Put the selected points (or all) back where the stencil places them">Reset</button><button class="icon-button" data-sp-zoom="-1" aria-label="Zoom out" title="Zoom out (or scroll)">−</button><button class="icon-button" data-sp-zoom="1" aria-label="Zoom in" title="Zoom in (or scroll)">+</button><button class="button small" data-sp-zoom="0" title="Show the whole device">Fit</button></div>'+
       '<div class="sp-fields"><label class="diagram-field">Port <select class="select" data-sp-pick aria-label="Port to select"></select></label><label class="diagram-field">Across (%) <input class="select" type="number" step="0.01" min="0" max="100" data-sp-x></label><label class="diagram-field">Down (%) <input class="select" type="number" step="0.01" min="0" max="100" data-sp-y></label></div>'+
-      '<div class="sp-canvas"></div><p class="live-note">Click a point or choose it in the list to select it, Shift-click or drag a box to select several, then drag them or use the arrow keys (Shift for 10 px, Ctrl for 0.1 px). Points apply to every device drawn with this shape.</p></div><div class="modal-foot"><button class="button" data-action="close-modal">Cancel</button><button class="button primary" data-sp-save>Save port points</button></div>');
-    el.modal.classList.add('wide-modal');var cw=el.modal.querySelector('.sp-canvas'),fitW=(cw&&cw.clientWidth||1000)-2*SP_MARGIN;state.spEdit.zoom=Math.max(1,Math.min(4,Math.round(150/(fitW/now.ratio)*2)/2));drawStencilPoints();}
-  function drawStencilPoints(){var e=state.spEdit,box=el.modal.querySelector('.sp-canvas');if(!e||!box)return;var M=SP_MARGIN,W=Math.max(400,(box.clientWidth||1000)-2-2*M)*e.zoom,H=Math.max(40,W/e.ratio),sel=new Set(e.sel),r=Math.max(5,Math.min(9,H/14));
-    box.innerHTML='<svg class="sp-svg" width="'+(W+2*M)+'" height="'+(H+2*M)+'" data-art-w="'+W+'" data-art-h="'+H+'" viewBox="0 0 '+(W+2*M)+' '+(H+2*M)+'"><rect width="'+(W+2*M)+'" height="'+(H+2*M)+'" fill="#f4f7fb"/><svg x="'+M+'" y="'+M+'" width="'+W+'" height="'+H+'" viewBox="0 0 '+e.art.w+' '+e.art.h+'" preserveAspectRatio="none">'+e.art.body+'</svg>'+
-      e.items.map(function(it,i){var x=M+it.fx*W,y=M+it.fy*H,on=sel.has(it.k),moved=e.defs[it.k]&&(Math.abs(e.defs[it.k][0]-it.fx)>0.0005||Math.abs(e.defs[it.k][1]-it.fy)>0.0005);return '<g class="sp-pt'+(on?' selected':'')+'" data-sp="'+h(it.k)+'"><circle cx="'+x+'" cy="'+y+'" r="'+r+'" fill="'+(on?'#2f6fde':moved?'#d97706':'#ffffff')+'" fill-opacity="'+(on?0.85:0.7)+'" stroke="'+(on?'#1d4ed8':'#1f2937')+'" stroke-width="1.5"/><text x="'+x+'" y="'+(y-r-2)+'" font-size="'+Math.max(8,r*1.2)+'" text-anchor="middle" fill="#111827" paint-order="stroke" stroke="#ffffff" stroke-width="3">'+h(it.label)+'</text><title>'+h(it.name||it.label)+'</title></g>';}).join('')+'</svg>';
+      '<div class="sp-canvas"></div><p class="live-note">Click a point or choose it in the list to select it, Shift-click or drag a box to select several, then drag them or use the arrow keys (Shift for 10 px, Ctrl for 0.1 px). Scroll to zoom; drag with the middle button or hold Space to pan; Fit shows the whole device. Points apply to every device drawn with this shape.</p></div><div class="modal-foot"><button class="button" data-action="close-modal">Cancel</button><button class="button primary" data-sp-save>Save port points</button></div>');
+    el.modal.classList.add('wide-modal');state.spEdit.vb=null;drawStencilPoints();}
+  // The whole device fits the box (no scrollbar); the wheel zooms at the pointer and the middle
+  // button or Space+drag pans, by changing the view box. Points keep their size on screen.
+  function spGeom(e,box){var M=SP_MARGIN,W=1000,H=Math.max(40,W/e.ratio),TW=W+2*M,TH=H+2*M,bw=Math.max(200,(box.clientWidth||900)-2),bh=Math.min(Math.max(160,window.innerHeight*0.55),bw*TH/TW+0);return {M:M,W:W,H:H,TW:TW,TH:TH,bw:bw,bh:Math.max(120,Math.min(bh,bw*TH/TW<120?120:bh))};}
+  function drawStencilPoints(){var e=state.spEdit,box=el.modal.querySelector('.sp-canvas');if(!e||!box)return;var g0=spGeom(e,box),M=g0.M,W=g0.W,H=g0.H,vb=e.vb||{x:0,y:0,w:g0.TW,h:g0.TH},upp=Math.max(vb.w/g0.bw,vb.h/g0.bh),sel=new Set(e.sel),r=7*upp;e.upp=upp;
+    box.style.height=Math.round(g0.bh)+'px';
+    box.innerHTML='<svg class="sp-svg" width="100%" height="100%" preserveAspectRatio="xMidYMid meet" data-art-w="'+W+'" data-art-h="'+H+'" viewBox="'+vb.x+' '+vb.y+' '+vb.w+' '+vb.h+'"><rect x="-5000" y="-5000" width="'+(g0.TW+10000)+'" height="'+(g0.TH+10000)+'" fill="#f4f7fb"/><svg x="'+M+'" y="'+M+'" width="'+W+'" height="'+H+'" viewBox="0 0 '+e.art.w+' '+e.art.h+'" preserveAspectRatio="none">'+e.art.body+'</svg>'+
+      e.items.map(function(it,i){var x=M+it.fx*W,y=M+it.fy*H,on=sel.has(it.k),moved=e.defs[it.k]&&(Math.abs(e.defs[it.k][0]-it.fx)>0.0005||Math.abs(e.defs[it.k][1]-it.fy)>0.0005);return '<g class="sp-pt'+(on?' selected':'')+'" data-sp="'+h(it.k)+'"><circle cx="'+x+'" cy="'+y+'" r="'+r+'" fill="'+(on?'#2f6fde':moved?'#d97706':'#ffffff')+'" fill-opacity="'+(on?0.85:0.7)+'" stroke="'+(on?'#1d4ed8':'#1f2937')+'" stroke-width="'+(1.5*upp)+'"/><text x="'+x+'" y="'+(y-r-2*upp)+'" font-size="'+(10*upp)+'" text-anchor="middle" fill="#111827" paint-order="stroke" stroke="#ffffff" stroke-width="'+(3*upp)+'">'+h(it.label)+'</text><title>'+h(it.name||it.label)+'</title></g>';}).join('')+'</svg>';
     var c=el.modal.querySelector('.sp-count');if(c)c.textContent=e.sel.length?e.sel.length+' selected':e.items.length+' ports';
     el.modal.querySelectorAll('[data-sp-align]').forEach(function(b){b.disabled=e.sel.length<(/spread/.test(b.getAttribute('data-sp-align'))?3:2);});
     var pick=el.modal.querySelector('[data-sp-pick]'),one=e.sel.length===1?e.items.find(function(it){return it.k===e.sel[0];}):null;if(pick){if(!pick.options.length)pick.innerHTML='<option value="">'+(e.items.length)+' ports</option>'+e.items.map(function(it){return '<option value="'+h(it.k)+'">'+h(it.name||it.label)+'</option>';}).join('');pick.value=one?one.k:'';}
@@ -10993,12 +11080,18 @@ function configTree(it){
     if(t.hasAttribute('data-sp-pick')){e.sel=t.value?[t.value]:[];drawStencilPoints();return;}
     var ax=t.hasAttribute('data-sp-x')?'fx':t.hasAttribute('data-sp-y')?'fy':'';if(!ax||e.sel.length!==1)return;var v=Number(t.value);if(!isFinite(v))return;var it=e.items.find(function(x){return x.k===e.sel[0];});if(!it)return;spSnap(e);it[ax]=Math.max(0,Math.min(1,v/100));drawStencilPoints();});
   // A pointer position on the editor canvas, in pixels of the artwork (W x H, inside the margin).
-  function spPoint(svg,ev){var b=svg.getBoundingClientRect(),TW=Number(svg.getAttribute('width')),TH=Number(svg.getAttribute('height'));return {x:(ev.clientX-b.left)*TW/b.width-SP_MARGIN,y:(ev.clientY-b.top)*TH/b.height-SP_MARGIN,W:Number(svg.getAttribute('data-art-w')),H:Number(svg.getAttribute('data-art-h'))};}
-  onDoc('pointerdown',function(event){var svg=event.target.closest&&event.target.closest('.sp-svg');if(!svg||!state.spEdit||event.button!==0)return;event.preventDefault();var e=state.spEdit,g=event.target.closest('[data-sp]'),p=spPoint(svg,event);
+  function spPoint(svg,ev){var q=svgPoint(svg,ev);return {x:q.x-SP_MARGIN,y:q.y-SP_MARGIN,W:Number(svg.getAttribute('data-art-w')),H:Number(svg.getAttribute('data-art-h')),cx:ev.clientX,cy:ev.clientY};}
+  function spZoom(e,f,at){var box=el.modal.querySelector('.sp-canvas');if(!box)return;var g0=spGeom(e,box),vb=e.vb||{x:0,y:0,w:g0.TW,h:g0.TH},w=Math.max(g0.TW/16,Math.min(g0.TW,vb.w/f)),h=w*vb.h/vb.w,ax=at?at.x+SP_MARGIN:vb.x+vb.w/2,ay=at?at.y+SP_MARGIN:vb.y+vb.h/2;
+    if(w>=g0.TW-0.5){e.vb=null;drawStencilPoints();return;}e.vb={x:ax-(ax-vb.x)*w/vb.w,y:ay-(ay-vb.y)*h/vb.h,w:w,h:h};drawStencilPoints();}
+  onDoc('wheel',function(event){var svg=event.target.closest&&event.target.closest('.sp-svg');if(!svg||!state.spEdit)return;event.preventDefault();spZoom(state.spEdit,event.deltaY<0?1.25:0.8,spPoint(svg,event));},{passive:false});
+  var spSpace=false;onDoc('keydown',function(ev){if(ev.code==='Space'&&state.spEdit&&el.modal.open&&el.modal.querySelector('.sp-svg')&&!/^(?:input|select|textarea|button)$/i.test((document.activeElement||{}).tagName||'')){spSpace=true;ev.preventDefault();}});onDoc('keyup',function(ev){if(ev.code==='Space')spSpace=false;});
+  onDoc('pointerdown',function(event){var svg=event.target.closest&&event.target.closest('.sp-svg');if(!svg||!state.spEdit||event.button!==0&&event.button!==1)return;event.preventDefault();var e=state.spEdit,g=event.target.closest('[data-sp]'),p=spPoint(svg,event);
+    if(event.button===1||spSpace){var box0=el.modal.querySelector('.sp-canvas'),g1=spGeom(e,box0);spDrag={kind:'pan',cx:event.clientX,cy:event.clientY,vb:Object.assign({},e.vb||{x:0,y:0,w:g1.TW,h:g1.TH})};return;}
     if(g){var k=g.getAttribute('data-sp');if(event.shiftKey||event.ctrlKey||event.metaKey){e.sel=e.sel.indexOf(k)>=0?e.sel.filter(function(x){return x!==k;}):e.sel.concat([k]);drawStencilPoints();return;}if(e.sel.indexOf(k)<0)e.sel=[k];
       spSnap(e);spDrag={kind:'move',start:p,orig:e.items.filter(function(it){return e.sel.indexOf(it.k)>=0;}).map(function(it){return {it:it,fx:it.fx,fy:it.fy};})};drawStencilPoints();return;}
     spDrag={kind:'box',start:p,add:event.shiftKey||event.ctrlKey||event.metaKey};});
-  onDoc('pointermove',function(event){if(!spDrag||!state.spEdit)return;var svg=el.modal.querySelector('.sp-svg');if(!svg)return;var p=spPoint(svg,event);
+  onDoc('pointermove',function(event){if(!spDrag||!state.spEdit)return;var svg=el.modal.querySelector('.sp-svg');if(!svg)return;
+    if(spDrag.kind==='pan'){var u=state.spEdit.upp||1;state.spEdit.vb={x:spDrag.vb.x-(event.clientX-spDrag.cx)*u,y:spDrag.vb.y-(event.clientY-spDrag.cy)*u,w:spDrag.vb.w,h:spDrag.vb.h};drawStencilPoints();return;}var p=spPoint(svg,event);
     if(spDrag.kind==='move'){var dx=(p.x-spDrag.start.x)/p.W,dy=(p.y-spDrag.start.y)/p.H;spDrag.orig.forEach(function(o){o.it.fx=Math.max(0,Math.min(1,o.fx+dx));o.it.fy=Math.max(0,Math.min(1,o.fy+dy));});drawStencilPoints();return;}
     var r=svg.querySelector('.diagram-marquee');if(!r){r=document.createElementNS('http://www.w3.org/2000/svg','rect');r.setAttribute('class','diagram-marquee');svg.appendChild(r);}r.setAttribute('x',SP_MARGIN+Math.min(p.x,spDrag.start.x));r.setAttribute('y',SP_MARGIN+Math.min(p.y,spDrag.start.y));r.setAttribute('width',Math.abs(p.x-spDrag.start.x));r.setAttribute('height',Math.abs(p.y-spDrag.start.y));spDrag.end=p;});
   onDoc('pointerup',function(){if(!spDrag||!state.spEdit)return;var d=spDrag,e=state.spEdit;spDrag=null;if(d.kind!=='box')return;var a=d.start,b=d.end;
@@ -11007,13 +11100,13 @@ function configTree(it){
     e.sel=(d.add?e.sel:[]).concat(hit.filter(function(k){return !d.add||e.sel.indexOf(k)<0;}));drawStencilPoints();});
   onDoc('keydown',function(event){var e=state.spEdit;if(!e||!el.modal.open||!el.modal.querySelector('.sp-svg'))return;var ae=document.activeElement;if(ae&&/^(?:input|select|textarea)$/i.test(ae.tagName))return;
     if((event.ctrlKey||event.metaKey)&&/^[zy]$/i.test(event.key)){event.preventDefault();if(/y/i.test(event.key)||event.shiftKey)spSwap(e,'fut','hist');else spSwap(e,'hist','fut');return;}
-    if(!/^Arrow/.test(event.key)||!e.sel.length)return;event.preventDefault();if(!event.repeat)spSnap(e);var svg=el.modal.querySelector('.sp-svg'),W=Number(svg.getAttribute('data-art-w')),H=Number(svg.getAttribute('data-art-h')),st=event.shiftKey?10:event.ctrlKey||event.metaKey?0.1:1,dx=event.key==='ArrowLeft'?-st:event.key==='ArrowRight'?st:0,dy=event.key==='ArrowUp'?-st:event.key==='ArrowDown'?st:0;
+    if(!/^Arrow/.test(event.key)||!e.sel.length)return;event.preventDefault();if(!event.repeat)spSnap(e);var svg=el.modal.querySelector('.sp-svg'),W=Number(svg.getAttribute('data-art-w')),H=Number(svg.getAttribute('data-art-h')),st=(event.shiftKey?10:event.ctrlKey||event.metaKey?0.1:1)*(e.upp||1),dx=event.key==='ArrowLeft'?-st:event.key==='ArrowRight'?st:0,dy=event.key==='ArrowUp'?-st:event.key==='ArrowDown'?st:0;
     e.items.forEach(function(it){if(e.sel.indexOf(it.k)<0)return;it.fx=Math.max(0,Math.min(1,it.fx+dx/W));it.fy=Math.max(0,Math.min(1,it.fy+dy/H));});drawStencilPoints();});
   onDoc('click',function(event){var t=event.target.closest&&event.target.closest('[data-stencil-points],[data-sp-align],[data-sp-all],[data-sp-reset],[data-sp-zoom],[data-sp-save],[data-sp-undo],[data-sp-redo]');if(!t||t.disabled)return;
     if(t.hasAttribute('data-stencil-points')){openStencilPoints(t.getAttribute('data-stencil-points'));return;}var e=state.spEdit;if(!e)return;
     if(t.hasAttribute('data-sp-undo')){spSwap(e,'hist','fut');return;}if(t.hasAttribute('data-sp-redo')){spSwap(e,'fut','hist');return;}
     if(t.hasAttribute('data-sp-all')){e.sel=e.items.map(function(it){return it.k;});drawStencilPoints();return;}
-    if(t.hasAttribute('data-sp-zoom')){e.zoom=Math.max(1,Math.min(6,e.zoom+Number(t.getAttribute('data-sp-zoom'))));drawStencilPoints();return;}
+    if(t.hasAttribute('data-sp-zoom')){var zv=Number(t.getAttribute('data-sp-zoom'));if(!zv){e.vb=null;drawStencilPoints();}else spZoom(e,zv>0?1.5:1/1.5,null);return;}
     if(t.hasAttribute('data-sp-reset')){spSnap(e);e.items.forEach(function(it){if((!e.sel.length||e.sel.indexOf(it.k)>=0)&&e.defs[it.k]){it.fx=e.defs[it.k][0];it.fy=e.defs[it.k][1];}});drawStencilPoints();return;}
     if(t.hasAttribute('data-sp-align')){var how=t.getAttribute('data-sp-align'),list=e.sel.map(function(k){return e.items.find(function(it){return it.k===k;});}).filter(Boolean);if(list.length<2)return;spSnap(e);
       if(how==='row')list.forEach(function(it){it.fy=list[0].fy;});else if(how==='col')list.forEach(function(it){it.fx=list[0].fx;});
