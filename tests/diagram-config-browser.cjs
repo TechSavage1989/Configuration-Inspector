@@ -60,6 +60,11 @@ ok((await routeOf()).split(' ').length===r0.split(' ').length,'dragging the jog 
   await page.keyboard.press('Control+z');await page.waitForTimeout(300);
   await page.locator('[data-site-links]').click();await page.waitForTimeout(200);await page.locator('#modal [data-site-link-remove][data-manual="0"]').first().click();await page.waitForTimeout(300);await page.keyboard.press('Escape');await page.waitForTimeout(200);
   ok(await page.locator('.diagram-scroll polyline[data-line]').count()===1,'a wrong link from the configurations can be removed');
+  // One link given its own type: its color changes and the legend gains its entry.
+  await page.evaluate(()=>{const l=document.querySelector('.diagram-scroll polyline[data-line]'),r=l.getAttribute('data-route').split(' ').map(q=>q.split(',').map(Number)),m=[(r[0][0]+r[1][0])/2,(r[0][1]+r[1][1])/2],svg=l.ownerSVGElement,p=svg.createSVGPoint();p.x=m[0];p.y=m[1];const c=p.matrixTransform(svg.getScreenCTM());l.dispatchEvent(new MouseEvent('contextmenu',{bubbles:true,cancelable:true,clientX:c.x,clientY:c.y,button:2}));});
+  await page.locator('.diagram-ctx [data-ctx="style"]').click();await page.locator('[data-link-style="label"]').fill('10 Gbps SFP+ DAC');await page.locator('[data-link-style="color"]').evaluate(e=>{e.value='#000000';});await page.locator('[data-link-style-save]').click();await page.waitForTimeout(400);
+  ok((await page.locator('.diagram-scroll polyline[data-line]').evaluateAll(ls=>ls.map(l=>l.getAttribute('stroke')))).includes('#000000')&&(await page.locator('.diagram-scroll text[data-kind]').allTextContents()).includes('10 Gbps SFP+ DAC'),'one link can be given its own type, with its own legend entry');
+  await page.keyboard.press('Control+z');await page.waitForTimeout(300);
   const theme=()=>page.locator('html').getAttribute('data-theme');const t0=await theme();await page.locator('#theme-choice').click();ok(await theme()!==t0&&await page.locator('#theme-choice').getAttribute('aria-pressed')===String(await theme()==='dark'),'the theme is one button that switches light and dark');await page.locator('#theme-choice').click();ok(await theme()===t0,'and back');
   ok(!errors.length,'no page errors: '+errors.join('; '));
   console.log(checks+' configuration-only diagram browser checks passed');
