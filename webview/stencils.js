@@ -69,7 +69,7 @@
    var media={};Object.keys(relMap).forEach(function(id){var t='visio/'+relMap[id].target.replace(/^\.\.\//,'');if(files[t])media[t]=files[t];});
    var pics=pictures(xml,relMap,files),conns=connections(top.body),frame=frameOf(w,h,pics,conns);
    var cells={};['PinX','PinY','LocPinX','LocPinY','BeginX','BeginY','EndX','EndY'].forEach(function(c){var v=cellOf(top.body,c);if(v!=null)cells[c]=v;});
-   masters.push({cells:cells,type:attr(top.tag,'Type')||'Shape',file:fileName||'stencil',id:attr(tag,'ID'),name:name,element:el,xml:xml,rels:relMap,media:media,props:props,part:props.PartNumber||'',product:props.ProductNumber||props.ProductDescription||'',manufacturer:props.Manufacturer||'',shapeW:w,shapeH:h,w:frame.w,h:frame.h,x0:frame.x,y0:frame.y,oneD:/<Cell N=["']BeginX["']/.test(top.body),connections:conns.map(function(c){return {x:c.x-frame.x,y:c.y-frame.y};}),pictures:pics.map(function(p){return Object.assign({},p,{x:p.x-frame.x,y:p.y-frame.y});})});}
+   masters.push({cells:cells,type:attr(top.tag,'Type')||'Shape',file:fileName||'stencil',id:attr(tag,'ID'),name:name,element:el,xml:xml,rels:relMap,media:media,props:props,part:props.PartNumber||props.NetZoomMfgProdNo||'',product:props.ProductNumber||props.ProductDescription||props.NetZoomMfgDesc||'',manufacturer:props.Manufacturer||'',shapeW:w,shapeH:h,w:frame.w,h:frame.h,x0:frame.x,y0:frame.y,oneD:/<Cell N=["']BeginX["']/.test(top.body),connections:conns.map(function(c){return {x:c.x-frame.x,y:c.y-frame.y};}),pictures:pics.map(function(p){return Object.assign({},p,{x:p.x-frame.x,y:p.y-frame.y});})});}
   return {file:fileName||'stencil',masters:masters,styles:docXML.match(/<StyleSheets>[\s\S]*?<\/StyleSheets>/)?docXML.match(/<StyleSheets>[\s\S]*?<\/StyleSheets>/)[0]:''};
  }
 
@@ -83,7 +83,7 @@
   if(master.part&&norm(master.part).length>=4&&hay.indexOf(norm(master.part))>=0)best=100;
   parts.forEach(function(p){var k=norm(p);if(k.length>=4&&(mn.indexOf(k)>=0||norm(master.product).indexOf(k)>=0))best=Math.max(best,95);});
   tokens(model).concat(parts.map(norm)).forEach(function(t){if(t.length<4)return;if(mn.indexOf(t)>=0||norm(master.product).indexOf(t)>=0)best=Math.max(best,60+Math.min(30,t.length*2));});
-  var fam=familyRE(master.name);if(fam&&fam.test(norm(model)))best=Math.max(best,75);
+  var fam=familyRE(master.name),pfam=master.part?familyRE(master.part):null;if(fam&&fam.test(norm(model))||pfam&&pfam.test(norm(model)))best=Math.max(best,75);
   // Same series, other generation (FG-120F for a FortiGate-120G): a weak match.
   // A bare series number (HP 6100 for an Aruba 6100 master) is a weak match too.
   (String(model).match(/(?:^|\D)(\d{4})(?!\d)/g)||[]).forEach(function(t){var d=t.replace(/\D/g,'');if(new RegExp('(^|\\D)'+d+'(\\D|$)').test(master.name))best=Math.max(best,60);});
@@ -91,10 +91,17 @@
   var nm=norm(model),re=/(\d{2,5})/g,m;while((m=re.exec(nm))){var gen=(nm.charAt(m.index+m[1].length).match(/[a-z]/)||[''])[0];for(var k=3;k>=2;k--){var letters=nm.slice(Math.max(0,m.index-k),m.index);if(!/^[a-z]{2,3}$/.test(letters))continue;var hit=new RegExp(letters+'(?:/[a-z]{2,4})?[^a-z0-9]*(?:\\d+/)?'+m[1]+'(?!\\d)(?:/\\d+)?([a-z]?)','i').exec(master.name);if(hit){if(!(gen&&hit[1]&&hit[1].toLowerCase()!==gen))best=Math.max(best,61);break;}}}
   // Another generation of the same series (FG-120/121F for a FortiGate-120G) has other
   // ports: never matched automatically.
-  if(best&&generationDiffers(model+' '+parts.join(' '),master.name+' '+(master.part||'')))return 0;
+  // The product number and description outrank the shape name, which vendors sometimes
+  // leave from an older model (a 120G shape named FG-120/121F).
+  var ident=master.props&&(master.props.NetZoomMfgProdNo||master.props.PartNumber)?master.part+' '+(master.product||''):master.name+' '+(master.part||'');
+  if(best&&generationDiffers(model+' '+parts.join(' '),ident))return 0;
   // The front of the device: rear views only when nothing else matches.
   if(best&&/\b(?:back|rear)\b/i.test(master.name))best-=5;
   if(best&&/\bfront\b/i.test(master.name))best+=2;
+  // Side, edge and mounting views are never the device's face. Access points are round or
+  // square seen face-on, so a long thin shape is a side view even when its name says nothing.
+  if(best&&/\b(?:side|edge|profile|angled?|isometric|bracket|mount(?:ing)?)\b/i.test(master.name))best-=8;
+  if(best&&node.role==='ap'){var ar=master.w&&master.h?master.w/master.h:1;if(ar>2||ar<0.5)best-=6;if(/\b(?:top|face)\b/i.test(master.name))best+=2;}
   return best;
  }
  function generationDiffers(model,name){var gens={},re=/(\d{2,5})([A-Za-z])?(?![A-Za-z0-9])/g,m,found=false;model=norm(model).replace(/(\d)([a-z])(?=[a-z]{2,})/g,'$1$2 ');
@@ -137,6 +144,42 @@
  // neighboring blocks that holds exactly the main ports, and the other blocks (in
  // order) for the uplinks. Positions are fractions of the master's width and height,
  // measured from its top left.
+ // Ports of a stencil for a device whose port groups are known. Vendor shapes differ in
+ // how they mark ports: one point per RJ45 jack, but often two per SFP cage (its left and
+ // right edges), and cages lower than the jacks. Points are split into an upper and a lower
+ // row at the middle of the shape's port rows; along a row, a run of evenly sized pairs
+ // that nearly touch is a run of cages; console and USB points without a partner row are
+ // left out. Ports are numbered column by column, upper row first.
+ function edgePorts(master){
+  var pts=(master.connections||[]).filter(function(p){return p.x>=0&&p.x<=master.w&&p.y>=0&&p.y<=master.h;});if(pts.length<4)return null;
+  var tol=master.h*0.04,levels=[];pts.slice().sort(function(a,b){return a.y-b.y;}).forEach(function(p){var l=levels.find(function(x){return Math.abs(x.y-p.y)<=tol;});if(l){l.pts.push(p);l.y=l.pts.reduce(function(a,q){return a+q.y;},0)/l.pts.length;}else levels.push({y:p.y,pts:[p]});});
+  levels=levels.filter(function(l){return l.pts.length>=2;});if(levels.length<2)return null;
+  var ys=levels.map(function(l){return l.y;}),mid=(Math.max.apply(null,ys)+Math.min.apply(null,ys))/2,upper=[],lower=[];
+  levels.forEach(function(l){l.pts.sort(function(a,b){return a.x-b.x;});(l.y>mid?upper:lower).push.apply(l.y>mid?upper:lower,l.pts);});
+  var gaps=[];[upper,lower].forEach(function(r){r.sort(function(a,b){return a.x-b.x;});for(var i=1;i<r.length;i++){var d=r[i].x-r[i-1].x;if(d>master.w*0.004)gaps.push(Math.round(d/master.w*400)/400);}});if(!gaps.length)return null;
+  var cnt={};gaps.forEach(function(g){cnt[g]=(cnt[g]||0)+1;});var P=Number(Object.keys(cnt).sort(function(a,b){return cnt[b]-cnt[a]||a-b;})[0])*master.w;
+  function row(list){var out=[],seg=[list[0]];function flush(){var n=seg.length,paired=false;
+     if(n>=4&&n%2===0){var w=[],inner=[];for(var i=0;i<n;i+=2){w.push(seg[i+1].x-seg[i].x);if(i)inner.push(seg[i].x-seg[i-1].x);}var wmin=Math.min.apply(null,w),wmax=Math.max.apply(null,w);paired=wmin>0&&wmax/wmin<1.3&&inner.every(function(g){return g<0.6*wmin;});}
+     if(paired)for(var k=0;k<n;k+=2)out.push({x:(seg[k].x+seg[k+1].x)/2,y:(seg[k].y+seg[k+1].y)/2});
+     else seg.forEach(function(p){var last=out[out.length-1];if(last&&p.x-last.x<P*0.25){last.x=(last.x+p.x)/2;}else out.push({x:p.x,y:p.y});});seg=[];}
+   for(var i=1;i<list.length;i++){if(list[i].x-list[i-1].x>P*1.5){flush();}seg.push(list[i]);}flush();return out;}
+  if(!upper.length||!lower.length)return null;
+  // Each level of points on its own (cages sit lower than jacks), then the levels of a side together.
+  function side(isUpper){var out=[];levels.filter(function(l){return (l.y>mid)===isUpper;}).forEach(function(l){out=out.concat(row(l.pts));});return out.sort(function(a,b){return a.x-b.x;});}
+  var U=side(true),L=side(false),cols=[];
+  U.forEach(function(p){cols.push({x:p.x,top:p,bottom:null});});
+  L.forEach(function(p){var c=cols.filter(function(c){return !c.bottom&&Math.abs(c.x-p.x)<P*0.6;}).sort(function(a,b){return Math.abs(a.x-p.x)-Math.abs(b.x-p.x);})[0];if(c)c.bottom=p;else cols.push({x:p.x,top:null,bottom:p});});
+  var full=cols.filter(function(c){return c.top&&c.bottom;}).length;if(full*2>cols.length)cols=cols.filter(function(c){return c.top&&c.bottom;});
+  cols.sort(function(a,b){return a.x-b.x;});var list=[];cols.forEach(function(c){if(c.top)list.push({x:c.x,y:c.top.y,row:0});if(c.bottom)list.push({x:c.x,y:c.bottom.y,row:1});});return list;
+ }
+ // Each known port group (left to right) takes the next ports of the stencil, as long as
+ // the stencil has them; a group past its last port gets null.
+ function bankLayout(master,counts){
+  var list=edgePorts(master);if(!list||!counts||!counts.length)return null;var at=0,found=0;
+  function frac(p){return {fx:p.x/master.w,fy:1-p.y/master.h,row:p.row};}
+  var out=counts.map(function(c){if(!c)return null;if(at+c>list.length)return null;var part=list.slice(at,at+c);at+=c;found++;return part.map(frac);});
+  return found?out:null;
+ }
  function layout(master,main,up){
   var blocks=ports(master);if(!blocks||!main)return null;var sizes=blocks.map(function(b){return b.length;});
   for(var i=0;i<blocks.length;i++){var sum=0;for(var j=i;j<blocks.length;j++){sum+=sizes[j];if(sum===main){var rest=[];blocks.forEach(function(b,k){if(k<i||k>j)rest=rest.concat(b);});if(up&&rest.length<up)break;
@@ -315,6 +358,6 @@
    file[0]=0x42;file[1]=0x4d;var dv=new DataView(file.buffer);dv.setUint32(2,file.length,true);dv.setUint32(10,offset,true);file.set(d,14);return {ext:'bmp',data:file};}
   return null;
  }
- root.SWStencils={read:read,match:match,score:score,ports:ports,layout:layout,artwork:artwork,emf:emf,unzip:unzip};
+ root.SWStencils={bankLayout:bankLayout,edgePorts:edgePorts,read:read,match:match,score:score,ports:ports,layout:layout,artwork:artwork,emf:emf,unzip:unzip};
  if(typeof module==='object'&&module.exports)module.exports=root.SWStencils;
 })(typeof globalThis!=='undefined'?globalThis:this);

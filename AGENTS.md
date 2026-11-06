@@ -74,6 +74,13 @@ existing release or its assets. Preserve the polished README layout.
 - Documentation pages (`docPages` in diagram.js: port map, wireless connections, VLANs and
   routing, trunk VLANs) are letter-sized (`p.doc`, drawn at full size by `fitLetter`) and built
   from `input.docs` (`diagramDocs` in index.html). Visio page names must be unique.
+- `site_map.js` layout keeps its own copies of devices in `layout.nodes`; anything added to
+  devices for the diagram (such as `hw`) must be set on `layout.nodes` too, or the diagram
+  silently falls back to the catalog faceplate.
+- Stencil port mapping for profiled devices uses `edgePorts`/`bankLayout` (stencils.js): ports
+  are read per level of connection points (cages often sit lower than jacks and carry two
+  points, one per edge). Stencil product properties (`NetZoomMfgProdNo`, `NetZoomMfgDesc`)
+  outrank the shape name when matching.
 - Stencil matching never picks another generation of a series automatically (FG-120/121F for a
   FortiGate-120G has other ports; `generationDiffers` in stencils.js) and prefers front views
   over rear views.

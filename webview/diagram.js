@@ -139,6 +139,8 @@
    var gs=this.plates[0].groups;if(this.hw){var big=gs.filter(function(g){return !g.rear;}).sort(function(a,b){return b.count-a.count;});if(big[0])big[0].role='main';var upr=big.find(function(g){return g!==big[0]&&g.fiber;});if(upr)upr.role='up';}
    var main=gs.find(function(g){return (g.role||g.name)==='main';}),upg=gs.find(function(g){return (g.role||g.name)==='up';});
    this.stencil=st;this.img={w:Math.round(iw*100)/100,h:Math.round(ih*100)/100};this.h=Math.max(54,up9(ih+G));this.imgTop=(this.h-this.img.h)/2;this.map=st.layout?st.layout(main?main.count:0,upg?upg.count:0):null;
+   // Known port groups: each group on its own run of the stencil's ports (front groups only).
+   if(this.hw&&st.banks){var bm=st.banks(gs.map(function(g){return g.rear?0:g.count;}));if(bm){this.bankMap={};gs.forEach(function(g,i){if(bm[i])this.bankMap[g.name]=bm[i];},this);}}
    x=0;this.plates.forEach(function(pl,i){pl.stencil=true;pl.x=x;pl.labelX=up9(iw+G*2);pl.w=pl.labelX+(i===0?216:117);x+=pl.w+27;});this.w=x-27;this.positions={};}
  }
  // The port slot for a port name: plate, column center and row (0 top, 1 bottom).
@@ -156,8 +158,11 @@
  };
  Device.prototype.place=function(plate,g,idx,portName){
   var p={name:portName},pp=portPos(g,idx),col=g.col+Math.floor(idx/(g.rows===1?1:2)),row=pp.row,key=plate.member+'|'+g.name+'|'+idx;
-  if(plate.stencil){var list=this.map&&((g.role||g.name)==='main'?this.map.main:(g.role||g.name)==='up'?this.map.up:null),pos=list&&list[idx],img=this.img,dx,py;
+  if(plate.stencil){var list=this.bankMap?this.bankMap[g.name]:this.map&&((g.role||g.name)==='main'?this.map.main:(g.role||g.name)==='up'?this.map.up:null),pos=list&&list[idx],img=this.img,dx,py;
    if(pos){dx=plate.x+G+pos.fx*img.w;py=this.imgTop+pos.fy*img.h;row=pos.row;}
+   // A known group the stencil has no ports for: where it sits on the drawn faceplate,
+   // across the middle 80% of the artwork.
+   else if(this.hw){var gs2=plate.groups.filter(function(x){return !x.rear&&x.count;}),first=gs2[0],last=gs2[gs2.length-1],x0=first?first.x:81,x1=last?last.x+groupWidth(last):x0+1;dx=plate.x+G+img.w*(0.1+0.8*(pp.dx-x0)/Math.max(1,x1-x0));py=row?this.imgTop+img.h:this.imgTop;}
    else{var cols=plate.groups.reduce(function(c,x){return Math.max(c,x.col+Math.ceil(x.count/2));},1);dx=plate.x+G+(col+0.5)/cols*img.w;py=row?this.imgTop+img.h:this.imgTop;}
    dx=snap(dx);this.positions[key]={x:dx,y:py,exact:!!pos};
    return {key:key,plate:plate,dx:dx,py:py,row:row,fiber:g.fiber,number:'',name:p.name};}
@@ -283,7 +288,11 @@
   var ipCount={};devices.forEach(function(dev){(dev.node.attached||[]).forEach(function(a){var n=all.get(a.key),ip=n&&(n.ips||[])[0];if(ip)ipCount[ip]=(ipCount[ip]||0)+1;});});
   function epIP(n){var ip=(n.ips||[])[0];return ip&&ipCount[ip]<3?ip:'';}
   devices.forEach(function(dev){dev.eps=[];dev.others=0;if(style==='box'||view.context&&view.context.has(dev.key))return;var list=(dev.node.attached||[]).map(function(a){return {node:all.get(a.key)||{name:a.name,role:a.role,key:a.key},port:a.port};}).filter(function(a){return a.node.role==='ap'?view.aps!==false:view.others!==false;});
-   var named=list.filter(function(a){return !a.node.generic;}).sort(function(a,b){return (a.node.role==='ap'?0:1)-(b.node.role==='ap'?0:1)||String(a.port).localeCompare(String(b.port),undefined,{numeric:true});});dev.eps=named.slice(0,12);dev.others=list.length-dev.eps.length;});
+   var named=list.filter(function(a){return !a.node.generic;}).sort(function(a,b){return (a.node.role==='ap'?0:1)-(b.node.role==='ap'?0:1)||String(a.port).localeCompare(String(b.port),undefined,{numeric:true});});
+   // Access points condensed into one box per switch (the ports stay marked).
+   var apList=named.filter(function(a){return a.node.role==='ap';});if(view.apGroup&&apList.length>1){var models=apList.map(function(a){return a.node.model;}).filter(function(m,i,all){return m&&all.indexOf(m)===i;});
+    named=[{node:{name:apList.length+' access points',role:'ap',key:'',model:models.length===1?models[0]:models.length+' models',group:true},port:apList[0].port,ports:apList.map(function(a){return a.port;})}].concat(named.filter(function(a){return a.node.role!=='ap';}));}
+   dev.eps=named.slice(0,12);dev.others=list.length-(view.apGroup&&apList.length>1?apList.length-1:0)-dev.eps.length;});
   // Connections: one per physical link on faceplates, one per device pair on boxes.
   var conns=[],seenLinks=new Set();
   (input.links||[]).forEach(function(l){var A=devices.get(l.a),B=devices.get(l.b);if(!A||!B||A===B)return;var key=[l.a+'|'+short(l.aPort),l.b+'|'+short(l.bPort)].sort().join('~');if(seenLinks.has(key))return;seenLinks.add(key);
@@ -299,6 +308,7 @@
    else{var sideA=c.A.row<c.B.row?'bottom':c.A.row>c.B.row?'top':'bottom',sideB=c.B.row<c.A.row?'bottom':c.B.row>c.A.row?'top':'bottom';c.ta={dev:c.A,side:sideA,label:portList(c.aPorts),conn:c};c.tb={dev:c.B,side:sideB,label:portList(c.bPorts),conn:c};c.A.terms.push(c.ta);c.B.terms.push(c.tb);}});
   function portList(list){var s=list.filter(Boolean).map(short);return s.length?clip(s[0],10)+(s.length>1?' +'+(s.length-1):''):'';}
   function termPlate(dev,port,c){var s=dev.slot(port||'');var t={dev:dev,slot:s,side:s.row?'bottom':'top',label:clip(short(port),10),conn:c};var prior=dev.terms.find(function(x){return x.slot.key===s.key;});if(prior){t.shared=prior;prior.shares=(prior.shares||0)+1;t.k=prior.shares;t.label='';}else{dev.terms.push(t);usedPorts.set(dev.key+'|'+s.key,LINK_TYPES[c.type].color);}return t;}
+  devices.forEach(function(dev){(dev.eps||[]).forEach(function(a){(a.ports||[]).forEach(function(p){if(style!=='plate')return;var sl=dev.slot(p||'');if(!usedPorts.has(dev.key+'|'+sl.key))usedPorts.set(dev.key+'|'+sl.key,LINK_TYPES.wap.color);});});});
   devices.forEach(function(dev){dev.fit();});
   // Endpoints sit above their switch when cabled to a top-row port and below it for a
   // bottom-row port, each near its port.
@@ -328,7 +338,8 @@
   var legendRight=legendRow(page,MARGIN,94,['fiber','copper','wap','other','slow'].filter(function(t){return used.has(t);}),style==='box'?Array.from(new Set(Array.from(devices.values()).map(function(d){return d.node.role;}))):null);
   // Devices, endpoints and summaries.
   devices.forEach(function(dev){page.begin(dev.key);if(style==='box')drawBox(page,dev);else{var u=new Map();usedPorts.forEach(function(color,k){if(k.indexOf(dev.key+'|')===0)u.set(k.slice(dev.key.length+1),color);});drawPlate(page,dev,u);}page.end();
-   dev.top.concat(dev.bot).forEach(function(e){var x=dev.x+e.rx,y=e.side==='top'?dev.epTopY:dev.epBotY,a=e.a;page.begin(a.node.key||'');page.rect(x,y,EP_W,EP_H,{fill:a.node.role==='ap'?'#eef8f0':'#eef3f9',stroke:a.node.role==='ap'?ROLE_FILL.ap:'#9aa9bd',width:1,radius:6});var est=input.stencils&&input.stencils.get(a.node.key);
+   dev.top.concat(dev.bot).forEach(function(e){var x=dev.x+e.rx,y=e.side==='top'?dev.epTopY:dev.epBotY,a=e.a;page.begin(a.node.key||'');
+    if(a.node.group){page.rect(x,y,EP_W,EP_H,{fill:'#eef8f0',stroke:ROLE_FILL.ap,width:1.5,radius:6});var pre=commonPrefix(a.ports);page.text(x+4,y+5,EP_W-8,46,clip('Ports '+ranges(a.ports,pre),20)+'\n'+a.node.name+'\n'+clip(a.node.model||'',22),{size:9,lineHeight:14,firstBold:true});page.end();return;}page.rect(x,y,EP_W,EP_H,{fill:a.node.role==='ap'?'#eef8f0':'#eef3f9',stroke:a.node.role==='ap'?ROLE_FILL.ap:'#9aa9bd',width:1,radius:6});var est=input.stencils&&input.stencils.get(a.node.key);
     if(est&&est.art){var r=est.art.w/est.art.h,ih=44,iw=ih*r;if(iw>44){iw=44;ih=iw/r;}page.image(x+5+(44-iw)/2,y+5+(44-ih)/2,iw,ih,{art:est.art,master:est.master});page.text(x+52,y+5,EP_W-56,46,clip(short(a.port),12)+'\n'+clip(a.node.name,13)+'\n'+clip(epIP(a.node)||a.node.model||'',14),{size:8.5,lineHeight:14,firstBold:true,align:'left'});}
     else page.text(x+4,y+5,EP_W-8,46,clip(short(a.port),16)+'\n'+clip(a.node.name,20)+'\n'+clip(epIP(a.node)||a.node.model||ROLE_LABEL[a.node.role]||'',22),{size:9,lineHeight:14,firstBold:true});page.end();});
    if(dev.others)page.text(dev.x+dev.w+G*2,dev.y+27,EP_W,18,'+'+dev.others+' other device'+(dev.others>1?'s':''),{size:10,align:'left',color:'#4a5568'});});
@@ -386,7 +397,7 @@
   var title=o.scope==='site'||!focus?(o.title||'Site')+' - Existing Topology':focus.name+(o.scope==='neighbors'?' - Connections':' and below');
   var kicker=(o.title||'Site')+(o.scope==='site'||!focus?'':' / '+focus.name),sub=o.subtitle||(o.scope==='site'||!focus?'Devices and links from imported neighbor and monitoring data':[focus.model,(focus.ips||[])[0]].filter(Boolean).join('  |  '));
   if(o.customTitle)title=o.customTitle;if(o.customSubtitle)sub=o.customSubtitle;
-  var view={company:o.company?String(o.company).toUpperCase():'',footer:o.author?'Prepared by '+o.author+(o.date?'  |  '+o.date:''):(o.date||''),title:title,kicker:kicker,subtitle:sub,rows:s.rows,context:s.context,style:style,aps:o.aps,others:o.others,vlansFor:o.scope==='site'?null:o.focus,maxRow:o.maxRow};
+  var view={company:o.company?String(o.company).toUpperCase():'',footer:o.author?'Prepared by '+o.author+(o.date?'  |  '+o.date:''):(o.date||''),title:title,kicker:kicker,subtitle:sub,rows:s.rows,context:s.context,style:style,aps:o.aps,apGroup:!!o.apGroup,others:o.others,vlansFor:o.scope==='site'||o.noVlans?null:o.focus,maxRow:o.maxRow};
   // Diagrams are meant to print on a letter sheet: try several row widths and keep the
   // one that needs the least shrinking (in either orientation).
   if(!o.maxRow){var best=null;(style==='box'?[3,4,6,8,10,14]:[1,2,3,4,5,6]).forEach(function(c){var m=render(input,Object.assign({},view,{maxRow:c,measure:true})),f=fitLetter(m);if(!best||f.raw>best.raw*1.02)best={c:c,raw:f.raw};});view.maxRow=best.c;}
@@ -481,8 +492,13 @@
    var rows=Array.from(rowsByKey.values()).sort(function(a,b){return order.indexOf(a.role)-order.indexOf(b.role);}).map(function(r){return [{text:PORT_ROLES[r.role].label,bold:true,bar:PORT_ROLES[r.role].fill}].concat(group.map(function(d){return r.ports[d.key]?ranges(r.ports[d.key],pre):'';}),[r.detail]);});
    var cw=group.length===1?[0.24,0.28,0.48]:[0.22,0.2,0.2,0.38];docTable(flow,[{label:'Port assignment',w:cw[0]}].concat(group.map(function(d,i){return {label:d.name+' ports',w:cw[i+1]};}),[{label:'VLANs and link details',w:cw[cw.length-1]}]),rows);}
  }
- function wirelessPages(docs,o,out){
+ function wirelessPages(docs,o,out,input){
   var devs=docs.devices.filter(function(d){return d.ports.some(function(p){return p.neighbor&&p.neighbor.role==='ap';});});if(!devs.length)return;
+  // Each switch drawn with its access points wired to their own ports (odd ports above,
+  // even ports below), as on a hand-drawn wireless page; then the table of them all.
+  if(input&&input.layout){var keys=input.layout.nodes.map(function(n){return n.key;});devs.forEach(function(d){if(keys.indexOf(d.key)<0)return;try{
+   var n=d.ports.filter(function(p){return p.neighbor&&p.neighbor.role==='ap';}).length,pg=diagram(input,{scope:'downstream',focus:d.key,depth:0,style:'auto',upstream:false,aps:true,others:false,hidden:new Set(keys.filter(function(k){return k!==d.key;})),added:new Set(),title:o.title,customTitle:'Wireless connections',customSubtitle:d.name+'  |  '+[d.model,d.ip,n+' access point'+(n===1?'':'s')].filter(Boolean).join('  /  '),company:o.company,noVlans:true});
+   pg.h+=30;pg.wireless=d.key;out.push(pg);}catch(e){}});}
   var flow=new Flow('Wireless connections','Access points, the switch ports they connect to and their addresses',o,out);
   devs.forEach(function(d){var aps=d.ports.filter(function(p){return p.neighbor&&p.neighbor.role==='ap';}).sort(function(a,b){return (splitName(a.name).n||0)-(splitName(b.name).n||0);});
    docTable(flow,[{label:'Port',w:0.12},{label:'Access point',w:0.3},{label:'Model',w:0.18},{label:'Address',w:0.16},{label:'Speed',w:0.12},{label:'Link',w:0.12}],aps.map(function(p){var n=p.neighbor;return [{text:p.name,bold:true},n.name,n.model||'',n.ip||'',p.speed||'',p.up==null?'':{text:p.up?'Up':'Down',color:p.up?'#166534':'#b91c1c',bold:!p.up}];}),{heading:d.name+'  ·  '+[d.model,d.ip,aps.length+' access point'+(aps.length===1?'':'s')].filter(Boolean).join('  /  ')});});
@@ -510,8 +526,9 @@
    docTable(flow,[{label:'VLAN',w:0.08},{label:'Name',w:0.22}].concat(part.map(function(c){return {label:c.label+'\n'+c.sub,w:cw,align:'center'};})),list.map(function(id){return [{text:id,bold:true},names.get(id)||''].concat(part.map(function(c){return c.native===id?{text:'N',chip:'#1b3a4b',color:'#ffffff'}:c.tagged.indexOf(id)>=0?{text:'T',chip:'#d6eef0',color:'#1b3a4b'}:{text:'-',color:'#9ca3af'};}));}),{});}
  }
  function docPages(input,o){o=o||{};var docs=input.docs;if(!docs||!docs.devices||!docs.devices.length)return [];var out=[];
-  portMapPages(docs,o,out);wirelessPages(docs,o,out);routingPages(docs,o,out);trunkPages(docs,o,out);
-  out.forEach(function(p){p.w=Math.max(DOC_W,p.w);p.h=Math.max(DOC_H,p.h);});number(out,{offset:o.offset==null?1:o.offset,total:out.length+(o.offset==null?1:o.offset),footer:o.author?'Prepared by '+o.author+(o.date?'  |  '+o.date:''):(o.date||'')});out.forEach(function(p){p.letter=fitLetter(p);});return out;}
+  var want=o.pages||{},skip=o.portMapSkip||new Set(),on=function(k){return want[k]!==false;};
+  if(on('portmap'))portMapPages({devices:docs.devices.filter(function(d){return !skip.has(d.key);})},o,out);if(on('wireless'))wirelessPages(docs,o,out,input);if(on('routing'))routingPages(docs,o,out);if(on('trunks'))trunkPages(docs,o,out);
+  out.forEach(function(p){if(p.doc){p.w=Math.max(DOC_W,p.w);p.h=Math.max(DOC_H,p.h);}});number(out,{offset:o.offset==null?1:o.offset,total:out.length+(o.offset==null?1:o.offset),footer:o.author?'Prepared by '+o.author+(o.date?'  |  '+o.date:''):(o.date||'')});out.forEach(function(p){p.letter=fitLetter(p);});return out;}
  // Page numbers and the footer across a set of pages.
  function number(pages,o){o=o||{};var n=o.total||pages.length,off=o.offset||0;pages.forEach(function(p,j){if(p.numbered)return;p.numbered=true;var i=j+off,w=p.w,h=p.h;p.rect(DM,h-44,w-2*DM,1,{fill:'#c9d3df',stroke:'none'});if(o.footer)p.text(DM,h-36,w/2,14,o.footer,{size:9,align:'left',color:'#4a5568'});p.text(w-DM-120,h-36,120,14,(i+1<10?'0':'')+(i+1)+' / '+(n<10?'0':'')+n,{size:9,bold:true,align:'right',color:'#1d5b79'});p.w=w;p.h=h;});return pages;}
 

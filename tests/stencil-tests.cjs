@@ -15,6 +15,15 @@ const {stencil,unzip,vss}=require('./stencil-writer.cjs');
  const fam=[{name:'EX-120/121F',part:'EX-120',connections:[]},{name:'EX-90/91G',part:'EX-90',connections:[]},{name:'EX/EXW-60/61F',part:'',connections:[]},{name:'EX-SW48 Switch rear',part:'EXSW48',connections:[]},{name:'EX-SW48 Switch',part:'EXSW48',connections:[]}];
  ok(T.match({model:'EX-120G'},fam)===null&&T.match({model:'EX-120F'},fam)===fam[0],'another generation of a series (120F for a 120G) is never chosen automatically');
  ok(T.match({model:'EX-91G'},fam)===fam[1]&&T.match({model:'EX-61F'},fam)===fam[2],'paired model names (90/91G, EX/EXW-60/61F) match either model');
+ // Known port groups each take their own run of stencil ports (HA/MGMT 2, ports 16, X1-X4).
+ const cols=[0.2,0.6,0.7,0.8,0.9,1.2,1.3,1.4,1.5,1.9,2.0],bm={name:'EX-FW',w:2.4,h:0.8,connections:[].concat(...cols.map(x=>[{x,y:0.6},{x,y:0.2}]))};
+ const banks=T.bankLayout(bm,[2,16,8,4]);ok(banks&&banks[0].length===2&&banks[1].length===16&&banks[2]===null&&banks[3].length===4&&Math.abs(banks[3][0].fx-1.9/2.4)<0.01&&banks[3][1].row===1,'port groups map to the stencil blocks that hold them; a group with none is left out: '+JSON.stringify(banks&&banks.map(b=>b&&b.length)));
+ {const r=(p,a,b)=>Array.from({length:b-a+1},(_,i)=>p+(a+i)),prof={title:'EX-FW',banks:[{label:'HA',names:['ha','mgmt'],form:'RJ45',rows:2},{label:'1G',names:r('port',1,16),form:'RJ45',rows:2},{label:'SFP',names:r('port',17,24),form:'SFP',rows:2},{label:'10G',names:r('x',1,4),form:'SFP+',rows:2}]};
+  const node={key:'fw',name:'FW',role:'firewall',model:'EX-FW',hw:{members:[{id:'1',profile:prof}],portOf:n=>{const b=prof.banks.find(b=>b.names.includes(n));return b?{member:'1',bank:prof.banks.indexOf(b),index:b.names.indexOf(n)}:null;}},stencil:{art:{w:240,h:80,body:''},master:bm,banks:c=>T.bankLayout(bm,c)}};
+  const dev=new (D._Device)(node,[],[],'plate'),x3=dev.slot('x3'),p1=dev.slot('port1'),sfp=dev.slot('port20');
+  ok(dev.positions[x3.key].exact&&Math.abs(x3.dx-(dev.plates[0].x+9+2.0/2.4*dev.img.w))<=4.5&&x3.row===0&&p1.dx<x3.dx&&!dev.positions[sfp.key].exact&&sfp.dx>p1.dx&&sfp.dx<x3.dx,'a known device on a stencil: X3 lands on its cage, a group the stencil lacks sits between its neighbors: '+JSON.stringify([x3.dx,p1.dx,sfp.dx]));}
+ const aps=[{name:'EX-AP900 side',part:'EXAP900',w:3,h:0.4,connections:[]},{name:'EX-AP900',part:'EXAP900',w:3.2,h:0.45,connections:[]},{name:'EX-AP900 top',part:'EXAP900',w:2,h:2,connections:[]}];
+ ok(T.match({model:'EX-AP900',parts:['EXAP900'],role:'ap'},aps)===aps[2],'an access point is drawn face-on, not from the side');
  ok(T.match({model:'EXSW48',role:'switch'},fam)===fam[4]&&T.match({model:'EXSW48',role:'ap'},fam)===fam[4],'the front view is chosen over the rear view');
  const L=T.layout(sw,8,2);
  ok(L&&L.main.length===8&&L.up.length===2,'8 ports and 2 uplinks from the connection points');
