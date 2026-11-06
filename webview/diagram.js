@@ -16,7 +16,7 @@
  };
  var ROLE_FILL={firewall:'#c0504d',router:'#e6a23c',switch:'#4f81bd',controller:'#6b62d9',ap:'#22b14c',endpoint:'#8a94a6',circuit:'#8e44ad'};
  var ROLE_LABEL={firewall:'Firewall',router:'Router',switch:'Switch',controller:'Controller',ap:'Access point',endpoint:'Device',circuit:'Provider circuit'};
- var G=9,BAND=72,BEND=20,CROSS=30,CROSS_STRICT=20000,TOP=126,EP_W=126,EP_H=54,EP_PITCH=153,MARGIN=36;
+ var G=9,BAND=72,BEND=20,CROSS=30,CROSS_STRICT=20000,TOP=126,EP_W=126,EP_H=54,EP_PITCH=153,MARGIN=36,HEAD=18,FOOT=18;
  function speedValue(s){var m=String(s||'').match(/([\d.]+)\s*([GM])/i);if(!m)return 0;return Number(m[1])*(m[2].toUpperCase()==='G'?1000:1);}
  function linkType(l,aRole,bRole){if(aRole==='circuit'||bRole==='circuit')return 'wan';
   if(aRole==='ap'||bRole==='ap')return 'wap';
@@ -133,9 +133,9 @@
    function place(g){g.rows=g.name==='main'&&cat&&cat.rows||2;g.mid=g.rows===1;g.per=g.name==='main'?(cat&&cat.per)||(g.count>=24?12:g.count):g.count;g.x=gx;g.col=col;col+=Math.ceil(g.count/(g.rows===1?1:2))+1;gx+=groupWidth(g)+27;groups.push(g);}
    order.forEach(function(k){var g=mem.groups.get(k);if(!g)return;if(g.count==null)g.count=g.max+g.max%2;if(!g.count)return;place(g);});
    if(mem.other.length)place({name:'other',count:mem.other.length,names:mem.other,fiber:false});
-   var label=i===0?216:117,w=up9(gx-27+9+18+label);
-   self.plates.push({member:mem.n,x:x,w:w,groups:groups,labelX:w-label+9,first:i===0});x+=w+27;});
-  this.w=x-27;this.h=72;this.stencilPlate(node);
+   var w=up9(gx-27+9+18);
+   self.plates.push({member:mem.n,x:x,w:w,groups:groups,first:i===0});x+=w+27;});
+  this.w=x-27;this.plateH=72;this.h=HEAD+72+FOOT;this.stencilPlate(node);
  }
  // Faceplates from verified hardware profiles (hardware.js): each bank keeps its connector,
  // rows, order and side, so ports sit where they are on the device.
@@ -145,9 +145,9 @@
    var gx=81,col=0,groups=[],banks=mem.profile.banks.filter(function(b){return !b.mirror;}),front=banks.filter(function(b){return b.side!=='rear';}),rear=banks.filter(function(b){return b.side==='rear';});
    front.concat(rear).forEach(function(b){var bi=mem.profile.banks.indexOf(b),f=formOf(b.displayForm||b.form),rows=b.rows||2,g={name:'b'+bi,bank:bi,count:b.names.length,rows:rows,rowOffset:b.rowOffset||0,names:b.names,labels:b.names.map(portLabel),form:f,fiber:f==='sfp'||f==='qsfp',pitch:f==='qsfp'?27:18,per:rows===2&&b.names.length>=24?12:b.names.length,rear:b.side==='rear',title:b.label};
     g.x=gx;g.col=col;col+=Math.ceil(g.count/rows)+1;gx+=groupWidth(g)+27;groups.push(g);});
-   var label=i===0?216:117,w=up9(gx-27+9+18+label);
-   self.plates.push({member:mem.id,x:x,w:w,groups:groups,labelX:w-label+9,first:i===0,title:mem.profile.title});x+=w+27;});
-  this.w=x-27;this.h=72;
+   var w=up9(gx-27+9+18);
+   self.plates.push({member:mem.id,x:x,w:w,groups:groups,first:i===0,title:mem.profile.title});x+=w+27;});
+  this.w=x-27;this.plateH=72;this.h=HEAD+72+FOOT;
  };
  Device.prototype.stencilPlate=function(node){
   var x;
@@ -156,13 +156,19 @@
   var st=node.stencil;if(st&&st.art){var a=st.art,ratio=a.w/a.h,iw=ratio>2.5?720:Math.min(162,a.w),ih=iw/ratio;if(ih>126){ih=126;iw=ih*ratio;}
    var gs=this.plates[0].groups;if(this.hw){var big=gs.filter(function(g){return !g.rear;}).sort(function(a,b){return b.count-a.count;});if(big[0])big[0].role='main';var upr=big.find(function(g){return g!==big[0]&&g.fiber;});if(upr)upr.role='up';}
    var main=gs.find(function(g){return (g.role||g.name)==='main';}),upg=gs.find(function(g){return (g.role||g.name)==='up';});
-   this.stencil=st;this.img={w:Math.round(iw*100)/100,h:Math.round(ih*100)/100};this.h=Math.max(54,up9(ih+G));this.imgTop=(this.h-this.img.h)/2;this.map=st.layout?st.layout(main?main.count:0,upg?upg.count:0):null;
+   this.stencil=st;this.img={w:Math.round(iw*100)/100,h:Math.round(ih*100)/100};this.plateH=Math.max(54,up9(ih+G));this.h=HEAD+this.plateH+FOOT;this.imgTop=HEAD+(this.plateH-this.img.h)/2;this.map=st.layout?st.layout(main?main.count:0,upg?upg.count:0):null;
    // Known port groups: each group on its own run of the stencil's ports (front groups only).
    if(this.hw&&st.banks){var bm=st.banks(gs.map(function(g){return g.rear?0:g.count;}));if(bm){this.bankMap={};gs.forEach(function(g,i){if(bm[i])this.bankMap[g.name]=bm[i];},this);}}
    // Otherwise the device's real port layout is fitted onto the stencil's ports.
    if(this.hw&&!this.bankMap&&st.edges){var cand=st.edges();if(cand&&cand.length>=3)this.fitMap=fitPorts(gs,cand);}
-   x=0;this.plates.forEach(function(pl,i){pl.stencil=true;pl.x=x;pl.labelX=up9(iw+G*2);pl.w=pl.labelX+(i===0?216:117);x+=pl.w+27;});this.w=x-27;this.positions={};}
+   x=0;this.plates.forEach(function(pl){pl.stencil=true;pl.x=x;pl.w=up9(iw+G*2);x+=pl.w+27;});this.w=x-27;this.positions={};}
+  this.room();
  }
+ // Name above the faceplate, model and address below it (owner request: details stacked
+ // with the device, not in a card beside it): the device is at least as wide as that text.
+ function textW(t,size,bold){return String(t||'').length*size*(bold?0.6:0.54);}
+ function footOf(dev){var n=dev.node;return [n.model||(dev.stencil&&dev.stencil.master&&dev.stencil.master.name)||ROLE_LABEL[n.role]||'',(n.ips||[])[0]||''].filter(Boolean).join('  |  ');}
+ Device.prototype.room=function(){var need=up9(Math.max(textW(clip(this.node.name,40),11,true),textW(footOf(this),9.5))+G*2);if(this.w>=need)return;var last=this.plates[this.plates.length-1];last.w+=need-this.w;this.w=need;};
  // The port slot for a port name: plate, column center and row (0 top, 1 bottom).
  Device.prototype.slot=function(name){
   if(this.hw){var at=this.hw.portOf(name),pl=at&&(this.plates.find(function(x){return String(x.member)===String(at.member);})||this.plates[0]),hg=pl&&pl.groups.find(function(x){return x.bank===at.bank;});
@@ -187,15 +193,14 @@
    else{var cols=plate.groups.reduce(function(c,x){return Math.max(c,x.col+Math.ceil(x.count/2));},1);dx=plate.x+G+(col+0.5)/cols*img.w;py=row?this.imgTop+img.h:this.imgTop;}
    var ex=dx;dx=snap(dx);this.positions[key]={x:ex,y:py,exact:!!pos&&pos.exact!==false};
    return {key:key,plate:plate,dx:dx,ex:ex,py:py,row:row,fiber:g.fiber,number:'',name:p.name};}
-  return {key:key,plate:plate,dx:plate.x+pp.dx,row:row,fiber:g.fiber,py:g.mid?36:null,number:g.labels?g.labels[idx]:g.name==='other'?'':String((g.base||0)+(g.zero?idx:idx+1)),name:p.name};
+  return {key:key,plate:plate,dx:plate.x+pp.dx,row:row,fiber:g.fiber,py:HEAD+(g.mid?36:row?51:21),number:g.labels?g.labels[idx]:g.name==='other'?'':String((g.base||0)+(g.zero?idx:idx+1)),name:p.name};
  };
- Device.prototype.fit=function(){if(this.style!=='box')return;var top=this.terms.filter(function(t){return t.side==='top';}).length,bottom=this.terms.length-top;this.w=Math.max(198,up9(36+18*Math.max(top,bottom)));};
+ Device.prototype.fit=function(){if(this.style!=='box'){if(this.plates)this.fitHeader();return;}var top=this.terms.filter(function(t){return t.side==='top';}).length,bottom=this.terms.length-top;this.w=Math.max(198,up9(36+18*Math.max(top,bottom)));};
  function drawPlate(page,dev,used,fills){
-  var node=dev.node,x0=dev.x,y=dev.y;
+  var node=dev.node,x0=dev.x,y=dev.y,y0=y;
   if(dev.stencil){dev.plates.forEach(function(pl){var x=x0+pl.x;
-    page.rect(x,y,dev.noLabel?pl.labelX-G:pl.w,dev.h,{fill:'#f4f7fb',stroke:'#c9d3df',width:1,radius:4});page.image(x+G,y+dev.imgTop,dev.img.w,dev.img.h,{art:dev.stencil.art,master:dev.stencil.master});if(dev.noLabel)return;
-    var lx=x+pl.labelX,lw=pl.w-pl.labelX-8,ty=y+Math.max(4,(dev.h-58)/2);
-    if(pl.first)page.text(lx,ty,lw,58,clip(node.name,30)+'\n'+clip(node.model||dev.stencil.master.name||'',34)+'\n'+((node.ips||[])[0]||''),{size:10.5,align:'left',firstBold:true,lineHeight:17});else page.text(lx,y+dev.h/2-9,lw,18,'Member '+pl.member,{size:10.5,bold:true,align:'left'});});
+    page.rect(x,y+HEAD,pl.w,dev.plateH,{fill:'#f4f7fb',stroke:'#c9d3df',width:1,radius:4});page.image(x+G,y+dev.imgTop,dev.img.w,dev.img.h,{art:dev.stencil.art,master:dev.stencil.master});});
+   drawHeader(page,dev);
    // Linked ports: a ring in the link color on the stencil.
    if(used)used.forEach(function(color,key){var p=dev.positions[key];if(p)page.rect(x0+p.x-6,y+p.y-6,12,12,{fill:'none',stroke:color,width:2,radius:6,pkey:dev.portKeys&&dev.portKeys[key]});});
    // Port roles on a stencil (port map pages, as in the reference drawing): a numbered square
@@ -206,15 +211,28 @@
      page.rect(x0+a.p.x-w/2,y+a.p.y-hh/2,w,hh,{fill:down?'#ffffff':fl.fill,stroke:down?(fl.fill==='#f4f5f7'?'#b6bfcc':fl.fill):'#3d4a5c',width:down?1.5:0.75});
      if(fl.label)page.text(x0+a.p.x-w/2,y+a.p.y-hh/2+(hh-Math.min(9,hh*0.62))/2-1,w,hh,fl.label,{size:Math.min(9,hh*0.62,w/(Math.max(2,fl.label.length)*0.62)),bold:true,color:'#1f2937'});});}
    return;}
-  dev.plates.forEach(function(pl){var x=x0+pl.x;
-   page.rect(x,y,dev.noLabel?pl.labelX-G:pl.w,72,{fill:'#dfe7f3',stroke:'#3d5a80',width:1.5,radius:4});page.rect(x+10,y+10,44,52,{fill:ROLE_FILL[node.role]||'#4f81bd',stroke:'none'});
+  dev.plates.forEach(function(pl){var x=x0+pl.x,y=y0+HEAD;
+   page.rect(x,y,pl.w,72,{fill:'#dfe7f3',stroke:'#3d5a80',width:1.5,radius:4});page.rect(x+10,y+10,44,52,{fill:ROLE_FILL[node.role]||'#4f81bd',stroke:'none'});
    pl.groups.forEach(function(g){for(var i=0;i<g.count;i++){var pp=portPos(g,i),row=pp.row,cx=x+pp.dx,cy=y+(g.mid?36:row?51:21),key=pl.member+'|'+g.name+'|'+i,u=used&&used.get(key),label=g.labels?g.labels[i]:g.name==='other'?'':String((g.base||0)+(g.zero?i:i+1));
     var fl=fills&&fills.get(key);drawPort(page,g.form||(g.fiber?'sfp':'rj45'),cx,cy,row,u,fl);
     if(label)page.text(cx-9,cy-4.5,18,9,label,{size:label.length>2?5:6.5,bold:!!(fl&&fl.up),color:(g.form==='sfp'||g.form==='qsfp'||!g.form&&g.fiber)&&!u&&!fl?'#ffffff':'#1f2937'});}});
-   var lx=x+pl.labelX,lw=pl.w-pl.labelX-8;if(dev.noLabel)return;
-   if(pl.first)page.text(lx,y+8,lw,58,clip(node.name,30)+'\n'+clip(node.model||ROLE_LABEL[node.role]||'',34)+'\n'+((node.ips||[])[0]||''),{size:10.5,align:'left',firstBold:true,lineHeight:17});
-   else page.text(lx,y+26,lw,18,'Member '+pl.member,{size:10.5,bold:true,align:'left'});});
+  });
+  drawHeader(page,dev);
  }
+ // The widest span along one edge of a device (from lo to hi) that no link stub crosses,
+ // preferring the leftmost span the text fits in.
+ function gapsOf(dev,side,lo,hi){var xs=(dev.terms||[]).filter(function(t){return t.side===side&&t.slot;}).map(function(t){return t.slot.ex!=null?t.slot.ex:t.slot.dx;}).filter(function(x){return x>lo-12&&x<hi+12;}).sort(function(a,b){return a-b;}),gaps=[],from=lo;
+  xs.forEach(function(x){if(x-11>from)gaps.push([from,x-11]);from=Math.max(from,x+11);});if(hi>from)gaps.push([from,hi]);return gaps;}
+ function freeSpan(dev,side,lo,hi,want){var gaps=gapsOf(dev,side,lo,hi);return gaps.find(function(g){return g[1]-g[0]>=want;})||gaps.slice().sort(function(a,b){return (b[1]-b[0])-(a[1]-a[0]);})[0]||[lo,hi];}
+ function widest(dev,side){return gapsOf(dev,side,4,dev.w-4).reduce(function(m,g){return Math.max(m,g[1]-g[0]);},0);}
+ // Before layout: the name goes on the edge (top or bottom) with room for it between the link
+ // stubs and the model and address on the other; the device widens only if neither fits.
+ Device.prototype.fitHeader=function(){var name=textW(clip(this.node.name,40),11,true),foot=textW(footOf(this),9.5),self=this;
+  function fits(){var t=widest(self,'top'),b=widest(self,'bottom');if(name<=t&&foot<=b)return 'top';if(name<=b&&foot<=t)return 'bottom';return null;}
+  for(var k=0;k<60;k++){var side=fits();if(side){this.nameSide=side;return;}var last=this.plates[this.plates.length-1];last.w+=G;this.w+=G;}this.nameSide='top';};
+ function drawHeader(page,dev){if(dev.noLabel)return;var node=dev.node,x0=dev.x,y=dev.y,name=clip(node.name,40),foot=footOf(dev),up=dev.nameSide!=='bottom',topY=y+1,botY=y+HEAD+dev.plateH+2;
+  var a=freeSpan(dev,up?'top':'bottom',4,dev.w-4,textW(name,11,true)),aw=a[1]-a[0];page.text(x0+a[0],up?topY:botY,aw,15,clip(name,Math.max(4,Math.floor(aw/6.6))),{size:11,bold:true,align:'left',color:'#1b3a4b'});
+  dev.plates.forEach(function(pl,i){var t=i?'Member '+pl.member:foot;if(!t)return;var side=up?'bottom':'top',b=freeSpan(dev,side,pl.x+4,pl.x+pl.w-4,textW(t,9.5)),bw=b[1]-b[0];page.text(x0+b[0],up?botY:topY+1,bw,14,clip(t,Math.max(4,Math.floor(bw/5.1))),{size:9.5,align:'left',color:'#4a5568'});});}
  // Port shapes in real proportions: an RJ45 jack (11.7 x 13.5 mm) with its latch notch on
  // the outer edge (top row up, bottom row down), an SFP cage (13.7 x 8.6 mm) and a QSFP cage
  // (18.4 x 8.5 mm), at the 18 px column pitch of a 14.5 mm port spacing.
@@ -319,7 +337,7 @@
  // input: {layout, links, vlans: Map, ports: Map key -> [port names]}
  // view: {title, rows (from scope), style 'plate' | 'box', aps, others, vlansFor, maxRow}
  function epKey(d,a){return a.node.group?'group:'+d.key:(a.node.key||a.node.name||'');}
- function render(input,view){EP_W=126;EP_PITCH=153;
+ function render(input,view){EP_W=126;EP_PITCH=153;EP_H=view.tallAps?108:54;
   var layout=input.layout,all=new Map(layout.all.map(function(n){return [n.key,n];})),shownByKey=new Map(layout.nodes.map(function(n){return [n.key,n];})),style=view.style==='box'?'box':'plate';
   var page=new Page(view.title||'Network diagram'),devices=new Map(),rowsOut=[],used=new Set();
   var maxRow=view.maxRow||(style==='box'?10:3);
@@ -356,7 +374,7 @@
   function portList(list){var s=list.filter(Boolean).map(short);return s.length?clip(s[0],10)+(s.length>1?' +'+(s.length-1):''):'';}
   function termPlate(dev,port,c){var po=view.edits&&view.edits.ports&&view.edits.ports[dev.key+'|'+short(port||'')];if(po){port=po;}var s=dev.slot(port||'');
    // A port's link point moved by hand (a stencil whose marks miss its ports).
-   var pp=view.edits&&view.edits.portPos&&view.edits.portPos[dev.key+'|'+short(port||'')];if(pp&&style==='plate'){s=Object.assign({},s);var ex=(s.ex!=null?s.ex:s.dx)+pp[0];s.ex=ex;s.dx=snap(ex);s.py=(s.py!=null?s.py:s.row?51:21)+pp[1];if(dev.positions&&dev.positions[s.key])dev.positions[s.key]={x:ex,y:s.py,exact:true};}var t={dev:dev,slot:s,side:s.row?'bottom':'top',label:clip(short(port),10),conn:c};(dev.portKeys=dev.portKeys||{})[s.key]=dev.portKeys[s.key]||dev.key+'|'+short(port||'');var prior=dev.terms.find(function(x){return x.slot.key===s.key;});if(prior){t.shared=prior;prior.shares=(prior.shares||0)+1;t.k=prior.shares;t.label='';}else{dev.terms.push(t);usedPorts.set(dev.key+'|'+s.key,kindStyle(c.type,view).color);}return t;}
+   var pp=view.edits&&view.edits.portPos&&view.edits.portPos[dev.key+'|'+short(port||'')];if(pp&&style==='plate'){s=Object.assign({},s);var ex=(s.ex!=null?s.ex:s.dx)+pp[0];s.ex=ex;s.dx=snap(ex);s.py=(s.py!=null?s.py:HEAD+(s.row?51:21))+pp[1];if(dev.positions&&dev.positions[s.key])dev.positions[s.key]={x:ex,y:s.py,exact:true};}var t={dev:dev,slot:s,side:s.row?'bottom':'top',label:clip(short(port),10),conn:c};(dev.portKeys=dev.portKeys||{})[s.key]=dev.portKeys[s.key]||dev.key+'|'+short(port||'');var prior=dev.terms.find(function(x){return x.slot.key===s.key;});if(prior){t.shared=prior;prior.shares=(prior.shares||0)+1;t.k=prior.shares;t.label='';}else{dev.terms.push(t);usedPorts.set(dev.key+'|'+s.key,kindStyle(c.type,view).color);}return t;}
   devices.forEach(function(dev){(dev.eps||[]).forEach(function(a){(a.ports||[]).forEach(function(p){if(style!=='plate')return;var sl=dev.slot(p||'');if(!usedPorts.has(dev.key+'|'+sl.key))usedPorts.set(dev.key+'|'+sl.key,kindStyle(linkKind({},dev.node.role,'ap'),view).color);});});});
   devices.forEach(function(dev){dev.fit();});
   // Endpoints sit above their switch when cabled to a top-row port and below it for a
@@ -366,7 +384,7 @@
   // Compact (owner request): a row of endpoints stays within the device's width where it fits,
   // each as near its port as its neighbors allow, instead of running off to one side.
   devices.forEach(function(d){[d.top,d.bot].forEach(function(list){var x=null;list.sort(function(p,q){return p.dx-q.dx;}).forEach(function(e){var ideal=snap(e.dx-EP_W/2);x=x==null?ideal:Math.max(ideal,x+EP_PITCH);e.rx=x;});
-    var lastPl=d.plates&&d.plates[d.plates.length-1],body=lastPl&&lastPl.labelX?d.w-(lastPl.w-lastPl.labelX)+G:d.w,n=list.length,span=n?(n-1)*EP_PITCH+EP_W:0,lo=0,hi=Math.max(0,snap(body-EP_W));if(n&&span<=body){for(var i=n-1;i>=0;i--){var cap=i===n-1?hi:list[i+1].rx-EP_PITCH;if(list[i].rx>cap)list[i].rx=cap;}for(var j=0;j<n;j++){var floor=j?list[j-1].rx+EP_PITCH:lo;if(list[j].rx<floor)list[j].rx=floor;}}
+    var body=d.w,n=list.length,span=n?(n-1)*EP_PITCH+EP_W:0,lo=0,hi=Math.max(0,snap(body-EP_W));if(n&&span<=body){for(var i=n-1;i>=0;i--){var cap=i===n-1?hi:list[i+1].rx-EP_PITCH;if(list[i].rx>cap)list[i].rx=cap;}for(var j=0;j<n;j++){var floor=j?list[j-1].rx+EP_PITCH:lo;if(list[j].rx<floor)list[j].rx=floor;}}
     // A row wider than the body still starts where it stays within the device's width if it can.
     else if(n){var start=Math.max(0,Math.min(list[0].rx,snap(d.w-span)));list.forEach(function(e,k){e.rx=start+k*EP_PITCH;});}});
    var left=Math.min.apply(null,[0].concat(d.top.concat(d.bot).map(function(e){return e.rx;}))),right=Math.max.apply(null,[d.w+(d.others?G*2+EP_W:0)].concat(d.top.concat(d.bot).map(function(e){return e.rx+EP_W;})));d.offset=-left;d.cellW=right-left;});
@@ -408,12 +426,18 @@
     // Styled after the reference drawing: grouped access points in a green summary box, other
     // devices and provider handoffs in a pale box with a dark accent bar.
     if(a.node.group){page.rect(x,y,EP_W,EP_H,{fill:'#86d9a4',stroke:'#2f9e5b',width:1});var pre=commonPrefix(a.ports);page.text(x+4,y+11,EP_W-8,40,clip(ranges(a.ports,pre),16)+'  |  '+a.ports.length+' APs\n'+clip(a.node.model||'',22),{size:9.5,lineHeight:16,firstBold:true,color:'#123524'});page.end();return;}
-    var plain=a.node.role!=='ap';page.rect(x,y,EP_W,EP_H,{fill:plain?'#e8eef5':'#eef8f0',stroke:plain?'#c9d3df':ROLE_FILL.ap,width:1,radius:plain?0:6});if(plain)page.rect(x,y,4,EP_H,{fill:'#1d3a5c',stroke:'none'});var est=input.stencils&&input.stencils.get(a.node.key);
+    // Wireless pages (room to spare): the access point's details stacked over its icon above the
+    // switch and under it below the switch, the link landing on the icon (owner's reference).
+    var est=input.stencils&&input.stencils.get(a.node.key);if(view.tallAps&&a.node.role==='ap'){page.rect(x,y,EP_W,EP_H,{fill:'#ffffff',stroke:'none'});var top=e.side==='top',iy=top?y+EP_H-48:y,ty=top?y+2:y+54,lk=(input.links||[]).find(function(x){return x.a===dev.key&&x.b===a.node.key||x.b===dev.key&&x.a===a.node.key;})||{},mine=lk.a===dev.key,sp=speedText(Math.max(speedValue(lk.aSpeed),speedValue(lk.bSpeed))),far=short((mine?lk.bPort:lk.aPort)||'');
+     if(est&&est.art){var r2=est.art.w/est.art.h,ih2=44,iw2=ih2*r2;if(iw2>48){iw2=48;ih2=iw2/r2;}page.rect(x+EP_W/2-24,iy,48,48,{fill:'#ffffff',stroke:'#c9d3df',width:1,radius:4});page.image(x+EP_W/2-iw2/2,iy+24-ih2/2,iw2,ih2,{art:est.art,master:est.master});}
+     else{page.rect(x+EP_W/2-24,iy,48,48,{fill:'#f4f7fb',stroke:'#7a8ca8',width:1,radius:4});[8,13,18].forEach(function(h,k){page.rect(x+EP_W/2-9+k*7,iy+31-h,4,h,{fill:'#2f9e5b',stroke:'none'});});page.rect(x+EP_W/2-6,iy+38,12,2,{fill:'#9aa9c0',stroke:'none'});}
+     page.text(x,ty,EP_W,50,a.node.name+'\n'+[clip(short(portEdit(dev,a.port)),16),sp].filter(Boolean).join(' · ')+'\n'+[epIP(a.node)||a.node.model||'',far].filter(Boolean).join(' · '),{size:9,lineHeight:16,firstBold:true,color:'#1b3a4b'});page.end();return;}
+    var plain=a.node.role!=='ap';page.rect(x,y,EP_W,EP_H,{fill:plain?'#e8eef5':'#eef8f0',stroke:plain?'#c9d3df':ROLE_FILL.ap,width:1,radius:plain?0:6});if(plain)page.rect(x,y,4,EP_H,{fill:'#1d3a5c',stroke:'none'});
     if(est&&est.art){var r=est.art.w/est.art.h,ih=44,iw=ih*r;if(iw>44){iw=44;ih=iw/r;}page.image(x+5+(44-iw)/2,y+5+(44-ih)/2,iw,ih,{art:est.art,master:est.master});page.text(x+52,y+5,EP_W-56,46,clip(short(portEdit(dev,a.port)),12)+'\n'+a.node.name+'\n'+clip(epIP(a.node)||a.node.model||'',Math.max(14,Math.floor((EP_W-56)/5))),{size:8.5,lineHeight:14,firstBold:true,align:'left'});}
     else if(plain)page.text(x+12,y+9,EP_W-16,40,a.node.name+'\n'+clip(short(portEdit(dev,a.port)),9)+'  |  '+clip(epIP(a.node)||a.node.model||ROLE_LABEL[a.node.role]||'',14),{size:9,lineHeight:16,firstBold:true,align:'left',color:'#1b3a4b'});
     else page.text(x+4,y+5,EP_W-8,46,clip(short(portEdit(dev,a.port)),16)+'\n'+a.node.name+'\n'+clip(epIP(a.node)||a.node.model||ROLE_LABEL[a.node.role]||'',22),{size:9,lineHeight:14,firstBold:true});page.end();});
    // Grouped access points: a box in the access point color around the ports they use.
-   (dev.eps||[]).forEach(function(a){if(!a.node.group||!a.ports||style!=='plate')return;var pts=a.ports.map(function(p){var sl=dev.slot(p||''),pos=dev.positions&&dev.positions[sl.key];return pos?[dev.x+pos.x,dev.y+pos.y]:[dev.x+sl.dx,dev.y+(sl.py!=null?sl.py:sl.row?51:21)];});if(!pts.length)return;
+   (dev.eps||[]).forEach(function(a){if(!a.node.group||!a.ports||style!=='plate')return;var pts=a.ports.map(function(p){var sl=dev.slot(p||''),pos=dev.positions&&dev.positions[sl.key];return pos?[dev.x+pos.x,dev.y+pos.y]:[dev.x+sl.dx,dev.y+(sl.py!=null?sl.py:HEAD+(sl.row?51:21))];});if(!pts.length)return;
     var xs=pts.map(function(p){return p[0];}),ys=pts.map(function(p){return p[1];}),x0=Math.min.apply(null,xs)-9,x1=Math.max.apply(null,xs)+9,y0=Math.min.apply(null,ys)-11,y1=Math.max.apply(null,ys)+11;page.rect(x0,y0,x1-x0,y1-y0,{fill:'none',stroke:ROLE_FILL.ap,width:2,radius:4});});
    if(dev.others)page.text(dev.x+dev.w+G*2,dev.y+27,EP_W,18,'+'+dev.others+' other device'+(dev.others>1?'s':''),{size:10,align:'left',color:'#4a5568'});});
   // Box terminals: sorted by the far end so routes do not cross needlessly.
@@ -422,7 +446,7 @@
   // direction out of the stub, and the label box inside the band.
   function geo(t){if(t.shared){var b=geo(t.shared),out=b.dir===3?-1:1;return {px:b.sx,py:b.sy,sx:b.sx,sy:b.sy+out*2*G*t.k,dir:b.dir,trunk:b};}
    var d=t.dev;if(t.ep!=null){var e=d.top.concat(d.bot).find(function(x){return x.conn===t.conn;}),ex=d.x+e.rx+EP_W/2,ey=epY(d,e);return e.side==='top'?{px:ex,py:ey+EP_H,sx:ex,sy:ey+EP_H+G,dir:1}:{px:ex,py:ey,sx:ex,sy:ey-G,dir:3};}
-   var x=d.x+(style==='box'?t.dx:t.slot.dx),top=t.side==='top',py=style==='box'?(top?d.y:d.y+d.h):t.slot.py!=null?d.y+t.slot.py:d.y+(top?21:51);
+   var x=d.x+(style==='box'?t.dx:t.slot.dx),top=t.side==='top',py=style==='box'?(top?d.y:d.y+d.h):t.slot.py!=null?d.y+t.slot.py:d.y+HEAD+(top?21:51);
    return {px:x,py:py,sx:x,sy:top?d.y-BAND:d.y+d.h+BAND,dir:top?3:1,lx:x+3,ly:top?d.y-BAND+4:d.y+d.h+4,lalign:top?'left':'right'};}
   conns.forEach(function(c){if(c.ep!=null)c.tb={dev:c.A,ep:c.ep,conn:c};});
   // Router over the whole page area.
@@ -493,7 +517,7 @@
   var title=o.scope==='site'||!focus?(o.title||'Site')+' - Existing Topology':focus.name+(o.scope==='neighbors'?' - Connections':' and below');
   var kicker=(o.title||'Site')+(o.scope==='site'||!focus?'':' / '+focus.name),sub=o.subtitle||(o.scope==='site'||!focus?'Devices and links from imported neighbor and monitoring data':[focus.model,(focus.ips||[])[0]].filter(Boolean).join('  |  '));
   if(o.customTitle)title=o.customTitle;if(o.customSubtitle)sub=o.customSubtitle;
-  var view={company:o.company?String(o.company).toUpperCase():'',footer:o.author?'Prepared by '+o.author+(o.date?'  |  '+o.date:''):(o.date||''),title:title,kicker:kicker,subtitle:sub,rows:s.rows,context:s.context,style:style,aps:o.aps,apGroup:!!o.apGroup,others:o.others,wan:o.wan,vlansFor:o.scope==='site'||o.noVlans?null:o.focus,maxRow:o.maxRow,linkStyles:o.linkStyles};
+  var view={company:o.company?String(o.company).toUpperCase():'',footer:o.author?'Prepared by '+o.author+(o.date?'  |  '+o.date:''):(o.date||''),title:title,kicker:kicker,subtitle:sub,rows:s.rows,context:s.context,style:style,aps:o.aps,apGroup:!!o.apGroup,others:o.others,wan:o.wan,vlansFor:o.scope==='site'||o.noVlans?null:o.focus,maxRow:o.maxRow,linkStyles:o.linkStyles,tallAps:!!o.tallAps};
   // Diagrams are meant to print on a letter sheet: try several row widths and keep the
   // one that needs the least shrinking (in either orientation).
   // Hand edits keep the arrangement they were made on.
@@ -592,7 +616,7 @@
     d.ports.forEach(function(p){var role=portRole(p),slot=d.hw&&dev.hw&&!dev.hw.portOf(p.name)?null:dev.slot(p.name);used[role]=true;if(slot&&slot.key)fills.set(slot.key,{fill:PORT_ROLES[role].fill,up:p.up!==false,stroke:'#3d4a5c',label:portNumber(p.name)});
      var detail=portDetail(p,role),k=role+'|'+detail;if(!rowsByKey.has(k))rowsByKey.set(k,{role:role,detail:detail,ports:{}});(rowsByKey.get(k).ports[d.key]=rowsByKey.get(k).ports[d.key]||[]).push(p.name);});
     dev.plates.forEach(function(pl){var ph=dev.h+40,pg=flow.need(ph+14);pg.text(DM,pg.y,560,20,d.name+(dev.plates.length>1?'  ·  member '+pl.member:''),{size:15,bold:true,align:'left',color:'#1b3a4b'});pg.text(DM+420,pg.y+3,DOC_W-2*DM-420,16,[d.model,upCount(d),d.ip].filter(Boolean).join('   |   '),{size:10,align:'right',color:'#4a5568'});
-     var keep=pl.x;pl.x=0;var one=Object.create(dev);one.noLabel=true;one.plates=[pl];one.x=DM;one.y=pg.y+26;one.w=pl.w;drawPlate(pg,one,null,fills);pl.x=keep;pg.y+=26+dev.h+18;});});
+     var keep=pl.x;pl.x=0;var one=Object.create(dev);one.noLabel=true;one.plates=[pl];one.x=DM;one.y=pg.y+26-HEAD;one.w=pl.w;drawPlate(pg,one,null,fills);pl.x=keep;pg.y+=26+dev.plateH+18;});});
    var p=flow.need(40),lx=DM;p.text(lx,p.y,90,16,'PORT ROLES',{size:9.5,bold:true,align:'left',color:'#1d5b79'});lx+=96;
    Object.keys(PORT_ROLES).filter(function(r){return used[r];}).forEach(function(r){p.rect(lx,p.y,26,14,{fill:PORT_ROLES[r].fill,stroke:'#7a8ca8',width:0.75});p.text(lx+32,p.y,170,16,PORT_ROLES[r].label,{size:10,align:'left'});lx+=40+PORT_ROLES[r].label.length*5.6;});p.y+=24;
    note(flow,'A filled port means the link is up (or no link state was imported); an outlined port means down.'+(function(){var pre=commonPrefix([].concat.apply([],group.map(function(d){return d.ports.map(function(x){return x.name;});})));return pre?' Port numbers use the prefix '+pre+'.':'';})());
@@ -605,7 +629,7 @@
   // Each switch drawn with its access points wired to their own ports (odd ports above,
   // even ports below), as on a hand-drawn wireless page; then the table of them all.
   if(input&&input.layout){var keys=input.layout.nodes.map(function(n){return n.key;});devs.forEach(function(d){if(keys.indexOf(d.key)<0)return;try{
-   var n=d.ports.filter(function(p){return p.neighbor&&p.neighbor.role==='ap';}).length,pg=diagram(input,{scope:'downstream',focus:d.key,depth:0,style:'auto',upstream:false,aps:true,others:false,hidden:new Set(keys.filter(function(k){return k!==d.key;})),added:new Set(),title:o.title,edits:o.wirelessEdits&&o.wirelessEdits[d.key]||undefined,linkStyles:o.linkStyles,customTitle:'Wireless connections',customSubtitle:d.name+'  |  '+[d.model,d.ip,n+' access point'+(n===1?'':'s')].filter(Boolean).join('  /  '),company:o.company,noVlans:true});
+   var n=d.ports.filter(function(p){return p.neighbor&&p.neighbor.role==='ap';}).length,pg=diagram(input,{scope:'downstream',focus:d.key,depth:0,style:'auto',upstream:false,aps:true,tallAps:true,others:false,hidden:new Set(keys.filter(function(k){return k!==d.key;})),added:new Set(),title:o.title,edits:o.wirelessEdits&&o.wirelessEdits[d.key]||undefined,linkStyles:o.linkStyles,customTitle:'Wireless connections',customSubtitle:d.name+'  |  '+[d.model,d.ip,n+' access point'+(n===1?'':'s')].filter(Boolean).join('  /  '),company:o.company,noVlans:true});
    pg.h+=30;pg.wireless=d.key;out.push(pg);}catch(e){}});}
   var flow=new Flow('Wireless connections','Access points, the switch ports they connect to and their addresses',o,out);
   devs.forEach(function(d){var aps=d.ports.filter(function(p){return p.neighbor&&p.neighbor.role==='ap';}).sort(function(a,b){return (splitName(a.name).n||0)-(splitName(b.name).n||0);});

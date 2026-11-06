@@ -1,5 +1,15 @@
 # Configuration Inspector development handoff
 
+## 5.44.0 — details above and below devices, tall access points
+
+- Plates have no side label column: `dev.h = HEAD + plateH + FOOT` (18 + 72 or stencil height + 18);
+  ports, `imgTop` and slot `py` include `HEAD`. `drawHeader()` writes the name and model/address
+  in the widest span no link stub crosses (`gapsOf`/`freeSpan`); `Device.fit()` calls
+  `fitHeader()` after terminals are known to choose `nameSide` and widen only if needed.
+- Port map clones draw with `noLabel` at `y - HEAD` and advance by `plateH`.
+- Wireless pages pass `tallAps` (view): `EP_H` 108 and access points drawn as icon plus three
+  lines (name, port and speed, address and AP port), with a white hit area for dragging.
+
 ## 5.43.0 — Visio 271 fixed, readable pages
 
 - Visio error 271: `documentXML()` was missing `<DocumentSheet NameU="TheDoc">` after
