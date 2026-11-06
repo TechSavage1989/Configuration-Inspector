@@ -154,7 +154,7 @@ changes. Large searches yield to the UI and superseded work is canceled.
 
 ## Site overview
 
-Open two or more configurations from the same site (**Add files**) and choose **Site overview** in the sidebar. It compares only what the exports contain:
+Open two or more configurations from the same site (**Add files**) and choose **Site overview** in the sidebar. A row of tabs at the top (**Settings**, **VLANs**, **Duplicate addresses**, **Shared subnets**, **Device mentions**, each with its count) shows one section at a time; the page scrolls as one and the tabs and column headings stay at the top. It compares only what the exports contain:
 
 - **Settings consistency:** NTP and DNS servers, DNS domain, syslog and SNMP destinations, SNMP location, local user accounts, time zone and spanning-tree mode. Values that differ from the most common one are highlighted; "Not in export" means the setting is absent from that file.
 - **VLANs across devices:** where each VLAN exists, its name and port count on each device, and VLANs whose names differ.

@@ -774,6 +774,7 @@ table.data th,table.data td{vertical-align:top}
 .tab-count{opacity:.7;font-weight:500;margin-left:4px}
 .evidence-search{max-width:280px}
 .evidence-head-actions{display:flex;gap:8px;align-items:center}
+.site-page{display:flex;flex-direction:column;gap:16px}.site-page>.site-summary{margin:0}
 .evidence-page td .copy-value,.live-tab-panel td .copy-value,.live-table td .copy-value,.neighbor-details td .copy-value,.site-map-links td .copy-value{width:auto;font:inherit;color:inherit;background:none;border:0;padding:0;display:inline-flex;gap:6px;align-items:center;text-align:left;cursor:copy}
 td .copy-value .icon{opacity:0;transition:opacity .12s}
 tr:hover td .copy-value .icon,td .copy-value:focus-visible .icon,td .copy-value-icon .icon{opacity:.75}
@@ -921,7 +922,7 @@ body{font-size:14px}.brand-mark{background:linear-gradient(145deg,#287dc6,#15578
       <div id="page-heading"></div>
       <div id="workspace-tabs"></div><div id="workspace-notice"></div>
       <div id="content"></div>
-      <footer class="page-footer"><span id="version-label">Config Inspector 5.28.0</span></footer>
+      <footer class="page-footer"><span id="version-label">Config Inspector 5.28.1</span></footer>
     </main>
   </div>
   <input type="file" id="import-file" multiple accept=".exp,.txt,.json,.conf,.cfg,.xml,.tar,.set,.log,.backup,.rsc,.xlsx,.csv" hidden>
@@ -6070,7 +6071,7 @@ function pJ(L,pan){const d=E(),I={},R={},T={};
     return {compareText:compareText,compareMode:['records','text','fields'].includes(data.compareMode)?data.compareMode:'records',models:models.slice(0,data.count),model:data.selected<0?null:models[data.selected],comparison:data.comparison<0?null:models[data.comparison],view:typeof data.view==='string'?data.view:'overview',scope:typeof data.scope==='string'?data.scope:'',categoryTabs:data.categoryTabs&&typeof data.categoryTabs==='object'&&!Array.isArray(data.categoryTabs)?data.categoryTabs:{},showUnassigned:!!data.showUnassigned,showEmpty:!!data.showEmpty};
   }
   function create(options){
-    options=options||{};var bridge=options.bridge||root.chrome&&root.chrome.webview,native=!!(bridge&&typeof bridge.postMessage==='function'&&typeof bridge.addEventListener==='function'),state={current:'5.28.0',state:'idle',message:'',automatic:true,busy:false,ready:false,available:false},handlers={},restoring=false,installing=false;
+    options=options||{};var bridge=options.bridge||root.chrome&&root.chrome.webview,native=!!(bridge&&typeof bridge.postMessage==='function'&&typeof bridge.addEventListener==='function'),state={current:'5.28.1',state:'idle',message:'',automatic:true,busy:false,ready:false,available:false},handlers={},restoring=false,installing=false;
     var commands=['update-ui-ready','update-status','update-check','update-download','update-later','update-auto-on','update-auto-off','update-restored','update-restore-failed'];
     function request(command){if(!native)throw new Error('Built-in updates are available in the Windows desktop edition.');if(!commands.includes(command))throw new Error('Unknown update action.');bridge.postMessage(command);}
     if(native)bridge.addEventListener('message',async function(event){
@@ -8282,7 +8283,7 @@ function pJ(L,pan){const d=E(),I={},R={},T={};
     var site=window.SWSiteOverview.build(workspace),names=site.devices.map(function(d){return d.name;});
     function chip(kind,label){return '<span class="chip '+kind+'">'+h(label)+'</span>';}
     function head(cols){return '<thead><tr>'+cols.map(function(c){return '<th scope="col">'+h(c)+'</th>';}).join('')+'</tr></thead>';}
-    function tableWrap(cols,rows,label){return '<div class="data-wrap" tabindex="0" role="region" aria-label="'+h(label)+'"><table class="data site-table">'+head(cols)+'<tbody>'+rows.join('')+'</tbody></table></div>';}
+    function tableWrap(cols,rows,label){return '<div class="evidence-wrap site-wrap" role="region" aria-label="'+h(label)+'"><table class="data site-table">'+head(cols)+'<tbody>'+rows.join('')+'</tbody></table></div>';}
     function device(i){return h(names[i]);}
     var differs=site.settings.filter(function(x){return x.status==='differs';}).length,vlanIssues=site.vlans.filter(function(v){return v.status==='name-differs';}).length;
     var summary='<div class="badge-row site-summary">'+chip('purple',sitePlural(site.devices.length,'device'))+chip(differs?'amber':'green',differs?sitePlural(differs,'setting')+' differ'+(differs===1?'s':''):'Common settings match')+chip(site.duplicates.length?'red':'green',site.duplicates.length?sitePlural(site.duplicates.length,'duplicate address','duplicate addresses'):'No duplicate addresses')+chip(vlanIssues?'amber':'green',vlanIssues?(vlanIssues===1?'1 VLAN name differs':vlanIssues+' VLAN names differ'):'VLAN names match')+chip('blue',sitePlural(site.subnets.length,'shared subnet'))+'</div>';
@@ -8297,10 +8298,15 @@ function pJ(L,pan){const d=E(),I={},R={},T={};
       '<section class="panel site-panel"><div class="panel-head"><h2 class="panel-title">Shared subnets</h2></div><p class="section-explainer">'+icon('info')+'Interfaces on different devices in the same subnet. This shows addressing, not a confirmed cable.</p>'+(site.subnets.length?tableWrap(['Subnet','Interfaces'],site.subnets.map(function(n){return '<tr data-site-subnet="'+h(n.network)+'"><th scope="row">'+h(n.network)+'</th><td>'+entries(n.entries)+'</td></tr>';}),'Shared subnets'):'<p class="empty-mini">No subnet is shared between devices.</p>')+'</section>',
       '<section class="panel site-panel"><div class="panel-head"><h2 class="panel-title">Descriptions naming another device</h2></div><p class="section-explainer">'+icon('info')+'Running configurations do not include live neighbor (CDP/LLDP) tables. These interface descriptions mention another open device by name.</p>'+(site.mentions.length?tableWrap(['Device / interface','Mentions','Description'],site.mentions.map(function(m){return '<tr data-site-mention="'+m.device+'-'+m.mentions+'"><th scope="row">'+device(m.device)+' / '+h(m.interface)+'</th><td>'+device(m.mentions)+'</td><td>'+h(m.description)+'</td></tr>';}),'Descriptions naming devices'):'<p class="empty-mini">No interface description names another open device.</p>')+'</section>'
     ];
-    return summary+panels.join('');
+    // One section at a time behind a tab row, like Supplementary data, so the page
+    // scrolls as one with pinned headers instead of several scroll areas.
+    var sections=[['settings','Settings',site.settings.length],['vlans','VLANs',site.vlans.length],['duplicates','Duplicate addresses',site.duplicates.length],['subnets','Shared subnets',site.subnets.length],['mentions','Device mentions',site.mentions.length]];
+    var current=sections.findIndex(function(x){return x[0]===state.siteTab;});if(current<0)current=0;
+    var tabs='<div class="compare-mode-toolbar evidence-tabs site-tabs" role="group" aria-label="Site overview sections">'+sections.map(function(x,i){return '<button class="button'+(i===current?' primary':'')+'" data-site-tab="'+x[0]+'" aria-pressed="'+(i===current)+'">'+h(x[1])+' <span class="tab-count">'+x[2].toLocaleString()+'</span></button>';}).join('')+'</div>';
+    return '<div class="site-page">'+tabs+summary+panels[current]+'</div>';
   }
   // Kept current by scripts/version.py, which replaces the release string on each bump.
-  var APP_VERSION='5.28.0';
+  var APP_VERSION='5.28.1';
   // Client report: one section per open configuration. Port states use the same
   // classification as Interfaces at a glance, evaluated with each model active.
   function withModel(m,fn){var saved={model:state.model,usage:state.interfaceUsageCache,recordMap:state.recordMap};state.model=m;state.interfaceUsageCache=null;state.recordMap=new Map(m.records.map(function(r){return [r.id,r];}));try{return fn();}finally{state.model=saved.model;state.interfaceUsageCache=saved.usage;state.recordMap=saved.recordMap;}}
@@ -8941,7 +8947,7 @@ function pJ(L,pan){const d=E(),I={},R={},T={};
     }
   }
   function showHelp(){
-    openModal(modalHeader('About Config Inspector','Firewall and switch configuration explorer / version 5.28.0')+
+    openModal(modalHeader('About Config Inspector','Firewall and switch configuration explorer / version 5.28.1')+
       '<div class="modal-body"><div class="help-section"><h3>Open and explore</h3><p>Import SonicWall EXP, FortiGate FortiOS text, Palo Alto configuration XML, Sophos Firewall XML or export TAR, Aruba AOS or AOS-CX text, Cisco IOS or NX-OS text, Juniper Junos text or XML, Meraki API JSON, or a JSON snapshot exported by this application. The device type is detected automatically. You can also drop a file anywhere in the window. Select an interface or record for a plain-language explanation and key facts. Related objects show their IP addresses or service ports. Advanced details contains all original fields. Use Copy summary for readable facts and Back to return from a related item.</p></div>'+
       '<div class="help-section"><h3>Configuration sections</h3><p>Choose a root section in the sidebar, then select one of its indented subsections. Each subsection opens its own page. Routes, objects, members and other primary definitions appear before related settings. Security pages are grouped by function, including web, applications, files, intrusion prevention and SSL/TLS inspection. Certificate objects remain under Certificates. Empty subsections are hidden by default. Use View options to show empty sections, or Configuration sections and All original fields to inspect untranslated settings. Configuration context, search and table filters apply to the selected view.</p></div>'+
       '<div class="help-section"><h3>Choose access rule zones</h3><p>In Access Rules, choose From zone and To zone independently. All zones leaves that side unrestricted. Swap reverses the direction. Clear zone filters removes the pair while keeping the table filters. Search, configured state, and IP version filters combine with the pair, and CSV includes all matching rules. A matrix cell selects its zone pair. Interface and zone details offer outgoing and incoming rules.</p></div>'+
@@ -9188,6 +9194,7 @@ function configTree(it){
     if(t.hasAttribute('data-workspace')){setModel(workspace[Number(t.dataset.workspace)]);}
     else if(t.hasAttribute('data-remove-workspace')){var i=Number(t.dataset.removeWorkspace);var removed=workspace.splice(i,1)[0];evidenceSets.forEach(function(s){if(s.assigned===removed)s.assigned=null;});liveCache=new Map();if(!workspace.length)clearWorkspace(true);else if(removed===state.model)setModel(workspace[Math.min(i,workspace.length-1)]);else {if(state.comparison===removed)state.comparison=null;render();}}
     else if(t.hasAttribute('data-remove-evidence')){removeEvidence(Number(t.dataset.removeEvidence));}
+    else if(t.hasAttribute('data-site-tab')){state.siteTab=t.dataset.siteTab;renderContent();el.content.scrollTop=0;}
     else if(t.hasAttribute('data-evidence-tab')){state.evidenceTab=t.dataset.evidenceTab;state.evidenceQuery='';state.evidenceLimit=100;renderContent();el.content.scrollTop=0;}
     else if(t.hasAttribute('data-evidence-more')){var top=el.content.scrollTop;state.evidenceLimit=t.dataset.evidenceMore==='all'?1e9:(state.evidenceLimit||100)+100;renderContent();el.content.scrollTop=top;}
     else if(t.hasAttribute('data-map-mode')){state.compactMap=t.dataset.mapMode==='compact';renderContent();}
