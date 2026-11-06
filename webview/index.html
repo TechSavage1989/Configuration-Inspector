@@ -6630,7 +6630,7 @@ function pJ(L,pan){const d=E(),I={},R={},T={};
  async function read(bytes,fileName){
   if(bytes.length>MAX_FILE)throw new Error('The stencil is too large to open.');
   // Visio 2003-2010 stencils (.vss) are binary compound files, not packages.
-  if(bytes[0]===0xd0&&bytes[1]===0xcf&&bytes[2]===0x11&&bytes[3]===0xe0){var e=new Error((fileName||'This file')+' is an older Visio stencil (.vss).');e.legacy=true;throw e;}
+  if(bytes[0]===0xd0&&bytes[1]===0xcf&&bytes[2]===0x11&&bytes[3]===0xe0)return readVSS(bytes,fileName);
   var files=await unzip(bytes),list=files['visio/masters/masters.xml'];
   if(!list)throw new Error((fileName||'This file')+' contains no master shapes. Choose a Visio stencil (.vssx) or a drawing made with the stencil.');
   var mastersXML=text(list),rels=relsOf(files['visio/masters/_rels/masters.xml.rels']?text(files['visio/masters/_rels/masters.xml.rels']):''),masters=[];
@@ -6650,7 +6650,7 @@ function pJ(L,pan){const d=E(),I={},R={},T={};
 
  // ---------- matching ----------
  function norm(s){return String(s||'').toLowerCase().replace(/fortigate/g,'fg').replace(/fortiswitch/g,'fs').replace(/fortiap/g,'fap').replace(/catalyst/g,'').replace(/[^a-z0-9]/g,'');}
- function tokens(s){return (String(s||'').match(/[A-Za-z]{0,4}[-_ ]?\d{2,5}[A-Za-z0-9-]*/g)||[]).map(norm).filter(function(t){return t.length>=3&&/\d/.test(t);});}
+ function tokens(s){var raw=(String(s||'').match(/[A-Za-z]{0,4}[-_ ]?\d{2,5}[A-Za-z0-9-]*/g)||[]).map(norm),normal=norm(s).match(/[a-z]{0,3}\d{2,5}[a-z0-9]*/g)||[];return raw.concat(normal).filter(function(t,i,a){return t.length>=3&&/\d/.test(t)&&a.indexOf(t)===i;});}
  // A master name like "FG-12xG" stands for a family: x matches a digit.
  function familyRE(name){var n=norm(name.replace(/\(.*?\)/g,''));if(!/\dx|x\d/.test(n))return null;try{return new RegExp(n.replace(/(\d)x/g,'$1\\d').replace(/x(\d)/g,'\\d$1'));}catch(e){return null;}}
  function score(node,master){
@@ -6662,7 +6662,8 @@ function pJ(L,pan){const d=E(),I={},R={},T={};
   // Same series, other generation (FG-120F for a FortiGate-120G): a weak match.
   // A bare series number (HP 6100 for an Aruba 6100 master) is a weak match too.
   (String(model).match(/(?:^|\D)(\d{4})(?!\d)/g)||[]).forEach(function(t){var d=t.replace(/\D/g,'');if(new RegExp('(^|\\D)'+d+'(\\D|$)').test(master.name))best=Math.max(best,60);});
-  var nm=norm(model),re=/(\d{3,5})/g,m;while((m=re.exec(nm))){for(var k=3;k>=2;k--){var core=nm.slice(Math.max(0,m.index-k),m.index)+m[1];if(/^[a-z]{2}/.test(core)&&mn.indexOf(core)>=0){best=Math.max(best,61);break;}}}
+  // The number must end where the master's number ends (FG-120 is not FG-1200D).
+  var nm=norm(model),re=/(\d{3,5})/g,m;while((m=re.exec(nm))){for(var k=3;k>=2;k--){var letters=nm.slice(Math.max(0,m.index-k),m.index);if(!/^[a-z]{2,3}$/.test(letters))continue;if(new RegExp(letters+'[^a-z0-9]*'+m[1]+'(?!\\d)','i').test(master.name)){best=Math.max(best,61);break;}}}
   if(best&&node.role==='ap'&&/back|rear/i.test(master.name))best+=3;
   if(best&&/front/i.test(master.name)&&node.role!=='ap')best+=2;
   return best;
@@ -6800,6 +6801,86 @@ function pJ(L,pan){const d=E(),I={},R={},T={};
   var compression=u32(bmi,16);if(compression===4)return 'data:image/jpeg;base64,'+base64(bits);if(compression===5)return 'data:image/png;base64,'+base64(bits);
   var file=new Uint8Array(14+bmi.length+bits.length),dv=new DataView(file.buffer);file[0]=0x42;file[1]=0x4d;dv.setUint32(2,file.length,true);dv.setUint32(10,14+bmi.length,true);file.set(bmi,14);file.set(bits,14+bmi.length);
   return 'data:image/bmp;base64,'+base64(file);
+ }
+
+ // ---------- Visio 2003-2010 stencils (.vss) ----------
+ // An OLE compound file whose "VisioDocument" stream holds pointer-linked streams (some
+ // LZ77-compressed) and typed chunks. Each stencil page (a master) has shapes with a
+ // transform, connection points and pictures (EMF, WMF or bitmaps). The format notes come
+ // from the open source libvisio project's reader.
+ function cfbStream(b,wanted){
+  var ss=1<<u16(b,30),fat=[],difat=[],i,v,sec=function(n){return 512+n*ss;};
+  if(ss!==512&&ss!==4096)throw new Error('The stencil file is damaged.');
+  for(i=0;i<109;i++){v=u32(b,76+i*4);if(v<0xfffffffa)difat.push(v);}
+  var d=u32(b,68);for(var k=0;k<u32(b,72)&&d<0xfffffffa&&sec(d)+ss<=b.length;k++){for(i=0;i<ss/4-1;i++){v=u32(b,sec(d)+i*4);if(v<0xfffffffa)difat.push(v);}d=u32(b,sec(d)+ss-4);}
+  difat.forEach(function(x){for(var j=0;j<ss/4;j++)fat.push(u32(b,sec(x)+j*4));});
+  function read(start,size){var out=new Uint8Array(size),pos=0,n=start,guard=0;while(n<0xfffffffa&&pos<size&&guard++<1e7){var at=sec(n),len=Math.min(ss,size-pos);if(at+len>b.length)break;out.set(b.subarray(at,at+len),pos);pos+=len;n=fat[n];}return out;}
+  var dir=read(u32(b,48),ss*256);
+  for(var o=0;o+128<=dir.length;o+=128){var nl=u16(dir,o+64);if(nl<2||nl>64)continue;var name='';for(i=0;i<nl/2-1;i++)name+=String.fromCharCode(u16(dir,o+i*2));if(name===wanted&&dir[o+66]===2){var size=u32(dir,o+120);if(size<u32(b,56))throw new Error('The stencil file is damaged.');return read(u32(dir,o+116),size);}}
+  return null;
+ }
+ function lz(t){var out=new Uint8Array(Math.max(16,t.length*8)),n=0,buf=new Uint8Array(4096),pos=0,o=0;
+  function put(x){if(n>=out.length){var bigger=new Uint8Array(out.length*2);bigger.set(out);out=bigger;}out[n++]=x;}
+  while(o<t.length){var flag=t[o++];if(o>t.length-1)break;for(var bit=0,mask=1;bit<8&&o<t.length;bit++,mask<<=1){
+   if(flag&mask){buf[pos&4095]=t[o++];put(buf[pos&4095]);pos++;}
+   else{if(o>t.length-2)break;var a1=t[o++],a2=t[o++],len=(a2&15)+3,p=((a2&0xf0)<<4)|a1;p=p>4078?p-4078:p+18;for(var j=0;j<len;j++){buf[(pos+j)&4095]=buf[(p+j)&4095];put(buf[(pos+j)&4095]);}pos+=len;}}}
+  return out.subarray(0,n);}
+ function f64(b,o){return o+8<=b.length?new DataView(b.buffer,b.byteOffset+o,8).getFloat64(0,true):0;}
+ var CHUNK_TRAILER8=[0x71,0x70,0x6b,0x6a,0x69,0x66,0x65,0x2c],CHUNK_TRAILER4=[0x64,0x65,0x66,0x69,0x6a,0x6b,0x6f,0x71,0x92,0xa9,0xb4,0xb6,0xb9,0xc7],CHUNK_NONE=[0x1f,0xc9,0x2d,0xd1];
+ function eachChunk(d,cb){var o=0;while(o<d.length){while(o<d.length&&!d[o])o++;if(o+19>d.length)break;var type=u32(d,o),list=u32(d,o+8),len=u32(d,o+12),level=u16(d,o+16),unk=d[o+18],tr=0;
+   if(list!==0||CHUNK_TRAILER8.indexOf(type)>=0)tr+=8;if(list!==0||(level===2&&unk===0x55)||(level===2&&unk===0x54&&type===0xaa)||(level===3&&unk!==0x50&&unk!==0x54))tr+=4;
+   if(CHUNK_TRAILER4.indexOf(type)>=0&&tr!==12&&tr!==4)tr+=4;if(CHUNK_NONE.indexOf(type)>=0)tr=0;var start=o+19;if(len>d.length-start)break;cb(type,d.subarray(start,start+len));o=start+len+tr;}}
+ function readVSS(bytes,fileName){
+  var V=cfbStream(bytes,'VisioDocument');if(!V||V.length<0x40)throw new Error((fileName||'This file')+' is not a Visio stencil.');
+  if(V[0x1a]<11){var old=new Error((fileName||'This file')+' was saved by Visio 2002 or earlier.');old.legacy=true;throw old;}
+  function ptr(d,o){return {type:u32(d,o),offset:u32(d,o+8),length:u32(d,o+12),format:u16(d,o+16)};}
+  var strings={},pageNames=null,pages={},seen=new Set(),budget=200000;
+  function shapeOf(page,id){return page.shapes[id]||(page.shapes[id]={id:id,parent:0,conns:[],pics:[]});}
+  function chunk(page,shape,type,d){
+   if(type===0x47||type===0x48||type===0x4e){if(d.length>=14)shape.parent=u32(d,10);shape.kind=type;}
+   else if(type===0x9b)shape.xf={pinX:f64(d,1),pinY:f64(d,10),w:f64(d,19),h:f64(d,28),locX:f64(d,37),locY:f64(d,46)};
+   else if(type===0x99)shape.conns.push({x:f64(d,1),y:f64(d,10)});
+   else if(type===0x98){var ft=u16(d,36),map=u16(d,38);shape.ftype={x:f64(d,1),y:f64(d,10),w:f64(d,19),h:f64(d,28),type:map===8?4:ft,format:d.length>=53?u32(d,49):0};}
+   else if(type===0x0c)shape.data=d;}
+  function walk(p,ctx){if(budget--<=0||p.offset+p.length>V.length)return;var raw=V.subarray(p.offset,p.offset+p.length),comp=(p.format&2)===2,d=comp?lz(raw):raw,shift=comp?4:0,kind=p.format>>4;
+   var c=Object.assign({},ctx);
+   if(p.type===0x1d)c.stencils=true;else if(p.type===0x1e&&ctx.stencils){c.page=pages[p.idx]||(pages[p.idx]={idx:p.idx,shapes:{}});c.shape=null;}
+   else if(c.page&&(p.type===0x47||p.type===0x48||p.type===0x4e))c.shape=shapeOf(c.page,p.idx);
+   if(p.type===0x33&&d.length>shift+4){var str='';for(var o=shift+4;o+1<d.length;o+=2){var ch=u16(d,o);if(!ch)break;str+=String.fromCharCode(ch);}strings[p.idx]=str;}
+   if(p.type===0xc9&&ctx.stencilsList){var cnt=u32(d,shift),m={};for(var r=0,q=shift+4;r<cnt&&q+13<=d.length;r++,q+=13)m[u32(d,q+8)]=u32(d,q);pageNames=m;}
+   if(kind===4||kind===5||kind===0){if(c.shape&&d.length>shift)chunk(c.page,c.shape,p.type,d.subarray(shift));}
+   else if((kind===0xd||kind===0xc||kind===8)&&c.shape)eachChunk(d,function(t,cd){chunk(c.page,c.shape,t,cd);});
+   if(kind===5&&p.type!==0x16&&!seen.has(p.offset)){seen.add(p.offset);var off=u32(d,shift);if(off+shift+8>d.length)return;var count=u32(d,off+shift),at=off+shift+8;
+    for(var i=0;i<count&&at+18<=d.length;i++,at+=18){var x=ptr(d,at);x.idx=i;if(x.type)walk(x,Object.assign({},c,{stencilsList:p.type===0x1d}));}}}
+  walk(ptr(V,0x24),{});
+  var masters=[],media=0;
+  Object.keys(pages).forEach(function(k){var page=pages[k],name=pageNames&&strings[pageNames[k]]||'Master '+k,shapes=page.shapes,top=Object.values(shapes).find(function(x){return x.parent===0&&x.xf;});
+   if(!top||/^dynamic connector$/i.test(name))return;
+   function origin(sh){var x=0,y=0,guard=0;while(sh&&sh!==top&&guard++<20){if(!sh.xf)return null;x+=sh.xf.pinX-sh.xf.locX;y+=sh.xf.pinY-sh.xf.locY;sh=shapes[sh.parent];}return sh===top?{x:x,y:y}:null;}
+   var pics=[];Object.values(shapes).forEach(function(sh){if(!sh.data||!sh.ftype)return;var o=sh===top?{x:0,y:0}:origin(sh);if(!o)return;var f=sh.ftype,ext=picture(sh.data,f.type,f.format);if(!ext)return;
+    pics.push({x:o.x+f.x,y:o.y+f.y,w:f.w||(sh.xf&&sh.xf.w),h:f.h||(sh.xf&&sh.xf.h),ext:ext.ext,data:ext.data});});
+   var w=top.xf.w,h=top.xf.h,frame=frameOf(w,h,pics,top.conns),id=String(masters.length+2),rels={},mfiles={},picXML=pics.map(function(pc,i){var rid='rId'+(i+1),path='visio/media/vss'+(++media)+'.'+pc.ext;rels[rid]={type:'http://schemas.openxmlformats.org/officeDocument/2006/relationships/image',target:'../media/vss'+media+'.'+pc.ext};mfiles[path]=pc.data;var x=pc.x-frame.x,y=pc.y-frame.y;
+     return '<Shape ID="'+(i+6)+'" Type="Foreign" LineStyle="0" FillStyle="0" TextStyle="0">'+xc('PinX',x+pc.w/2)+xc('PinY',y+pc.h/2)+xc('Width',pc.w)+xc('Height',pc.h)+xc('LocPinX',pc.w/2)+xc('LocPinY',pc.h/2)+xc('ImgOffsetX',0)+xc('ImgOffsetY',0)+xc('ImgWidth',pc.w)+xc('ImgHeight',pc.h)+'<ForeignData ForeignType="'+(pc.ext==='emf'?'EnhMetaFile':pc.ext==='wmf'?'MetaFile':'Bitmap')+'"'+(/^(png|jpg|gif|tif)$/.test(pc.ext)?' CompressionType="'+{png:'PNG',jpg:'JPEG',gif:'GIF',tif:'TIFF'}[pc.ext]+'"':'')+'><Rel r:id="'+rid+'"/></ForeignData></Shape>';}).join('');
+   var conns=top.conns.map(function(c){return {x:c.x-frame.x,y:c.y-frame.y};}),fw=frame.w,fh=frame.h;
+   var xml='<?xml version="1.0" encoding="utf-8" standalone="yes"?>\n<MasterContents xmlns="http://schemas.microsoft.com/office/visio/2012/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" xml:space="preserve"><Shapes><Shape ID="5" NameU="'+escX(name)+'" Name="'+escX(name)+'" Type="Group" LineStyle="0" FillStyle="0" TextStyle="0">'+xc('PinX',fw/2)+xc('PinY',fh/2)+xc('Width',fw)+xc('Height',fh)+xc('LocPinX',fw/2)+xc('LocPinY',fh/2)+
+    (conns.length?'<Section N="Connection">'+conns.map(function(c,i){return '<Row T="Connection" IX="'+i+'">'+xc('X',c.x)+xc('Y',c.y)+'</Row>';}).join('')+'</Section>':'')+(picXML?'<Shapes>'+picXML+'</Shapes>':'')+'</Shape></Shapes></MasterContents>';
+   var element='<Master ID="'+id+'" NameU="'+escX(name)+'" Name="'+escX(name)+'" IconSize="1" AlignName="2" MatchByName="0" IconUpdate="1" PatternFlags="0" Hidden="0" MasterType="2"><PageSheet LineStyle="0" FillStyle="0" TextStyle="0">'+xc('PageWidth',fw)+xc('PageHeight',fh)+'</PageSheet><Rel r:id="rId1"/></Master>';
+   var part=((name.match(/^([A-Z0-9][A-Z0-9-]{3,14})(?=[\s/(]|$)/)||[])[1]||'');if(!/\d/.test(part))part='';
+   masters.push({cells:{PinX:fw/2,PinY:fh/2,LocPinX:fw/2,LocPinY:fh/2},type:'Group',file:fileName||'stencil',id:id,name:name,element:element,xml:xml,rels:rels,media:mfiles,props:{},part:part,product:'',manufacturer:'',shapeW:fw,shapeH:fh,w:fw,h:fh,x0:0,y0:0,oneD:false,connections:conns,
+    pictures:pics.map(function(pc){return {x:pc.x-frame.x,y:pc.y-frame.y,w:pc.w,h:pc.h,ext:pc.ext,data:pc.data};})});});
+  if(!masters.length)throw new Error((fileName||'This file')+' contains no master shapes.');
+  return {file:fileName||'stencil',masters:masters,styles:'',legacy:true};
+ }
+ function xc(n,v){return '<Cell N="'+n+'" V="'+(Math.round(v*1e6)/1e6)+'"/>';}
+ function escX(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+ // A foreign data blob as a picture: EMF/WMF metafiles and bitmaps (a raw DIB gets a
+ // BMP file header).
+ function picture(d,type,format){
+  if(type===0||type===4){if(d.length>0x2c&&d[0x28]===0x20&&d[0x29]===0x45&&d[0x2a]===0x4d&&d[0x2b]===0x46)return {ext:'emf',data:d};return {ext:'wmf',data:d};}
+  if(type===1){var ext={1:'jpg',2:'gif',3:'tif',4:'png'}[format];if(ext)return {ext:ext,data:d};
+   if(d.length<40)return null;var head=u32(d,0),bits=u16(d,14),colors=u32(d,32)||(bits<=8?1<<bits:0),offset=14+head+colors*4+((u32(d,16)===3&&head===40)?12:0),file=new Uint8Array(14+d.length);
+   file[0]=0x42;file[1]=0x4d;var dv=new DataView(file.buffer);dv.setUint32(2,file.length,true);dv.setUint32(10,offset,true);file.set(d,14);return {ext:'bmp',data:file};}
+  return null;
  }
  root.SWStencils={read:read,match:match,score:score,ports:ports,layout:layout,artwork:artwork,emf:emf,unzip:unzip};
  if(typeof module==='object'&&module.exports)module.exports=root.SWStencils;
@@ -10164,26 +10245,26 @@ function configTree(it){
     if(stencilLib.files.length){stencilLib.version++;if(state.view==='diagram')renderContent();}}
   async function importStencils(files){var added=0,masters=0,errors=[],legacy=[],status=el.modal.open&&el.modal.querySelector('.stencil-status');
     files=files.filter(function(f){return /\.(vssx|vstx|vsdx|vss|vst)$/i.test(f.name||'');});if(!files.length){toast('No Visio stencils (.vssx, .vsdx, .vss) were found there.');return;}
-    for(var i=0;i<files.length;i++){var f=files[i];if(status)status.textContent='Reading '+(i+1)+' of '+files.length+': '+(f.webkitRelativePath||f.name);if(/\.(vss|vst)$/i.test(f.name)){legacy.push(f.webkitRelativePath||f.name);continue;}try{var bytes=new Uint8Array(await f.arrayBuffer()),st=await window.SWStencils.read(bytes,f.name);if(!st.masters.length)throw new Error(f.name+' contains no device shapes.');
+    for(var i=0;i<files.length;i++){var f=files[i];if(status)status.textContent='Reading '+(i+1)+' of '+files.length+': '+(f.webkitRelativePath||f.name);try{var bytes=new Uint8Array(await f.arrayBuffer()),st=await window.SWStencils.read(bytes,f.name);if(!st.masters.length)throw new Error(f.name+' contains no device shapes.');
       stencilLib.files=stencilLib.files.filter(function(x){return x.file!==f.name;});stencilLib.files.push(st);added++;masters+=st.masters.length;
       try{await stencilStore('readwrite',function(s){s.put({name:f.name,bytes:bytes.buffer.slice(bytes.byteOffset,bytes.byteOffset+bytes.byteLength),added:Date.now()});});}catch(e){}}catch(e){if(e&&e.legacy)legacy.push(f.webkitRelativePath||f.name);else if(!(files.length>1&&/no (master|device) shapes/.test(e.message||'')))errors.push(e.message||String(e));}}
-    stencilLib.version++;state.stencilLegacy=legacy;if(status)status.textContent='';if(added)toast('Added '+masters+' stencil shape'+(masters===1?'':'s')+' from '+added+' file'+(added===1?'':'s')+'.');if(errors.length)toast(errors.slice(0,3).join(' ')+(errors.length>3?' ('+(errors.length-3)+' more)':''));if(legacy.length&&!el.modal.open)toast(legacy.length+' older .vss stencil'+(legacy.length===1?'':'s')+' must be saved as .vssx in Visio first. Open Stencils for the list.');if(state.view==='diagram')renderContent();if(el.modal.open&&el.modal.querySelector('.stencil-dialog'))showStencils();}
+    stencilLib.version++;state.stencilLegacy=legacy;if(status)status.textContent='';if(added)toast('Added '+masters+' stencil shape'+(masters===1?'':'s')+' from '+added+' file'+(added===1?'':'s')+'.');if(errors.length)toast(errors.slice(0,3).join(' ')+(errors.length>3?' ('+(errors.length-3)+' more)':''));if(legacy.length&&!el.modal.open)toast(legacy.length+' stencil'+(legacy.length===1?'':'s')+' from Visio 2002 or earlier could not be read. Open Stencils for the list.');if(state.view==='diagram')renderContent();if(el.modal.open&&el.modal.querySelector('.stencil-dialog'))showStencils();}
   async function removeStencilFile(name){stencilLib.files=stencilLib.files.filter(function(x){return x.file!==name;});stencilLib.version++;try{await stencilStore('readwrite',function(s){s.delete(name);});}catch(e){}if(state.view==='diagram')renderContent();showStencils();}
   // Shown on the diagram until vendor stencils are in use.
   function stencilNotice(page){
     if(!window.SWStencils||page.style!=='plate')return '';var d=state.diagram||{};if(d.style==='plate')return '';
-    if(!stencilLib.files.length)return '<div class="notice neutral diagram-stencil-notice">'+icon('layers')+'<span><b>No vendor stencils yet.</b> Devices are drawn as generic faceplates. Import your vendor Visio stencils (.vssx), or a Visio drawing that already uses them (.vsdx), to draw each device with its real front panel. Vendors such as HPE Aruba, Cisco and Fortinet publish Visio stencils for their products.</span><span class="notice-actions"><button class="button small primary" data-action="diagram-stencils">'+icon('upload')+'Import stencils</button></span></div>';
+    if(!stencilLib.files.length)return '<div class="notice neutral diagram-stencil-notice">'+icon('layers')+'<span><b>No vendor stencils yet.</b> Devices are drawn as generic faceplates. Import your vendor Visio stencils (.vss or .vssx), or a Visio drawing that already uses them (.vsdx), to draw each device with its real front panel. Vendors such as HPE Aruba, Cisco and Fortinet publish Visio stencils for their products.</span><span class="notice-actions"><button class="button small primary" data-action="diagram-stencils">'+icon('upload')+'Import stencils</button></span></div>';
     var used=page.shapes.some(function(x){return x.type==='image';});
     if(!used)return '<div class="notice neutral diagram-stencil-notice">'+icon('layers')+'<span>None of the '+allMasters().length+' imported stencil shapes match the devices on this diagram. Choose a shape for a device under <b>Stencils</b>, or import the vendor\'s stencil for these models.</span><span class="notice-actions"><button class="button small" data-action="diagram-stencils">Stencils</button></span></div>';
     return '';
   }
   function showStencils(){
     var input=diagramInput(),nodes=input?input.layout.nodes.slice().sort(function(a,b){return a.name.localeCompare(b.name,undefined,{numeric:true});}):[],all=allMasters(),choices=stencilChoices();
-    var files=stencilLib.files.length?stencilLib.files.map(function(f){return '<div class="site-link-row stencil-file"><span><b>'+h(f.file)+'</b> · '+f.masters.length+' shape'+(f.masters.length===1?'':'s')+'</span><button class="quiet-button" data-stencil-remove="'+h(f.file)+'">'+icon('trash')+'Remove</button></div>';}).join(''):'<p class="empty-mini">No stencils yet. Import a vendor stencil (.vssx), or a Visio drawing that already uses the shapes (.vsdx).</p>';
+    var files=stencilLib.files.length?stencilLib.files.map(function(f){return '<div class="site-link-row stencil-file"><span><b>'+h(f.file)+'</b> · '+f.masters.length+' shape'+(f.masters.length===1?'':'s')+'</span><button class="quiet-button" data-stencil-remove="'+h(f.file)+'">'+icon('trash')+'Remove</button></div>';}).join(''):'<p class="empty-mini">No stencils yet. Import a vendor stencil (.vss or .vssx), or a Visio drawing that already uses the shapes (.vsdx).</p>';
     var rows=nodes.map(function(n){var auto=window.SWStencils&&all.length?window.SWStencils.match(stencilNode(n),all):null,cur=choices[n.key]||'auto';
       return '<label class="site-link-row stencil-row"><span class="stencil-device"><b>'+h(n.name)+'</b><span class="muted">'+h(n.model||n.role)+'</span></span><select class="select" data-stencil-device="'+h(n.key)+'"><option value="auto"'+(cur==='auto'?' selected':'')+'>Automatic: '+h(auto?auto.name:'drawn faceplate')+'</option><option value="none"'+(cur==='none'?' selected':'')+'>Drawn faceplate</option>'+all.map(function(m){return '<option value="'+h(masterKey(m))+'"'+(cur===masterKey(m)?' selected':'')+'>'+h(m.name)+'</option>';}).join('')+'</select></label>';}).join('');
     openModal(modalHeader('Vendor stencils','Draw devices with your own Visio stencils')+'<div class="modal-body stencil-dialog"><p class="live-note">Devices are matched by part number or model; each linked port is placed on the stencil when its connection points fit the device\'s ports. Visio downloads include the vendor shapes. Stencils are kept in this app on this computer and are never sent anywhere. Vendors such as HPE Aruba, Cisco and Fortinet publish Visio stencils for their products.</p>'+
-      '<div class="stencil-actions"><button class="button primary small" data-action="stencil-import">'+icon('upload')+'Import stencil files</button><button class="button small" data-action="stencil-folder">'+icon('layers')+'Import a stencil folder</button><input type="file" id="stencil-file" accept=".vssx,.vsdx,.vstx,.vss,.vst" multiple hidden><input type="file" id="stencil-folder" webkitdirectory directory multiple hidden><span class="muted stencil-status" aria-live="polite"></span></div>'+(state.stencilLegacy&&state.stencilLegacy.length?'<div class="notice neutral">'+icon('alert')+'<span><b>'+state.stencilLegacy.length+' older Visio stencil'+(state.stencilLegacy.length===1?'':'s')+' (.vss) not read.</b> The app reads the current Visio format. Open each in Visio, choose File &gt; Save As, save it as a Visio stencil (.vssx), and import that: '+h(state.stencilLegacy.slice(0,12).join(', '))+(state.stencilLegacy.length>12?' and '+(state.stencilLegacy.length-12)+' more':'')+'</span></div>':'')+'<h3 class="detail-label">Files</h3>'+files+(nodes.length&&all.length?'<h3 class="detail-label">Devices</h3>'+rows:'')+'</div><div class="modal-foot"><button class="button" data-action="close-modal">Close</button></div>');
+      '<div class="stencil-actions"><button class="button primary small" data-action="stencil-import">'+icon('upload')+'Import stencil files</button><button class="button small" data-action="stencil-folder">'+icon('layers')+'Import a stencil folder</button><input type="file" id="stencil-file" accept=".vssx,.vsdx,.vstx,.vss,.vst" multiple hidden><input type="file" id="stencil-folder" webkitdirectory directory multiple hidden><span class="muted stencil-status" aria-live="polite"></span></div>'+(state.stencilLegacy&&state.stencilLegacy.length?'<div class="notice neutral">'+icon('alert')+'<span><b>'+state.stencilLegacy.length+' stencil'+(state.stencilLegacy.length===1?'':'s')+' from Visio 2002 or earlier not read.</b> Open each in a newer Visio and save it as a Visio stencil (.vssx or .vss), then import that: '+h(state.stencilLegacy.slice(0,12).join(', '))+(state.stencilLegacy.length>12?' and '+(state.stencilLegacy.length-12)+' more':'')+'</span></div>':'')+'<h3 class="detail-label">Files</h3>'+files+(nodes.length&&all.length?'<h3 class="detail-label">Devices</h3>'+rows:'')+'</div><div class="modal-foot"><button class="button" data-action="close-modal">Close</button></div>');
   }
   document.addEventListener('click',function(event){var t=event.target.closest&&event.target.closest('[data-action="diagram-stencils"],[data-action="stencil-import"],[data-action="stencil-folder"],[data-stencil-remove]');if(!t)return;
     var act=t.getAttribute('data-action');if(act==='diagram-stencils')showStencils();else if(act==='stencil-import'||act==='stencil-folder'){var f=document.getElementById(act==='stencil-import'?'stencil-file':'stencil-folder');if(f)f.click();}else removeStencilFile(t.getAttribute('data-stencil-remove'));});

@@ -45,6 +45,9 @@ existing release or its assets. Preserve the polished README layout.
 - Diagrams must try to fit a letter sheet (owner request): `diagram()` picks the row width
   whose measured size needs the least shrinking (`fitLetter`), and every download goes
   through `onLetter()` (Visio pages, SVG and printable HTML are 11 x 8.5 in or 8.5 x 11 in).
+- `.vss` stencils (Visio 2003-2010, OLE compound files) are read natively by `readVSS()` in
+  `stencils.js` (format notes from libvisio); masters get synthesized master XML for
+  Visio export. Test with the fictional builder `vss()` in `tests/stencil-writer.cjs`.
 - Microsoft Visio is stricter than LibreOffice (error 271 on open): document settings are
   elements, FaceName uses `Panose`, Font cells name a declared face, a shape's cells come
   before its sections, cell names must be real Visio cells, and ZIP dates must be valid.

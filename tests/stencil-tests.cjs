@@ -3,7 +3,7 @@
 // from fictional shapes; no vendor artwork is part of the repository.
 const assert=require('node:assert/strict'),zlib=require('node:zlib'),T=require('../webview/stencils.js'),D=require('../webview/diagram.js'),M=require('../webview/site_map.js'),E=require('../webview/evidence.js');
 let checks=0;function ok(v,m){checks++;assert.ok(v,m);}
-const {stencil,unzip}=require('./stencil-writer.cjs');
+const {stencil,unzip,vss}=require('./stencil-writer.cjs');
 (async()=>{
  const st=await T.read(new Uint8Array(stencil()),'example.vssx');
  ok(st.masters.length===2&&st.masters[0].name==='EX-SW8 8-port switch'&&st.masters[0].part==='EX-SW8'&&st.masters[0].manufacturer==='Example Networks','masters with their properties (connectors skipped): '+st.masters.map(m=>m.name).join(', '));
@@ -40,5 +40,17 @@ const {stencil,unzip}=require('./stencil-writer.cjs');
  ok(/<Master ID="2"/.test(masters)&&/<Master ID="3"/.test(masters)&&!/LineStyle=["']3/.test(files['visio/masters/master2.xml'].toString()),'masters renumbered and their styles reset');
  ok(files['visio/pages/_rels/page1.xml.rels'].toString().includes('../media/stencil')&&/Extension="png"/.test(files['[Content_Types].xml'].toString())&&/vnd\.ms-visio\.master\+xml/.test(files['[Content_Types].xml'].toString()),'page relationships and content types');
  const plain=unzip(Buffer.from(D.vsdx([D.diagram({layout,links,vlans:new Map(),ports:new Map()},{scope:'site'})],'x')));ok(!Object.keys(plain).some(n=>/masters/.test(n)),'without stencils no masters are written');
+ // Visio 2003-2010 stencils (.vss), read natively.
+ const old=await T.read(new Uint8Array(vss()),'example.vss'),om=old.masters[0];
+ ok(old.legacy&&old.masters.length===1&&om.name==='EX-SW8 8-port switch'&&om.part==='EX-SW8','a .vss stencil is read without Visio: '+om.name);
+ ok(om.connections.length===10&&om.pictures.length===1&&om.pictures[0].ext==='png'&&Math.abs(om.w-4)<1e-9&&Math.abs(om.h-0.8)<1e-9,'its frame, connection points and picture (from a compressed stream)');
+ const OL=T.layout(om,8,2);ok(OL&&OL.main.length===8&&OL.up.length===2&&Math.abs(OL.main[0].fx-0.25)<0.01&&OL.main[1].row===1,'ports from the .vss connection points');
+ ok(T.match({model:'Example EX-SW8',role:'switch'},old.masters)===om&&T.artwork(om).body.includes('data:image/png;base64,'),'matched and drawn');
+ const ostencils=new Map();layout.all.forEach(n=>{const m=T.match(n,old.masters);if(m)ostencils.set(n.key,{master:m,art:T.artwork(m),layout:(a,b)=>T.layout(m,a,b)});});
+ const opage=D.diagram({layout,links,vlans:new Map(),ports:new Map(),stencils:ostencils,title:'Old stencil'},{scope:'site'});
+ const ostyle=D.diagram({layout,links,vlans:new Map(),ports:new Map(),stencils:ostencils,title:'Old stencil'},{scope:'downstream',focus:layout.nodes.slice().sort((a,b)=>a.y-b.y)[0].key});
+ const of=unzip(Buffer.from(D.vsdx([ostyle],'Old stencil'))),mx=Object.keys(of).filter(n=>/^visio\/masters\/master\d+\.xml$/.test(n)).map(n=>of[n].toString()).join('');
+ ok(ostyle.shapes.some(s=>s.type==='image'&&s.master===om)&&/<Section N="Connection"><Row T="Connection" IX="0"><Cell N="X"/.test(mx)&&/ForeignType="Bitmap" CompressionType="PNG"/.test(mx)&&Object.keys(of).some(n=>/^visio\/media\/stencil\d+_rId1\.png$/.test(n)),'Visio downloads carry a master built from the .vss shape');
+ const bad=vss();bad[512*3+0x1a]=6;await T.read(new Uint8Array(bad),'ancient.vss').then(()=>ok(false,'a Visio 2002 stencil is refused'),e=>ok(e.legacy&&/2002 or earlier/.test(e.message),'a Visio 2002 stencil is reported: '+e.message));
  console.log(checks+' stencil checks passed');
 })().catch(e=>{console.error(e);process.exit(1);});

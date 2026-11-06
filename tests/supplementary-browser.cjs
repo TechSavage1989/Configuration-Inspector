@@ -7,7 +7,7 @@ for(let p=1;p<=8;p++)L.push('interface GigabitEthernet1/0/'+p,' switchport mode 
 L.push('interface TenGigabitEthernet1/1/1',' switchport mode trunk','interface Vlan99',' ip address 10.0.99.11 255.255.255.0');
 const cfg=L.join('\n')+'\n';
 const SHOW='EXAMPLE-ACCESS1#show interfaces status\n\nPort      Name               Status       Vlan       Duplex  Speed Type\nGi1/0/4   Desk 4             connected    10         a-full a-1000 10/100/1000BaseTX\n';
-const {stencil}=require('./stencil-writer.cjs');
+const {stencil,vss}=require('./stencil-writer.cjs');
 const file=(name,buffer,type)=>({name,mimeType:type||'text/plain',buffer:Buffer.isBuffer(buffer)?buffer:Buffer.from(buffer)});
 (async()=>{
  const browser=await playwright.chromium.launch({headless:true,args:['--no-sandbox'],...(process.env.CI_CHROME_PATH?{executablePath:process.env.CI_CHROME_PATH}:{})});
@@ -80,13 +80,13 @@ const file=(name,buffer,type)=>({name,mimeType:type||'text/plain',buffer:Buffer.
   ok((await dtext()).includes('EXAMPLE-AP1')&&(await dtext()).includes('EXAMPLE-ACCESS1')&&(await dtext()).includes('EXAMPLE-FW1'),'the device, its upstream device, switches and access points are drawn');
   ok(/^Letter, (landscape|portrait)/.test(await page.locator('.diagram-paper').first().innerText()),'the diagram shows how it prints on letter paper: '+await page.locator('.diagram-paper').first().innerText());
   ok(await page.locator('.diagram-stencil-notice [data-action="diagram-stencils"]').count()===1,'without stencils the diagram offers to import them');
-  await page.locator('#import-file').setInputFiles({name:'example-devices.vssx',mimeType:'application/octet-stream',buffer:stencil()});await page.waitForTimeout(800);
+  await page.locator('#import-file').setInputFiles([{name:'example-devices.vssx',mimeType:'application/octet-stream',buffer:stencil()},{name:'older-devices.vss',mimeType:'application/octet-stream',buffer:vss()}]);await page.waitForTimeout(1000);
   ok((await page.locator('.diagram-stencil-notice').innerText()).includes('match'),'stencils that match no device on the diagram are reported');
   await page.locator('.diagram-panel [data-action="diagram-stencils"]').first().click();await page.locator('.stencil-dialog').waitFor();
-  ok((await page.locator('.stencil-dialog').innerText()).includes('example-devices.vssx'),'the stencil file is listed');
+  ok((await page.locator('.stencil-dialog').innerText()).includes('example-devices.vssx')&&(await page.locator('.stencil-dialog').innerText()).includes('older-devices.vss'),'both stencil files are listed, the .vss one read natively');
   await page.locator('[data-stencil-device="examplecore"]').selectOption({label:'EX-SW8 8-port switch'});await page.waitForTimeout(400);await page.keyboard.press('Escape');await page.waitForTimeout(400);
   ok(await page.locator('.diagram-scroll [data-diagram-node="examplecore"] svg').count()>=1&&await page.locator('.diagram-stencil-notice').count()===0,'a device given a stencil is drawn with it');
-  const stored=await page.evaluate(()=>new Promise(r=>{const q=indexedDB.open('config-inspector-stencils',1);q.onsuccess=()=>{const c=q.result.transaction('files','readonly').objectStore('files').count();c.onsuccess=()=>r(c.result);};q.onerror=()=>r(-1);}));ok(stored===1,'the stencil is kept for next time');
+  const stored=await page.evaluate(()=>new Promise(r=>{const q=indexedDB.open('config-inspector-stencils',1);q.onsuccess=()=>{const c=q.result.transaction('files','readonly').objectStore('files').count();c.onsuccess=()=>r(c.result);};q.onerror=()=>r(-1);}));ok(stored===2,'the stencils are kept for next time');
   ok(await page.locator('.diagram-trail [data-diagram-focus]').count()>=1&&(await page.locator('.diagram-trail').innerText()).includes('Whole site'),'a path leads back up');
   ok(await page.evaluate(()=>[...document.querySelectorAll('.diagram-scroll text')].some(t=>t.textContent==='1')&&[...document.querySelectorAll('.diagram-scroll text')].some(t=>t.textContent==='2')),'faceplate ports are numbered');
   await page.locator('[data-diagram-option="aps"]').uncheck();await page.waitForTimeout(300);ok(!(await dtext()).includes('EXAMPLE-AP1'),'access points can be left out');

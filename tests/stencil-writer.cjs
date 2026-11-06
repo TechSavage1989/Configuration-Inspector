@@ -31,3 +31,39 @@ function stencil(){
   ['visio/media/sw.png',PNG],['visio/media/ap.emf',emfFile()]]);
 }
 module.exports={stencil,zip,unzip,emfFile};
+
+// A fictional Visio 2003-2010 stencil (.vss): an OLE compound file whose VisioDocument
+// stream holds pointer lists, a name table, one stencil page with a group shape (its
+// transform and ten connection points: 8 ports in two rows, 2 uplinks) and a foreign
+// shape with a PNG picture. One stream is stored "compressed" with literal-only blocks.
+function vss(){
+ const parts=[];let at=0x60;const put=buf=>{const o=at;parts.push([o,buf]);at+=buf.length;return {offset:o,length:buf.length};};
+ const ptr=(type,s,format)=>{const b=Buffer.alloc(18);b.writeUInt32LE(type,0);b.writeUInt32LE(s.offset,8);b.writeUInt32LE(s.length,12);b.writeUInt16LE(format,16);return b;};
+ const list=ptrs=>{const b=Buffer.alloc(16+ptrs.length*18);b.writeUInt32LE(8,0);b.writeUInt32LE(ptrs.length,8);ptrs.forEach((p,i)=>p.copy(b,16+i*18));return b;};
+ const chunk=(type,data)=>{const h=Buffer.alloc(19);h.writeUInt32LE(type,0);h.writeUInt32LE(data.length,12);return Buffer.concat([h,data]);};
+ const dbl=(...v)=>{const b=Buffer.alloc(v.length*9);v.forEach((x,i)=>{b[i*9]=0x40;b.writeDoubleLE(x,i*9+1);});return b;};
+ const literal=buf=>{const out=[];for(let i=0;i<buf.length;i+=8){const part=buf.subarray(i,i+8);out.push(Buffer.from([0xff]),part);}return Buffer.concat(out);};
+ const shapeHead=parent=>{const b=Buffer.alloc(40);b.writeUInt32LE(parent,10);return b;};
+ const name2=s=>{const b=Buffer.alloc(4+(s.length+1)*2);b.writeUInt32LE(1,0);b.write(s,4,'utf16le');return b;};
+ // Group: 4 in x 0.8 in, ports at x 1..2.5 (top y 0.6, bottom y 0.2), uplinks at x 3.6.
+ const conns=[];for(let c=0;c<4;c++){conns.push(chunk(0x99,dbl(1+c*0.5,0.6,0,0)),chunk(0x99,dbl(1+c*0.5,0.2,0,0)));}conns.push(chunk(0x99,dbl(3.6,0.6,0,0)),chunk(0x99,dbl(3.6,0.2,0,0)));
+ const group=put(Buffer.concat([chunk(0x47,shapeHead(0)),chunk(0x9b,Buffer.concat([dbl(2,0.4,4,0.8,2,0.4,0),Buffer.from([0,0])])),...conns]));
+ const ftype=Buffer.alloc(60);dbl(0,0,4,0.8).copy(ftype,0);ftype.writeUInt16LE(1,36);ftype.writeUInt16LE(0,38);ftype.writeUInt32LE(4,49);
+ const shapeList=ptrs=>{const b=Buffer.alloc(52+ptrs.length*18);b.writeUInt32LE(44,0);b.writeUInt32LE(5,10);b.writeUInt32LE(ptrs.length,44);ptrs.forEach((p,i)=>p.copy(b,52+i*18));return b;};
+ const fShape=put(literal(Buffer.concat([Buffer.alloc(4),shapeList([ptr(0x9b,put(Buffer.concat([dbl(2,0.4,4,0.8,2,0.4,0),Buffer.from([0,0])])),0x40),ptr(0x98,put(ftype),0x40),ptr(0x0c,put(PNG),0x40)])])));
+ const empty=Buffer.alloc(18),page=put(list([empty,empty,empty,empty,empty,ptr(0x47,group,0xd0),ptr(0x4e,fShape,0x52)]));
+ const names=put(list([ptr(0x33,put(name2('EX-SW8 8-port switch')),0x40)]));
+ const idx=Buffer.alloc(4+13);idx.writeUInt32LE(1,0);idx.writeUInt32LE(0,4);idx.writeUInt32LE(0,8);idx.writeUInt32LE(1,12);
+ const stencils=put(list([ptr(0xc9,put(idx),0x40),ptr(0x1e,page,0x50)]));
+ const trailer=put(list([ptr(0x32,names,0x50),ptr(0x1d,stencils,0x50)]));
+ const doc=Buffer.alloc(Math.max(at,4200));doc[0x1a]=11;ptr(0x14,trailer,0x50).copy(doc,0x24);parts.forEach(([o,b])=>b.copy(doc,o));
+ // Compound file: header, one FAT sector, one directory sector, then the stream.
+ const ss=512,sectors=Math.ceil(doc.length/ss),file=Buffer.alloc(ss*(3+sectors));
+ Buffer.from('d0cf11e0a1b11ae1','hex').copy(file,0);file.writeUInt16LE(0x3e,24);file.writeUInt16LE(3,26);file.writeUInt16LE(0xfffe,28);file.writeUInt16LE(9,30);file.writeUInt16LE(6,32);file.writeUInt32LE(1,44);file.writeUInt32LE(1,48);file.writeUInt32LE(4096,56);file.writeUInt32LE(0xfffffffe,60);file.writeUInt32LE(0xfffffffe,68);
+ for(let i=0;i<109;i++)file.writeUInt32LE(i?0xffffffff:0,76+i*4);
+ const fat=ss;for(let i=0;i<ss/4;i++)file.writeUInt32LE(0xffffffff,fat+i*4);file.writeUInt32LE(0xfffffffd,fat);file.writeUInt32LE(0xfffffffe,fat+4);for(let i=0;i<sectors;i++)file.writeUInt32LE(i===sectors-1?0xfffffffe:3+i,fat+(2+i)*4);
+ const dir=ss*2,entry=(n,name,type,child,start,size)=>{const o=dir+n*128;file.write(name,o,'utf16le');file.writeUInt16LE((name.length+1)*2,o+64);file[o+66]=type;file[o+67]=1;file.writeUInt32LE(0xffffffff,o+68);file.writeUInt32LE(0xffffffff,o+72);file.writeUInt32LE(child,o+76);file.writeUInt32LE(start,o+116);file.writeUInt32LE(size,o+120);};
+ entry(0,'Root Entry',5,1,0xfffffffe,0);entry(1,'VisioDocument',2,0xffffffff,2,doc.length);doc.copy(file,ss*3);
+ return file;
+}
+module.exports.vss=vss;

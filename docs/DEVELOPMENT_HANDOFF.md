@@ -7,7 +7,8 @@
 - `diagramMeta()` (title, subtitle, file, author, company; author/company in localStorage)
   feeds `diagram()` (`customTitle`, `company`, `footer`) and `vsdx(pages,title,meta)`.
 - Device list: `filterDiagramDevices()`, `data-diagram-bulk`. Stencil folder input
-  (`webkitdirectory`), legacy `.vss` detection (`e.legacy`) listed in the dialog.
+  (`webkitdirectory`); `.vss` stencils read natively by `readVSS()` (CFB reader `cfbStream`,
+  LZ77 `lz`, chunk headers `eachChunk`), only pre-2003 files are listed as unreadable.
 
 - `render(input,{measure:true})` returns the laid-out size before routing; `diagram()` tries
   several `maxRow` values and keeps the best `fitLetter()` result. `onLetter(page)` scales
