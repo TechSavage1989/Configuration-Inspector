@@ -1,5 +1,11 @@
 # Configuration Inspector development handoff
 
+## 5.28.1 — tabbed site overview
+
+- `sitePage()` renders a `.site-tabs` row (`data-site-tab`, `state.siteTab`) and one
+  section; tables use `.evidence-wrap.site-wrap` (no inner scroll), so `pinHeaders()`
+  pins the tabs, panel title and column headings.
+
 ## 5.28.0 — network map collapsed by default
 
 - `state.mapOpen` holds opened map groups (`zone:`/`compact:` keys) and interface ids;

@@ -46,7 +46,7 @@ existing release or its assets. Preserve the polished README layout.
   unknown ports, and keep `open` checks as `>=0` (`-1` means no open configuration).
 - Pages that scroll as a whole must not contain vertical scroll areas (nested scrollbars
   trap the mouse wheel). Split long content into tabs or "Show more" instead; the
-  supplementary browser test checks the Supplementary data page for this. Exception:
+  supplementary and site overview browser tests check this. Exception:
   the Site map device panel is a sticky side column that scrolls by itself (owner request).
 - Headers are pinned by `pinHeaders()` after every `renderContent()` on pages that scroll
   as a whole: page bars (`PAGE_BARS`), each panel's `.panel-head`/`.toolbar`, then `thead`.
