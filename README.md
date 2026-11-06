@@ -24,7 +24,7 @@
 - **Understand interfaces and topology:** inspect physical layouts, VLANs, interface groups and device information where the export provides enough detail.
 - **See a whole site:** open several configurations and compare their NTP, DNS, syslog, SNMP, local users and spanning-tree settings, VLAN names, shared subnets and duplicate IP addresses on one page.
 - **Add live network data:** open Auvik site or device reports (.xlsx or .csv) and show command output (routes, interface status, LLDP / CDP neighbors, MAC and ARP tables). The app draws a **site map** of firewalls and switches with the ports that connect them, and adds link state, neighbors and the devices seen on each port to the matching configuration.
-- **Generate network diagrams:** turn the imported neighbor data and open configurations into an overview topology plus one page per switch stack or building — switches as faceplates with management addresses, color-coded links with port labels, access points, VLANs and a legend — and download them as an editable Visio (.vsdx) file, SVG or a printable page.
+- **Generate network diagrams:** draw any part of the network from the imported neighbor data and open configurations — the selected configuration's device and everything below it, a device and its connections, or the whole site — with switches as faceplates with numbered ports, access points and phones beside the ports they use, color-coded links that never overlap, VLANs and a legend. Click a device to draw from it down, choose which devices to include, and download an editable Visio (.vsdx) file, SVG or a printable page.
 - **Compare snapshots:** inspect matched objects and their properties side by side, or compare configuration text/files with aligned lines and synchronized scrolling. Copy a plain-language **change summary** for a ticket or change record.
 - **Review findings and export:** inspect configuration review results, including unused objects, undefined or unused VLANs, access ports in VLAN 1 and trunks that carry every VLAN, and create reports for further analysis. A printable **client report** summarizes every open configuration: devices, port usage, VLANs, IP addresses and findings.
 
@@ -58,6 +58,11 @@ When supplementary data is open, the search also finds devices, live interfaces,
 <table>
   <tr><td width="50%"><b>Site map built from an Auvik site export</b><br><img src="docs/images/site-map.png" alt="Site map with a firewall, core switch and access switches" width="440"></td><td width="50%"><b>Live link state and neighbors on the interface table</b><br><img src="docs/images/live-interfaces.png" alt="Interface table with live link state and connected devices" width="440"></td></tr>
 </table>
+
+### Network diagrams
+
+<b>A switch and what it connects to, drawn for Visio</b><br>
+<img src="docs/images/network-diagram.png" alt="Network diagram of an access switch stack with phones and access points above and below their ports" width="900">
 
 ### Site overview
 
@@ -182,7 +187,11 @@ Data is matched to an open configuration by hostname, or by an interface address
 
 Values in these tables (MAC and IP addresses, ports, device names) can be copied by clicking them, and **Copy table** copies the rows shown with their column names for a spreadsheet or ticket.
 
-- **Network diagram** (sidebar, once any file contains links): an overview topology titled after the site, then one page per switch with switches or access points below it. A small building's switches go on one page; a large core shows its direct neighbors and continues on the next pages. Switches are drawn as faceplates with their management address and model, links are colored by type (10 Gbps+ fiber or uplink, 1 Gbps copper, access point copper) and labeled with their ports, access points and named devices sit beside the switch they connect to, and the VLANs and a legend are on the page. Edit the title, then download **Visio (.vsdx)** (one Visio page per diagram page, all shapes editable), **SVG** for the page shown, or **Printable HTML** with every page for printing or saving as PDF.
+- **Network diagram** (sidebar, once any file contains links): opens on the device of the selected configuration and everything below it, with the device above it for context. Choose **Device and below**, **Device connections** or **Whole site**, pick another device, limit the levels, switch between **Faceplates** and **Boxes**, and show or hide the upstream device, access points and other devices; **Choose devices** leaves out single devices. Click any device to draw the diagram from it down, and use the path above the diagram to go back up. Scroll to zoom, drag to move, or use the zoom buttons and **Fit**.
+  - Switches are faceplates sized from the device's own interfaces or a built-in model catalog (Cisco Catalyst, Aruba, HPE, Meraki and others), with every port numbered, odd ports on top and stack members side by side. Linked ports are outlined in the link color and named in a band above or below the device.
+  - Links are colored by type (10 Gbps+ fiber or uplink, 1 Gbps copper, access point copper; dashed when 100 Mbps or slower). A link reaches a top-row port from above and a bottom-row port from below, goes around devices, never runs on top of another link, and hops over links it crosses. A port reported with several neighbors becomes a trunk with a junction dot.
+  - Access points and named devices sit above the switch when they use a top-row port and below it for a bottom-row port, with their port, name and address; others are counted.
+  - Downloads: **Visio (.vsdx)** of the diagram shown (each device is one group of plain shapes, so it moves as a unit and stays editable), **SVG**, **Printable HTML**, **Site book (.vsdx)** with the whole site and one page for each switch with switches or access points below it, and **Device library (.vsdx)** with every catalog faceplate to copy into your own diagrams or drag into a stencil.
 
 Supplementary data describes the network when it was collected. It is never merged into a configuration or an export, is kept in memory only, and is cleared with **Clear workspace**. Older `.xls` workbooks are not supported; save them as .xlsx or CSV.
 

@@ -1,5 +1,24 @@
 # Configuration Inspector development handoff
 
+## 5.31.0 — scoped, routed network diagrams
+
+- `diagram.js`: `scope(layout,options)` picks rows of devices (downstream of a focus,
+  its connections, or the whole site; depth, upstream, hidden set); `render(input,view)`
+  lays out faceplates (`Device`: groups/members from `parsePort` + `physicalPort` filtered
+  inventory, `CATALOG` or 24/48+4 uplink inference) or boxes, places endpoints above/below
+  by port row, routes every link with the grid `Router` (A* with bend/crossing costs,
+  no shared edges, endpoint corridors reserved, relaxed fallback flagged `strict:false`),
+  adds hops at crossings, trunks for shared ports and rotated port labels in the bands.
+  `diagram(input,options)` titles a page; `build(input)` is the site book; `library()` is
+  the device catalog page. Devices are SVG `<g data-diagram-node>` and Visio group shapes.
+- index.html: `diagramInput()` (cached per evidence/workspace) adds speeds, VLANs and port
+  inventories; `diagramOptions()` keeps `state.diagram` and follows the selected
+  configuration; `diagramCurrent()` caches pages per option key. Zoom/pan reuse the site
+  map handlers (`zoomKey(box)` keeps `state.diagramZoom` separate); a new diagram is fitted
+  once via `data-autofit` in `fitSiteMapToWindow`.
+- Icons: `VIEW_ICONS` gives every navigation page its own icon (`viewIcon()` in `navItem`
+  and the overview stat cards); `tests/navigation-browser.cjs` checks they differ.
+
 ## 5.30.0 — network diagrams
 
 - `webview/diagram.js` (embedded `network-diagram`, `window.SWDiagram`) builds page models

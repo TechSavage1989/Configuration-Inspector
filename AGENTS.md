@@ -40,6 +40,15 @@ existing release or its assets. Preserve the polished README layout.
   shadowing it breaks every import. Browser tests catch this, `npm test` does not.
 - Network diagrams (`webview/diagram.js`) must stay editable in Visio: write plain shapes
   (no embedded images) and check generated .vsdx files open in LibreOffice.
+- Diagram routing rules (owner request), checked by `routing()` in `tests/diagram-tests.cjs`:
+  links end on port centers, entering top-row ports from above and bottom-row ports from
+  below through the device's label band; they go around devices and never share a
+  collinear stretch (crossings hop). The router (`Router` in `diagram.js`) works on a 9 px
+  grid: keep device, port and endpoint geometry on that grid or stubs miss their nodes.
+  A relaxed route (`strict:false`) means the layout ran out of room; widen the channel
+  or corridor that is short instead of accepting the overlap.
+- The diagram opens on the selected configuration's device; `state.diagram.focusModel`
+  tracks which configuration that was, so choose a new focus whenever it changes.
 - Supplementary data (`webview/evidence.js` parsing, `webview/site_map.js` layout) is
   joined with configurations in `index.html` (`liveFor`, `evidenceOwner`). Never commit
   real monitoring exports or command output: build test data with `tests/xlsx-writer.cjs`

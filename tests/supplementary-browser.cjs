@@ -64,18 +64,42 @@ const file=(name,buffer,type)=>({name,mimeType:type||'text/plain',buffer:Buffer.
   await page.locator('[data-sitemap-zoom="fit"]').click();const fit=await page.evaluate(()=>{const b=document.querySelector('.site-map-scroll'),s=b.querySelector('svg');return {sw:s.getBoundingClientRect().width,bw:b.clientWidth,sh:s.getBoundingClientRect().height,bh:b.clientHeight};});
   ok(fit.sw<=fit.bw&&fit.sh<=fit.bh,'Fit shows the whole map: '+JSON.stringify(fit));
   await page.locator('[data-sitemap-zoom="reset"]').click();ok((await page.locator('.zoom-level').innerText())==='100%','back to actual size');
-  // Network diagram: overview and building pages, Visio, SVG and printable downloads.
-  await page.locator('.nav-scroll [data-view="diagram"]').click();await page.locator('.diagram-preview svg').waitFor();
-  const dpages=await page.locator('[data-diagram-page]').allInnerTexts();ok(dpages[0]==='Overview'&&dpages.includes('EXAMPLE-CORE'),'diagram pages: '+dpages.join(' | '));
-  ok((await page.locator('.diagram-preview').textContent()).includes('Example Organization - Existing Topology'),'the overview is titled after the site');
-  await page.locator('[data-diagram-page="1"]').click();await page.waitForTimeout(200);ok((await page.locator('.diagram-preview').textContent()).includes('EXAMPLE-AP1'),'a building page shows its access points');
-  const [vsdx]=await Promise.all([page.waitForEvent('download'),page.locator('[data-diagram-export="vsdx"]').click()]);ok(/network-diagram\.vsdx$/.test(vsdx.suggestedFilename()),'Visio download: '+vsdx.suggestedFilename());
-  const pk=require('node:fs').readFileSync(await vsdx.path()).slice(0,2).toString();ok(pk==='PK','the Visio file is a package');
+  // Network diagram: opens on the selected configuration's device; whole site; click a
+  // device to draw from it down; choose what to include, zoom and pan, and every download.
+  await page.locator('.nav-scroll [data-view="diagram"]').click();await page.locator('.diagram-scroll svg').waitFor();
+  const dtext=()=>page.locator('.diagram-scroll').textContent();
+  ok((await page.locator('.diagram-panel .panel-title').innerText())==='Example Organization - Existing Topology'&&await page.locator('.diagram-toolbar [data-diagram-scope="site"][aria-pressed="true"]').count()===1,'with no configuration open the diagram shows the whole site');
+  const dfit=await page.evaluate(()=>{const b=document.querySelector('.diagram-scroll'),s=b.querySelector('svg');return {sw:s.getBoundingClientRect().width,bw:b.clientWidth,sh:s.getBoundingClientRect().height,bh:b.clientHeight,page:document.getElementById('content').scrollHeight-document.getElementById('content').clientHeight};});
+  ok(dfit.sw<=dfit.bw+1&&dfit.sh<=dfit.bh+1&&dfit.page<=1,'a new diagram is fitted to the window: '+JSON.stringify(dfit));
+  await page.locator('.diagram-scroll [data-diagram-node="examplecore"]').first().click();await page.waitForTimeout(300);
+  ok((await page.locator('.diagram-panel .panel-title').innerText())==='EXAMPLE-CORE and below','clicking a device draws the diagram from it down');
+  ok((await dtext()).includes('EXAMPLE-AP1')&&(await dtext()).includes('EXAMPLE-ACCESS1')&&(await dtext()).includes('EXAMPLE-FW1'),'the device, its upstream device, switches and access points are drawn');
+  ok(await page.locator('.diagram-trail [data-diagram-focus]').count()>=1&&(await page.locator('.diagram-trail').innerText()).includes('Whole site'),'a path leads back up');
+  ok(await page.evaluate(()=>[...document.querySelectorAll('.diagram-scroll text')].some(t=>t.textContent==='1')&&[...document.querySelectorAll('.diagram-scroll text')].some(t=>t.textContent==='2')),'faceplate ports are numbered');
+  await page.locator('[data-diagram-option="aps"]').uncheck();await page.waitForTimeout(300);ok(!(await dtext()).includes('EXAMPLE-AP1'),'access points can be left out');
+  await page.locator('[data-diagram-option="aps"]').check();await page.waitForTimeout(300);
+  await page.locator('.diagram-choose summary').click();await page.locator('[data-diagram-hide="exampleaccess1"]').uncheck();await page.waitForTimeout(300);
+  ok(!(await dtext()).includes('EXAMPLE-ACCESS1')&&(await page.locator('.diagram-choose summary').innerText()).includes('1 left out'),'single devices can be left out');
+  await page.locator('[data-diagram-showall]').click();await page.waitForTimeout(300);ok((await dtext()).includes('EXAMPLE-ACCESS1'),'and included again');
+  await page.locator('.diagram-toolbar [data-diagram-scope="neighbors"]').click();await page.waitForTimeout(300);ok((await page.locator('.diagram-panel .panel-title').innerText())==='EXAMPLE-CORE - Connections','device connections view');
+  await page.locator('.diagram-toolbar [data-diagram-scope="downstream"]').click();await page.waitForTimeout(300);
+  const dz0=await page.locator('.diagram-page-view .zoom-level').innerText(),dbox=await page.locator('.diagram-scroll').boundingBox();
+  await page.mouse.move(dbox.x+dbox.width/2,dbox.y+dbox.height/2);await page.mouse.wheel(0,-400);await page.waitForTimeout(150);
+  ok((await page.locator('.diagram-page-view .zoom-level').innerText())!==dz0,'the mouse wheel zooms the diagram');
+  await page.locator('.diagram-page-view [data-sitemap-zoom="reset"]').click();ok((await page.locator('.diagram-page-view .zoom-level').innerText())==='100%','actual size');
+  const dbefore=await page.evaluate(()=>{const b=document.querySelector('.diagram-scroll');b.scrollLeft=200;b.scrollTop=200;return [b.scrollLeft,b.scrollTop];});
+  await page.mouse.move(dbox.x+dbox.width/2,dbox.y+dbox.height/2);await page.mouse.down();await page.mouse.move(dbox.x+dbox.width/2+120,dbox.y+dbox.height/2+60,{steps:6});await page.mouse.up();await page.waitForTimeout(150);
+  const dafter=await page.evaluate(()=>{const b=document.querySelector('.diagram-scroll');return [b.scrollLeft,b.scrollTop];});
+  ok(dafter[0]<dbefore[0]&&dafter[1]<dbefore[1]&&(await page.locator('.diagram-panel .panel-title').innerText())==='EXAMPLE-CORE and below','dragging pans the diagram without selecting a device: '+JSON.stringify([dbefore,dafter]));
+  const fs2=require('node:fs');
+  const [vsdx]=await Promise.all([page.waitForEvent('download'),page.locator('[data-diagram-export="vsdx"]').click()]);ok(/^EXAMPLE-CORE-and-below\.vsdx$/.test(vsdx.suggestedFilename())&&fs2.readFileSync(await vsdx.path()).slice(0,2).toString()==='PK','Visio download of this diagram: '+vsdx.suggestedFilename());
   const [svgFile]=await Promise.all([page.waitForEvent('download'),page.locator('[data-diagram-export="svg"]').click()]);ok(/\.svg$/.test(svgFile.suggestedFilename()),'SVG download');
-  const [htmlFile]=await Promise.all([page.waitForEvent('download'),page.locator('[data-diagram-export="html"]').click()]);ok(require('node:fs').readFileSync(await htmlFile.path(),'utf8').includes('Print or save as PDF'),'printable HTML download');
-  await page.locator('[data-diagram-page="0"]').click();await page.locator('#diagram-title').fill('Example Campus');await page.waitForTimeout(400);
-  ok((await page.locator('.diagram-preview').textContent()).includes('Example Campus - Existing Topology'),'the title updates the preview as you type');
-  await page.locator('[data-diagram-page="1"]').click();await page.locator('[data-diagram-page="0"]').click();ok((await page.locator('#diagram-title').inputValue())==='Example Campus','the title is kept');
+  const [htmlFile]=await Promise.all([page.waitForEvent('download'),page.locator('[data-diagram-export="html"]').click()]);ok(fs2.readFileSync(await htmlFile.path(),'utf8').includes('Print or save as PDF'),'printable HTML download');
+  const [book]=await Promise.all([page.waitForEvent('download'),page.locator('[data-diagram-export="book"]').click()]);ok(/site-book\.vsdx$/.test(book.suggestedFilename()),'site book download: '+book.suggestedFilename());
+  const [stencil]=await Promise.all([page.waitForEvent('download'),page.locator('[data-diagram-export="library"]').click()]);ok(/device-library\.vsdx$/.test(stencil.suggestedFilename())&&fs2.readFileSync(await stencil.path()).slice(0,2).toString()==='PK','device library download');
+  await page.locator('.diagram-toolbar [data-diagram-scope="site"]').click();await page.waitForTimeout(300);await page.locator('#diagram-title').fill('Example Campus');await page.waitForTimeout(500);
+  ok((await dtext()).includes('Example Campus - Existing Topology'),'the site name updates the diagram as you type');
+  await page.locator('.nav-scroll [data-view="sitemap"]').click();await page.locator('.nav-scroll [data-view="diagram"]').click();ok((await page.locator('#diagram-title').inputValue())==='Example Campus','the site name is kept');
   // Search works on supplementary data alone, grouped by type.
   await page.locator('#global-search').fill('example-access');await page.waitForTimeout(500);
   ok(await page.locator('.gs-sup-group[data-sup-group="devices"] .gs-sup-item').count()===3,'devices found by name without a configuration open');
@@ -96,6 +120,9 @@ const file=(name,buffer,type)=>({name,mimeType:type||'text/plain',buffer:Buffer.
   ok(await page.locator('#drawer .live-panel td [data-copy-value="00:00:5e:00:53:a1"]').count()===1&&await page.locator('#drawer .live-panel td [data-copy-value="10.0.10.50"]').count()===1,'MAC and IP addresses on a port can be copied');
   ok((await page.locator('#drawer .live-copy-all').getAttribute('data-copy-value')).includes('00:00:5e:00:53:a1\t10.0.10.50'),'all devices on a port can be copied at once');
   await page.keyboard.press('Escape');
+  await page.locator('.nav-scroll [data-view="diagram"]').click();await page.locator('.diagram-scroll svg').waitFor();
+  ok((await page.locator('.diagram-panel .panel-title').innerText())==='EXAMPLE-ACCESS1 and below'&&(await page.locator('#diagram-focus').inputValue())==='exampleaccess1','with a configuration selected the diagram opens on its device');
+  ok((await page.locator('.diagram-scroll').textContent()).includes('EXAMPLE-CORE')&&(await page.locator('.diagram-scroll').textContent()).includes('EXAMPLE-AP1'),'with its upstream device and access points');
   // The network map shows live link state and connected devices.
   await page.locator('.nav-scroll [data-view="topology"]').click();await page.waitForTimeout(500);
   ok(await page.locator('.live-neighbors-panel.collapsed').count()===1,'connected devices start collapsed like the other map groups');
