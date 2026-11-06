@@ -11,7 +11,7 @@ Profiles and sources
   https://jp.forticloud.com/help/supportedmodels.html
   https://fortinetweb.s3.amazonaws.com/docs.fortinet.com/v2/attachments/ff9309bd-92ed-11ef-a705-1222899fa4e9/FG-200G-Series-QSG.pdf
   https://docs.fortinet.com/document/fortigate/7.6.5/hardware-acceleration/793766/fortigate-200g-and-201g-fast-path-architecture
-- FortiGate 120G/121G:
+- FortiGate 120G/121G: front-panel groups for HA/MGMT, ports 1-16, X1-X4 (SFP+) and ports 17-24 (SFP), in that order from the left, with odd/even vertical numbering (as on Fortinet's own Visio stencil for the 120G series):
   https://fortinetweb.s3.amazonaws.com/docs.fortinet.com/v2/attachments/f9fb064a-a672-11ee-8673-fa163e15d75b/FG-120G-SERIES-QSG.pdf
 - FortiGate 90G/91G shared interfaces and 100F/101F shared interfaces are presented as model port groups where exact revision-specific positioning is not established:
   https://community.fortinet.com/fortigate-3/technical-tip-understanding-shared-media-interfaces-on-the-fortigate-178744

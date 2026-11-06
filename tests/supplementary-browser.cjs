@@ -167,6 +167,18 @@ const file=(name,buffer,type)=>({name,mimeType:type||'text/plain',buffer:Buffer.
   await page.locator('[data-diagram-tab]',{hasText:'Port map'}).first().click();await page.waitForTimeout(300);ok((await page.locator('.diagram-panel .panel-title').innerText())==='Port map'&&(await dtext()).includes('Port assignment'),'a documentation page is shown in the viewer');
   const [onePage]=await Promise.all([page.waitForEvent('download'),page.locator('.diagram-download summary').click().then(()=>page.locator('[data-diagram-export="vsdx-page"]').click())]);ok(require('./stencil-writer.cjs').unzip(fs2.readFileSync(await onePage.path()))['visio/pages/pages.xml'].toString().match(/<Page /g).length===1&&/Port map\.vsdx$/.test(onePage.suggestedFilename()),'or just the page shown: '+onePage.suggestedFilename());
   await page.locator('[data-diagram-tab="0"]').click();await page.waitForTimeout(300);
+  await page.locator('.diagram-pages summary').click();await page.locator('[data-diagram-page="trunks"]').uncheck();await page.waitForTimeout(300);
+  ok(!(await page.locator('[data-diagram-tab]').allInnerTexts()).some(x=>/Trunk VLANs/.test(x)),'pages can be left out');
+  ok(await page.locator('.diagram-pages[open]').count()===1,'the pages menu stays open while you choose');await page.locator('[data-diagram-page="trunks"]').check();await page.waitForTimeout(300);
+  const pmBoxes=page.locator('[data-diagram-portmap]');ok(await pmBoxes.count()>=1,'the port map devices are listed');const pmKey=await pmBoxes.first().getAttribute('data-diagram-portmap');
+  const pmName=(await pmBoxes.first().locator('xpath=..').innerText()).split(' · ')[0].trim();await pmBoxes.first().uncheck();await page.waitForTimeout(300);await page.keyboard.press('Escape');
+  const pmTabs=await page.locator('[data-diagram-tab]').allInnerTexts();let onPortMap=false;for(let i=0;i<pmTabs.length;i++)if(/^Port map/.test(pmTabs[i])){await page.locator('[data-diagram-tab="'+i+'"]').click();await page.waitForTimeout(200);if((await page.locator('.diagram-scroll').textContent()).includes(pmName))onPortMap=true;}
+  ok(!onPortMap,'a device can be left off the port map: '+pmName);
+  await page.locator('[data-diagram-tab="0"]').click();await page.locator('.diagram-pages summary').click();await page.locator('[data-diagram-portmap="'+pmKey+'"]').check();await page.waitForTimeout(300);await page.keyboard.press('Escape');
+  const apBoxes=async()=>(await page.locator('.diagram-scroll text').allTextContents()).filter(x=>/EXAMPLE-AP/.test(x)).length,apBefore=await apBoxes();
+  await page.locator('.diagram-show summary').click();await page.locator('[data-diagram-option="apGroup"]').check();await page.waitForTimeout(300);
+  ok(await apBoxes()<=apBefore&&(apBefore<2||(await page.locator('.diagram-scroll').textContent()).match(/\d+ access points/)),'access points can be grouped into one box per switch: '+apBefore+' -> '+await apBoxes());
+  await page.locator('[data-diagram-option="apGroup"]').uncheck();await page.waitForTimeout(300);await page.keyboard.press('Escape');
   // The network map shows live link state and connected devices.
   await page.locator('.nav-scroll [data-view="topology"]').click();await page.waitForTimeout(500);
   ok(await page.locator('.live-neighbors-panel.collapsed').count()===1,'connected devices start collapsed like the other map groups');

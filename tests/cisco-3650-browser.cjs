@@ -48,7 +48,9 @@ const {chromium}=require('playwright'),{configuration}=require('./cisco-3650-tes
   assert.equal(await second.locator('.hardware-port-cell').count(),52,'show unused restores every port');
   assert.equal(await second.locator('.hardware-face').getAttribute('data-port-layout'),'physical');
   fs.mkdirSync('test-results',{recursive:true});
-  await page.locator('.interface-glance').screenshot({path:'test-results/cisco-3650-stack.png'});
+  // A diagnostic picture only: the panel may re-render while it is taken (a late refresh
+  // replaces the element), so try again on a fresh locator rather than fail the run.
+  for(let attempt=0;attempt<3;attempt++){try{await page.waitForTimeout(150);await page.locator('.interface-glance').screenshot({path:'test-results/cisco-3650-stack.png',timeout:5000});break;}catch(e){if(attempt===2)console.warn('cisco-3650 diagnostic screenshot skipped: '+e.message.split('\n')[0]);}}
   await second.locator('[data-unused-section]').click();
   // A new import resets an explicit hide choice, including logical interface groups.
   const next=configuration().replace('end\n','interface Vlan30\n shutdown\n!\ninterface Port-channel9\n shutdown\n!\ninterface Loopback9\n shutdown\n!\nend\n');

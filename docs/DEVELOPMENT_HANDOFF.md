@@ -1,5 +1,18 @@
 # Configuration Inspector development handoff
 
+## 5.35.0 — stencil ports, wireless drawings, AP groups, page choices
+
+- `layout.nodes` now carry `hw` as well (index.html `diagramInput`); before, the diagram itself
+  drew catalog faceplates and only the documentation pages used hardware profiles.
+- Stencils: `edgePorts()` and `bankLayout()` map known port groups onto a stencil's connection
+  points; `Device.stencilPlate` builds `bankMap`. Matching reads NetZoom product properties,
+  penalizes side/edge views, and prefers square (face-on) shapes for access points.
+- `hardware.js`: FortiGate 120G order is HA/MGMT, 1-16, X1-X4, 17-24 (Fortinet stencil).
+- Wireless pages draw `diagram()` per switch (others hidden, `noVlans`) before the table.
+- `view.apGroup` condenses access points into one endpoint (`node.group`, `ports`).
+- `docPages(input,{pages,portMapSkip})`; the **Choose pages** menu (`data-diagram-page`,
+  `data-diagram-portmap`) sits in the page tab row.
+
 ## 5.34.1 — stencil dialog tabs
 
 - `stencilTabs()` splits the stencil dialog into Devices and Stencil files panes
