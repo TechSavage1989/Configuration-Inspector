@@ -1,5 +1,34 @@
 # Configuration Inspector development handoff
 
+## 5.39.0 — editor selection, route snapping, stencil port points
+
+- Editor (index.html): `editDrag.kind` is `move`, `box` (selection box on empty space,
+  `state.diagramBoxed` swallows the click after it), `port` (moves the stencil ring
+  `rect[data-port]` live), `corner` (`routeCornerMove`) or `line` (`routeSegMove`). Both snap
+  to coordinates of the same route within `editTol()` (8 screen px) and `routeTidy()` merges
+  collinear stretches; Ctrl+click adds (`routeWithBend`) or removes (`routeWithout`) points.
+  A press near a thin link takes it; a corner is taken only within a third of its stretches.
+- `renderKeepingView()` re-renders after edits keeping scroll; the auto-fit key is
+  `cur.baseKey` (without edits), so edits never refit. Middle-button drag pans.
+- Hops are no longer skipped between lines of the same bundle (`groups`).
+- Stencil port points: `stencilPointsAll()` (localStorage `config-inspector-stencil-points`,
+  per `masterKey`, keyed `group|index` as fractions of the artwork) reach `Device.place()`
+  through `stencil.points`; `SWDiagram.stencilPorts(node,ports)` lists the points for the
+  editor (`openStencilPoints`, `drawStencilPoints`, `SP_MARGIN` canvas margin).
+  `state.stencilPointsVersion` is part of the `diagramInput()` cache key.
+- `stencils.js`: bitmap blits (76/77) follow `BLEND[rop]` (SRCCOPY, SRCAND multiply,
+  SRCPAINT lighten, SRCINVERT difference); other raster operations count as unsupported.
+- `#toast` is a manual popover (top layer), so messages show over open dialogs.
+- `.site-link-row[hidden]` is forced hidden (`display:flex` used to beat `[hidden]`, so the
+  stencil device search and the diagram device list did not filter).
+- Theme: `#theme-choice` is a toggle button (`applyTheme` sets its label and aria-pressed);
+  App settings keeps its own theme select.
+- `tests/updater-windows-tests.cpp` waits for the workspace to be deleted after the restore
+  marker (the probe writes the marker first), which made the Windows job fail at random.
+- Screenshots: `docs/images/hero.png` was recaptured with the fictional Example-3650 stack
+  from `tests/cisco-3650-tests.cjs`. The other README screenshots still show the old Theme
+  drop-down in the top bar; recapture them with fictional data when their pages are next updated.
+
 ## 5.38.1 — EMF clipping
 
 - `emfSVG()` emits through `emit()`, which wraps drawing in the clip path in force

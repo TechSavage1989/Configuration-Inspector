@@ -224,7 +224,7 @@
  function emf(bytes){
   try{return emfSVG(bytes);}catch(e){return null;}
  }
- var emfSeq=0;
+ var emfSeq=0,BLEND={0x00CC0020:'',0x008800C6:'multiply',0x00EE0086:'lighten',0x00660046:'difference'};
  function emfSVG(b){
   var dv=new DataView(b.buffer,b.byteOffset,b.byteLength);if(b.length<88||dv.getUint32(0,true)!==1||dv.getUint32(40,true)!==0x464D4520)return null;
   function i32(o){return dv.getInt32(o,true);}function u(o){return dv.getUint32(o,true);}function i16(o){return dv.getInt16(o,true);}function f32(o){return dv.getFloat32(o,true);}
@@ -285,7 +285,11 @@
     // Other bitmap operations: BitBlt, StretchBlt, TransparentBlt, AlphaBlend (a rectangle
     // without a bitmap is a brush fill) and SetDIBitsToDevice.
     case 76:case 77:case 114:case 116:{var bx=i32(r+24),by=i32(r+28),bw=i32(r+32),bh=i32(r+36),oB=u(r+84),cB=u(r+88),oBits=u(r+92),cBits=u(r+96);
-      if(cB>=40&&oB+cB<=size&&oBits+cBits<=size){var hr=dib(b.subarray(r+oB,r+oB+cB),b.subarray(r+oBits,r+oBits+cBits));if(hr){var a1=pt(bx,by),a2=pt(bx+bw,by+bh);emit('<image x="'+Math.min(a1[0],a2[0])+'" y="'+Math.min(a1[1],a2[1])+'" width="'+r2(Math.abs(a2[0]-a1[0]))+'" height="'+r2(Math.abs(a2[1]-a1[1]))+'" preserveAspectRatio="none" href="'+hr+'"/>');}else unsupported++;}
+      // A bitmap combines with what is drawn as its raster operation says: copied, or the
+      // AND / OR / XOR of a transparent mask pair (drawn as multiply, lighten, difference).
+      var blend=type===76||type===77?BLEND[u(r+40)]:'';
+      if(cB>=40&&oB+cB<=size&&oBits+cBits<=size&&blend==null)unsupported++;
+      else if(cB>=40&&oB+cB<=size&&oBits+cBits<=size){var hr=dib(b.subarray(r+oB,r+oB+cB),b.subarray(r+oBits,r+oBits+cBits));if(hr){var a1=pt(bx,by),a2=pt(bx+bw,by+bh);emit('<image x="'+Math.min(a1[0],a2[0])+'" y="'+Math.min(a1[1],a2[1])+'" width="'+r2(Math.abs(a2[0]-a1[0]))+'" height="'+r2(Math.abs(a2[1]-a1[1]))+'" preserveAspectRatio="none"'+(blend?' style="mix-blend-mode:'+blend+'"':'')+' href="'+hr+'"/>');}else unsupported++;}
       // Without a bitmap only the brush raster operations paint (PATCOPY, WHITENESS,
       // BLACKNESS); others, such as the no-op Visio writes at the end, draw nothing.
       else if(!cB&&type===76&&[0x00F00021,0x00FF0062,0x00000042].indexOf(u(r+40))>=0){var rop=u(r+40),c1=pt(bx,by),c2=pt(bx+bw,by+bh);var fillC=rop===0x00FF0062?'#ffffff':rop===0x00000042?'#000000':st.brush.none?null:st.brush.color;if(fillC)emit('<rect x="'+Math.min(c1[0],c2[0])+'" y="'+Math.min(c1[1],c2[1])+'" width="'+r2(Math.abs(c2[0]-c1[0]))+'" height="'+r2(Math.abs(c2[1]-c1[1]))+'" fill="'+fillC+'"/>');}break;}

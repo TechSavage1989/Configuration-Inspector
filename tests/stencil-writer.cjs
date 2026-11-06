@@ -18,6 +18,10 @@ function emfFile(extra){const recs=[];const rec=(type,body)=>{const b=Buffer.all
  const pg=Buffer.alloc(16+4+12);pg.writeUInt32LE(3,16);[[0,0],[99,0],[50,49]].forEach((p,i)=>{pg.writeInt16LE(p[0],20+i*4);pg.writeInt16LE(p[1],22+i*4);});rec(86,pg);
  if(extra==='gradient')rec(118,Buffer.alloc(40));
  if(extra==='clip'){const bb=Buffer.alloc(92);bb.writeInt32LE(0,16);bb.writeInt32LE(0,20);bb.writeInt32LE(99,24);bb.writeInt32LE(49,28);bb.writeUInt32LE(0x00AA0029,32);rec(76,bb);}
+ // A transparent-mask pair (AND then OR) and, for 'oddrop', a raster operation not drawn.
+ const blit=rop=>{const bb=Buffer.alloc(92+40+4);bb.writeInt32LE(0,16);bb.writeInt32LE(0,20);bb.writeInt32LE(99,24);bb.writeInt32LE(49,28);bb.writeUInt32LE(rop,32);bb.writeUInt32LE(100,76);bb.writeUInt32LE(40,80);bb.writeUInt32LE(140,84);bb.writeUInt32LE(4,88);bb.writeUInt32LE(40,92);bb.writeInt32LE(1,96);bb.writeInt32LE(1,100);bb.writeUInt16LE(1,104);bb.writeUInt16LE(24,106);rec(76,bb);};
+ if(extra==='mask'){blit(0x008800C6);blit(0x00EE0086);}
+ if(extra==='oddrop')blit(0x00330008);
  rec(14,Buffer.alloc(12));const all=Buffer.concat(recs);all.writeUInt32LE(all.length,48);return all;}
 // A stencil with one 8-port switch (2 SFP uplinks) whose ports carry connection points,
 // and one access point.

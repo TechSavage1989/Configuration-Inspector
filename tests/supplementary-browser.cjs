@@ -84,7 +84,7 @@ const file=(name,buffer,type)=>({name,mimeType:type||'text/plain',buffer:Buffer.
   ok((await page.locator('.diagram-stencil-notice').innerText()).includes('match'),'stencils that match no device on the diagram are reported');
   await page.locator('.diagram-panel [data-action="diagram-stencils"]').first().click();await page.locator('.stencil-dialog').waitFor();
   ok(await page.locator('.stencil-tabs [data-stencil-tab="devices"][aria-selected="true"]').count()===1&&await page.locator('[data-stencil-pane="files"]').isHidden(),'devices and stencil files are on separate tabs, devices first');
-  await page.locator('.stencil-device-filter').fill('core');ok(await page.locator('.stencil-row:not([hidden])').count()===1,'devices can be found by name');await page.locator('.stencil-device-filter').fill('');
+  await page.locator('.stencil-device-filter').fill('core');ok(await page.locator('.stencil-row:not([hidden])').count()===1&&await page.locator('.stencil-row:visible').count()===1,'devices can be found by name (the others are really hidden)');await page.locator('.stencil-device-filter').fill('');
   await page.locator('[data-stencil-tab="files"]').click();
   ok((await page.locator('.stencil-dialog').innerText()).includes('example-devices.vssx')&&(await page.locator('.stencil-dialog').innerText()).includes('older-devices.vss'),'both stencil files are listed, the .vss one read natively');
   await page.locator('[data-stencil-tab="devices"]').click();ok(await page.locator('.stencil-dialog [data-stencil-choose="exampleap1"]').count()===1,'access points are listed for a stencil too');
@@ -97,6 +97,18 @@ const file=(name,buffer,type)=>({name,mimeType:type||'text/plain',buffer:Buffer.
   await page.locator('[data-stencil-check="exampleaccess1"]').check();await page.locator('[data-stencil-check="exampleaccess2"]').check();await page.locator('[data-stencil-auto-selected]').click();await page.waitForTimeout(300);
   await page.keyboard.press('Escape');await page.waitForTimeout(400);
   ok(await page.locator('.diagram-scroll [data-diagram-node="examplecore"] svg').count()>=1&&await page.locator('.diagram-stencil-notice').count()===0,'a device given a stencil is drawn with it');
+  // Port points placed by hand on the stencil: select, align, save.
+  await page.locator('.diagram-panel [data-action="diagram-stencils"]').first().click();await page.locator('.stencil-dialog').waitFor();
+  await page.locator('[data-stencil-points="examplecore"]').click();await page.locator('.sp-svg').waitFor();const pts=await page.locator('.sp-pt').count();ok(pts>=8,'the port point editor shows the stencil with a point per port: '+pts);
+  ok(await page.locator('[data-sp-align="row"]').isDisabled(),'aligning needs a selection');
+const spb=await page.locator('.sp-svg').boundingBox();await page.mouse.move(spb.x+2,spb.y+2);await page.mouse.down();await page.mouse.move(spb.x+spb.width*0.5,spb.y+spb.height-2,{steps:4});await page.mouse.up();
+const boxed=Number((await page.locator('.sp-count').innerText()).split(' ')[0]);ok(boxed>=2&&boxed<pts,'a box selects the points inside it: '+boxed);
+  await page.locator('[data-sp-align="row"]').click();const ys=await page.locator('.sp-pt.selected circle').evaluateAll(cs=>cs.map(c=>c.getAttribute('cy')));ok(new Set(ys).size===1,'Same height lines the selected points up');
+  await page.keyboard.press('ArrowRight');await page.locator('[data-sp-save]').click();await page.waitForTimeout(500);
+  const saved=await page.evaluate(()=>Object.values(JSON.parse(localStorage.getItem('config-inspector-stencil-points')||'{}')).reduce((n,v)=>n+Object.keys(v).length,0));ok(saved>=2,'the moved points are kept for the stencil: '+saved);
+  ok(await page.locator('.diagram-scroll [data-diagram-node="examplecore"] svg').count()>=1&&await page.locator('#toast').evaluate(t=>t.matches(':popover-open')),'the diagram keeps the stencil, and the message is shown above everything');
+  await page.locator('.diagram-panel [data-action="diagram-stencils"]').first().click();await page.locator('.stencil-dialog').waitFor();await page.locator('[data-stencil-choose-selected]').click();await page.waitForTimeout(200);
+  ok(await page.locator('#toast').evaluate(t=>t.matches(':popover-open')&&getComputedStyle(t).opacity!=='0'),'a message over an open dialog is in the top layer, not behind its backdrop');await page.keyboard.press('Escape');await page.waitForTimeout(300);
   const stored=await page.evaluate(()=>new Promise(r=>{const q=indexedDB.open('config-inspector-stencils',1);q.onsuccess=()=>{const c=q.result.transaction('files','readonly').objectStore('files').count();c.onsuccess=()=>r(c.result);};q.onerror=()=>r(-1);}));ok(stored===2,'the stencils are kept for next time');
   ok(await page.locator('.diagram-trail [data-diagram-focus]').count()>=1&&(await page.locator('.diagram-trail').innerText()).includes('Whole site'),'a path leads back up');
   ok(await page.evaluate(()=>[...document.querySelectorAll('.diagram-scroll text')].some(t=>t.textContent==='1')&&[...document.querySelectorAll('.diagram-scroll text')].some(t=>t.textContent==='2')),'faceplate ports are numbered');

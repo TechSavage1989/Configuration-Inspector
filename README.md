@@ -199,16 +199,17 @@ Values in these tables (MAC and IP addresses, ports, device names) can be copied
   - **Stencils**, **Document** (site name, title, subtitle, file name, **Prepared by** and **Organization**, used on the drawing, in the Visio document properties and in download names), **Visio** and more downloads, and **Full screen** (Esc to leave), which gives the diagram the whole window.
   - Click any device to draw the diagram from it down, and use the path under the toolbar to go back up. Scroll to zoom, drag to move, or use the zoom buttons and **Fit**.
   - **Edit** makes the drawing yours to correct (press **Done** to go back):
-    - Drag devices and access points to move them; Shift-click selects several.
-    - Drag the middle of a link to move that stretch.
+    - Drag devices and access points to move them; Shift-click, or drag a box on empty space, selects several. The middle mouse button moves the view while editing.
+    - Drag a stretch or a corner of a link to move it. A stretch dragged onto the line of another stretch of the same link snaps to it and the two merge. **Ctrl+click** a link to add a point, or a corner to remove it.
     - Double-click a label to change it (empty hides it).
     - Double-click a link to choose the port each end uses.
     - Align the selected items on their left edges, centers or tops, or space them evenly. **Straighten access point links** moves access points over their ports.
     - **Undo** and **Reset layout** are there too.
     - **Add link**, **Add device** and **Links** fix what the files don't show: draw a cable, add a device without a configuration (a provider router, an unmanaged switch), and see where each link comes from (imported data, the configurations, or by hand) to remove the wrong ones.
-    - Drag the end of a link to move its point on a port (for stencils whose marks miss their ports); right-click a link to add or remove a bend or reset its route.
+    - Drag the end of a link to move its point on a port; the ring on the stencil moves with it. Right-click a link to add or remove a bend or reset its route.
+    - Double-click a device drawn with a stencil (or use **Port points** under **Stencils**) to place its port points: the stencil with a point per port, selected by click, Shift-click or a box, moved by dragging or with the arrow keys, and lined up with **Same height**, **Same column**, **Space across** and **Space down**. Port points apply to every device drawn with that shape.
     - **Ctrl+Z** and **Ctrl+Shift+Z** (or **Undo** and **Redo**) step back and forward through every change.
-    - Edits are kept on this computer for each view of the site and go into every download. Devices that start rows line up on one left edge by default.
+    - Edits are kept on this computer for each view of the site and go into every download. The zoom and scrolled position stay where they are after each change. Devices that start rows line up on one left edge by default.
   - **Pages:** tabs under the toolbar show the documentation pages that follow the diagram, built from the open configurations and supplementary data. Each is a letter page:
     - **Port map**: each firewall on a page of its own and switches two to a page: the front panel with ports colored by role (wired data, access points, uplinks, trunks, default access, disabled) and filled when the link is up, and a table of the ports in each role with their VLANs and link details.
     - **Wireless connections**: each switch drawn with its access points wired to their own ports (odd ports above, even ports below), then every access point with its switch port, model, address, speed and link state; links below 1 Gbps are listed.
@@ -297,7 +298,7 @@ comparison tools, not an editor, merge tool or full Notepad++ plugin replacement
 
 ### Storage and privacy
 
-Open **App settings** from the sidebar or native File menu to choose the desktop data folder and manage stored app data. The default desktop location is **`%LOCALAPPDATA%\ConfigInspectorWebView`**, outside the executable folder; changing the location takes effect on the next launch.
+The **Dark** / **Light** button at the top of the window switches between the dark and light themes (the choice is remembered). Open **App settings** from the sidebar or native File menu to choose the desktop data folder and manage stored app data. The default desktop location is **`%LOCALAPPDATA%\ConfigInspectorWebView`**, outside the executable folder; changing the location takes effect on the next launch.
 
 - Imported configuration files remain in their original locations.
 - **Recent files** on the start screen remember only each file's name, device name, vendor and location, never its contents. Reopening reads the file again from its folder. Remove entries, use **Clear list**, or delete stored data to forget them.
