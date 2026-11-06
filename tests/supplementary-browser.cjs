@@ -1,5 +1,5 @@
 // Supplementary data in the app: site map, live interface data and the data page.
-const assert=require('node:assert/strict'),path=require('node:path'),{demoSite}=require('./xlsx-writer.cjs');
+const assert=require('node:assert/strict'),path=require('node:path'),{demoSite,xlsx}=require('./xlsx-writer.cjs');
 let playwright;try{playwright=require('playwright');}catch{playwright=require(process.env.CODEX_PRIMARY_RUNTIME_NODE_MODULES+'/playwright');}
 let checks=0;function ok(v,m){checks++;assert.ok(v,m);}
 const L=['version 16.12','hostname EXAMPLE-ACCESS1','vlan 10',' name USERS','vlan 30',' name WIRELESS'];
@@ -223,6 +223,11 @@ const boxed=Number((await page.locator('.sp-count').innerText()).split(' ')[0]);
   {const tabs=await page.locator('[data-diagram-tab]').allInnerTexts(),wi=tabs.findIndex(t=>/^Wireless/.test(t));if(wi>0){await page.locator('[data-diagram-tab="'+wi+'"]').click();await page.waitForTimeout(400);
    ok(await page.locator('.diagram-editing .diagram-editbar').count()===1,'a wireless connections page has the same editor');const ep=page.locator('.diagram-scroll [data-diagram-ep]').first();await ep.scrollIntoViewIfNeeded();const e0=await ep.boundingBox();await page.mouse.move(e0.x+e0.width/2,e0.y+e0.height/2);await page.mouse.down();await page.mouse.move(e0.x+e0.width/2+60,e0.y+e0.height/2,{steps:5});await page.mouse.up();await page.waitForTimeout(400);
    const keys=await page.evaluate(()=>Object.keys(JSON.parse(localStorage.getItem('config-inspector-diagram-edits')||'{}')));ok(keys.some(k=>k.startsWith('["wireless"')),'and keeps its own hand edits: '+keys.length);await page.keyboard.press('Control+z');await page.waitForTimeout(300);await page.locator('[data-diagram-tab="0"]').click();await page.waitForTimeout(300);}}
+  // A diagram too small to read splits into continuation pages, but its first page still shows
+  // every device below the selected one and every endpoint (owner request).
+  {const focus0=await page.locator('#diagram-focus').inputValue();await page.evaluate(()=>{window.DIAGRAM_READABLE=5;});await page.locator('#diagram-focus').selectOption('examplecore');await page.waitForTimeout(500);await page.locator('[data-diagram-tab="0"]').click();await page.waitForTimeout(500);
+   const t=await dtext();ok(['EXAMPLE-ACCESS1','EXAMPLE-ACCESS2','EXAMPLE-ACCESS3','EXAMPLE-PRINTER'].every(n=>t.includes(n)),'a split diagram keeps every switch and endpoint on its first page: '+t.slice(0,400));
+   await page.evaluate(()=>{delete window.DIAGRAM_READABLE;});await page.locator('#diagram-focus').selectOption(focus0);await page.waitForTimeout(500);}
   await page.locator('[data-diagram-reset]').click();await page.waitForTimeout(300);ok(JSON.stringify(JSON.parse(await page.evaluate(()=>localStorage.getItem('config-inspector-diagram-edits')||'{}')))==='{}','reset removes the hand edits');
   await page.locator('[data-diagram-editmode]').click();await page.waitForTimeout(300);
   const apBoxes=async()=>(await page.locator('.diagram-scroll text').allTextContents()).filter(x=>/EXAMPLE-AP/.test(x)).length,apBefore=await apBoxes();
@@ -293,6 +298,15 @@ const boxed=Number((await page.locator('.sp-count').innerText()).split(' ')[0]);
   await page.locator('[data-evidence-tab="files"]').click();await page.waitForTimeout(300);
   ok(await page.locator('.evidence-file').count()===2,'both imports are listed');
   await page.locator('[data-evidence-file] [data-remove-evidence]').last().click();await page.waitForTimeout(300);ok(await page.locator('.evidence-file').count()===1,'an import can be removed');
+  // A neighbor reported on the wrong local port (a monitoring export put a firewall's link on its
+  // down "ha" port): the far end's description names this device and the real port, so the
+  // Neighbors table shows that port and keeps the reported one for reference.
+  {const r=(admin,oper,name,parent,connected)=>[admin,oper,name,'00:00:5e:00:53:7'+name.length,'Ethernet',parent,'1.0 Gbit/s',connected,''];
+   await page.locator('#import-file').setInputFiles(file('example-edge.xlsx',xlsx([{name:'Devices',rows:[['DEVICES','','','','','','','','','','',''],['Status','Device Name','Type','Make & Model','MAC Address(es)','IP Address(es)','Network(s)','Connected To','Software Version','Serial Number','Firmware Version','Description'],['Up','EXAMPLE-EDGE','Switch','Example Edge 8','10.0.99.40','','','EXAMPLE-ACCESS1 through GigabitEthernet1/0/3','','','','']]},
+    {name:'Interfaces',rows:[['INTERFACES','','','','','','','',''],['Admin Status','Oper Status','Interface Name','MAC Address','Type','Parent Device','Negotiated Speed','Connected To','Configuration Details'],r('Up','Down','GigabitEthernet1/0/3','EXAMPLE-ACCESS1','eth9  on EXAMPLE-EDGE'),r('Up','Up','eth9 (Uplink-to-EXAMPLE-ACCESS1-GigabitEthernet1/0/4)','EXAMPLE-EDGE','GigabitEthernet1/0/3  on EXAMPLE-ACCESS1')]}]),'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'));await page.waitForTimeout(800);
+   await page.locator('[data-view="evidence"]').first().click();await page.waitForTimeout(300);await page.locator('[data-evidence-tab="neighbors"]').click();await page.waitForTimeout(300);
+   const rows=await page.locator('.evidence-panel tbody tr').allInnerTexts(),row=rows.find(t=>t.includes('EXAMPLE-EDGE'))||'';
+   ok(/^GigabitEthernet1\/0\/4 \(reported GigabitEthernet1\/0\/3\)/.test(row),'a neighbor on a down port is moved to the port the far end describes: '+row);}
   // Compare configs does not accept supplementary data.
   await page.locator('[data-view="compare"]').first().click();await page.locator('#compare-left-file').setInputFiles(file('example-site.xlsx',demoSite()));await page.waitForTimeout(500);
   ok((await page.locator('#import-error').innerText()).includes('main workspace'),'compare explains where supplementary data goes');
