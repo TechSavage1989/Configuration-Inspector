@@ -38,8 +38,17 @@ existing release or its assets. Preserve the polished README layout.
   (the view list in `renderContent`), or every panel collapses to one screen.
 - The detailed network map renderer already has a `collapsed` variable in scope;
   shadowing it breaks every import. Browser tests catch this, `npm test` does not.
-- Network diagrams (`webview/diagram.js`) must stay editable in Visio: write plain shapes
-  (no embedded images) and check generated .vsdx files open in LibreOffice.
+- Network diagrams (`webview/diagram.js`) must stay editable in Visio: write plain shapes,
+  except vendor stencils the user imports (`webview/stencils.js`), which are written as
+  masters with instances; check generated .vsdx files open in LibreOffice. Never commit
+  vendor stencils or their artwork: build test stencils in the test (`tests/stencil-tests.cjs`).
+- LibreOffice refuses a .vsdx whose shape has an invalid cell value (for example
+  `FillForegnd="none"`); write a cell only when it has a real value.
+- Neighbor ports from monitoring exports can be wrong; `correctLinkPort()` in index.html
+  swaps in the port that the far end's description names when link state agrees.
+- Device names and IPv4 addresses in tables and detail rows become `.entity-link`
+  buttons after each render (`linkifyEntities`); exclude new large text views in
+  `ENTITY_SKIP` or the skipped view list if they should stay plain.
 - Diagram routing rules (owner request), checked by `routing()` in `tests/diagram-tests.cjs`:
   links end on port centers, entering top-row ports from above and bottom-row ports from
   below through the device's label band; they go around devices and never share a

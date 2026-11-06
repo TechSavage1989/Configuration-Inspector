@@ -1,5 +1,22 @@
 # Configuration Inspector development handoff
 
+## 5.32.0 — stencils, linked names, add/remove devices
+
+- `webview/stencils.js` (embedded `vendor-stencils`, `window.SWStencils`): `read()` unzips a
+  .vssx/.vsdx and returns masters (frame from their pictures, connection points, part
+  number properties, media); `match()` scores masters against a device's model and part
+  numbers (config identity from `deviceIdentityFor`); `ports()`/`layout()` cluster
+  connection points into port blocks (odd on top) and map main/uplink ports when the
+  blocks fit; `artwork()` renders PNG/JPEG/BMP and EMF (GDI records) to SVG markup.
+- index.html keeps imported stencils in IndexedDB (`config-inspector-stencils`), per-device
+  choices in localStorage, and passes `input.stencils` to `SWDiagram.diagram`. `diagram.js`
+  draws stencil devices (`Device.stencil`, `image` shapes) and writes masters, media,
+  page relationships and instances (children repeat scaled boxes and ForeignData).
+- `linkifyEntities()` (MutationObserver on content, drawer and dialog) and `openEntity()`.
+- `correctLinkPort()` fixes neighbor ports using descriptions and link state.
+- Diagram: `state.diagram.added`/`hidden`, `scope({added})`; right-click removes a device.
+- Site map: the side panel is sized before the map in `fitSiteMapToWindow`.
+
 ## 5.31.0 — scoped, routed network diagrams
 
 - `diagram.js`: `scope(layout,options)` picks rows of devices (downstream of a focus,

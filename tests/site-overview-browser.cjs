@@ -42,6 +42,14 @@ const files=[
   ok(!layout.list&&layout.panels&&layout.nested===0,'the page scrolls as one with no scroll areas inside it: '+JSON.stringify(layout));
   const pins=await page.evaluate(()=>{const c=document.getElementById('content'),bar=c.querySelector('.site-tabs'),panels=[...c.querySelectorAll('.site-panel')];return panels.map(p=>{const h=p.querySelector(':scope > .panel-head'),t=p.querySelector('thead');return [h&&h.getAttribute('data-pinned'),t&&t.getAttribute('data-pinned'),t&&h?parseFloat(t.style.top)===h.offsetHeight+bar.offsetHeight:null,bar.getAttribute('data-pinned')];});});
   ok(pins.length&&pins.every(x=>x[3]==='true'&&x[0]==='true'&&(x[1]===null||x[1]==='true')&&x[2]!==false),'the tab row, panel title and column headings stay pinned while scrolling: '+JSON.stringify(pins));
+  // Devices named in the overview link to their configuration at the named interface.
+  await page.locator('[data-site-tab="duplicates"]').click();await page.waitForTimeout(300);
+  const dl=await page.locator('[data-site-duplicate="10.0.99.12"] .entity-link').allInnerTexts();
+  ok(dl.includes('ACCESS-SW2')&&dl.includes('ACCESS-SW3')&&!dl.includes('10.0.99.12'),'device names link; an address on two devices does not: '+dl.join(','));
+  await page.locator('[data-site-duplicate="10.0.99.12"] .entity-link').filter({hasText:'ACCESS-SW2'}).click();await page.locator('#drawer[open]').waitFor();
+  const opened={h1:await page.locator('h1').innerText(),drawer:(await page.locator('#drawer').innerText()).slice(0,200),heading:await page.locator('#page-heading').innerText()};
+  ok(opened.h1==='Interfaces'&&opened.drawer.includes('Vlan99')&&opened.heading.includes('ACCESS-SW2'),'a device link opens its configuration at the interface: '+JSON.stringify(opened));
+  await page.keyboard.press('Escape');await page.locator('[data-view="site"]').first().click();await page.locator('.site-summary').waitFor();
   await page.locator('[data-remove-workspace="2"]').click();await page.waitForFunction(()=>document.querySelectorAll('[data-remove-workspace]').length===2);
   await page.locator('[data-view="site"]').first().click();await page.locator('.site-summary').waitFor();
   ok((await page.locator('.site-summary .chip').allInnerTexts()).join('|')==='2 devices|Common settings match|No duplicate addresses|VLAN names match|1 shared subnet','the overview updates when a configuration is closed: '+(await page.locator('.site-summary .chip').allInnerTexts()).join('|'));

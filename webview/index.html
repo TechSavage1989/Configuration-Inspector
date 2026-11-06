@@ -777,6 +777,8 @@ table.data th,table.data td{vertical-align:top}
 .site-page{display:flex;flex-direction:column;gap:16px}
 .diagram-page-view{display:flex;flex-direction:column;gap:16px}.diagram-actions{display:flex;gap:8px;align-items:center;flex-wrap:wrap}.diagram-title-field{display:flex;gap:6px;align-items:center;font-size:12px;color:var(--muted)}.diagram-title-field .diagram-title-input{width:220px;max-width:none;font-size:12px;color:var(--ink)}
 .diagram-toolbar{align-items:center;flex-wrap:wrap}.diagram-field{display:flex;gap:6px;align-items:center;font-size:12px;color:var(--muted)}.diagram-field .select{width:auto;max-width:260px;font-size:12px;color:var(--ink)}.diagram-check{display:flex;gap:5px;align-items:center;font-size:12px;color:var(--ink)}
+.entity-link{border:0;background:none;padding:0;margin:0;font:inherit;color:var(--accent);cursor:pointer;text-align:left;text-decoration:underline;text-decoration-color:color-mix(in srgb,var(--accent) 35%,transparent);text-underline-offset:2px}.entity-link:hover{text-decoration-color:var(--accent)}
+.stencil-dialog .site-link-row{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:6px 0;border-bottom:1px solid var(--line)}.stencil-device{display:flex;flex-direction:column;min-width:0}.stencil-device .muted{color:var(--muted);font-size:11px}.stencil-row .select{max-width:340px;font-size:12px}.stencil-actions{margin:8px 0 12px}
 .link-button{border:0;background:none;padding:0;font:inherit;color:var(--accent);cursor:pointer}.link-button:hover{text-decoration:underline}
 .diagram-trail{display:flex;flex-wrap:wrap;gap:6px;align-items:center;padding:10px 16px 0;font-size:12px;color:var(--muted)}.diagram-trail strong{color:var(--ink)}
 .diagram-choose{margin:10px 16px 0;border:1px solid var(--line);border-radius:8px;padding:8px 12px}.diagram-choose summary{cursor:pointer;font-size:12px;font-weight:600}.diagram-choose-list{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:2px 16px;margin:8px 0}.diagram-choose-row{display:flex;gap:8px;align-items:center;font-size:12px}.diagram-choose-row .muted{margin-left:auto;color:var(--muted);font-size:11px}
@@ -939,10 +941,10 @@ body{font-size:14px}.brand-mark{background:linear-gradient(145deg,#287dc6,#15578
       <div id="page-heading"></div>
       <div id="workspace-tabs"></div><div id="workspace-notice"></div>
       <div id="content"></div>
-      <footer class="page-footer"><span id="version-label">Config Inspector 5.31.0</span></footer>
+      <footer class="page-footer"><span id="version-label">Config Inspector 5.32.0</span></footer>
     </main>
   </div>
-  <input type="file" id="import-file" multiple accept=".exp,.txt,.json,.conf,.cfg,.xml,.tar,.set,.log,.backup,.rsc,.xlsx,.csv" hidden>
+  <input type="file" id="import-file" multiple accept=".exp,.txt,.json,.conf,.cfg,.xml,.tar,.set,.log,.backup,.rsc,.xlsx,.csv,.vssx,.vstx" hidden>
   <input type="file" id="compare-left-file" accept=".exp,.txt,.json,.conf,.cfg,.xml,.tar,.set,.log,.backup,.rsc" hidden>
   <input type="file" id="compare-file" accept=".exp,.txt,.json,.conf,.cfg,.xml,.tar,.set,.log,.backup,.rsc" hidden>
   <dialog id="modal" aria-labelledby="modal-title"></dialog>
@@ -6157,6 +6159,12 @@ function pJ(L,pan){const d=E(),I={},R={},T={};
    var label=i===0?216:117,w=up9(81+18*(Math.max(col,2)-2)+27+label);
    self.plates.push({member:mem.n,x:x,w:w,groups:groups,labelX:w-label+9,first:i===0});x+=w+27;});
   this.w=x-27;this.h=72;
+  // A vendor stencil replaces the drawn faceplate: its artwork per stack member, with
+  // ports at the stencil's connection points when they fit the port counts.
+  var st=node.stencil;if(st&&st.art){var a=st.art,ratio=a.w/a.h,iw=ratio>2.5?720:Math.min(162,a.w),ih=iw/ratio;if(ih>126){ih=126;iw=ih*ratio;}
+   var main=this.plates[0].groups.find(function(g){return g.name==='main';}),upg=this.plates[0].groups.find(function(g){return g.name==='up';});
+   this.stencil=st;this.img={w:Math.round(iw*100)/100,h:Math.round(ih*100)/100};this.h=Math.max(54,up9(ih+G));this.imgTop=(this.h-this.img.h)/2;this.map=st.layout?st.layout(main?main.count:0,upg?upg.count:0):null;
+   x=0;var self2=this;this.plates.forEach(function(pl,i){pl.stencil=true;pl.x=x;pl.labelX=up9(iw+G*2);pl.w=pl.labelX+(i===0?216:117);x+=pl.w+27;});this.w=x-27;this.positions={};}
  }
  // The port slot for a port name: plate, column center and row (0 top, 1 bottom).
  Device.prototype.slot=function(name){
@@ -6167,12 +6175,24 @@ function pJ(L,pan){const d=E(),I={},R={},T={};
   if(!g||p.group==='other'){g=plate.groups.find(function(x){return x.name==='other';});if(!g){g={name:'other',count:0,col:plate.groups.reduce(function(c,x){return Math.max(c,x.col+Math.ceil(x.count/2)+1);},0),names:[]};plate.groups.push(g);}
    idx=g.names.indexOf(p.name);if(idx<0){g.names.push(p.name);g.count=g.names.length;idx=g.names.length-1;}}
   else{idx=p.n+(g.zero?1:0)-1;idx=Math.max(0,idx)%Math.max(2,g.count+g.count%2);}
-  var col=g.col+Math.floor(idx/2),row=idx%2;
-  return {key:plate.member+'|'+g.name+'|'+idx,plate:plate,dx:plate.x+81+18*col,row:row,fiber:g.fiber,number:g.name==='other'?'':String(g.zero?idx:idx+1),name:p.name};
+  var col=g.col+Math.floor(idx/2),row=idx%2,key=plate.member+'|'+g.name+'|'+idx;
+  if(plate.stencil){var list=this.map&&(g.name==='main'?this.map.main:g.name==='up'?this.map.up:null),pos=list&&list[idx],img=this.img,dx,py;
+   if(pos){dx=plate.x+G+pos.fx*img.w;py=this.imgTop+pos.fy*img.h;row=pos.row;}
+   else{var cols=plate.groups.reduce(function(c,x){return Math.max(c,x.col+Math.ceil(x.count/2));},1);dx=plate.x+G+(col+0.5)/cols*img.w;py=row?this.imgTop+img.h:this.imgTop;}
+   dx=snap(dx);this.positions[key]={x:dx,y:py,exact:!!pos};
+   return {key:key,plate:plate,dx:dx,py:py,row:row,fiber:g.fiber,number:'',name:p.name};}
+  return {key:key,plate:plate,dx:plate.x+81+18*col,row:row,fiber:g.fiber,number:g.name==='other'?'':String(g.zero?idx:idx+1),name:p.name};
  };
  Device.prototype.fit=function(){if(this.style!=='box')return;var top=this.terms.filter(function(t){return t.side==='top';}).length,bottom=this.terms.length-top;this.w=Math.max(198,up9(36+18*Math.max(top,bottom)));};
  function drawPlate(page,dev,used){
   var node=dev.node,x0=dev.x,y=dev.y;
+  if(dev.stencil){dev.plates.forEach(function(pl){var x=x0+pl.x;
+    page.rect(x,y,pl.w,dev.h,{fill:'#f4f7fb',stroke:'#c9d3df',width:1,radius:4});page.image(x+G,y+dev.imgTop,dev.img.w,dev.img.h,{art:dev.stencil.art,master:dev.stencil.master});
+    var lx=x+pl.labelX,lw=pl.w-pl.labelX-8,ty=y+Math.max(4,(dev.h-58)/2);
+    if(pl.first)page.text(lx,ty,lw,58,clip(node.name,30)+'\n'+clip(node.model||dev.stencil.master.name||'',34)+'\n'+((node.ips||[])[0]||''),{size:10.5,align:'left',firstBold:true,lineHeight:17});else page.text(lx,y+dev.h/2-9,lw,18,'Member '+pl.member,{size:10.5,bold:true,align:'left'});});
+   // Linked ports: a ring in the link color on the stencil.
+   if(used)used.forEach(function(color,key){var p=dev.positions[key];if(p)page.rect(x0+p.x-6,y+p.y-6,12,12,{fill:'none',stroke:color,width:2,radius:6});});
+   return;}
   dev.plates.forEach(function(pl){var x=x0+pl.x;
    page.rect(x,y,pl.w,72,{fill:'#dfe7f3',stroke:'#3d5a80',width:1.5,radius:4});page.rect(x+10,y+10,44,52,{fill:ROLE_FILL[node.role]||'#4f81bd',stroke:'none'});
    pl.groups.forEach(function(g){for(var i=0;i<g.count;i++){var col=g.col+Math.floor(i/2),row=i%2,cx=x+81+18*col,cy=y+(row?51:21),key=pl.member+'|'+g.name+'|'+i,u=used&&used.get(key),label=g.name==='other'?'':String(g.zero?i:i+1);
@@ -6191,6 +6211,7 @@ function pJ(L,pan){const d=E(),I={},R={},T={};
  Page.prototype.push=function(s){if(this.cur){s.g=this.cur.id;s.node=this.cur.node;}this.shapes.push(s);return this;};
  Page.prototype.rect=function(x,y,w,h,o){this.grow(x+w,y+h);return this.push(Object.assign({type:'rect',x:x,y:y,w:w,h:h},o||{}));};
  Page.prototype.text=function(x,y,w,h,text,o){this.grow(x+w,y+h);return this.push(Object.assign({type:'text',x:x,y:y,w:w,h:h,text:String(text)},o||{}));};
+ Page.prototype.image=function(x,y,w,h,o){this.grow(x+w,y+h);return this.push(Object.assign({type:'image',x:x,y:y,w:w,h:h},o||{}));};
  Page.prototype.line=function(points,o){var self=this;points.forEach(function(p){self.grow(p[0],p[1]);});return this.push(Object.assign({type:'line',points:points},o||{}));};
  Page.prototype.grow=function(x,y){this.w=Math.max(this.w,x+MARGIN);this.h=Math.max(this.h,y+MARGIN);};
  Page.prototype.begin=function(node){this.cur={id:++this.groupId,node:node};};
@@ -6244,6 +6265,12 @@ function pJ(L,pan){const d=E(),I={},R={},T={};
  function scope(layout,o){
   var t=tree(layout),hidden=o.hidden||new Set(),rows=[],depthLimit=o.depth>0?o.depth:Infinity;
   function ok(k){return t.byKey.has(k)&&!hidden.has(k);}
+  var out=scopeRows();
+  // Devices added by hand join the row of their tier (or a new row in tier order).
+  (o.added?Array.from(o.added):[]).forEach(function(k){if(!ok(k)||out.rows.some(function(r){return r.indexOf(k)>=0;}))return;var y=t.byKey.get(k).y,at=out.rows.findIndex(function(r){return t.byKey.get(r[0]).y===y;});
+   if(at>=0)out.rows[at].push(k);else{var before=out.rows.findIndex(function(r){return t.byKey.get(r[0]).y>y;});if(before<0)out.rows.push([k]);else out.rows.splice(before,0,[k]);}});
+  return out;
+  function scopeRows(){
   if(o.scope==='site'||!o.focus||!t.byKey.has(o.focus)){var ys=Array.from(new Set(layout.nodes.map(function(n){return n.y;}))).sort(function(a,b){return a-b;});ys.forEach(function(y){var row=layout.nodes.filter(function(n){return n.y===y&&ok(n.key)&&!n.isolated;}).sort(function(a,b){return a.x-b.x;}).map(function(n){return n.key;});if(row.length)rows.push(row);});
    var iso=layout.nodes.filter(function(n){return n.isolated&&ok(n.key);}).map(function(n){return n.key;});if(iso.length&&o.scope==='site')rows.push(iso);return {rows:rows,tree:t};}
   var focus=o.focus,parent=t.parentOf.get(focus),context=new Set();
@@ -6253,6 +6280,7 @@ function pJ(L,pan){const d=E(),I={},R={},T={};
    if(o.upstream!==false&&ups.length){if(rows.length>1)rows[0]=rows[0].concat(ups);else rows.unshift(ups);ups.forEach(function(k){context.add(k);});}if(downs.length){rows.push(downs.sort(function(a,b){return t.byKey.get(a).x-t.byKey.get(b).x;}));downs.forEach(function(k){context.add(k);});}return {rows:rows,tree:t,context:context};}
   var level=[focus],d=0;while(level.length&&d<depthLimit){var next=[];level.forEach(function(k){(t.children.get(k)||[]).forEach(function(c){if(ok(c))next.push(c);});});if(next.length)rows.push(next);level=next;d++;}
   return {rows:rows,tree:t,context:context};
+  }
  }
 
  // ---------- render ----------
@@ -6263,7 +6291,7 @@ function pJ(L,pan){const d=E(),I={},R={},T={};
   var page=new Page(view.title||'Network diagram'),devices=new Map(),rowsOut=[],used=new Set();
   var maxRow=view.maxRow||(style==='box'?10:3);
   view.rows.forEach(function(row){for(var i=0;i<row.length;i+=maxRow)rowsOut.push(row.slice(i,i+maxRow));});
-  rowsOut.forEach(function(row,r){row.forEach(function(k){var n=Object.assign({},shownByKey.get(k)||all.get(k));var ports=[];(input.links||[]).forEach(function(l){if(l.a===k)ports.push(l.aPort);if(l.b===k)ports.push(l.bPort);});(n.attached||[]).forEach(function(a){ports.push(a.port);});var dev=new Device(n,input.ports&&input.ports.get(k)||[],ports,style);dev.row=r;devices.set(k,dev);});});
+  rowsOut.forEach(function(row,r){row.forEach(function(k){var n=Object.assign({},shownByKey.get(k)||all.get(k));if(input.stencils&&input.stencils.get(k))n.stencil=input.stencils.get(k);var ports=[];(input.links||[]).forEach(function(l){if(l.a===k)ports.push(l.aPort);if(l.b===k)ports.push(l.bPort);});(n.attached||[]).forEach(function(a){ports.push(a.port);});var dev=new Device(n,input.ports&&input.ports.get(k)||[],ports,style);dev.row=r;devices.set(k,dev);});});
   // Endpoints (access points and named devices) beside their switch on faceplate pages.
   var ipCount={};devices.forEach(function(dev){(dev.node.attached||[]).forEach(function(a){var n=all.get(a.key),ip=n&&(n.ips||[])[0];if(ip)ipCount[ip]=(ipCount[ip]||0)+1;});});
   function epIP(n){var ip=(n.ips||[])[0];return ip&&ipCount[ip]<3?ip:'';}
@@ -6301,7 +6329,8 @@ function pJ(L,pan){const d=E(),I={},R={},T={};
   // Trunks of shared ports need room outside the band too.
   conns.forEach(function(c){[c.ta,c.tb].forEach(function(t){if(t&&t.shared){var d=t.dev,key=t.side==='top'?'trunkTop':'trunkBot';d[key]=Math.max(d[key]||0,t.k);}});});
   rowsOut.forEach(function(row,r){var ds=row.map(function(k){return devices.get(k);}),nTop=Math.max.apply(null,ds.map(function(d){return d.top.length;})),nBot=Math.max.apply(null,ds.map(function(d){return d.bot.length;})),kTop=Math.max.apply(null,ds.map(function(d){return d.trunkTop||0;})),kBot=Math.max.apply(null,ds.map(function(d){return d.trunkBot||0;}));
-   cursor+=G*2*kTop;var topExtra=nTop?EP_H+G*(nTop+3+2*kTop):0,y=cursor+topExtra+BAND,epBot=y+72+BAND+G*(nBot+3+2*kBot),bottom=(nBot?epBot+EP_H:y+72+BAND)+G*2*kBot;
+   var rowH=Math.max.apply(null,ds.map(function(d){return d.h;}));
+   cursor+=G*2*kTop;var topExtra=nTop?EP_H+G*(nTop+3+2*kTop):0,y=cursor+topExtra+BAND,epBot=y+rowH+BAND+G*(nBot+3+2*kBot),bottom=(nBot?epBot+EP_H:y+rowH+BAND)+G*2*kBot;
    ds.forEach(function(d){d.y=y;d.epTopY=cursor;d.epBotY=epBot;});cursor=up9(bottom)+G*Math.min(chan[r+1],40);});
   // Title and legend.
   if(view.kicker)page.text(MARGIN,16,1200,14,view.kicker.toUpperCase(),{size:9.5,bold:true,align:'left',color:'#1d5b79'});
@@ -6310,7 +6339,9 @@ function pJ(L,pan){const d=E(),I={},R={},T={};
   var legendRight=legendRow(page,MARGIN,94,['fiber','copper','wap','other','slow'].filter(function(t){return used.has(t);}),style==='box'?Array.from(new Set(Array.from(devices.values()).map(function(d){return d.node.role;}))):null);
   // Devices, endpoints and summaries.
   devices.forEach(function(dev){page.begin(dev.key);if(style==='box')drawBox(page,dev);else{var u=new Map();usedPorts.forEach(function(color,k){if(k.indexOf(dev.key+'|')===0)u.set(k.slice(dev.key.length+1),color);});drawPlate(page,dev,u);}page.end();
-   dev.top.concat(dev.bot).forEach(function(e){var x=dev.x+e.rx,y=e.side==='top'?dev.epTopY:dev.epBotY,a=e.a;page.begin(a.node.key||'');page.rect(x,y,EP_W,EP_H,{fill:a.node.role==='ap'?'#eef8f0':'#eef3f9',stroke:a.node.role==='ap'?ROLE_FILL.ap:'#9aa9bd',width:1,radius:6});page.text(x+4,y+5,EP_W-8,46,clip(short(a.port),16)+'\n'+clip(a.node.name,20)+'\n'+clip(epIP(a.node)||a.node.model||ROLE_LABEL[a.node.role]||'',22),{size:9,lineHeight:14,firstBold:true});page.end();});
+   dev.top.concat(dev.bot).forEach(function(e){var x=dev.x+e.rx,y=e.side==='top'?dev.epTopY:dev.epBotY,a=e.a;page.begin(a.node.key||'');page.rect(x,y,EP_W,EP_H,{fill:a.node.role==='ap'?'#eef8f0':'#eef3f9',stroke:a.node.role==='ap'?ROLE_FILL.ap:'#9aa9bd',width:1,radius:6});var est=input.stencils&&input.stencils.get(a.node.key);
+    if(est&&est.art){var r=est.art.w/est.art.h,ih=44,iw=ih*r;if(iw>44){iw=44;ih=iw/r;}page.image(x+5+(44-iw)/2,y+5+(44-ih)/2,iw,ih,{art:est.art,master:est.master});page.text(x+52,y+5,EP_W-56,46,clip(short(a.port),12)+'\n'+clip(a.node.name,13)+'\n'+clip(epIP(a.node)||a.node.model||'',14),{size:8.5,lineHeight:14,firstBold:true,align:'left'});}
+    else page.text(x+4,y+5,EP_W-8,46,clip(short(a.port),16)+'\n'+clip(a.node.name,20)+'\n'+clip(epIP(a.node)||a.node.model||ROLE_LABEL[a.node.role]||'',22),{size:9,lineHeight:14,firstBold:true});page.end();});
    if(dev.others)page.text(dev.x+dev.w+G*2,dev.y+27,EP_W,18,'+'+dev.others+' other device'+(dev.others>1?'s':''),{size:10,align:'left',color:'#4a5568'});});
   // Box terminals: sorted by the far end so routes do not cross needlessly.
   if(style==='box')devices.forEach(function(dev){['top','bottom'].forEach(function(side){var list=dev.terms.filter(function(t){return t.side===side;});list.forEach(function(t){var o=t.conn.ta===t?t.conn.tb:t.conn.ta;t.order=o.dev.x+o.dev.w/2;});list.sort(function(a,b){return a.order-b.order;});var n=list.length,slots=Math.floor((dev.w-36)/18)+1;list.forEach(function(t,i){var s=n>=slots?i:Math.round((i+0.5)*slots/n-0.5);t.dx=18+18*Math.min(s,slots-1);});});});
@@ -6318,7 +6349,7 @@ function pJ(L,pan){const d=E(),I={},R={},T={};
   // direction out of the stub, and the label box inside the band.
   function geo(t){if(t.shared){var b=geo(t.shared),out=b.dir===3?-1:1;return {px:b.sx,py:b.sy,sx:b.sx,sy:b.sy+out*2*G*t.k,dir:b.dir,trunk:b};}
    var d=t.dev;if(t.ep!=null){var e=d.top.concat(d.bot).find(function(x){return x.conn===t.conn;}),ex=d.x+e.rx+EP_W/2;return e.side==='top'?{px:ex,py:d.epTopY+EP_H,sx:ex,sy:d.epTopY+EP_H+G,dir:1}:{px:ex,py:d.epBotY,sx:ex,sy:d.epBotY-G,dir:3};}
-   var x=d.x+(style==='box'?t.dx:t.slot.dx),top=t.side==='top',py=style==='box'?(top?d.y:d.y+d.h):d.y+(top?21:51);
+   var x=d.x+(style==='box'?t.dx:t.slot.dx),top=t.side==='top',py=style==='box'?(top?d.y:d.y+d.h):t.slot.py!=null?d.y+t.slot.py:d.y+(top?21:51);
    return {px:x,py:py,sx:x,sy:top?d.y-BAND:d.y+d.h+BAND,dir:top?3:1,lx:x+3,ly:top?d.y-BAND+4:d.y+d.h+4,lalign:top?'left':'right'};}
   conns.forEach(function(c){if(c.ep!=null)c.tb={dev:c.A,ep:c.ep,conn:c};});
   // Router over the whole page area.
@@ -6386,6 +6417,7 @@ function pJ(L,pan){const d=E(),I={},R={},T={};
   return '<text x="'+x+'" y="'+(s.y+size)+'" font-size="'+size+'" text-anchor="'+anchor+'" fill="'+fill+'"'+weight+'>'+lines.map(function(l,i){return '<tspan x="'+x+'" dy="'+(i?lh:0)+'"'+(s.firstBold&&i===0?' font-weight="700"':'')+'>'+esc(l)+'</tspan>';}).join('')+'</text>';}
  function shapeSVG(s){
   if(s.type==='rect')return '<rect x="'+s.x+'" y="'+s.y+'" width="'+s.w+'" height="'+s.h+'" rx="'+(s.radius||0)+'" fill="'+(s.fill||'none')+'" stroke="'+(s.stroke&&s.stroke!=='none'?s.stroke:'none')+'" stroke-width="'+(s.width||1)+'"/>';
+  if(s.type==='image')return s.art?'<svg x="'+s.x+'" y="'+s.y+'" width="'+s.w+'" height="'+s.h+'" viewBox="0 0 '+s.art.w+' '+s.art.h+'" preserveAspectRatio="none" overflow="hidden">'+s.art.body+'</svg>':'';
   if(s.type==='line')return '<polyline points="'+s.points.map(function(p){return p[0]+','+p[1];}).join(' ')+'" fill="none" stroke="'+s.color+'" stroke-width="'+(s.width||2)+'"'+(s.dash?' stroke-dasharray="8 5"':'')+' stroke-linejoin="round" stroke-linecap="'+(s.dash?'butt':'round')+'"/>';
   return textSVG(s);}
  function svg(page){
@@ -6397,7 +6429,7 @@ function pJ(L,pan){const d=E(),I={},R={},T={};
  var crcTable=null;function crc32(bytes){if(!crcTable){crcTable=[];for(var n=0;n<256;n++){var c=n;for(var k=0;k<8;k++)c=c&1?0xedb88320^(c>>>1):c>>>1;crcTable[n]=c>>>0;}}var crc=0xffffffff;for(var i=0;i<bytes.length;i++)crc=(crc>>>8)^crcTable[(crc^bytes[i])&0xff];return (crc^0xffffffff)>>>0;}
  function zip(files){
   var enc=new TextEncoder(),parts=[],central=[],offset=0;
-  files.forEach(function(f){var name=enc.encode(f[0]),data=enc.encode(f[1]),crc=crc32(data),h=new DataView(new ArrayBuffer(30));h.setUint32(0,0x04034b50,true);h.setUint16(4,20,true);h.setUint32(14,crc,true);h.setUint32(18,data.length,true);h.setUint32(22,data.length,true);h.setUint16(26,name.length,true);parts.push(new Uint8Array(h.buffer),name,data);
+  files.forEach(function(f){var name=enc.encode(f[0]),data=typeof f[1]==='string'?enc.encode(f[1]):f[1],crc=crc32(data),h=new DataView(new ArrayBuffer(30));h.setUint32(0,0x04034b50,true);h.setUint16(4,20,true);h.setUint32(14,crc,true);h.setUint32(18,data.length,true);h.setUint32(22,data.length,true);h.setUint16(26,name.length,true);parts.push(new Uint8Array(h.buffer),name,data);
    var c=new DataView(new ArrayBuffer(46));c.setUint32(0,0x02014b50,true);c.setUint16(4,20,true);c.setUint16(6,20,true);c.setUint32(16,crc,true);c.setUint32(20,data.length,true);c.setUint32(24,data.length,true);c.setUint16(28,name.length,true);c.setUint32(42,offset,true);central.push(new Uint8Array(c.buffer),name);offset+=30+name.length+data.length;});
   var size=central.reduce(function(n,p){return n+p.length;},0),e=new DataView(new ArrayBuffer(22));e.setUint32(0,0x06054b50,true);e.setUint16(8,files.length,true);e.setUint16(10,files.length,true);e.setUint32(12,size,true);e.setUint32(16,offset,true);
   var all=parts.concat(central,[new Uint8Array(e.buffer)]),total=all.reduce(function(n,p){return n+p.length;},0),out=new Uint8Array(total),pos=0;all.forEach(function(p){out.set(p,pos);pos+=p.length;});return out;
@@ -6408,33 +6440,69 @@ function pJ(L,pan){const d=E(),I={},R={},T={};
  function charSection(s){return '<Section N="Character"><Row IX="0">'+cell('Font','1')+cell('Color',s.color||'#1F2937')+cell('Style',s.bold?1:0)+cell('Size',n((s.size||11)*0.75/72))+'</Row></Section>';}
  var BOX_GEOM='<Row T="RelMoveTo" IX="1">'+cell('X',0)+cell('Y',0)+'</Row><Row T="RelLineTo" IX="2">'+cell('X',1)+cell('Y',0)+'</Row><Row T="RelLineTo" IX="3">'+cell('X',1)+cell('Y',1)+'</Row><Row T="RelLineTo" IX="4">'+cell('X',0)+cell('Y',1)+'</Row><Row T="RelLineTo" IX="5">'+cell('X',0)+cell('Y',0)+'</Row>';
  // One shape in a coordinate frame: page height H (inches), origin offset ox/oy.
- function shapeXML(s,id,H,ox,oy){
+ function shapeXML(s,ids,H,ox,oy,ctx){var id=ids.next++;
+  if(s.type==='image'){var mm=ctx&&s.master&&ctx.masters.get(s.master);return mm?instanceXML(s,id,ids,H,ox,oy,mm):'';}
   if(s.type==='line'){var xs=s.points.map(function(p){return p[0]/96-ox;}),ys=s.points.map(function(p){return H-p[1]/96-oy;}),minX=Math.min.apply(null,xs),maxX=Math.max.apply(null,xs),minY=Math.min.apply(null,ys),maxY=Math.max.apply(null,ys),w=Math.max(maxX-minX,0.01),h=Math.max(maxY-minY,0.01);
    return '<Shape ID="'+id+'" Type="Shape" LineStyle="0" FillStyle="0" TextStyle="0">'+cell('PinX',n(minX+w/2))+cell('PinY',n(minY+h/2))+cell('Width',n(w))+cell('Height',n(h))+cell('LocPinX',n(w/2))+cell('LocPinY',n(h/2))+cell('LineWeight',n((s.width||2)/96))+cell('LineColor',s.color||'#000000')+cell('LinePattern',s.dash?2:1)+cell('FillPattern',0)+cell('Rounding',n(3/96))+
     '<Section N="Geometry" IX="0">'+cell('NoFill',1)+cell('NoLine',0)+s.points.map(function(p,i){return '<Row T="'+(i?'LineTo':'MoveTo')+'" IX="'+(i+1)+'">'+cell('X',n(p[0]/96-ox-minX))+cell('Y',n(H-p[1]/96-oy-minY))+'</Row>';}).join('')+'</Section></Shape>';}
   var isText=s.type==='text',cx=(s.x+s.w/2)/96-ox,cy=H-(s.y+s.h/2)/96-oy,w=Math.max((s.rotate?s.h:s.w)/96,0.01),h=Math.max((s.rotate?s.w:s.h)/96,0.01);
   return '<Shape ID="'+id+'" Type="Shape" LineStyle="0" FillStyle="0" TextStyle="0">'+cell('PinX',n(cx))+cell('PinY',n(cy))+cell('Width',n(w))+cell('Height',n(h))+cell('LocPinX',n(w/2))+cell('LocPinY',n(h/2))+(s.rotate?cell('Angle','1.5707963'):'')+
-   (isText?cell('LinePattern',0)+cell('FillPattern',0)+cell('VerticalAlign',s.rotate?1:0):cell('FillForegnd',s.fill||'#FFFFFF')+cell('FillPattern',s.fill&&s.fill!=='none'?1:0)+cell('LineColor',s.stroke&&s.stroke!=='none'?s.stroke:'#000000')+cell('LinePattern',s.stroke&&s.stroke!=='none'?1:0)+cell('LineWeight',n((s.width||1)/96))+(s.radius?cell('Rounding',n(s.radius/96)):''))+
+   (isText?cell('LinePattern',0)+cell('FillPattern',0)+cell('VerticalAlign',s.rotate?1:0):(s.fill&&s.fill!=='none'?cell('FillForegnd',s.fill):'')+cell('FillPattern',s.fill&&s.fill!=='none'?1:0)+cell('LineColor',s.stroke&&s.stroke!=='none'?s.stroke:'#000000')+cell('LinePattern',s.stroke&&s.stroke!=='none'?1:0)+cell('LineWeight',n((s.width||1)/96))+(s.radius?cell('Rounding',n(s.radius/96)):''))+
    (isText?charSection(s)+'<Section N="Paragraph"><Row IX="0">'+cell('HorzAlign',s.align==='left'?0:s.align==='right'?2:1)+'</Row></Section>'+cell('LeftMargin',0)+cell('RightMargin',0)+cell('TopMargin',0)+cell('BottomMargin',0):'')+
    '<Section N="Geometry" IX="0">'+cell('NoFill',isText?1:0)+cell('NoLine',isText?1:0)+BOX_GEOM+'</Section>'+(isText?'<Text>'+esc(s.text)+'</Text>':'')+'</Shape>';
  }
  function bounds(list){var x0=Infinity,y0=Infinity,x1=-Infinity,y1=-Infinity;list.forEach(function(s){if(s.type==='line')s.points.forEach(function(p){x0=Math.min(x0,p[0]);y0=Math.min(y0,p[1]);x1=Math.max(x1,p[0]);y1=Math.max(y1,p[1]);});else{x0=Math.min(x0,s.x);y0=Math.min(y0,s.y);x1=Math.max(x1,s.x+s.w);y1=Math.max(y1,s.y+s.h);}});return {x:x0,y:y0,w:x1-x0,h:y1-y0};}
  // Shapes of a page; each device's shapes become one group so it moves as a unit.
- function shapesXML(shapes,H,ids){
-  var out=[],i=0;while(i<shapes.length){var s=shapes[i];if(!s.g){out.push(shapeXML(s,ids.next++,H,0,0));i++;continue;}
+ function shapesXML(shapes,H,ids,ctx){
+  var out=[],i=0;while(i<shapes.length){var s=shapes[i];if(!s.g){out.push(shapeXML(s,ids,H,0,0,ctx));i++;continue;}
    var j=i;while(j<shapes.length&&shapes[j].g===s.g)j++;var kids=shapes.slice(i,j),b=bounds(kids),gx=b.x/96,gy=H-(b.y+b.h)/96,gw=Math.max(b.w/96,0.01),gh=Math.max(b.h/96,0.01),gid=ids.next++;
-   out.push('<Shape ID="'+gid+'" Type="Group" LineStyle="0" FillStyle="0" TextStyle="0">'+cell('PinX',n(gx+gw/2))+cell('PinY',n(gy+gh/2))+cell('Width',n(gw))+cell('Height',n(gh))+cell('LocPinX',n(gw/2))+cell('LocPinY',n(gh/2))+'<Shapes>'+kids.map(function(k){return shapeXML(k,ids.next++,H,gx,gy);}).join('')+'</Shapes></Shape>');i=j;}
+   out.push('<Shape ID="'+gid+'" Type="Group" LineStyle="0" FillStyle="0" TextStyle="0">'+cell('PinX',n(gx+gw/2))+cell('PinY',n(gy+gh/2))+cell('Width',n(gw))+cell('Height',n(gh))+cell('LocPinX',n(gw/2))+cell('LocPinY',n(gh/2))+'<Shapes>'+kids.map(function(k){return shapeXML(k,ids,H,gx,gy,ctx);}).join('')+'</Shapes></Shape>');i=j;}
   return out.join('');
  }
- function pageXML(page){return '<?xml version="1.0" encoding="utf-8" standalone="yes"?>\n<PageContents xmlns="'+NS+'" xmlns:r="'+RNS+'" xml:space="preserve"><Shapes>'+shapesXML(page.shapes,page.h/96,{next:1})+'</Shapes></PageContents>';}
+ function pageXML(page,ctx,rels){return '<?xml version="1.0" encoding="utf-8" standalone="yes"?>\n<PageContents xmlns="'+NS+'" xmlns:r="'+RNS+'" xml:space="preserve"><Shapes>'+shapesXML(page.shapes,page.h/96,{next:1,rels:rels},ctx)+'</Shapes></PageContents>';}
+ // Vendor masters: the instance of a master placed so its artwork fills the image box,
+ // with an empty child for each of the master's sub-shapes (they inherit everything).
+ var BOX_CELLS=['PinX','PinY','Width','Height','LocPinX','LocPinY','ImgOffsetX','ImgOffsetY','ImgWidth','ImgHeight'];
+ function masterTree(xml){var root={children:[]},stack=[root],re=/<(\/?)Shape(s?)(\s[^>]*?)?(\/?)>/g,m;while((m=re.exec(xml))){if(m[2]==='s')continue;if(m[1]){stack.pop();continue;}
+   var rest=xml.slice(re.lastIndex),stop=rest.search(/<Shape[\s>]|<Shapes>|<\/Shape>/),own=stop<0?rest:rest.slice(0,stop),cells={};
+   BOX_CELLS.forEach(function(c){var v=own.match(new RegExp('<Cell N=["\']'+c+'["\'] V=["\']([^"\']*)["\']'));if(v)cells[c]=Number(v[1]);});
+   var fd=own.match(/<ForeignData\b([^>]*)>[\s\S]*?<Rel\s+r:id=["']([^"']+)["']/);
+   var node={id:(m[3].match(/\sID=["'](\d+)["']/)||[])[1],type:(m[3].match(/\sType=["'](\w+)["']/)||[])[1]||'Shape',cells:cells,foreign:fd?{attrs:fd[1],rel:fd[2]}:null,children:[]};stack[stack.length-1].children.push(node);if(!m[4])stack.push(node);}return root.children[0]||null;}
+ function instanceXML(s,id,ids,H,ox,oy,mm){
+  var m=mm.master,c=m.cells,k=(s.w/96)/m.w,left=s.x/96-ox,bottom=H-(s.y+s.h)/96-oy,Ox=left-m.x0*k,Oy=bottom-m.y0*k,lx=(c.LocPinX!=null?c.LocPinX:m.shapeW/2),ly=(c.LocPinY!=null?c.LocPinY:m.shapeH/2),originX=(c.PinX||0)-lx,originY=(c.PinY||0)-ly;
+  var cellsXML=cell('PinX',n(Ox+lx*k))+cell('PinY',n(Oy+ly*k))+cell('Width',n(m.shapeW*k))+cell('Height',n(m.shapeH*k))+cell('LocPinX',n(lx*k))+cell('LocPinY',n(ly*k));
+  if(m.oneD&&c.BeginX!=null)cellsXML+=cell('BeginX',n(Ox+(c.BeginX-originX)*k))+cell('BeginY',n(Oy+(c.BeginY-originY)*k))+cell('EndX',n(Ox+(c.EndX-originX)*k))+cell('EndY',n(Oy+(c.EndY-originY)*k));
+  // Children repeat their box (scaled) and picture so viewers that do not evaluate the
+  // master's formulas still draw them in place.
+  function kids(list){return list.map(function(ch){var body=Object.keys(ch.cells).map(function(c){return cell(c,n(ch.cells[c]*k));}).join('');
+    if(ch.foreign&&mm.media[ch.foreign.rel]&&ids.rels){var rid='rId'+(ids.rels.length+1);ids.rels.push({id:rid,target:mm.media[ch.foreign.rel]});body+='<ForeignData'+ch.foreign.attrs+'><Rel r:id="'+rid+'"/></ForeignData>';}
+    return '<Shape ID="'+(ids.next++)+'" Type="'+ch.type+'" MasterShape="'+ch.id+'">'+body+(ch.children.length?'<Shapes>'+kids(ch.children)+'</Shapes>':'')+'</Shape>';}).join('');}
+  var tree=mm.tree;return '<Shape ID="'+id+'" Type="'+(tree?tree.type:'Group')+'" Master="'+mm.id+'">'+cellsXML+(tree&&tree.children.length?'<Shapes>'+kids(tree.children)+'</Shapes>':'')+'</Shape>';
+ }
+ function mastersOf(pages){var map=new Map();pages.forEach(function(p){p.shapes.forEach(function(s){if(s.type==='image'&&s.master&&!map.has(s.master))map.set(s.master,{id:map.size+2,master:s.master,tree:masterTree(s.master.xml),media:{}});});});return map;}
+ var MEDIA={png:'image/png',jpg:'image/jpeg',jpeg:'image/jpeg',gif:'image/gif',bmp:'image/bmp',emf:'image/x-emf',wmf:'image/x-wmf',svg:'image/svg+xml',tif:'image/tiff',tiff:'image/tiff'};
+ function noStyles(x){return x.replace(/\b(LineStyle|FillStyle|TextStyle)=(["'])\d+\2/g,'$1="0"');}
+ function masterParts(ctx){
+  var parts=[],entries=[],rels=[],media={};
+  ctx.masters.forEach(function(mm,i){var m=mm.master,file='master'+mm.id+'.xml',mrels=[];
+   Object.keys(m.rels).forEach(function(rid){var r=m.rels[rid],src='visio/'+r.target.replace(/^\.\.\//,''),data=m.media[src];if(!data)return;var ext=(src.match(/\.([a-z0-9]+)$/i)||['','bin'])[1].toLowerCase(),name='stencil'+mm.id+'_'+rid.replace(/\W/g,'')+'.'+ext;media[ext]=true;mm.media[rid]=name;parts.push(['visio/media/'+name,data,null]);mrels.push('<Relationship Id="'+rid+'" Type="'+r.type+'" Target="../media/'+name+'"/>');});
+   parts.push(['visio/masters/'+file,noStyles(m.xml),'application/vnd.ms-visio.master+xml']);
+   if(mrels.length)parts.push(['visio/masters/_rels/'+file+'.rels','<?xml version="1.0" encoding="utf-8" standalone="yes"?>\n<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">'+mrels.join('')+'</Relationships>',null]);
+   rels.push('<Relationship Id="rId'+mm.id+'" Type="http://schemas.microsoft.com/visio/2010/relationships/master" Target="'+file+'"/>');
+   entries.push(noStyles(m.element).replace(/^<Master\s/,'<Master ').replace(/(<Master\b[^>]*?)(\s)ID=(["'])\d+\3/,'$1$2ID="'+mm.id+'"').replace(/<Rel\s+r:id=(["'])[^"']+\1/,'<Rel r:id="rId'+mm.id+'"'));});
+  if(!entries.length)return null;
+  parts.push(['visio/masters/masters.xml','<?xml version="1.0" encoding="utf-8" standalone="yes"?>\n<Masters xmlns="'+NS+'" xmlns:r="'+RNS+'" xml:space="preserve">'+entries.join('')+'</Masters>','application/vnd.ms-visio.masters+xml']);
+  parts.push(['visio/masters/_rels/masters.xml.rels','<?xml version="1.0" encoding="utf-8" standalone="yes"?>\n<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">'+rels.join('')+'</Relationships>',null]);
+  return {parts:parts,media:Object.keys(media)};
+ }
  function documentXML(){
   return '<?xml version="1.0" encoding="utf-8" standalone="yes"?>\n<VisioDocument xmlns="'+NS+'" xmlns:r="'+RNS+'" xml:space="preserve"><DocumentSettings TopPage="0" DefaultTextStyle="0" DefaultLineStyle="0" DefaultFillStyle="0" DefaultGuideStyle="0">'+cell('GlueSettings',9)+cell('SnapSettings',65847)+'</DocumentSettings><Colors><ColorEntry IX="0" RGB="#000000"/><ColorEntry IX="1" RGB="#FFFFFF"/></Colors><FaceNames><FaceName NameU="Calibri" UnicodeRanges="-536859905 -1073732485 9 0" CharSets="536871423 0" Panos="2 15 5 2 2 2 4 3 2 4" Flags="325"/><FaceName NameU="Segoe UI" UnicodeRanges="-469750017 -1073683329 9 0" CharSets="536871423 0" Panos="2 11 5 2 4 2 4 2 2 3" Flags="325"/></FaceNames><StyleSheets><StyleSheet ID="0" NameU="No Style" Name="No Style">'+
    cell('EnableLineProps',1)+cell('EnableFillProps',1)+cell('EnableTextProps',1)+cell('HideForApply',0)+cell('LineWeight',0.01041666666666667)+cell('LineColor','#000000')+cell('LinePattern',1)+cell('Rounding',0)+cell('EndArrowSize',2)+cell('BeginArrow',0)+cell('EndArrow',0)+cell('LineCap',0)+cell('BeginArrowSize',2)+cell('LineColorTrans',0)+cell('CompoundType',0)+cell('FillForegnd','#FFFFFF')+cell('FillBkgnd','#000000')+cell('FillPattern',1)+cell('ShdwForegnd','#000000')+cell('ShdwPattern',0)+cell('FillForegndTrans',0)+cell('FillBkgndTrans',0)+cell('ShdwForegndTrans',0)+cell('ShapeShdwType',0)+cell('ShapeShdwOffsetX',0)+cell('ShapeShdwOffsetY',0)+cell('ShapeShdwObliqueAngle',0)+cell('ShapeShdwScaleFactor',1)+cell('ShapeShdwBlur',0)+cell('ShapeShdwShow',0)+cell('LeftMargin',0.05555555555555555)+cell('RightMargin',0.05555555555555555)+cell('TopMargin',0.05555555555555555)+cell('BottomMargin',0.05555555555555555)+cell('VerticalAlign',1)+cell('TextBkgnd',0)+cell('DefaultTabStop',0.5)+cell('TextDirection',0)+cell('TextBkgndTrans',0)+cell('LockTextEdit',0)+cell('LockVtxEdit',0)+cell('ObjType',0)+
    '<Section N="Character"><Row IX="0">'+cell('Font',1)+cell('Color','#000000')+cell('Style',0)+cell('Case',0)+cell('Pos',0)+cell('FontScale',1)+cell('Size',0.1666666666666667)+cell('DblUnderline',0)+cell('Overline',0)+cell('Strikethru',0)+cell('DoubleStrikethrough',0)+cell('Letterspace',0)+cell('ColorTrans',0)+cell('AsianFont',0)+cell('ComplexScriptFont',0)+cell('ComplexScriptSize',-1)+cell('LangID','en-US')+'</Row></Section><Section N="Paragraph"><Row IX="0">'+cell('IndFirst',0)+cell('IndLeft',0)+cell('IndRight',0)+cell('SpLine',-1.2)+cell('SpBefore',0)+cell('SpAfter',0)+cell('HorzAlign',1)+cell('Bullet',0)+cell('BulletStr','')+cell('BulletFont',0)+cell('BulletFontSize',-1)+cell('TextPosAfterBullet',0)+cell('Flags',0)+'</Row></Section></StyleSheet></StyleSheets></VisioDocument>';
  }
- function packageFiles(title,mainType,docRels,parts){
+ function packageFiles(title,mainType,docRels,parts,extraDefaults){
   var files=[];
-  files.push(['[Content_Types].xml','<?xml version="1.0" encoding="utf-8" standalone="yes"?>\n<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/visio/document.xml" ContentType="'+mainType+'"/>'+parts.filter(function(p){return !/\.rels$/.test(p[0]);}).map(function(p){return '<Override PartName="/'+p[0]+'" ContentType="'+p[2]+'"/>';}).join('')+'<Override PartName="/docProps/core.xml" ContentType="application/vnd.openxmlformats-package.core-properties+xml"/><Override PartName="/docProps/app.xml" ContentType="application/vnd.openxmlformats-officedocument.extended-properties+xml"/></Types>']);
+  files.push(['[Content_Types].xml','<?xml version="1.0" encoding="utf-8" standalone="yes"?>\n<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/visio/document.xml" ContentType="'+mainType+'"/>'+(extraDefaults||[]).map(function(e){return '<Default Extension="'+e+'" ContentType="'+(MEDIA[e]||'application/octet-stream')+'"/>';}).join('')+parts.filter(function(p){return p[2]&&!/\.rels$/.test(p[0]);}).map(function(p){return '<Override PartName="/'+p[0]+'" ContentType="'+p[2]+'"/>';}).join('')+'<Override PartName="/docProps/core.xml" ContentType="application/vnd.openxmlformats-package.core-properties+xml"/><Override PartName="/docProps/app.xml" ContentType="application/vnd.openxmlformats-officedocument.extended-properties+xml"/></Types>']);
   files.push(['_rels/.rels','<?xml version="1.0" encoding="utf-8" standalone="yes"?>\n<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.microsoft.com/visio/2010/relationships/document" Target="visio/document.xml"/><Relationship Id="rId2" Type="http://schemas.openxmlformats.org/package/2006/relationships/metadata/core-properties" Target="docProps/core.xml"/><Relationship Id="rId3" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/extended-properties" Target="docProps/app.xml"/></Relationships>']);
   files.push(['docProps/app.xml','<?xml version="1.0" encoding="utf-8" standalone="yes"?>\n<Properties xmlns="http://schemas.openxmlformats.org/officeDocument/2006/extended-properties"><Application>Config Inspector</Application><Template></Template></Properties>']);
   files.push(['docProps/core.xml','<?xml version="1.0" encoding="utf-8" standalone="yes"?>\n<cp:coreProperties xmlns:cp="http://schemas.openxmlformats.org/package/2006/metadata/core-properties" xmlns:dc="http://purl.org/dc/elements/1.1/"><dc:title>'+esc(title)+'</dc:title><dc:creator>Config Inspector</dc:creator></cp:coreProperties>']);
@@ -6444,12 +6512,14 @@ function pJ(L,pan){const d=E(),I={},R={},T={};
   return zip(files);
  }
  function vsdx(pages,title){
-  var parts=[],rels=[],entries=[];
-  pages.forEach(function(p,i){parts.push(['visio/pages/page'+(i+1)+'.xml',pageXML(p),'application/vnd.ms-visio.page+xml']);rels.push('<Relationship Id="rId'+(i+1)+'" Type="http://schemas.microsoft.com/visio/2010/relationships/page" Target="page'+(i+1)+'.xml"/>');
+  var parts=[],rels=[],entries=[],ctx={masters:mastersOf(pages)},mp=masterParts(ctx);
+  pages.forEach(function(p,i){var prels=[];parts.push(['visio/pages/page'+(i+1)+'.xml',pageXML(p,ctx,prels),'application/vnd.ms-visio.page+xml']);
+   var mrel=[];ctx.masters.forEach(function(mm){mrel.push('<Relationship Id="rM'+mm.id+'" Type="http://schemas.microsoft.com/visio/2010/relationships/master" Target="../masters/master'+mm.id+'.xml"/>');});
+   if(prels.length||mrel.length)parts.push(['visio/pages/_rels/page'+(i+1)+'.xml.rels','<?xml version="1.0" encoding="utf-8" standalone="yes"?>\n<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">'+mrel.join('')+prels.map(function(r){return '<Relationship Id="'+r.id+'" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="../media/'+r.target+'"/>';}).join('')+'</Relationships>',null]);rels.push('<Relationship Id="rId'+(i+1)+'" Type="http://schemas.microsoft.com/visio/2010/relationships/page" Target="page'+(i+1)+'.xml"/>');
    var name=esc(String(p.title).slice(0,31));entries.push('<Page ID="'+i+'" NameU="'+name+'" Name="'+name+'" ViewScale="-1" ViewCenterX="0" ViewCenterY="0"><PageSheet LineStyle="0" FillStyle="0" TextStyle="0">'+cell('PageWidth',n(p.w/96))+cell('PageHeight',n(p.h/96))+cell('PageScale',1)+cell('DrawingScale',1)+cell('DrawingSizeType',0)+cell('DrawingScaleType',0)+cell('PrintPageOrientation',p.w>p.h?2:1)+'</PageSheet><Rel r:id="rId'+(i+1)+'"/></Page>');});
   parts.push(['visio/pages/pages.xml','<?xml version="1.0" encoding="utf-8" standalone="yes"?>\n<Pages xmlns="'+NS+'" xmlns:r="'+RNS+'" xml:space="preserve">'+entries.join('')+'</Pages>','application/vnd.ms-visio.pages+xml']);
   parts.push(['visio/pages/_rels/pages.xml.rels','<?xml version="1.0" encoding="utf-8" standalone="yes"?>\n<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">'+rels.join('')+'</Relationships>','application/vnd.openxmlformats-package.relationships+xml']);
-  return packageFiles(title||'Network diagram','application/vnd.ms-visio.drawing.main+xml','<Relationship Id="rId1" Type="http://schemas.microsoft.com/visio/2010/relationships/pages" Target="pages/pages.xml"/>',parts);
+  return packageFiles(title||'Network diagram','application/vnd.ms-visio.drawing.main+xml','<Relationship Id="rId1" Type="http://schemas.microsoft.com/visio/2010/relationships/pages" Target="pages/pages.xml"/>'+(mp?'<Relationship Id="rId2" Type="http://schemas.microsoft.com/visio/2010/relationships/masters" Target="masters/masters.xml"/>':''),parts.concat(mp?mp.parts:[]),mp?mp.media:[]);
  }
  // Faceplates of every catalog model (and generic sizes) as plain-shape pages.
  function stencilPages(){
@@ -6470,6 +6540,238 @@ function pJ(L,pan){const d=E(),I={},R={},T={};
  }
  root.SWDiagram={build:build,diagram:diagram,scope:scope,tree:tree,render:render,svg:svg,vsdx:vsdx,library:library,stencilPages:stencilPages,linkType:linkType,parsePort:parsePort,physicalPort:physicalPort,catalogFor:catalogFor,CATALOG:CATALOG,LINK_TYPES:LINK_TYPES,GRID:G};
  if(typeof module==='object'&&module.exports)module.exports=root.SWDiagram;
+})(typeof globalThis!=='undefined'?globalThis:this);
+
+</script>
+<script id="vendor-stencils">
+(function(root){'use strict';
+ // Vendor Visio stencils for network diagrams. Reads the masters of a .vssx stencil (or
+ // a .vsdx/.vstx that contains them), renders their artwork for the preview (PNG, JPEG,
+ // BMP or EMF), matches masters to devices by part number or model, and maps a master's
+ // connection points to front-panel ports. Stencils are the user's own files: nothing
+ // here is bundled with the app.
+ var MAX_FILE=60*1024*1024;
+ function u16(b,o){return b[o]|(b[o+1]<<8);}
+ function u32(b,o){return (b[o]|(b[o+1]<<8)|(b[o+2]<<16)|(b[o+3]<<24))>>>0;}
+ async function inflateRaw(data){
+  if(typeof DecompressionStream==='undefined')throw new Error('This browser cannot read compressed Visio files.');
+  var stream=new Blob([data]).stream().pipeThrough(new DecompressionStream('deflate-raw'));
+  return new Uint8Array(await new Response(stream).arrayBuffer());
+ }
+ async function unzip(bytes){
+  var end=-1;for(var i=bytes.length-22;i>=Math.max(0,bytes.length-65557);i--)if(u32(bytes,i)===0x06054b50){end=i;break;}
+  if(end<0)throw new Error('The file is not a Visio stencil or drawing (.vssx, .vsdx, .vstx).');
+  var count=u16(bytes,end+10),offset=u32(bytes,end+16),files={},decoder=new TextDecoder('utf-8');
+  for(var n=0;n<count;n++){if(u32(bytes,offset)!==0x02014b50)break;
+   var method=u16(bytes,offset+10),size=u32(bytes,offset+20),nameLen=u16(bytes,offset+28),extra=u16(bytes,offset+30),comment=u16(bytes,offset+32),local=u32(bytes,offset+42);
+   var name=decoder.decode(bytes.subarray(offset+46,offset+46+nameLen));offset+=46+nameLen+extra+comment;
+   if(!/^visio\/(masters\/|media\/|document\.xml|_rels\/document)/.test(name))continue;
+   var start=local+30+u16(bytes,local+26)+u16(bytes,local+28),data=bytes.subarray(start,start+size);
+   files[name]=method===0?data.slice():method===8?await inflateRaw(data):null;}
+  return files;
+ }
+ function text(b){return new TextDecoder('utf-8').decode(b);}
+ function unescapeXML(s){return String(s).replace(/&lt;/g,'<').replace(/&gt;/g,'>').replace(/&quot;/g,'"').replace(/&apos;/g,"'").replace(/&#x([0-9a-f]+);/gi,function(_,x){return String.fromCodePoint(parseInt(x,16));}).replace(/&#(\d+);/g,function(_,d){return String.fromCodePoint(Number(d));}).replace(/&amp;/g,'&');}
+ function attr(tag,name){var m=tag.match(new RegExp('\\s'+name+'=(?:"([^"]*)"|\'([^\']*)\')'));return m?unescapeXML(m[1]!=null?m[1]:m[2]):'';}
+ function cellOf(xml,name){var m=xml.match(new RegExp('<Cell N=["\']'+name+'["\'] V=["\']([^"\']*)["\']'));return m?Number(m[1]):null;}
+ // The opening tag and own cells of the first shape, without its sub-shapes.
+ function topShape(xml){var i=xml.indexOf('<Shape ');if(i<0)return null;var j=xml.indexOf('<Shapes>',i+6),k=xml.indexOf('</Shape>',i);var stop=j>=0&&(k<0||j<k)?j:k;return {tag:xml.slice(i,xml.indexOf('>',i)+1),body:xml.slice(i,stop<0?xml.length:stop)};}
+ function propertyRows(xml){var out={},re=/<Row N=["'](\w+)["']>\s*<Cell N=["']Value["'] V=["']([^"']*)["']/g,m;while((m=re.exec(xml)))if(!(m[1] in out))out[m[1]]=unescapeXML(m[2]);return out;}
+ function connections(body){var sec=body.match(/<Section N=["']Connection["']>([\s\S]*?)<\/Section>/);if(!sec)return [];var out=[],re=/<Row T=["']Connection["'][^>]*>([\s\S]*?)<\/Row>/g,m;while((m=re.exec(sec[1]))){var x=cellOf(m[1],'X'),y=cellOf(m[1],'Y');if(x!=null&&y!=null)out.push({x:x,y:y});}return out;}
+ function relsOf(xml){var out={},re=/<Relationship\s[^>]*>/g,m;while((m=re.exec(xml)))out[attr(m[0],'Id')]={type:attr(m[0],'Type'),target:attr(m[0],'Target')};return out;}
+ function extOf(path){return (String(path).match(/\.([a-z0-9]+)$/i)||['',''])[1].toLowerCase();}
+ // Foreign (picture) shapes of a master with their place in the master's frame (inches,
+ // y up) and the media part they show.
+ function pictures(xml,rels,files){
+  var out=[],top=topShape(xml);if(!top)return out;
+  var re=/<Shape\s[^>]*Type=["']Foreign["'][^>]*>([\s\S]*?)<\/Shape>/g,m;
+  while((m=re.exec(xml))){var body=m[1],rel=body.match(/<ForeignData[^>]*>[\s\S]*?<Rel\s+r:id=["']([^"']+)["']/);if(!rel)continue;var r=rels[rel[1]];if(!r)continue;
+   var path='visio/'+r.target.replace(/^\.\.\//,''),data=files[path];if(!data)continue;
+   var w=cellOf(body,'Width'),h=cellOf(body,'Height'),px=cellOf(body,'PinX'),py=cellOf(body,'PinY'),lx=cellOf(body,'LocPinX'),ly=cellOf(body,'LocPinY');
+   if(w==null||h==null)continue;out.push({x:(px==null?w/2:px)-(lx==null?w/2:lx),y:(py==null?h/2:py)-(ly==null?h/2:ly),w:w,h:h,ext:extOf(path),data:data,path:path});}
+  return out;
+ }
+ // The drawn extent of a master: its pictures (and connection points), which for a 1-D
+ // shape can be much taller than the shape itself.
+ function frameOf(w,h,pics,conns){
+  var x0=0,y0=0,x1=w,y1=h;if(pics.length){x0=Infinity;y0=Infinity;x1=-Infinity;y1=-Infinity;pics.forEach(function(p){x0=Math.min(x0,p.x);y0=Math.min(y0,p.y);x1=Math.max(x1,p.x+p.w);y1=Math.max(y1,p.y+p.h);});}
+  return {x:x0,y:y0,w:Math.max(0.01,x1-x0),h:Math.max(0.01,y1-y0)};
+ }
+ // Reads a stencil or drawing and returns its masters.
+ async function read(bytes,fileName){
+  if(bytes.length>MAX_FILE)throw new Error('The stencil is too large to open.');
+  var files=await unzip(bytes),list=files['visio/masters/masters.xml'];
+  if(!list)throw new Error((fileName||'This file')+' contains no master shapes. Choose a Visio stencil (.vssx) or a drawing made with the stencil.');
+  var mastersXML=text(list),rels=relsOf(files['visio/masters/_rels/masters.xml.rels']?text(files['visio/masters/_rels/masters.xml.rels']):''),masters=[];
+  var docXML=files['visio/document.xml']?text(files['visio/document.xml']):'';
+  var re=/<Master\s[\s\S]*?<\/Master>/g,m;
+  while((m=re.exec(mastersXML))){var el=m[0],tag=el.slice(0,el.indexOf('>')+1),rel=(el.match(/<Rel\s+r:id=["']([^"']+)["']/)||[])[1],r=rel&&rels[rel];if(!r)continue;
+   var path='visio/masters/'+r.target.replace(/^.*\//,''),raw=files[path];if(!raw)continue;var xml=text(raw),top=topShape(xml);if(!top)continue;
+   var name=attr(tag,'NameU')||attr(tag,'Name'),mrels=files['visio/masters/_rels/'+path.replace(/^.*\//,'')+'.rels'],relMap=mrels?relsOf(text(mrels)):{};
+   if(/^dynamic connector$/i.test(name)||attr(tag,'Hidden')==='1')continue;
+   var props=propertyRows(top.body),w=cellOf(top.body,'Width'),h=cellOf(top.body,'Height');if(!(w>0)||!(h>0))continue;
+   var media={};Object.keys(relMap).forEach(function(id){var t='visio/'+relMap[id].target.replace(/^\.\.\//,'');if(files[t])media[t]=files[t];});
+   var pics=pictures(xml,relMap,files),conns=connections(top.body),frame=frameOf(w,h,pics,conns);
+   var cells={};['PinX','PinY','LocPinX','LocPinY','BeginX','BeginY','EndX','EndY'].forEach(function(c){var v=cellOf(top.body,c);if(v!=null)cells[c]=v;});
+   masters.push({cells:cells,type:attr(top.tag,'Type')||'Shape',file:fileName||'stencil',id:attr(tag,'ID'),name:name,element:el,xml:xml,rels:relMap,media:media,props:props,part:props.PartNumber||'',product:props.ProductNumber||props.ProductDescription||'',manufacturer:props.Manufacturer||'',shapeW:w,shapeH:h,w:frame.w,h:frame.h,x0:frame.x,y0:frame.y,oneD:/<Cell N=["']BeginX["']/.test(top.body),connections:conns.map(function(c){return {x:c.x-frame.x,y:c.y-frame.y};}),pictures:pics.map(function(p){return Object.assign({},p,{x:p.x-frame.x,y:p.y-frame.y});})});}
+  return {file:fileName||'stencil',masters:masters,styles:docXML.match(/<StyleSheets>[\s\S]*?<\/StyleSheets>/)?docXML.match(/<StyleSheets>[\s\S]*?<\/StyleSheets>/)[0]:''};
+ }
+
+ // ---------- matching ----------
+ function norm(s){return String(s||'').toLowerCase().replace(/fortigate/g,'fg').replace(/fortiswitch/g,'fs').replace(/fortiap/g,'fap').replace(/catalyst/g,'').replace(/[^a-z0-9]/g,'');}
+ function tokens(s){return (String(s||'').match(/[A-Za-z]{0,4}[-_ ]?\d{2,5}[A-Za-z0-9-]*/g)||[]).map(norm).filter(function(t){return t.length>=3&&/\d/.test(t);});}
+ // A master name like "FG-12xG" stands for a family: x matches a digit.
+ function familyRE(name){var n=norm(name.replace(/\(.*?\)/g,''));if(!/\dx|x\d/.test(n))return null;try{return new RegExp(n.replace(/(\d)x/g,'$1\\d').replace(/x(\d)/g,'\\d$1'));}catch(e){return null;}}
+ function score(node,master){
+  var model=String(node.model||''),parts=node.parts||[],hay=norm(model+' '+parts.join(' ')+' '+(node.name||'')),best=0,mn=norm(master.name);
+  if(master.part&&norm(master.part).length>=4&&hay.indexOf(norm(master.part))>=0)best=100;
+  parts.forEach(function(p){var k=norm(p);if(k.length>=4&&(mn.indexOf(k)>=0||norm(master.product).indexOf(k)>=0))best=Math.max(best,95);});
+  tokens(model).concat(parts.map(norm)).forEach(function(t){if(t.length<4)return;if(mn.indexOf(t)>=0||norm(master.product).indexOf(t)>=0)best=Math.max(best,60+Math.min(30,t.length*2));});
+  var fam=familyRE(master.name);if(fam&&fam.test(norm(model)))best=Math.max(best,75);
+  // Same series, other generation (FG-120F for a FortiGate-120G): a weak match.
+  // A bare series number (HP 6100 for an Aruba 6100 master) is a weak match too.
+  (String(model).match(/(?:^|\D)(\d{4})(?!\d)/g)||[]).forEach(function(t){var d=t.replace(/\D/g,'');if(new RegExp('(^|\\D)'+d+'(\\D|$)').test(master.name))best=Math.max(best,60);});
+  var nm=norm(model),re=/(\d{3,5})/g,m;while((m=re.exec(nm))){for(var k=3;k>=2;k--){var core=nm.slice(Math.max(0,m.index-k),m.index)+m[1];if(/^[a-z]{2}/.test(core)&&mn.indexOf(core)>=0){best=Math.max(best,61);break;}}}
+  if(best&&node.role==='ap'&&/back|rear/i.test(master.name))best+=3;
+  if(best&&/front/i.test(master.name)&&node.role!=='ap')best+=2;
+  return best;
+ }
+ function match(node,masters){var best=null,top=0;(masters||[]).forEach(function(m){var s=score(node,m);if(s>top){top=s;best=m;}});return top>=60?best:null;}
+
+ // ---------- ports from connection points ----------
+ // Vendor network stencils carry a connection point on each port. Points are grouped
+ // into two rows; points closer than about half the port pitch belong to one port; a
+ // wide gap starts a new port block. Ports are numbered column by column, top row
+ // first. The mapping is used only when the blocks add up to the device's port counts.
+ function ports(master){
+  var pts=master.connections||[];if(pts.length<4)return null;
+  var ys=pts.map(function(p){return p.y;}).sort(function(a,b){return a-b;}),tol=master.h*0.02,rowsY=[];
+  ys.forEach(function(y){var r=rowsY.find(function(x){return Math.abs(x.y-y)<=tol;});if(r){r.n++;r.sum+=y;r.y=r.sum/r.n;}else rowsY.push({y:y,n:1,sum:y});});
+  rowsY.sort(function(a,b){return b.n-a.n;});if(rowsY.length<2||rowsY[1].n<2)return null;
+  var top=rowsY[0].y>rowsY[1].y?rowsY[0]:rowsY[1],bottom=top===rowsY[0]?rowsY[1]:rowsY[0];
+  function rowPoints(r){return pts.filter(function(p){return Math.abs(p.y-r.y)<=tol;}).sort(function(a,b){return a.x-b.x;});}
+  var tp=rowPoints(top),bp=rowPoints(bottom),deltas=[];
+  [tp,bp].forEach(function(row){for(var i=1;i<row.length;i++){var d=row[i].x-row[i-1].x;if(d>master.w*0.002)deltas.push(d);}});
+  if(!deltas.length)return null;deltas.sort(function(a,b){return a-b;});var counts={};deltas.forEach(function(d){var k=Math.round(d*100);counts[k]=(counts[k]||0)+1;});
+  var pitch=Number(Object.keys(counts).sort(function(a,b){return counts[b]-counts[a]||b-a;})[0])/100;
+  // Runs of close points are split where the gap is clearly wider than the run's usual
+  // gap: a cage drawn with three points next to another has gaps 0.28, 0.28, 0.32 ...
+  function merge(row){var out=[],run=[row[0]];
+   function flush(){var gaps=[];for(var i=1;i<run.length;i++)gaps.push(run[i].x-run[i-1].x);var mean=gaps.length?gaps.reduce(function(a,b){return a+b;},0)/gaps.length:0,cur=[run[0]];
+    for(var k=1;k<run.length;k++){if(gaps[k-1]>mean*1.07){out.push(cur);cur=[];}cur.push(run[k]);}out.push(cur);run=[];}
+   for(var i=1;i<row.length;i++){if(row[i].x-row[i-1].x<pitch*0.6)run.push(row[i]);else{flush();run=[row[i]];}}if(run.length)flush();
+   return out.map(function(g){return {x:g.reduce(function(a,p){return a+p.x;},0)/g.length,y:g.reduce(function(a,p){return a+p.y;},0)/g.length};});}
+  var T=merge(tp),B=merge(bp),cols=[];
+  T.forEach(function(p){cols.push({x:p.x,top:p,bottom:null});});
+  B.forEach(function(p){var c=cols.filter(function(c){return !c.bottom&&Math.abs(c.x-p.x)<pitch*0.6;}).sort(function(a,b){return Math.abs(a.x-p.x)-Math.abs(b.x-p.x);})[0];if(c)c.bottom=p;else cols.push({x:p.x,top:null,bottom:p});});
+  cols.sort(function(a,b){return a.x-b.x;});
+  var blocks=[];cols.forEach(function(c,i){if(!i||c.x-cols[i-1].x>pitch*1.6)blocks.push([]);blocks[blocks.length-1].push(c);});
+  return blocks.map(function(b){var list=[];b.forEach(function(c){if(c.top)list.push({x:c.x,y:c.top.y,row:0});if(c.bottom)list.push({x:c.x,y:c.bottom.y,row:1});});return list;});
+ }
+ // Port positions for a device with `main` front ports and `up` uplink ports: a run of
+ // neighboring blocks that holds exactly the main ports, and the other blocks (in
+ // order) for the uplinks. Positions are fractions of the master's width and height,
+ // measured from its top left.
+ function layout(master,main,up){
+  var blocks=ports(master);if(!blocks||!main)return null;var sizes=blocks.map(function(b){return b.length;});
+  for(var i=0;i<blocks.length;i++){var sum=0;for(var j=i;j<blocks.length;j++){sum+=sizes[j];if(sum===main){var rest=[];blocks.forEach(function(b,k){if(k<i||k>j)rest=rest.concat(b);});if(up&&rest.length<up)break;
+    var mainPorts=[].concat.apply([],blocks.slice(i,j+1));function frac(p){return {fx:p.x/master.w,fy:1-p.y/master.h,row:p.row};}
+    return {main:mainPorts.map(frac),up:rest.slice(0,up||0).map(frac)};}if(sum>main)break;}}
+  // When only some ports are known (from links), the smallest run of blocks that holds
+  // them, if the remaining blocks hold the uplinks.
+  var best=null;for(var a=0;a<blocks.length;a++){var total=0;for(var b=a;b<blocks.length;b++){total+=sizes[b];if(total>=main){var others=sizes.reduce(function(n,v,k){return k<a||k>b?n+v:n;},0);if(others>=(up||0)&&(!best||total<best.total))best={a:a,b:b,total:total};break;}}}
+  if(best){var mp=[].concat.apply([],blocks.slice(best.a,best.b+1)),rs=[];blocks.forEach(function(bl,k){if(k<best.a||k>best.b)rs=rs.concat(bl);});var f=function(p){return {fx:p.x/master.w,fy:1-p.y/master.h,row:p.row};};return {main:mp.map(f),up:rs.slice(0,up||0).map(f),partial:true};}
+  return null;
+ }
+
+ // ---------- artwork ----------
+ function base64(bytes){var s='';for(var i=0;i<bytes.length;i+=0x8000)s+=String.fromCharCode.apply(null,bytes.subarray(i,i+0x8000));return typeof btoa==='function'?btoa(s):Buffer.from(bytes).toString('base64');}
+ var MIME={png:'image/png',jpg:'image/jpeg',jpeg:'image/jpeg',gif:'image/gif',bmp:'image/bmp',svg:'image/svg+xml'};
+ // SVG markup (a group in the master's frame, 96 px per inch, y down) for a master's
+ // pictures, or null when none can be shown.
+ function artwork(master){
+  if(master._art!==undefined)return master._art;
+  var W=master.w*96,H=master.h*96,parts=[];
+  master.pictures.forEach(function(p){var x=p.x*96,y=(master.h-p.y-p.h)*96,w=p.w*96,h=p.h*96;
+   if(MIME[p.ext])parts.push('<image x="'+r2(x)+'" y="'+r2(y)+'" width="'+r2(w)+'" height="'+r2(h)+'" preserveAspectRatio="none" href="data:'+MIME[p.ext]+';base64,'+base64(p.data)+'"/>');
+   else if(p.ext==='emf'){var e=emf(p.data);if(e)parts.push('<svg x="'+r2(x)+'" y="'+r2(y)+'" width="'+r2(w)+'" height="'+r2(h)+'" viewBox="'+e.viewBox+'" preserveAspectRatio="none" overflow="hidden">'+e.body+'</svg>');}});
+  master._art=parts.length?{w:W,h:H,body:parts.join('')}:null;return master._art;
+ }
+ function r2(v){return Math.round(v*100)/100;}
+
+ // ---------- EMF ----------
+ // A renderer for the GDI records network stencils use: paths, polygons, lines,
+ // rectangles, ellipses, bitmaps and text, with world and window/viewport transforms.
+ // EMF+ comments are skipped; their GDI fallback records are drawn.
+ function emf(bytes){
+  try{return emfSVG(bytes);}catch(e){return null;}
+ }
+ function emfSVG(b){
+  var dv=new DataView(b.buffer,b.byteOffset,b.byteLength);if(b.length<88||dv.getUint32(0,true)!==1||dv.getUint32(40,true)!==0x464D4520)return null;
+  function i32(o){return dv.getInt32(o,true);}function u(o){return dv.getUint32(o,true);}function i16(o){return dv.getInt16(o,true);}function f32(o){return dv.getFloat32(o,true);}
+  var bounds=[i32(8),i32(12),i32(16),i32(20)],out=[],objects={},stack=[];
+  var st={xf:[1,0,0,1,0,0],wo:[0,0],we:null,vo:[0,0],ve:null,pen:{color:'#000',width:1,none:false},brush:{color:'#fff',none:false},font:{size:12,weight:400,italic:false,face:'Arial'},textColor:'#000',align:0,fill:'evenodd',pos:[0,0],bk:1};
+  function clone(s){return JSON.parse(JSON.stringify(s));}
+  function color(o){return '#'+[dv.getUint8(o),dv.getUint8(o+1),dv.getUint8(o+2)].map(function(x){return ('0'+x.toString(16)).slice(-2);}).join('');}
+  function mul(a,c){return [a[0]*c[0]+a[1]*c[2],a[0]*c[1]+a[1]*c[3],a[2]*c[0]+a[3]*c[2],a[2]*c[1]+a[3]*c[3],a[4]*c[0]+a[5]*c[2]+c[4],a[4]*c[1]+a[5]*c[3]+c[5]];}
+  function pt(x,y){var m=st.xf,X=x*m[0]+y*m[2]+m[4],Y=x*m[1]+y*m[3]+m[5];if(st.we&&st.ve){X=(X-st.wo[0])*st.ve[0]/st.we[0]+st.vo[0];Y=(Y-st.wo[1])*st.ve[1]/st.we[1]+st.vo[1];}else{X+=st.vo[0]-st.wo[0];Y+=st.vo[1]-st.wo[1];}return [r2(X),r2(Y)];}
+  function scale(){var m=st.xf,s=Math.sqrt(Math.abs(m[0]*m[3]-m[1]*m[2]))||1;if(st.we&&st.ve)s*=Math.abs(st.ve[0]/st.we[0]);return s;}
+  var path=null;
+  function add(cmd){if(path!==null)path.push(cmd);return path!==null;}
+  function paint(d,fill,stroke){var p=st.pen,br=st.brush,f=fill&&!br.none?br.color:'none',s=stroke&&!p.none?p.color:'none';if(f==='none'&&s==='none')return;out.push('<path d="'+d+'" fill="'+f+'"'+(f!=='none'?' fill-rule="'+st.fill+'"':'')+' stroke="'+s+'"'+(s!=='none'?' stroke-width="'+r2(Math.max(0.5,p.width*scale()))+'"':'')+'/>');}
+  function poly(o,n,is16,close,fill,stroke,move){var d=[],sz=is16?4:8;for(var k=0;k<n;k++){var x=is16?i16(o+k*sz):i32(o+k*sz),y=is16?i16(o+k*sz+2):i32(o+k*sz+4),p=pt(x,y);d.push((k===0&&move!==false?'M':'L')+p[0]+' '+p[1]);}if(!n)return;var s=d.join('')+(close?'Z':'');if(!add(s))paint(s,fill,stroke);}
+  function bez(o,n,is16,from){var d=[],sz=is16?4:8;for(var k=0;k+2<n+(from?0:0);k+=3){var ps=[0,1,2].map(function(j){var q=o+(k+j)*sz;return pt(is16?i16(q):i32(q),is16?i16(q+2):i32(q+4));});d.push('C'+ps.map(function(p){return p[0]+' '+p[1];}).join(' '));}return d.join('');}
+  function stockObject(i){var k=i&0x7fffffff;if(k<=5)st.brush={color:['#ffffff','#c0c0c0','#808080','#404040','#000000','none'][k],none:k===5};else if(k<=8)st.pen={color:k===6?'#ffffff':'#000000',width:1,none:k===8};}
+  var o=0,guard=0;
+  while(o+8<=b.length&&guard++<200000){var type=u(o),size=u(o+4);if(size<8||o+size>b.length)break;var r=o;
+   switch(type){
+    case 9:st.we=[i32(r+8),i32(r+12)];break;case 10:st.wo=[i32(r+8),i32(r+12)];break;case 11:st.ve=[i32(r+8),i32(r+12)];break;case 12:st.vo=[i32(r+8),i32(r+12)];break;
+    case 19:st.fill=u(r+8)===2?'nonzero':'evenodd';break;case 22:st.align=u(r+8);break;case 24:st.textColor=color(r+8);break;case 18:st.bk=u(r+8);break;
+    case 33:stack.push(clone(st));break;
+    case 34:{var rel=i32(r+8),k=rel<0?stack.length+rel:rel-1;if(k>=0&&k<stack.length){st=stack[k];stack.length=k;}break;}
+    case 35:st.xf=[f32(r+8),f32(r+12),f32(r+16),f32(r+20),f32(r+24),f32(r+28)];break;
+    case 36:{var x=[f32(r+8),f32(r+12),f32(r+16),f32(r+20),f32(r+24),f32(r+28)],mode=u(r+32);st.xf=mode===1?[1,0,0,1,0,0]:mode===2?mul(x,st.xf):mode===3?mul(st.xf,x):x;break;}
+    case 37:{var ih=u(r+8);if(ih&0x80000000)stockObject(ih);else{var ob=objects[ih];if(ob){if(ob.kind==='pen')st.pen=ob.v;else if(ob.kind==='brush')st.brush=ob.v;else if(ob.kind==='font')st.font=ob.v;}}break;}
+    case 38:objects[u(r+8)]={kind:'pen',v:{color:color(r+24),width:Math.max(1,i32(r+16)),none:(u(r+12)&15)===5}};break;
+    case 95:objects[u(r+8)]={kind:'pen',v:{color:color(r+40),width:Math.max(1,u(r+32)),none:(u(r+28)&15)===5}};break;
+    case 39:objects[u(r+8)]={kind:'brush',v:{color:color(r+16),none:u(r+12)===1}};break;
+    case 82:{var face='';for(var c=0;c<32;c++){var ch=u16(b,r+40+c*2);if(!ch)break;face+=String.fromCharCode(ch);}objects[u(r+8)]={kind:'font',v:{size:Math.abs(i32(r+12))||12,esc:i32(r+20)/10,weight:i32(r+28)||400,italic:!!b[r+32],face:face||'Arial'}};break;}
+    case 40:delete objects[u(r+8)];break;
+    case 27:st.pos=[i32(r+8),i32(r+12)];add('M'+pt(st.pos[0],st.pos[1]).join(' '));break;
+    case 54:{var a=pt(st.pos[0],st.pos[1]),e=pt(i32(r+8),i32(r+12));st.pos=[i32(r+8),i32(r+12)];if(!add('L'+e.join(' ')))paint('M'+a.join(' ')+'L'+e.join(' '),false,true);break;}
+    case 59:path=[];break;case 60:break;case 61:add('Z');break;
+    case 62:case 63:case 64:if(path&&path.length){var dd=path.join('');path=null;paint(dd,type!==64,type!==62);}else path=null;break;
+    case 3:case 86:poly(r+28,u(r+24),type===86,true,true,true);break;
+    case 4:case 87:poly(r+28,u(r+24),type===87,false,false,true);break;
+    case 6:case 89:poly(r+28,u(r+24),type===89,false,false,true,false);break;
+    case 2:case 85:{var n=u(r+24),is=type===85,p0=pt(is?i16(r+28):i32(r+28),is?i16(r+30):i32(r+32)),s='M'+p0.join(' ')+bez(r+28+(is?4:8),n-1,is);if(!add(s))paint(s,false,true);break;}
+    case 5:case 88:{var s2=bez(r+28,u(r+24),type===88);if(!add(s2))paint('M'+pt(st.pos[0],st.pos[1]).join(' ')+s2,false,true);break;}
+    case 7:case 8:case 90:case 91:{var np=u(r+24),is16=type>=90,cnt=[],base=r+32,acc='';for(var q=0;q<np;q++)cnt.push(u(base+q*4));var po=base+np*4,sz=is16?4:8;
+      cnt.forEach(function(nn){for(var k=0;k<nn;k++){var x=is16?i16(po+k*sz):i32(po+k*sz),y=is16?i16(po+k*sz+2):i32(po+k*sz+4),p=pt(x,y);acc+=(k?'L':'M')+p[0]+' '+p[1];}if(type===8||type===91)acc+='Z';po+=nn*sz;});
+      if(!add(acc))paint(acc,type===8||type===91,true);break;}
+    case 42:case 43:case 44:{var L=i32(r+8),T=i32(r+12),R=i32(r+16),B=i32(r+20),p1=pt(L,T),p2=pt(R,B),x0=Math.min(p1[0],p2[0]),y0=Math.min(p1[1],p2[1]),w=Math.abs(p2[0]-p1[0]),h=Math.abs(p2[1]-p1[1]),d;
+      if(type===42)d='M'+(x0)+' '+(y0+h/2)+'a'+w/2+' '+h/2+' 0 1 0 '+w+' 0a'+w/2+' '+h/2+' 0 1 0 '+(-w)+' 0Z';else d='M'+x0+' '+y0+'h'+w+'v'+h+'h'+(-w)+'Z';if(!add(d))paint(d,true,true);break;}
+    case 81:{var xd=i32(r+24),yd=i32(r+28),offBmi=u(r+48),cbBmi=u(r+52),offBits=u(r+56),cbBits=u(r+60),cxd=i32(r+72),cyd=i32(r+76);
+      if(cbBmi>=40&&offBmi+cbBmi<=size&&offBits+cbBits<=size){var href=dib(b.subarray(r+offBmi,r+offBmi+cbBmi),b.subarray(r+offBits,r+offBits+cbBits));if(href){var q1=pt(xd,yd),q2=pt(xd+cxd,yd+cyd);out.push('<image x="'+Math.min(q1[0],q2[0])+'" y="'+Math.min(q1[1],q2[1])+'" width="'+r2(Math.abs(q2[0]-q1[0]))+'" height="'+r2(Math.abs(q2[1]-q1[1]))+'" preserveAspectRatio="none" href="'+href+'"/>');}}break;}
+    case 84:{var rx=i32(r+36),ry=i32(r+40),nc=u(r+44),os=u(r+48),str='';for(var t=0;t<nc&&os+t*2+1<size;t++)str+=String.fromCharCode(u16(b,r+os+t*2));str=str.replace(/[\u0000-\u001f]/g,'');if(!str.trim())break;
+      var tp=pt(rx,ry),fs=r2(st.font.size*scale()),al=st.align,anchor=(al&6)===6?'middle':(al&2)?'end':'start',base2=(al&24)===24?'':(al&8)?' dominant-baseline="text-after-edge"':' dominant-baseline="text-before-edge"';
+      out.push('<text x="'+tp[0]+'" y="'+tp[1]+'" font-size="'+fs+'" font-family="'+esc(st.font.face)+', Arial, sans-serif"'+(st.font.weight>=600?' font-weight="700"':'')+(st.font.italic?' font-style="italic"':'')+' fill="'+st.textColor+'" text-anchor="'+anchor+'"'+base2+(st.font.esc?' transform="rotate('+r2(-st.font.esc*(st.we&&st.ve&&st.ve[1]/st.we[1]<0?-1:1))+' '+tp[0]+' '+tp[1]+')"':'')+'>'+esc(str)+'</text>');break;}
+    case 14:o=b.length;continue;
+   }
+   o+=size;}
+  if(!out.length)return null;
+  return {viewBox:bounds[0]+' '+bounds[1]+' '+Math.max(1,bounds[2]-bounds[0]+1)+' '+Math.max(1,bounds[3]-bounds[1]+1),body:out.join('')};
+ }
+ function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+ // A device-independent bitmap as an image URL: JPEG and PNG pass through; others become
+ // a BMP file.
+ function dib(bmi,bits){
+  var compression=u32(bmi,16);if(compression===4)return 'data:image/jpeg;base64,'+base64(bits);if(compression===5)return 'data:image/png;base64,'+base64(bits);
+  var file=new Uint8Array(14+bmi.length+bits.length),dv=new DataView(file.buffer);file[0]=0x42;file[1]=0x4d;dv.setUint32(2,file.length,true);dv.setUint32(10,14+bmi.length,true);file.set(bmi,14);file.set(bits,14+bmi.length);
+  return 'data:image/bmp;base64,'+base64(file);
+ }
+ root.SWStencils={read:read,match:match,score:score,ports:ports,layout:layout,artwork:artwork,emf:emf,unzip:unzip};
+ if(typeof module==='object'&&module.exports)module.exports=root.SWStencils;
 })(typeof globalThis!=='undefined'?globalThis:this);
 
 </script>
@@ -6503,7 +6805,7 @@ function pJ(L,pan){const d=E(),I={},R={},T={};
     return {compareText:compareText,compareMode:['records','text','fields'].includes(data.compareMode)?data.compareMode:'records',models:models.slice(0,data.count),model:data.selected<0?null:models[data.selected],comparison:data.comparison<0?null:models[data.comparison],view:typeof data.view==='string'?data.view:'overview',scope:typeof data.scope==='string'?data.scope:'',categoryTabs:data.categoryTabs&&typeof data.categoryTabs==='object'&&!Array.isArray(data.categoryTabs)?data.categoryTabs:{},showUnassigned:!!data.showUnassigned,showEmpty:!!data.showEmpty};
   }
   function create(options){
-    options=options||{};var bridge=options.bridge||root.chrome&&root.chrome.webview,native=!!(bridge&&typeof bridge.postMessage==='function'&&typeof bridge.addEventListener==='function'),state={current:'5.31.0',state:'idle',message:'',automatic:true,busy:false,ready:false,available:false},handlers={},restoring=false,installing=false;
+    options=options||{};var bridge=options.bridge||root.chrome&&root.chrome.webview,native=!!(bridge&&typeof bridge.postMessage==='function'&&typeof bridge.addEventListener==='function'),state={current:'5.32.0',state:'idle',message:'',automatic:true,busy:false,ready:false,available:false},handlers={},restoring=false,installing=false;
     var commands=['update-ui-ready','update-status','update-check','update-download','update-later','update-auto-on','update-auto-off','update-restored','update-restore-failed'];
     function request(command){if(!native)throw new Error('Built-in updates are available in the Windows desktop edition.');if(!commands.includes(command))throw new Error('Unknown update action.');bridge.postMessage(command);}
     if(native)bridge.addEventListener('message',async function(event){
@@ -7418,8 +7720,11 @@ function pJ(L,pan){const d=E(),I={},R={},T={};
   function fitSiteMapToWindow(root){
     var box=root.querySelector('.site-map-page .site-map-scroll,.diagram-page-view .site-map-scroll'),side=root.querySelector('.site-map-page.with-detail .site-map-detail');if(!box&&!side)return;
     var top=root.getBoundingClientRect().top,pad=parseFloat(getComputedStyle(root).paddingBottom)||0;
+    // The side panel first: until it is limited, its full height would count as overflow
+    // and shrink the map.
+    if(side){side.style.maxHeight='';var sh=Math.max(240,root.clientHeight-(side.getBoundingClientRect().top-top+root.scrollTop)-pad);side.style.maxHeight=sh+'px';}
     if(box){box.style.height='';var h=Math.max(300,root.clientHeight-(box.getBoundingClientRect().top-top+root.scrollTop)-pad);box.style.height=h+'px';var over=root.scrollHeight-root.clientHeight;if(over>0)box.style.height=Math.max(300,h-over)+'px';}
-    if(side){side.style.maxHeight='';var sh=Math.max(240,root.clientHeight-(side.getBoundingClientRect().top-top+root.scrollTop)-pad);side.style.maxHeight=sh+'px';var extra=root.scrollHeight-root.clientHeight;if(extra>0)side.style.maxHeight=Math.max(240,sh-extra)+'px';}
+    if(side){var extra=root.scrollHeight-root.clientHeight;if(extra>0)side.style.maxHeight=Math.max(240,parseFloat(side.style.maxHeight)-extra)+'px';}
     for(var pass=0;pass<3;pass++){var more=root.scrollHeight-root.clientHeight;if(more<=0)break;if(box)box.style.height=Math.max(300,parseFloat(box.style.height)-more)+'px';if(side)side.style.maxHeight=Math.max(240,parseFloat(side.style.maxHeight)-more)+'px';}
     if(root.scrollHeight<=root.clientHeight)root.scrollTop=0;
     if(box&&box.getAttribute('data-autofit')){box.removeAttribute('data-autofit');fitSiteZoom(box);}
@@ -7940,10 +8245,27 @@ function pJ(L,pan){const d=E(),I={},R={},T={};
     evidenceSets.forEach(function(s){s.ev.links.forEach(function(l){var a=dev(l.a.device),b=dev(l.b.device);if(!a||!b)return;if(/\d/.test(l.a.port))a.hasPorts=true;if(/\d/.test(l.b.port))b.hasPorts=true;links.push({a:a.key,b:b.key,aPort:l.a.port,bPort:l.b.port,source:l.source});});});
     workspace.forEach(function(m){dev(m.meta.name);});
     evidenceDeviceInfo().forEach(function(d){if(window.SWSiteMap.infra(window.SWSiteMap.role(d)))dev(d.name);});
+    links.forEach(function(l){correctLinkPort(l,devices.get(l.a),devices.get(l.b));});
     // Keep one link per port pair across files.
     var seen=new Set();links=links.filter(function(l){var a=l.a+'|'+X.interfaceKey(l.aPort),b=l.b+'|'+X.interfaceKey(l.bPort),k=a<b?a+'~'+b:b+'~'+a;if(seen.has(k))return false;seen.add(k);return true;});
     return {devices:Array.from(devices.values()),links:links};
   }
+  // Neighbor tables sometimes name the wrong local port (an export reported a firewall's
+  // down "ha" port for a link that its "x3" port carries). When the far end's configured
+  // or reported description names this device and one of its ports, and the reported
+  // port is not up while the described one is, use the described port and keep the
+  // reported one for reference.
+  function alnum(v){return String(v||'').toLowerCase().replace(/[^a-z0-9]/g,'');}
+  function devicePortNames(name){var X=SE(),key=X.deviceKey(name),out=[],m=modelForDevice(name);if(m)(m.categories.interfaces||[]).forEach(function(r){if(r.name)out.push(r.name);});evidenceSets.forEach(function(set){set.ev.interfaces.forEach(function(i){if(i.name&&X.deviceKey(i.device)===key)out.push(i.name);});});return out;}
+  function portDescription(name,port){var X=SE(),m=modelForDevice(name),pk=X.interfaceKey(port),d='';if(m)(m.categories.interfaces||[]).some(function(r){if(X.interfaceKey(r.name)===pk&&r.summary&&r.summary.comment){d=String(r.summary.comment);return true;}return false;});if(!d){var e=evidencePort(name,port);d=e&&e.description||'';}return d;}
+  function portUp(name,port){var e=evidencePort(name,port);return e?/^up/i.test(e.oper||''):null;}
+  function correctLinkPort(l,A,B){if(!A||!B)return;[[A,'aPort',B,'bPort'],[B,'bPort',A,'aPort']].forEach(function(s){var near=s[0],far=s[2],desc=alnum(portDescription(far.name,l[s[3]])),nk=SE().deviceKey(near.name);if(!desc||!nk)return;
+    // Descriptions often shorten the name (no model suffix), so accept its longest
+    // leading part of at least 60%.
+    var at=-1,len=nk.length;for(;len>=Math.max(6,Math.ceil(nk.length*0.6));len--){at=desc.indexOf(nk.slice(0,len));if(at>=0)break;}if(at<0)return;var rest=desc.slice(at+len),best='';
+    devicePortNames(near.name).forEach(function(p){var k=alnum(p);if(k&&rest.indexOf(k)===0&&!/\d/.test(rest.charAt(k.length)||'')&&k.length>alnum(best).length)best=p;});
+    if(!best||alnum(best)===alnum(l[s[1]]))return;var was=l[s[1]];if(portUp(near.name,was)===true||portUp(near.name,best)===false)return;
+    l[s[1]+'Reported']=was;l[s[1]]=best;l.correction=near.name+' '+was+' reported; '+far.name+' '+l[s[3]]+' is described as "'+portDescription(far.name,l[s[3]])+'"';});}
   function deviceIdentityFor(m){try{var inv=window.SWHardware?window.SWHardware.inventory(m):null;return inv&&inv.members&&inv.members[0]&&inv.members[0].model||'';}catch(e){return '';}}
   function modelRole(m){return /^(?:sonicwall|fortinet|fortigate|paloalto|sophos|juniper-srx)$/i.test(m.meta.vendorId||'')||m.categories&&m.categories.policies&&m.categories.policies.length>5?'firewall':'switch';}
   function shortPort(p){return String(p||'').replace(/^TwentyFiveGigE/i,'Twe').replace(/^TenGigabitEthernet/i,'Te').replace(/^GigabitEthernet/i,'Gi').replace(/^FastEthernet/i,'Fa').replace(/^FortyGigabitEthernet/i,'Fo').replace(/^HundredGigE/i,'Hu').replace(/^Port-channel/i,'Po').replace(/^Ethernet/i,'Eth').replace(/\s*\(.*\)$/,'');}
@@ -8056,19 +8378,20 @@ function pJ(L,pan){const d=E(),I={},R={},T={};
   // The diagram input: site map layout, links with speeds, VLANs and each device's ports.
   var diagramCache={key:'',input:null,pages:new Map()};
   function diagramInput(){
-    if(!window.SWDiagram||!window.SWSiteMap)return null;var key=evidenceSets.length+'|'+workspace.length+'|'+evidenceSets.map(function(s){return s.name;}).join(',');if(diagramCache.key===key)return diagramCache.input;
+    if(!window.SWDiagram||!window.SWSiteMap)return null;var key=evidenceSets.length+'|'+workspace.length+'|'+evidenceSets.map(function(s){return s.name;}).join(',')+'|'+stencilLib.version;if(diagramCache.key===key)return diagramCache.input;
     var data=siteMapModel(),X=SE();
     data.links.forEach(function(l){var a=data.devices.find(function(d){return d.key===l.a;}),b=data.devices.find(function(d){return d.key===l.b;});var pa=a&&evidencePort(a.name,l.aPort),pb=b&&evidencePort(b.name,l.bPort);l.aSpeed=pa&&pa.speed||'';l.bSpeed=pb&&pb.speed||'';});
     var layout=window.SWSiteMap.layout(data.devices,data.links,{showAccess:false}),vlans=new Map(),ports=new Map();
     layout.nodes.forEach(function(n){var m=modelForDevice(n.name),list=[],names=[];if(m){(m.categories.vlans||[]).forEach(function(r){var v=r.summary||{};if(r.summary.featureRoot||!/^\d+$/.test(String(v.vlan||'')))return;if(!list.some(function(x){return x.id===String(v.vlan);}))list.push({id:String(v.vlan),name:v.vlanName||v.label||''});});(m.categories.interfaces||[]).forEach(function(r){if(r.name)names.push(r.name);});}
       evidenceSets.forEach(function(set){set.ev.interfaces.forEach(function(i){if(X.deviceKey(i.device)!==n.key)return;if(i.name)names.push(i.name);if(!m)(i.vlans||[]).forEach(function(v){if(!list.some(function(x){return x.id===v.id;}))list.push({id:v.id,name:v.name||''});});});});
       list.sort(function(a,b){return Number(a.id)-Number(b.id);});vlans.set(n.key,list);ports.set(n.key,names);});
-    diagramCache={key:key,input:{title:diagramTitle(),layout:layout,links:data.links,vlans:vlans,ports:ports},pages:new Map()};return diagramCache.input;
+    var stencils=new Map();layout.all.forEach(function(n){var st=stencilFor(n);if(st)stencils.set(n.key,st);});
+    diagramCache={key:key,input:{title:diagramTitle(),layout:layout,links:data.links,vlans:vlans,ports:ports,stencils:stencils},pages:new Map()};return diagramCache.input;
   }
   // What the diagram shows. It follows the selected configuration's device until a
   // device is chosen here; clicking a device in the diagram draws from it down.
   function diagramOptions(){
-    var input=diagramInput();if(!input)return null;var d=state.diagram||(state.diagram={scope:'downstream',depth:0,style:'auto',upstream:true,aps:true,others:true,hidden:new Set(),focus:'',focusModel:undefined});
+    var input=diagramInput();if(!input)return null;var d=state.diagram||(state.diagram={scope:'downstream',depth:0,style:'auto',upstream:true,aps:true,others:true,hidden:new Set(),added:new Set(),focus:'',focusModel:undefined});
     var keys=new Set(input.layout.nodes.map(function(n){return n.key;}));
     if(d.focusModel!==state.model||!keys.has(d.focus)){var own=state.model?input.layout.nodes.find(function(n){return n.open===workspace.indexOf(state.model);}):null;
       var top=input.layout.nodes.filter(function(n){return !n.isolated;}).sort(function(a,b){return a.y-b.y||b.degree-a.degree;})[0];if(d.focusModel!==state.model)d.scope=own?(d.scope==='site'?'downstream':d.scope):'site';d.focus=own?own.key:top?top.key:'';d.focusModel=state.model;}
@@ -8076,8 +8399,8 @@ function pJ(L,pan){const d=E(),I={},R={},T={};
   }
   function diagramCurrent(){
     var input=diagramInput(),d=diagramOptions();if(!input||!d)return null;
-    var o={scope:d.scope,focus:d.focus,depth:d.depth,style:d.style,upstream:d.upstream,aps:d.aps,others:d.others,hidden:d.hidden,title:diagramTitle()},key=JSON.stringify([o.scope,o.focus,o.depth,o.style,o.upstream,o.aps,o.others,Array.from(d.hidden).sort(),o.title]);
-    if(!diagramCache.pages.has(key)){if(diagramCache.pages.size>12)diagramCache.pages.clear();diagramCache.pages.set(key,window.SWDiagram.diagram(input,o));}
+    var o={scope:d.scope,focus:d.focus,depth:d.depth,style:d.style,upstream:d.upstream,aps:d.aps,others:d.others,hidden:d.hidden,added:d.added,title:diagramTitle()},key=JSON.stringify([o.scope,o.focus,o.depth,o.style,o.upstream,o.aps,o.others,Array.from(d.hidden).sort(),Array.from(d.added).sort(),o.title]);
+    if(!diagramCache.pages.has(key)){if(diagramCache.pages.size>12)diagramCache.pages.clear();diagramCache.pages.set(key,window.SWDiagram.diagram(d.style==='plate'?Object.assign({},input,{stencils:null}):input,o));}
     return {page:diagramCache.pages.get(key),key:key,input:input,options:d};
   }
   function diagramTrail(input,focus){var t=window.SWDiagram.tree(input.layout),chain=[],k=focus;while(k&&chain.length<12){chain.unshift(k);k=t.parentOf.get(k);}return {tree:t,chain:chain};}
@@ -8087,14 +8410,16 @@ function pJ(L,pan){const d=E(),I={},R={},T={};
     var bar='<div class="compare-mode-toolbar evidence-tabs diagram-toolbar" role="group" aria-label="Diagram contents">'+scopes.map(function(s){return '<button class="button'+(d.scope===s[0]?' primary':'')+'" data-diagram-scope="'+s[0]+'" aria-pressed="'+(d.scope===s[0])+'">'+s[1]+'</button>';}).join('')+
       '<label class="diagram-field">Device <select class="select" id="diagram-focus" aria-label="Diagram device"'+(d.scope==='site'?' disabled':'')+'>'+nodes.map(function(n){return '<option value="'+h(n.key)+'"'+(n.key===d.focus?' selected':'')+'>'+h(n.name)+'</option>';}).join('')+'</select></label>'+
       '<label class="diagram-field">Levels <select class="select" id="diagram-depth" aria-label="Levels below the device"'+(d.scope!=='downstream'?' disabled':'')+'>'+[[0,'All'],[1,'1'],[2,'2'],[3,'3']].map(function(x){return '<option value="'+x[0]+'"'+(Number(d.depth)===x[0]?' selected':'')+'>'+x[1]+'</option>';}).join('')+'</select></label>'+
-      '<label class="diagram-field">Drawing <select class="select" id="diagram-style" aria-label="Drawing style">'+[['auto','Automatic'],['plate','Faceplates'],['box','Boxes']].map(function(x){return '<option value="'+x[0]+'"'+(d.style===x[0]?' selected':'')+'>'+x[1]+'</option>';}).join('')+'</select></label>'+
+      '<label class="diagram-field">Drawing <select class="select" id="diagram-style" aria-label="Drawing style">'+[['auto','Stencils where available'],['plate','Drawn faceplates'],['box','Boxes']].map(function(x){return '<option value="'+x[0]+'"'+(d.style===x[0]?' selected':'')+'>'+x[1]+'</option>';}).join('')+'</select></label>'+
       [['upstream','Upstream device'],['aps','Access points'],['others','Other devices']].map(function(x){return '<label class="diagram-check"><input type="checkbox" data-diagram-option="'+x[0]+'"'+(d[x[0]]!==false?' checked':'')+'> '+x[1]+'</label>';}).join('')+'</div>';
     var crumbs=d.scope==='site'?'':'<nav class="diagram-trail" aria-label="Path to the device"><button class="link-button" data-diagram-scope="site">Whole site</button>'+trail.chain.map(function(k){var n=trail.tree.byKey.get(k);return '<span aria-hidden="true">›</span>'+(k===d.focus?'<strong>'+h(n.name)+'</strong>':'<button class="link-button" data-diagram-focus="'+h(k)+'">'+h(n.name)+'</button>');}).join('')+'</nav>';
-    var hidden=d.hidden.size,choose='<details class="diagram-choose"'+(state.diagramChooseOpen?' open':'')+'><summary>Choose devices'+(hidden?' <span class="panel-count">'+hidden+' left out</span>':'')+'</summary><div class="diagram-choose-list">'+nodes.map(function(n){return '<label class="site-link-row diagram-choose-row"><input type="checkbox" data-diagram-hide="'+h(n.key)+'"'+(d.hidden.has(n.key)?'':' checked')+'> <span>'+h(n.name)+'</span><span class="muted">'+h(n.model||n.role)+'</span></label>';}).join('')+'</div>'+(hidden?'<button class="button small" data-diagram-showall>Include all devices</button>':'')+'</details>';
+    // Every device of the site, ticked when it is on the diagram: untick to remove one,
+    // tick one from elsewhere to add it in its tier.
+    var onPage=new Set(page.devices.map(function(x){return x.key;})),changed=d.hidden.size+d.added.size,choose='<details class="diagram-choose"'+(state.diagramChooseOpen?' open':'')+'><summary>Add or remove devices <span class="panel-count">'+onPage.size+' of '+nodes.length+' shown</span></summary><div class="diagram-choose-list">'+nodes.map(function(n){return '<label class="site-link-row diagram-choose-row"><input type="checkbox" data-diagram-device="'+h(n.key)+'"'+(onPage.has(n.key)?' checked':'')+'> <span>'+h(n.name)+'</span><span class="muted">'+h(n.model||n.role)+'</span></label>';}).join('')+'</div>'+(changed?'<button class="button small" data-diagram-showall>Undo added and removed devices</button>':'')+'</details>';
     var svg=window.SWDiagram.svg(page).replace(/^<svg /,'<svg class="diagram-svg" data-w="'+page.w+'" data-h="'+page.h+'" role="img" aria-label="'+h(page.title)+'" ').replace(/ width="[\d.]+" height="[\d.]+"/,' width="'+Math.round(page.w*z)+'" height="'+Math.round(page.h*z)+'"');
     var fit=state.diagramFitKey!==cur.key;state.diagramFitKey=cur.key;
-    return '<div class="diagram-page-view">'+bar+'<section class="panel diagram-panel"><div class="panel-head"><h2 class="panel-title">'+h(page.title)+'</h2><div class="diagram-actions"><label class="diagram-title-field">Site name <input class="select diagram-title-input" id="diagram-title" value="'+h(diagramTitle())+'" aria-label="Site name"></label><button class="button small primary" data-diagram-export="vsdx">'+icon('download')+'Visio (.vsdx)</button><button class="button small" data-diagram-export="svg">'+icon('download')+'SVG</button><button class="button small" data-diagram-export="html">'+icon('download')+'Printable HTML</button><button class="button small" data-diagram-export="book" title="The whole site plus one page for each switch with switches or access points below it">'+icon('download')+'Site book (.vsdx)</button><button class="button small" data-diagram-export="library" title="Every faceplate in the built-in device catalog, as grouped shapes to copy into diagrams or a stencil">'+icon('download')+'Device library (.vsdx)</button></div></div>'+
-      crumbs+choose+'<p class="live-note">Click a device to draw from it down. Scroll to zoom and drag to move. Ports are numbered on each faceplate; linked ports are outlined in the link color and named above or below the device.</p>'+
+    return '<div class="diagram-page-view">'+bar+'<section class="panel diagram-panel"><div class="panel-head"><h2 class="panel-title">'+h(page.title)+'</h2><div class="diagram-actions"><label class="diagram-title-field">Site name <input class="select diagram-title-input" id="diagram-title" value="'+h(diagramTitle())+'" aria-label="Site name"></label><button class="button small primary" data-diagram-export="vsdx">'+icon('download')+'Visio (.vsdx)</button><button class="button small" data-diagram-export="svg">'+icon('download')+'SVG</button><button class="button small" data-diagram-export="html">'+icon('download')+'Printable HTML</button><button class="button small" data-diagram-export="book" title="The whole site plus one page for each switch with switches or access points below it">'+icon('download')+'Site book (.vsdx)</button><button class="button small" data-action="diagram-stencils" title="Use your vendor Visio stencils for the devices">'+icon('layers')+'Stencils'+(stencilLib.files.length?' <span class="tab-count">'+stencilLib.files.reduce(function(n,f){return n+f.masters.length;},0)+'</span>':'')+'</button><button class="button small" data-diagram-export="library" title="Every faceplate in the built-in device catalog, as grouped shapes to copy into diagrams or a stencil">'+icon('download')+'Device library (.vsdx)</button></div></div>'+
+      crumbs+choose+'<p class="live-note">Click a device to draw from it down; right-click a device to remove it. Scroll to zoom and drag to move. Ports are numbered on each faceplate; linked ports are outlined in the link color and named above or below the device.</p>'+
       '<div class="site-map-viewport"><div class="site-map-zoom" role="group" aria-label="Zoom"><button class="icon-button" data-sitemap-zoom="out" aria-label="Zoom out" title="Zoom out">−</button><span class="zoom-level" aria-live="polite">'+Math.round(z*100)+'%</span><button class="icon-button" data-sitemap-zoom="in" aria-label="Zoom in" title="Zoom in">+</button><button class="button small" data-sitemap-zoom="fit" title="Fit the whole diagram">Fit</button><button class="button small" data-sitemap-zoom="reset" title="Actual size">100%</button></div><div class="site-map-scroll diagram-scroll"'+(fit?' data-autofit="1"':'')+' title="Scroll to zoom, drag to move">'+svg+'</div></div></section></div>';
   }
   function exportDiagram(kind){
@@ -8898,7 +9223,7 @@ function pJ(L,pan){const d=E(),I={},R={},T={};
     return '<div class="site-page">'+tabs+summary+panels[current]+'</div>';
   }
   // Kept current by scripts/version.py, which replaces the release string on each bump.
-  var APP_VERSION='5.31.0';
+  var APP_VERSION='5.32.0';
   // Client report: one section per open configuration. Port states use the same
   // classification as Interfaces at a glance, evaluated with each model active.
   function withModel(m,fn){var saved={model:state.model,usage:state.interfaceUsageCache,recordMap:state.recordMap};state.model=m;state.interfaceUsageCache=null;state.recordMap=new Map(m.records.map(function(r){return [r.id,r];}));try{return fn();}finally{state.model=saved.model;state.interfaceUsageCache=saved.usage;state.recordMap=saved.recordMap;}}
@@ -9087,6 +9412,7 @@ function pJ(L,pan){const d=E(),I={},R={},T={};
   }
   async function importFile(file,target){
     if(!file||state.busy)return;
+    if(/\.(vssx|vstx)$/i.test(file.name||'')&&window.SWStencils){if(el.modal.open)el.modal.close();await importStencils([file]);return;}
     if(target)state.importTarget=target;
     if(!el.modal.open||!document.getElementById('paste-config'))showImport(state.importTarget);
     if(file.size>25*1024*1024){importError('This file exceeds the 25 MB limit. Choose a smaller EXP or decoded text file.');return;}
@@ -9539,7 +9865,7 @@ function pJ(L,pan){const d=E(),I={},R={},T={};
     }
   }
   function showHelp(){
-    openModal(modalHeader('About Config Inspector','Firewall and switch configuration explorer / version 5.31.0')+
+    openModal(modalHeader('About Config Inspector','Firewall and switch configuration explorer / version 5.32.0')+
       '<div class="modal-body"><div class="help-section"><h3>Open and explore</h3><p>Import SonicWall EXP, FortiGate FortiOS text, Palo Alto configuration XML, Sophos Firewall XML or export TAR, Aruba AOS or AOS-CX text, Cisco IOS or NX-OS text, Juniper Junos text or XML, Meraki API JSON, or a JSON snapshot exported by this application. The device type is detected automatically. You can also drop a file anywhere in the window. Select an interface or record for a plain-language explanation and key facts. Related objects show their IP addresses or service ports. Advanced details contains all original fields. Use Copy summary for readable facts and Back to return from a related item.</p></div>'+
       '<div class="help-section"><h3>Configuration sections</h3><p>Choose a root section in the sidebar, then select one of its indented subsections. Each subsection opens its own page. Routes, objects, members and other primary definitions appear before related settings. Security pages are grouped by function, including web, applications, files, intrusion prevention and SSL/TLS inspection. Certificate objects remain under Certificates. Empty subsections are hidden by default. Use View options to show empty sections, or Configuration sections and All original fields to inspect untranslated settings. Configuration context, search and table filters apply to the selected view.</p></div>'+
       '<div class="help-section"><h3>Choose access rule zones</h3><p>In Access Rules, choose From zone and To zone independently. All zones leaves that side unrestricted. Swap reverses the direction. Clear zone filters removes the pair while keeping the table filters. Search, configured state, and IP version filters combine with the pair, and CSV includes all matching rules. A matrix cell selects its zone pair. Interface and zone details offer outgoing and incoming rules.</p></div>'+
@@ -9726,6 +10052,84 @@ function configTree(it){
   document.addEventListener('click',function(event){if(event.target.closest('[data-overview-routes]')){state.categoryTabs.routes='routes';view('routes');}});
   // Site map and supplementary data controls.
   // Zoom around a point (wheel, buttons) by resizing the SVG and keeping that point fixed.
+  // Clickable devices and addresses. A device name or address shown in a table, side
+  // panel or details row links to what the app knows about it: an open configuration
+  // (at the named interface when there is one), otherwise the imported device details.
+  // Applied to each rendered page, drawer and dialog.
+  var entityCache={key:''};
+  function entityIndex(){
+    var key=workspace.length+'|'+evidenceSets.length+'|'+workspace.map(function(m){return m.meta.name;}).join(',');if(entityCache.key===key)return entityCache;
+    var X=SE(),devices=new Map(),ips=new Map(),aliases=new Map();
+    function alias(name,k){name=String(name||'').trim();if(name.length>=3&&!/^\d+$/.test(name)&&!aliases.has(name.toLowerCase()))aliases.set(name.toLowerCase(),k);}
+    workspace.forEach(function(m){var n=String(m.meta.name||''),k=X.deviceKey(n);if(!k)return;devices.set(k,{name:n,model:m});alias(n,k);
+      (m.categories.interfaces||[]).forEach(function(r){(r.addresses||[]).forEach(function(a){var ip=String(a&&a.ip||'').split('/')[0];if(!/^\d+\.\d+\.\d+\.\d+$/.test(ip))return;var had=ips.get(ip);if(!had)ips.set(ip,{key:k,iface:r.name});else if(had.key!==k)had.ambiguous=true;});});});
+    evidenceDeviceInfo().forEach(function(d,k){if(!devices.has(k)){if(d.generic||!(d.ips&&d.ips.length||d.model||d.type))return;devices.set(k,{name:d.name});}alias(d.name,k);(d.ips||[]).forEach(function(ip){if(!ips.has(ip))ips.set(ip,{key:k});});});
+    var names=Array.from(aliases.keys()).sort(function(a,b){return b.length-a.length;}).map(function(n){return n.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');});
+    entityCache={key:key,devices:devices,ips:ips,aliases:aliases,re:new RegExp((names.length?'(?<![A-Za-z0-9_.-])('+names.join('|')+')(?![A-Za-z0-9_-])|':'')+'(?<![\\d.])(\\d{1,3}(?:\\.\\d{1,3}){3})(?![\\d.]*\\d)','gi')};
+    return entityCache;
+  }
+  var ENTITY_CELLS='td,th[scope="row"],.device-info-row > :last-child,.detail-cell,.site-link-row,.live-panel li,dd',ENTITY_SKIP='button,a,input,select,textarea,code,pre,svg,label,summary,.entity-link,[data-copy-value],.workspace-tabs,.notice,.stc-root,.raw-source,.source-block';
+  function linkifyEntities(root){
+    if(!root||!root.querySelectorAll||['compare','plaintext','raw'].indexOf(state.view)>=0&&root===el.content)return;var idx=entityIndex();if(!idx.devices.size)return;
+    var X=SE(),self=state.model?X.deviceKey(state.model.meta.name):'',cells=root.querySelectorAll(ENTITY_CELLS),budget=4000;
+    for(var c=0;c<cells.length&&budget>0;c++){var walker=document.createTreeWalker(cells[c],NodeFilter.SHOW_TEXT,null),nodes=[],n;while((n=walker.nextNode())&&budget-->0)if(n.nodeValue.trim().length>=3&&!(n.parentElement&&n.parentElement.closest(ENTITY_SKIP)))nodes.push(n);
+      nodes.forEach(function(node){var text=node.nodeValue,re=idx.re,m,last=0,frag=null;re.lastIndex=0;
+        while((m=re.exec(text))){var kind=m[1]?'device':'ip',value=m[1]||m[2],target,iface='',end=m.index+m[0].length;
+          if(kind==='device'){var k=idx.aliases.get(value.toLowerCase());target=idx.devices.get(k);var tail=text.slice(end).match(/^\s+\/\s+([^(),\n]+?)(?=\s*\(|\s*,|\s*$)/);if(tail)iface=tail[1].trim();if(!target||k===self&&!iface)continue;}
+          else{target=idx.ips.get(value);if(!target||target.ambiguous||target.key===self&&['site','evidence','sitemap','search','diagram'].indexOf(state.view)<0)continue;}
+          frag=frag||document.createDocumentFragment();frag.appendChild(document.createTextNode(text.slice(last,m.index)));
+          var b=document.createElement('button');b.type='button';b.className='entity-link';b.setAttribute('data-entity',kind);b.setAttribute('data-entity-value',value);if(iface)b.setAttribute('data-entity-interface',iface);
+          var own=idx.devices.get(kind==='ip'?target.key:idx.aliases.get(value.toLowerCase()));b.title=own&&own.model?'Open '+own.name+(iface?' at '+iface:kind==='ip'&&target.iface?' at '+target.iface:''):'Show '+(own?own.name:value)+' details';b.textContent=value;frag.appendChild(b);last=end;}
+        if(frag){frag.appendChild(document.createTextNode(text.slice(last)));node.parentNode.replaceChild(frag,node);}});}
+  }
+  function findInterfaceRecord(model,name){var want=String(name||'').toLowerCase().replace(/[\s_-]+/g,'');return (model.categories.interfaces||[]).find(function(r){return String(r.name||'').toLowerCase().replace(/[\s_-]+/g,'')===want;})||null;}
+  function openEntity(t){
+    var idx=entityIndex(),kind=t.getAttribute('data-entity'),value=t.getAttribute('data-entity-value'),key=kind==='ip'?(idx.ips.get(value)||{}).key:idx.aliases.get(String(value).toLowerCase()),dev=idx.devices.get(key);if(!dev)return;
+    var iface=t.getAttribute('data-entity-interface')||(kind==='ip'?(idx.ips.get(value)||{}).iface:'')||'';
+    if(el.modal&&el.modal.open)el.modal.close();
+    if(!dev.model){showNeighbor(dev.name);return;}
+    if(dev.model!==state.model)setModel(dev.model);
+    var rec=iface&&findInterfaceRecord(dev.model,iface);
+    if(rec){view('interfaces');showRecord(rec.id);}else if(state.view!=='overview')view('overview');
+  }
+  document.addEventListener('click',function(event){var t=event.target.closest&&event.target.closest('.entity-link');if(!t)return;event.preventDefault();event.stopPropagation();openEntity(t);},true);
+  var entityTimer=null;
+  function watchEntities(){if(typeof MutationObserver!=='function')return;var obs=new MutationObserver(function(){clearTimeout(entityTimer);entityTimer=setTimeout(function(){obs.disconnect();try{[el.content,el.drawer,el.modal].forEach(linkifyEntities);}finally{[el.content,el.drawer,el.modal].forEach(function(x){if(x)obs.observe(x,{childList:true,subtree:true});});}},60);});[el.content,el.drawer,el.modal].forEach(function(x){if(x)obs.observe(x,{childList:true,subtree:true});});}
+  watchEntities();
+  // Vendor stencils: Visio stencils (.vssx) or drawings that use them (.vsdx), imported by
+  // the user and kept in this browser profile. Devices use the master that matches their
+  // part number or model unless another one (or a drawn faceplate) is chosen.
+  var stencilLib={files:[],version:0},STENCIL_DB='config-inspector-stencils';
+  function stencilStore(mode,work){return new Promise(function(resolve,reject){if(!window.indexedDB){reject(new Error('Storage is not available.'));return;}var r=indexedDB.open(STENCIL_DB,1);r.onupgradeneeded=function(){r.result.createObjectStore('files',{keyPath:'name'});};r.onerror=function(){reject(r.error);};
+    r.onsuccess=function(){var db=r.result,t=db.transaction('files',mode),out;t.oncomplete=function(){db.close();resolve(out);};t.onerror=t.onabort=function(){db.close();reject(t.error);};out=work(t.objectStore('files'));};});}
+  function stencilChoices(){try{return JSON.parse(localStorage.getItem('config-inspector-stencil-choice')||'{}');}catch(e){return {};}}
+  function setStencilChoice(key,value){var c=stencilChoices();if(value==='auto')delete c[key];else c[key]=value;try{localStorage.setItem('config-inspector-stencil-choice',JSON.stringify(c));}catch(e){}stencilLib.version++;}
+  function allMasters(){return [].concat.apply([],stencilLib.files.map(function(f){return f.masters;}));}
+  function masterKey(m){return m.file+'#'+m.id;}
+  function stencilNode(n){var m=modelForDevice(n.name),id=m?deviceIdentityFor(m):'';return {name:n.name,role:n.role,model:[n.model,id].filter(Boolean).join(' '),parts:id?[id]:[]};}
+  function stencilMaster(n){var choice=stencilChoices()[n.key];if(choice==='none')return null;var all=allMasters();if(choice){var picked=all.find(function(m){return masterKey(m)===choice;});if(picked)return picked;}return window.SWStencils?window.SWStencils.match(stencilNode(n),all):null;}
+  function stencilFor(n){if(!stencilLib.files.length||!window.SWStencils)return null;var m=stencilMaster(n);if(!m)return null;var art=window.SWStencils.artwork(m);if(!art)return null;return {master:m,art:art,layout:function(main,up){return window.SWStencils.layout(m,main,up);}};}
+  async function loadStencils(){try{var rows=await stencilStore('readonly',function(s){var out=[],q=s.getAll();q.onsuccess=function(){out.push.apply(out,q.result||[]);};return out;});
+      for(var i=0;i<rows.length;i++){try{stencilLib.files.push(await window.SWStencils.read(new Uint8Array(rows[i].bytes),rows[i].name));}catch(e){}}}catch(e){}
+    if(stencilLib.files.length){stencilLib.version++;if(state.view==='diagram')renderContent();}}
+  async function importStencils(files){var added=0,masters=0,errors=[];
+    for(var i=0;i<files.length;i++){var f=files[i];try{var bytes=new Uint8Array(await f.arrayBuffer()),st=await window.SWStencils.read(bytes,f.name);if(!st.masters.length)throw new Error(f.name+' contains no device shapes.');
+      stencilLib.files=stencilLib.files.filter(function(x){return x.file!==f.name;});stencilLib.files.push(st);added++;masters+=st.masters.length;
+      try{await stencilStore('readwrite',function(s){s.put({name:f.name,bytes:bytes.buffer.slice(bytes.byteOffset,bytes.byteOffset+bytes.byteLength),added:Date.now()});});}catch(e){}}catch(e){errors.push(e.message||String(e));}}
+    stencilLib.version++;if(added)toast('Added '+masters+' stencil shape'+(masters===1?'':'s')+' from '+added+' file'+(added===1?'':'s')+'.');if(errors.length)toast(errors.join(' '));if(state.view==='diagram')renderContent();if(el.modal.open&&el.modal.querySelector('.stencil-dialog'))showStencils();}
+  async function removeStencilFile(name){stencilLib.files=stencilLib.files.filter(function(x){return x.file!==name;});stencilLib.version++;try{await stencilStore('readwrite',function(s){s.delete(name);});}catch(e){}if(state.view==='diagram')renderContent();showStencils();}
+  function showStencils(){
+    var input=diagramInput(),nodes=input?input.layout.nodes.slice().sort(function(a,b){return a.name.localeCompare(b.name,undefined,{numeric:true});}):[],all=allMasters(),choices=stencilChoices();
+    var files=stencilLib.files.length?stencilLib.files.map(function(f){return '<div class="site-link-row stencil-file"><span><b>'+h(f.file)+'</b> · '+f.masters.length+' shape'+(f.masters.length===1?'':'s')+'</span><button class="quiet-button" data-stencil-remove="'+h(f.file)+'">'+icon('trash')+'Remove</button></div>';}).join(''):'<p class="empty-mini">No stencils yet. Import a vendor stencil (.vssx), or a Visio drawing that already uses the shapes (.vsdx).</p>';
+    var rows=nodes.map(function(n){var auto=window.SWStencils&&all.length?window.SWStencils.match(stencilNode(n),all):null,cur=choices[n.key]||'auto';
+      return '<label class="site-link-row stencil-row"><span class="stencil-device"><b>'+h(n.name)+'</b><span class="muted">'+h(n.model||n.role)+'</span></span><select class="select" data-stencil-device="'+h(n.key)+'"><option value="auto"'+(cur==='auto'?' selected':'')+'>Automatic: '+h(auto?auto.name:'drawn faceplate')+'</option><option value="none"'+(cur==='none'?' selected':'')+'>Drawn faceplate</option>'+all.map(function(m){return '<option value="'+h(masterKey(m))+'"'+(cur===masterKey(m)?' selected':'')+'>'+h(m.name)+'</option>';}).join('')+'</select></label>';}).join('');
+    openModal(modalHeader('Vendor stencils','Draw devices with your own Visio stencils')+'<div class="modal-body stencil-dialog"><p class="live-note">Devices are matched by part number or model; each linked port is placed on the stencil when its connection points fit the device\'s ports. Visio downloads include the vendor shapes. Stencils are kept in this app on this computer and are never sent anywhere. Vendors such as HPE Aruba, Cisco and Fortinet publish Visio stencils for their products.</p>'+
+      '<div class="stencil-actions"><button class="button primary small" data-action="stencil-import">'+icon('upload')+'Import stencils</button><input type="file" id="stencil-file" accept=".vssx,.vsdx,.vstx" multiple hidden></div><h3 class="detail-label">Files</h3>'+files+(nodes.length&&all.length?'<h3 class="detail-label">Devices</h3>'+rows:'')+'</div><div class="modal-foot"><button class="button" data-action="close-modal">Close</button></div>');
+  }
+  document.addEventListener('click',function(event){var t=event.target.closest&&event.target.closest('[data-action="diagram-stencils"],[data-action="stencil-import"],[data-stencil-remove]');if(!t)return;
+    if(t.getAttribute('data-action')==='diagram-stencils')showStencils();else if(t.getAttribute('data-action')==='stencil-import'){var f=document.getElementById('stencil-file');if(f)f.click();}else removeStencilFile(t.getAttribute('data-stencil-remove'));});
+  document.addEventListener('change',function(event){var t=event.target;if(t.id==='stencil-file'&&t.files&&t.files.length){importStencils(Array.from(t.files));t.value='';}else if(t.hasAttribute&&t.hasAttribute('data-stencil-device')){setStencilChoice(t.getAttribute('data-stencil-device'),t.value);if(state.view==='diagram')renderContent();}});
+  if(window.SWStencils)loadStencils();
   function siteMapBox(){return el.content.querySelector('.site-map-scroll');}
   // Zoom for the site map and the network diagram (each keeps its own level).
   function zoomKey(box){return box&&box.classList.contains('diagram-scroll')?'diagramZoom':'siteMapZoom';}
@@ -9758,12 +10162,16 @@ function configTree(it){
     else if(t.id==='diagram-depth')setDiagram(function(d){d.depth=Number(t.value)||0;});
     else if(t.id==='diagram-style')setDiagram(function(d){d.style=t.value;});
     else if(t.hasAttribute('data-diagram-option'))setDiagram(function(d){d[t.getAttribute('data-diagram-option')]=t.checked;});
-    else if(t.hasAttribute('data-diagram-hide')){var top=el.content.scrollTop;setDiagram(function(d){var k=t.getAttribute('data-diagram-hide');if(t.checked)d.hidden.delete(k);else d.hidden.add(k);});el.content.scrollTop=top;}});
+    else if(t.hasAttribute('data-diagram-device')){var top=el.content.scrollTop;setDiagram(function(d){diagramToggle(d,t.getAttribute('data-diagram-device'),t.checked);});el.content.scrollTop=top;}});
+  function diagramToggle(d,k,on){if(on){d.hidden.delete(k);var cur=diagramCurrent();if(!cur||!cur.page.devices.some(function(x){return x.key===k;}))d.added.add(k);}else{d.added.delete(k);d.hidden.add(k);}}
+  // Right-click a device on the diagram to remove it.
+  document.addEventListener('contextmenu',function(event){var t=event.target.closest&&event.target.closest('.diagram-scroll [data-diagram-node]');if(!t)return;var key=t.getAttribute('data-diagram-node'),cur=diagramCurrent();if(!cur||!cur.page.devices.some(function(x){return x.key===key;}))return;event.preventDefault();
+    if(key===cur.options.focus&&cur.options.scope!=='site'){toast('This is the device the diagram is drawn from. Choose another device to remove it.');return;}var n=cur.page.devices.find(function(x){return x.key===key;});setDiagram(function(d){diagramToggle(d,key,false);});toast('Removed '+n.name+' from the diagram. Tick it under Add or remove devices to bring it back.');});
   document.addEventListener('toggle',function(event){if(event.target.classList&&event.target.classList.contains('diagram-choose'))state.diagramChooseOpen=event.target.open;},true);
   document.addEventListener('click',function(event){var t=event.target.closest&&event.target.closest('[data-diagram-scope],[data-diagram-focus],[data-diagram-showall],.diagram-scroll [data-diagram-node]');if(!t)return;
     if(t.hasAttribute('data-diagram-scope'))setDiagram(function(d){d.scope=t.getAttribute('data-diagram-scope');});
     else if(t.hasAttribute('data-diagram-focus'))setDiagram(function(d){d.focus=t.getAttribute('data-diagram-focus');});
-    else if(t.hasAttribute('data-diagram-showall'))setDiagram(function(d){d.hidden.clear();});
+    else if(t.hasAttribute('data-diagram-showall'))setDiagram(function(d){d.hidden.clear();d.added.clear();});
     else{var key=t.getAttribute('data-diagram-node'),input=diagramInput();if(!key||!input||!input.layout.nodes.some(function(n){return n.key===key;}))return;setDiagram(function(d){d.focus=key;d.scope='downstream';});}});
   document.addEventListener('input',function(event){if(event.target.id!=='live-tab-query')return;state.liveQuery=event.target.value;state.evidenceLimit=100;var pos=event.target.selectionStart;renderContent();var input=document.getElementById('live-tab-query');if(input){input.focus();try{input.setSelectionRange(pos,pos);}catch(e){}}});
   document.addEventListener('input',function(event){if(event.target.id!=='evidence-query')return;state.evidenceQuery=event.target.value;state.evidenceLimit=100;var pos=event.target.selectionStart,top=el.content.scrollTop;renderContent();el.content.scrollTop=top;var input=document.getElementById('evidence-query');if(input){input.focus();try{input.setSelectionRange(pos,pos);}catch(e){}}});

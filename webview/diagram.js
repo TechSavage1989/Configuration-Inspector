@@ -96,6 +96,12 @@
    var label=i===0?216:117,w=up9(81+18*(Math.max(col,2)-2)+27+label);
    self.plates.push({member:mem.n,x:x,w:w,groups:groups,labelX:w-label+9,first:i===0});x+=w+27;});
   this.w=x-27;this.h=72;
+  // A vendor stencil replaces the drawn faceplate: its artwork per stack member, with
+  // ports at the stencil's connection points when they fit the port counts.
+  var st=node.stencil;if(st&&st.art){var a=st.art,ratio=a.w/a.h,iw=ratio>2.5?720:Math.min(162,a.w),ih=iw/ratio;if(ih>126){ih=126;iw=ih*ratio;}
+   var main=this.plates[0].groups.find(function(g){return g.name==='main';}),upg=this.plates[0].groups.find(function(g){return g.name==='up';});
+   this.stencil=st;this.img={w:Math.round(iw*100)/100,h:Math.round(ih*100)/100};this.h=Math.max(54,up9(ih+G));this.imgTop=(this.h-this.img.h)/2;this.map=st.layout?st.layout(main?main.count:0,upg?upg.count:0):null;
+   x=0;var self2=this;this.plates.forEach(function(pl,i){pl.stencil=true;pl.x=x;pl.labelX=up9(iw+G*2);pl.w=pl.labelX+(i===0?216:117);x+=pl.w+27;});this.w=x-27;this.positions={};}
  }
  // The port slot for a port name: plate, column center and row (0 top, 1 bottom).
  Device.prototype.slot=function(name){
@@ -106,12 +112,24 @@
   if(!g||p.group==='other'){g=plate.groups.find(function(x){return x.name==='other';});if(!g){g={name:'other',count:0,col:plate.groups.reduce(function(c,x){return Math.max(c,x.col+Math.ceil(x.count/2)+1);},0),names:[]};plate.groups.push(g);}
    idx=g.names.indexOf(p.name);if(idx<0){g.names.push(p.name);g.count=g.names.length;idx=g.names.length-1;}}
   else{idx=p.n+(g.zero?1:0)-1;idx=Math.max(0,idx)%Math.max(2,g.count+g.count%2);}
-  var col=g.col+Math.floor(idx/2),row=idx%2;
-  return {key:plate.member+'|'+g.name+'|'+idx,plate:plate,dx:plate.x+81+18*col,row:row,fiber:g.fiber,number:g.name==='other'?'':String(g.zero?idx:idx+1),name:p.name};
+  var col=g.col+Math.floor(idx/2),row=idx%2,key=plate.member+'|'+g.name+'|'+idx;
+  if(plate.stencil){var list=this.map&&(g.name==='main'?this.map.main:g.name==='up'?this.map.up:null),pos=list&&list[idx],img=this.img,dx,py;
+   if(pos){dx=plate.x+G+pos.fx*img.w;py=this.imgTop+pos.fy*img.h;row=pos.row;}
+   else{var cols=plate.groups.reduce(function(c,x){return Math.max(c,x.col+Math.ceil(x.count/2));},1);dx=plate.x+G+(col+0.5)/cols*img.w;py=row?this.imgTop+img.h:this.imgTop;}
+   dx=snap(dx);this.positions[key]={x:dx,y:py,exact:!!pos};
+   return {key:key,plate:plate,dx:dx,py:py,row:row,fiber:g.fiber,number:'',name:p.name};}
+  return {key:key,plate:plate,dx:plate.x+81+18*col,row:row,fiber:g.fiber,number:g.name==='other'?'':String(g.zero?idx:idx+1),name:p.name};
  };
  Device.prototype.fit=function(){if(this.style!=='box')return;var top=this.terms.filter(function(t){return t.side==='top';}).length,bottom=this.terms.length-top;this.w=Math.max(198,up9(36+18*Math.max(top,bottom)));};
  function drawPlate(page,dev,used){
   var node=dev.node,x0=dev.x,y=dev.y;
+  if(dev.stencil){dev.plates.forEach(function(pl){var x=x0+pl.x;
+    page.rect(x,y,pl.w,dev.h,{fill:'#f4f7fb',stroke:'#c9d3df',width:1,radius:4});page.image(x+G,y+dev.imgTop,dev.img.w,dev.img.h,{art:dev.stencil.art,master:dev.stencil.master});
+    var lx=x+pl.labelX,lw=pl.w-pl.labelX-8,ty=y+Math.max(4,(dev.h-58)/2);
+    if(pl.first)page.text(lx,ty,lw,58,clip(node.name,30)+'\n'+clip(node.model||dev.stencil.master.name||'',34)+'\n'+((node.ips||[])[0]||''),{size:10.5,align:'left',firstBold:true,lineHeight:17});else page.text(lx,y+dev.h/2-9,lw,18,'Member '+pl.member,{size:10.5,bold:true,align:'left'});});
+   // Linked ports: a ring in the link color on the stencil.
+   if(used)used.forEach(function(color,key){var p=dev.positions[key];if(p)page.rect(x0+p.x-6,y+p.y-6,12,12,{fill:'none',stroke:color,width:2,radius:6});});
+   return;}
   dev.plates.forEach(function(pl){var x=x0+pl.x;
    page.rect(x,y,pl.w,72,{fill:'#dfe7f3',stroke:'#3d5a80',width:1.5,radius:4});page.rect(x+10,y+10,44,52,{fill:ROLE_FILL[node.role]||'#4f81bd',stroke:'none'});
    pl.groups.forEach(function(g){for(var i=0;i<g.count;i++){var col=g.col+Math.floor(i/2),row=i%2,cx=x+81+18*col,cy=y+(row?51:21),key=pl.member+'|'+g.name+'|'+i,u=used&&used.get(key),label=g.name==='other'?'':String(g.zero?i:i+1);
@@ -130,6 +148,7 @@
  Page.prototype.push=function(s){if(this.cur){s.g=this.cur.id;s.node=this.cur.node;}this.shapes.push(s);return this;};
  Page.prototype.rect=function(x,y,w,h,o){this.grow(x+w,y+h);return this.push(Object.assign({type:'rect',x:x,y:y,w:w,h:h},o||{}));};
  Page.prototype.text=function(x,y,w,h,text,o){this.grow(x+w,y+h);return this.push(Object.assign({type:'text',x:x,y:y,w:w,h:h,text:String(text)},o||{}));};
+ Page.prototype.image=function(x,y,w,h,o){this.grow(x+w,y+h);return this.push(Object.assign({type:'image',x:x,y:y,w:w,h:h},o||{}));};
  Page.prototype.line=function(points,o){var self=this;points.forEach(function(p){self.grow(p[0],p[1]);});return this.push(Object.assign({type:'line',points:points},o||{}));};
  Page.prototype.grow=function(x,y){this.w=Math.max(this.w,x+MARGIN);this.h=Math.max(this.h,y+MARGIN);};
  Page.prototype.begin=function(node){this.cur={id:++this.groupId,node:node};};
@@ -183,6 +202,12 @@
  function scope(layout,o){
   var t=tree(layout),hidden=o.hidden||new Set(),rows=[],depthLimit=o.depth>0?o.depth:Infinity;
   function ok(k){return t.byKey.has(k)&&!hidden.has(k);}
+  var out=scopeRows();
+  // Devices added by hand join the row of their tier (or a new row in tier order).
+  (o.added?Array.from(o.added):[]).forEach(function(k){if(!ok(k)||out.rows.some(function(r){return r.indexOf(k)>=0;}))return;var y=t.byKey.get(k).y,at=out.rows.findIndex(function(r){return t.byKey.get(r[0]).y===y;});
+   if(at>=0)out.rows[at].push(k);else{var before=out.rows.findIndex(function(r){return t.byKey.get(r[0]).y>y;});if(before<0)out.rows.push([k]);else out.rows.splice(before,0,[k]);}});
+  return out;
+  function scopeRows(){
   if(o.scope==='site'||!o.focus||!t.byKey.has(o.focus)){var ys=Array.from(new Set(layout.nodes.map(function(n){return n.y;}))).sort(function(a,b){return a-b;});ys.forEach(function(y){var row=layout.nodes.filter(function(n){return n.y===y&&ok(n.key)&&!n.isolated;}).sort(function(a,b){return a.x-b.x;}).map(function(n){return n.key;});if(row.length)rows.push(row);});
    var iso=layout.nodes.filter(function(n){return n.isolated&&ok(n.key);}).map(function(n){return n.key;});if(iso.length&&o.scope==='site')rows.push(iso);return {rows:rows,tree:t};}
   var focus=o.focus,parent=t.parentOf.get(focus),context=new Set();
@@ -192,6 +217,7 @@
    if(o.upstream!==false&&ups.length){if(rows.length>1)rows[0]=rows[0].concat(ups);else rows.unshift(ups);ups.forEach(function(k){context.add(k);});}if(downs.length){rows.push(downs.sort(function(a,b){return t.byKey.get(a).x-t.byKey.get(b).x;}));downs.forEach(function(k){context.add(k);});}return {rows:rows,tree:t,context:context};}
   var level=[focus],d=0;while(level.length&&d<depthLimit){var next=[];level.forEach(function(k){(t.children.get(k)||[]).forEach(function(c){if(ok(c))next.push(c);});});if(next.length)rows.push(next);level=next;d++;}
   return {rows:rows,tree:t,context:context};
+  }
  }
 
  // ---------- render ----------
@@ -202,7 +228,7 @@
   var page=new Page(view.title||'Network diagram'),devices=new Map(),rowsOut=[],used=new Set();
   var maxRow=view.maxRow||(style==='box'?10:3);
   view.rows.forEach(function(row){for(var i=0;i<row.length;i+=maxRow)rowsOut.push(row.slice(i,i+maxRow));});
-  rowsOut.forEach(function(row,r){row.forEach(function(k){var n=Object.assign({},shownByKey.get(k)||all.get(k));var ports=[];(input.links||[]).forEach(function(l){if(l.a===k)ports.push(l.aPort);if(l.b===k)ports.push(l.bPort);});(n.attached||[]).forEach(function(a){ports.push(a.port);});var dev=new Device(n,input.ports&&input.ports.get(k)||[],ports,style);dev.row=r;devices.set(k,dev);});});
+  rowsOut.forEach(function(row,r){row.forEach(function(k){var n=Object.assign({},shownByKey.get(k)||all.get(k));if(input.stencils&&input.stencils.get(k))n.stencil=input.stencils.get(k);var ports=[];(input.links||[]).forEach(function(l){if(l.a===k)ports.push(l.aPort);if(l.b===k)ports.push(l.bPort);});(n.attached||[]).forEach(function(a){ports.push(a.port);});var dev=new Device(n,input.ports&&input.ports.get(k)||[],ports,style);dev.row=r;devices.set(k,dev);});});
   // Endpoints (access points and named devices) beside their switch on faceplate pages.
   var ipCount={};devices.forEach(function(dev){(dev.node.attached||[]).forEach(function(a){var n=all.get(a.key),ip=n&&(n.ips||[])[0];if(ip)ipCount[ip]=(ipCount[ip]||0)+1;});});
   function epIP(n){var ip=(n.ips||[])[0];return ip&&ipCount[ip]<3?ip:'';}
@@ -240,7 +266,8 @@
   // Trunks of shared ports need room outside the band too.
   conns.forEach(function(c){[c.ta,c.tb].forEach(function(t){if(t&&t.shared){var d=t.dev,key=t.side==='top'?'trunkTop':'trunkBot';d[key]=Math.max(d[key]||0,t.k);}});});
   rowsOut.forEach(function(row,r){var ds=row.map(function(k){return devices.get(k);}),nTop=Math.max.apply(null,ds.map(function(d){return d.top.length;})),nBot=Math.max.apply(null,ds.map(function(d){return d.bot.length;})),kTop=Math.max.apply(null,ds.map(function(d){return d.trunkTop||0;})),kBot=Math.max.apply(null,ds.map(function(d){return d.trunkBot||0;}));
-   cursor+=G*2*kTop;var topExtra=nTop?EP_H+G*(nTop+3+2*kTop):0,y=cursor+topExtra+BAND,epBot=y+72+BAND+G*(nBot+3+2*kBot),bottom=(nBot?epBot+EP_H:y+72+BAND)+G*2*kBot;
+   var rowH=Math.max.apply(null,ds.map(function(d){return d.h;}));
+   cursor+=G*2*kTop;var topExtra=nTop?EP_H+G*(nTop+3+2*kTop):0,y=cursor+topExtra+BAND,epBot=y+rowH+BAND+G*(nBot+3+2*kBot),bottom=(nBot?epBot+EP_H:y+rowH+BAND)+G*2*kBot;
    ds.forEach(function(d){d.y=y;d.epTopY=cursor;d.epBotY=epBot;});cursor=up9(bottom)+G*Math.min(chan[r+1],40);});
   // Title and legend.
   if(view.kicker)page.text(MARGIN,16,1200,14,view.kicker.toUpperCase(),{size:9.5,bold:true,align:'left',color:'#1d5b79'});
@@ -249,7 +276,9 @@
   var legendRight=legendRow(page,MARGIN,94,['fiber','copper','wap','other','slow'].filter(function(t){return used.has(t);}),style==='box'?Array.from(new Set(Array.from(devices.values()).map(function(d){return d.node.role;}))):null);
   // Devices, endpoints and summaries.
   devices.forEach(function(dev){page.begin(dev.key);if(style==='box')drawBox(page,dev);else{var u=new Map();usedPorts.forEach(function(color,k){if(k.indexOf(dev.key+'|')===0)u.set(k.slice(dev.key.length+1),color);});drawPlate(page,dev,u);}page.end();
-   dev.top.concat(dev.bot).forEach(function(e){var x=dev.x+e.rx,y=e.side==='top'?dev.epTopY:dev.epBotY,a=e.a;page.begin(a.node.key||'');page.rect(x,y,EP_W,EP_H,{fill:a.node.role==='ap'?'#eef8f0':'#eef3f9',stroke:a.node.role==='ap'?ROLE_FILL.ap:'#9aa9bd',width:1,radius:6});page.text(x+4,y+5,EP_W-8,46,clip(short(a.port),16)+'\n'+clip(a.node.name,20)+'\n'+clip(epIP(a.node)||a.node.model||ROLE_LABEL[a.node.role]||'',22),{size:9,lineHeight:14,firstBold:true});page.end();});
+   dev.top.concat(dev.bot).forEach(function(e){var x=dev.x+e.rx,y=e.side==='top'?dev.epTopY:dev.epBotY,a=e.a;page.begin(a.node.key||'');page.rect(x,y,EP_W,EP_H,{fill:a.node.role==='ap'?'#eef8f0':'#eef3f9',stroke:a.node.role==='ap'?ROLE_FILL.ap:'#9aa9bd',width:1,radius:6});var est=input.stencils&&input.stencils.get(a.node.key);
+    if(est&&est.art){var r=est.art.w/est.art.h,ih=44,iw=ih*r;if(iw>44){iw=44;ih=iw/r;}page.image(x+5+(44-iw)/2,y+5+(44-ih)/2,iw,ih,{art:est.art,master:est.master});page.text(x+52,y+5,EP_W-56,46,clip(short(a.port),12)+'\n'+clip(a.node.name,13)+'\n'+clip(epIP(a.node)||a.node.model||'',14),{size:8.5,lineHeight:14,firstBold:true,align:'left'});}
+    else page.text(x+4,y+5,EP_W-8,46,clip(short(a.port),16)+'\n'+clip(a.node.name,20)+'\n'+clip(epIP(a.node)||a.node.model||ROLE_LABEL[a.node.role]||'',22),{size:9,lineHeight:14,firstBold:true});page.end();});
    if(dev.others)page.text(dev.x+dev.w+G*2,dev.y+27,EP_W,18,'+'+dev.others+' other device'+(dev.others>1?'s':''),{size:10,align:'left',color:'#4a5568'});});
   // Box terminals: sorted by the far end so routes do not cross needlessly.
   if(style==='box')devices.forEach(function(dev){['top','bottom'].forEach(function(side){var list=dev.terms.filter(function(t){return t.side===side;});list.forEach(function(t){var o=t.conn.ta===t?t.conn.tb:t.conn.ta;t.order=o.dev.x+o.dev.w/2;});list.sort(function(a,b){return a.order-b.order;});var n=list.length,slots=Math.floor((dev.w-36)/18)+1;list.forEach(function(t,i){var s=n>=slots?i:Math.round((i+0.5)*slots/n-0.5);t.dx=18+18*Math.min(s,slots-1);});});});
@@ -257,7 +286,7 @@
   // direction out of the stub, and the label box inside the band.
   function geo(t){if(t.shared){var b=geo(t.shared),out=b.dir===3?-1:1;return {px:b.sx,py:b.sy,sx:b.sx,sy:b.sy+out*2*G*t.k,dir:b.dir,trunk:b};}
    var d=t.dev;if(t.ep!=null){var e=d.top.concat(d.bot).find(function(x){return x.conn===t.conn;}),ex=d.x+e.rx+EP_W/2;return e.side==='top'?{px:ex,py:d.epTopY+EP_H,sx:ex,sy:d.epTopY+EP_H+G,dir:1}:{px:ex,py:d.epBotY,sx:ex,sy:d.epBotY-G,dir:3};}
-   var x=d.x+(style==='box'?t.dx:t.slot.dx),top=t.side==='top',py=style==='box'?(top?d.y:d.y+d.h):d.y+(top?21:51);
+   var x=d.x+(style==='box'?t.dx:t.slot.dx),top=t.side==='top',py=style==='box'?(top?d.y:d.y+d.h):t.slot.py!=null?d.y+t.slot.py:d.y+(top?21:51);
    return {px:x,py:py,sx:x,sy:top?d.y-BAND:d.y+d.h+BAND,dir:top?3:1,lx:x+3,ly:top?d.y-BAND+4:d.y+d.h+4,lalign:top?'left':'right'};}
   conns.forEach(function(c){if(c.ep!=null)c.tb={dev:c.A,ep:c.ep,conn:c};});
   // Router over the whole page area.
@@ -325,6 +354,7 @@
   return '<text x="'+x+'" y="'+(s.y+size)+'" font-size="'+size+'" text-anchor="'+anchor+'" fill="'+fill+'"'+weight+'>'+lines.map(function(l,i){return '<tspan x="'+x+'" dy="'+(i?lh:0)+'"'+(s.firstBold&&i===0?' font-weight="700"':'')+'>'+esc(l)+'</tspan>';}).join('')+'</text>';}
  function shapeSVG(s){
   if(s.type==='rect')return '<rect x="'+s.x+'" y="'+s.y+'" width="'+s.w+'" height="'+s.h+'" rx="'+(s.radius||0)+'" fill="'+(s.fill||'none')+'" stroke="'+(s.stroke&&s.stroke!=='none'?s.stroke:'none')+'" stroke-width="'+(s.width||1)+'"/>';
+  if(s.type==='image')return s.art?'<svg x="'+s.x+'" y="'+s.y+'" width="'+s.w+'" height="'+s.h+'" viewBox="0 0 '+s.art.w+' '+s.art.h+'" preserveAspectRatio="none" overflow="hidden">'+s.art.body+'</svg>':'';
   if(s.type==='line')return '<polyline points="'+s.points.map(function(p){return p[0]+','+p[1];}).join(' ')+'" fill="none" stroke="'+s.color+'" stroke-width="'+(s.width||2)+'"'+(s.dash?' stroke-dasharray="8 5"':'')+' stroke-linejoin="round" stroke-linecap="'+(s.dash?'butt':'round')+'"/>';
   return textSVG(s);}
  function svg(page){
@@ -336,7 +366,7 @@
  var crcTable=null;function crc32(bytes){if(!crcTable){crcTable=[];for(var n=0;n<256;n++){var c=n;for(var k=0;k<8;k++)c=c&1?0xedb88320^(c>>>1):c>>>1;crcTable[n]=c>>>0;}}var crc=0xffffffff;for(var i=0;i<bytes.length;i++)crc=(crc>>>8)^crcTable[(crc^bytes[i])&0xff];return (crc^0xffffffff)>>>0;}
  function zip(files){
   var enc=new TextEncoder(),parts=[],central=[],offset=0;
-  files.forEach(function(f){var name=enc.encode(f[0]),data=enc.encode(f[1]),crc=crc32(data),h=new DataView(new ArrayBuffer(30));h.setUint32(0,0x04034b50,true);h.setUint16(4,20,true);h.setUint32(14,crc,true);h.setUint32(18,data.length,true);h.setUint32(22,data.length,true);h.setUint16(26,name.length,true);parts.push(new Uint8Array(h.buffer),name,data);
+  files.forEach(function(f){var name=enc.encode(f[0]),data=typeof f[1]==='string'?enc.encode(f[1]):f[1],crc=crc32(data),h=new DataView(new ArrayBuffer(30));h.setUint32(0,0x04034b50,true);h.setUint16(4,20,true);h.setUint32(14,crc,true);h.setUint32(18,data.length,true);h.setUint32(22,data.length,true);h.setUint16(26,name.length,true);parts.push(new Uint8Array(h.buffer),name,data);
    var c=new DataView(new ArrayBuffer(46));c.setUint32(0,0x02014b50,true);c.setUint16(4,20,true);c.setUint16(6,20,true);c.setUint32(16,crc,true);c.setUint32(20,data.length,true);c.setUint32(24,data.length,true);c.setUint16(28,name.length,true);c.setUint32(42,offset,true);central.push(new Uint8Array(c.buffer),name);offset+=30+name.length+data.length;});
   var size=central.reduce(function(n,p){return n+p.length;},0),e=new DataView(new ArrayBuffer(22));e.setUint32(0,0x06054b50,true);e.setUint16(8,files.length,true);e.setUint16(10,files.length,true);e.setUint32(12,size,true);e.setUint32(16,offset,true);
   var all=parts.concat(central,[new Uint8Array(e.buffer)]),total=all.reduce(function(n,p){return n+p.length;},0),out=new Uint8Array(total),pos=0;all.forEach(function(p){out.set(p,pos);pos+=p.length;});return out;
@@ -347,33 +377,69 @@
  function charSection(s){return '<Section N="Character"><Row IX="0">'+cell('Font','1')+cell('Color',s.color||'#1F2937')+cell('Style',s.bold?1:0)+cell('Size',n((s.size||11)*0.75/72))+'</Row></Section>';}
  var BOX_GEOM='<Row T="RelMoveTo" IX="1">'+cell('X',0)+cell('Y',0)+'</Row><Row T="RelLineTo" IX="2">'+cell('X',1)+cell('Y',0)+'</Row><Row T="RelLineTo" IX="3">'+cell('X',1)+cell('Y',1)+'</Row><Row T="RelLineTo" IX="4">'+cell('X',0)+cell('Y',1)+'</Row><Row T="RelLineTo" IX="5">'+cell('X',0)+cell('Y',0)+'</Row>';
  // One shape in a coordinate frame: page height H (inches), origin offset ox/oy.
- function shapeXML(s,id,H,ox,oy){
+ function shapeXML(s,ids,H,ox,oy,ctx){var id=ids.next++;
+  if(s.type==='image'){var mm=ctx&&s.master&&ctx.masters.get(s.master);return mm?instanceXML(s,id,ids,H,ox,oy,mm):'';}
   if(s.type==='line'){var xs=s.points.map(function(p){return p[0]/96-ox;}),ys=s.points.map(function(p){return H-p[1]/96-oy;}),minX=Math.min.apply(null,xs),maxX=Math.max.apply(null,xs),minY=Math.min.apply(null,ys),maxY=Math.max.apply(null,ys),w=Math.max(maxX-minX,0.01),h=Math.max(maxY-minY,0.01);
    return '<Shape ID="'+id+'" Type="Shape" LineStyle="0" FillStyle="0" TextStyle="0">'+cell('PinX',n(minX+w/2))+cell('PinY',n(minY+h/2))+cell('Width',n(w))+cell('Height',n(h))+cell('LocPinX',n(w/2))+cell('LocPinY',n(h/2))+cell('LineWeight',n((s.width||2)/96))+cell('LineColor',s.color||'#000000')+cell('LinePattern',s.dash?2:1)+cell('FillPattern',0)+cell('Rounding',n(3/96))+
     '<Section N="Geometry" IX="0">'+cell('NoFill',1)+cell('NoLine',0)+s.points.map(function(p,i){return '<Row T="'+(i?'LineTo':'MoveTo')+'" IX="'+(i+1)+'">'+cell('X',n(p[0]/96-ox-minX))+cell('Y',n(H-p[1]/96-oy-minY))+'</Row>';}).join('')+'</Section></Shape>';}
   var isText=s.type==='text',cx=(s.x+s.w/2)/96-ox,cy=H-(s.y+s.h/2)/96-oy,w=Math.max((s.rotate?s.h:s.w)/96,0.01),h=Math.max((s.rotate?s.w:s.h)/96,0.01);
   return '<Shape ID="'+id+'" Type="Shape" LineStyle="0" FillStyle="0" TextStyle="0">'+cell('PinX',n(cx))+cell('PinY',n(cy))+cell('Width',n(w))+cell('Height',n(h))+cell('LocPinX',n(w/2))+cell('LocPinY',n(h/2))+(s.rotate?cell('Angle','1.5707963'):'')+
-   (isText?cell('LinePattern',0)+cell('FillPattern',0)+cell('VerticalAlign',s.rotate?1:0):cell('FillForegnd',s.fill||'#FFFFFF')+cell('FillPattern',s.fill&&s.fill!=='none'?1:0)+cell('LineColor',s.stroke&&s.stroke!=='none'?s.stroke:'#000000')+cell('LinePattern',s.stroke&&s.stroke!=='none'?1:0)+cell('LineWeight',n((s.width||1)/96))+(s.radius?cell('Rounding',n(s.radius/96)):''))+
+   (isText?cell('LinePattern',0)+cell('FillPattern',0)+cell('VerticalAlign',s.rotate?1:0):(s.fill&&s.fill!=='none'?cell('FillForegnd',s.fill):'')+cell('FillPattern',s.fill&&s.fill!=='none'?1:0)+cell('LineColor',s.stroke&&s.stroke!=='none'?s.stroke:'#000000')+cell('LinePattern',s.stroke&&s.stroke!=='none'?1:0)+cell('LineWeight',n((s.width||1)/96))+(s.radius?cell('Rounding',n(s.radius/96)):''))+
    (isText?charSection(s)+'<Section N="Paragraph"><Row IX="0">'+cell('HorzAlign',s.align==='left'?0:s.align==='right'?2:1)+'</Row></Section>'+cell('LeftMargin',0)+cell('RightMargin',0)+cell('TopMargin',0)+cell('BottomMargin',0):'')+
    '<Section N="Geometry" IX="0">'+cell('NoFill',isText?1:0)+cell('NoLine',isText?1:0)+BOX_GEOM+'</Section>'+(isText?'<Text>'+esc(s.text)+'</Text>':'')+'</Shape>';
  }
  function bounds(list){var x0=Infinity,y0=Infinity,x1=-Infinity,y1=-Infinity;list.forEach(function(s){if(s.type==='line')s.points.forEach(function(p){x0=Math.min(x0,p[0]);y0=Math.min(y0,p[1]);x1=Math.max(x1,p[0]);y1=Math.max(y1,p[1]);});else{x0=Math.min(x0,s.x);y0=Math.min(y0,s.y);x1=Math.max(x1,s.x+s.w);y1=Math.max(y1,s.y+s.h);}});return {x:x0,y:y0,w:x1-x0,h:y1-y0};}
  // Shapes of a page; each device's shapes become one group so it moves as a unit.
- function shapesXML(shapes,H,ids){
-  var out=[],i=0;while(i<shapes.length){var s=shapes[i];if(!s.g){out.push(shapeXML(s,ids.next++,H,0,0));i++;continue;}
+ function shapesXML(shapes,H,ids,ctx){
+  var out=[],i=0;while(i<shapes.length){var s=shapes[i];if(!s.g){out.push(shapeXML(s,ids,H,0,0,ctx));i++;continue;}
    var j=i;while(j<shapes.length&&shapes[j].g===s.g)j++;var kids=shapes.slice(i,j),b=bounds(kids),gx=b.x/96,gy=H-(b.y+b.h)/96,gw=Math.max(b.w/96,0.01),gh=Math.max(b.h/96,0.01),gid=ids.next++;
-   out.push('<Shape ID="'+gid+'" Type="Group" LineStyle="0" FillStyle="0" TextStyle="0">'+cell('PinX',n(gx+gw/2))+cell('PinY',n(gy+gh/2))+cell('Width',n(gw))+cell('Height',n(gh))+cell('LocPinX',n(gw/2))+cell('LocPinY',n(gh/2))+'<Shapes>'+kids.map(function(k){return shapeXML(k,ids.next++,H,gx,gy);}).join('')+'</Shapes></Shape>');i=j;}
+   out.push('<Shape ID="'+gid+'" Type="Group" LineStyle="0" FillStyle="0" TextStyle="0">'+cell('PinX',n(gx+gw/2))+cell('PinY',n(gy+gh/2))+cell('Width',n(gw))+cell('Height',n(gh))+cell('LocPinX',n(gw/2))+cell('LocPinY',n(gh/2))+'<Shapes>'+kids.map(function(k){return shapeXML(k,ids,H,gx,gy,ctx);}).join('')+'</Shapes></Shape>');i=j;}
   return out.join('');
  }
- function pageXML(page){return '<?xml version="1.0" encoding="utf-8" standalone="yes"?>\n<PageContents xmlns="'+NS+'" xmlns:r="'+RNS+'" xml:space="preserve"><Shapes>'+shapesXML(page.shapes,page.h/96,{next:1})+'</Shapes></PageContents>';}
+ function pageXML(page,ctx,rels){return '<?xml version="1.0" encoding="utf-8" standalone="yes"?>\n<PageContents xmlns="'+NS+'" xmlns:r="'+RNS+'" xml:space="preserve"><Shapes>'+shapesXML(page.shapes,page.h/96,{next:1,rels:rels},ctx)+'</Shapes></PageContents>';}
+ // Vendor masters: the instance of a master placed so its artwork fills the image box,
+ // with an empty child for each of the master's sub-shapes (they inherit everything).
+ var BOX_CELLS=['PinX','PinY','Width','Height','LocPinX','LocPinY','ImgOffsetX','ImgOffsetY','ImgWidth','ImgHeight'];
+ function masterTree(xml){var root={children:[]},stack=[root],re=/<(\/?)Shape(s?)(\s[^>]*?)?(\/?)>/g,m;while((m=re.exec(xml))){if(m[2]==='s')continue;if(m[1]){stack.pop();continue;}
+   var rest=xml.slice(re.lastIndex),stop=rest.search(/<Shape[\s>]|<Shapes>|<\/Shape>/),own=stop<0?rest:rest.slice(0,stop),cells={};
+   BOX_CELLS.forEach(function(c){var v=own.match(new RegExp('<Cell N=["\']'+c+'["\'] V=["\']([^"\']*)["\']'));if(v)cells[c]=Number(v[1]);});
+   var fd=own.match(/<ForeignData\b([^>]*)>[\s\S]*?<Rel\s+r:id=["']([^"']+)["']/);
+   var node={id:(m[3].match(/\sID=["'](\d+)["']/)||[])[1],type:(m[3].match(/\sType=["'](\w+)["']/)||[])[1]||'Shape',cells:cells,foreign:fd?{attrs:fd[1],rel:fd[2]}:null,children:[]};stack[stack.length-1].children.push(node);if(!m[4])stack.push(node);}return root.children[0]||null;}
+ function instanceXML(s,id,ids,H,ox,oy,mm){
+  var m=mm.master,c=m.cells,k=(s.w/96)/m.w,left=s.x/96-ox,bottom=H-(s.y+s.h)/96-oy,Ox=left-m.x0*k,Oy=bottom-m.y0*k,lx=(c.LocPinX!=null?c.LocPinX:m.shapeW/2),ly=(c.LocPinY!=null?c.LocPinY:m.shapeH/2),originX=(c.PinX||0)-lx,originY=(c.PinY||0)-ly;
+  var cellsXML=cell('PinX',n(Ox+lx*k))+cell('PinY',n(Oy+ly*k))+cell('Width',n(m.shapeW*k))+cell('Height',n(m.shapeH*k))+cell('LocPinX',n(lx*k))+cell('LocPinY',n(ly*k));
+  if(m.oneD&&c.BeginX!=null)cellsXML+=cell('BeginX',n(Ox+(c.BeginX-originX)*k))+cell('BeginY',n(Oy+(c.BeginY-originY)*k))+cell('EndX',n(Ox+(c.EndX-originX)*k))+cell('EndY',n(Oy+(c.EndY-originY)*k));
+  // Children repeat their box (scaled) and picture so viewers that do not evaluate the
+  // master's formulas still draw them in place.
+  function kids(list){return list.map(function(ch){var body=Object.keys(ch.cells).map(function(c){return cell(c,n(ch.cells[c]*k));}).join('');
+    if(ch.foreign&&mm.media[ch.foreign.rel]&&ids.rels){var rid='rId'+(ids.rels.length+1);ids.rels.push({id:rid,target:mm.media[ch.foreign.rel]});body+='<ForeignData'+ch.foreign.attrs+'><Rel r:id="'+rid+'"/></ForeignData>';}
+    return '<Shape ID="'+(ids.next++)+'" Type="'+ch.type+'" MasterShape="'+ch.id+'">'+body+(ch.children.length?'<Shapes>'+kids(ch.children)+'</Shapes>':'')+'</Shape>';}).join('');}
+  var tree=mm.tree;return '<Shape ID="'+id+'" Type="'+(tree?tree.type:'Group')+'" Master="'+mm.id+'">'+cellsXML+(tree&&tree.children.length?'<Shapes>'+kids(tree.children)+'</Shapes>':'')+'</Shape>';
+ }
+ function mastersOf(pages){var map=new Map();pages.forEach(function(p){p.shapes.forEach(function(s){if(s.type==='image'&&s.master&&!map.has(s.master))map.set(s.master,{id:map.size+2,master:s.master,tree:masterTree(s.master.xml),media:{}});});});return map;}
+ var MEDIA={png:'image/png',jpg:'image/jpeg',jpeg:'image/jpeg',gif:'image/gif',bmp:'image/bmp',emf:'image/x-emf',wmf:'image/x-wmf',svg:'image/svg+xml',tif:'image/tiff',tiff:'image/tiff'};
+ function noStyles(x){return x.replace(/\b(LineStyle|FillStyle|TextStyle)=(["'])\d+\2/g,'$1="0"');}
+ function masterParts(ctx){
+  var parts=[],entries=[],rels=[],media={};
+  ctx.masters.forEach(function(mm,i){var m=mm.master,file='master'+mm.id+'.xml',mrels=[];
+   Object.keys(m.rels).forEach(function(rid){var r=m.rels[rid],src='visio/'+r.target.replace(/^\.\.\//,''),data=m.media[src];if(!data)return;var ext=(src.match(/\.([a-z0-9]+)$/i)||['','bin'])[1].toLowerCase(),name='stencil'+mm.id+'_'+rid.replace(/\W/g,'')+'.'+ext;media[ext]=true;mm.media[rid]=name;parts.push(['visio/media/'+name,data,null]);mrels.push('<Relationship Id="'+rid+'" Type="'+r.type+'" Target="../media/'+name+'"/>');});
+   parts.push(['visio/masters/'+file,noStyles(m.xml),'application/vnd.ms-visio.master+xml']);
+   if(mrels.length)parts.push(['visio/masters/_rels/'+file+'.rels','<?xml version="1.0" encoding="utf-8" standalone="yes"?>\n<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">'+mrels.join('')+'</Relationships>',null]);
+   rels.push('<Relationship Id="rId'+mm.id+'" Type="http://schemas.microsoft.com/visio/2010/relationships/master" Target="'+file+'"/>');
+   entries.push(noStyles(m.element).replace(/^<Master\s/,'<Master ').replace(/(<Master\b[^>]*?)(\s)ID=(["'])\d+\3/,'$1$2ID="'+mm.id+'"').replace(/<Rel\s+r:id=(["'])[^"']+\1/,'<Rel r:id="rId'+mm.id+'"'));});
+  if(!entries.length)return null;
+  parts.push(['visio/masters/masters.xml','<?xml version="1.0" encoding="utf-8" standalone="yes"?>\n<Masters xmlns="'+NS+'" xmlns:r="'+RNS+'" xml:space="preserve">'+entries.join('')+'</Masters>','application/vnd.ms-visio.masters+xml']);
+  parts.push(['visio/masters/_rels/masters.xml.rels','<?xml version="1.0" encoding="utf-8" standalone="yes"?>\n<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">'+rels.join('')+'</Relationships>',null]);
+  return {parts:parts,media:Object.keys(media)};
+ }
  function documentXML(){
   return '<?xml version="1.0" encoding="utf-8" standalone="yes"?>\n<VisioDocument xmlns="'+NS+'" xmlns:r="'+RNS+'" xml:space="preserve"><DocumentSettings TopPage="0" DefaultTextStyle="0" DefaultLineStyle="0" DefaultFillStyle="0" DefaultGuideStyle="0">'+cell('GlueSettings',9)+cell('SnapSettings',65847)+'</DocumentSettings><Colors><ColorEntry IX="0" RGB="#000000"/><ColorEntry IX="1" RGB="#FFFFFF"/></Colors><FaceNames><FaceName NameU="Calibri" UnicodeRanges="-536859905 -1073732485 9 0" CharSets="536871423 0" Panos="2 15 5 2 2 2 4 3 2 4" Flags="325"/><FaceName NameU="Segoe UI" UnicodeRanges="-469750017 -1073683329 9 0" CharSets="536871423 0" Panos="2 11 5 2 4 2 4 2 2 3" Flags="325"/></FaceNames><StyleSheets><StyleSheet ID="0" NameU="No Style" Name="No Style">'+
    cell('EnableLineProps',1)+cell('EnableFillProps',1)+cell('EnableTextProps',1)+cell('HideForApply',0)+cell('LineWeight',0.01041666666666667)+cell('LineColor','#000000')+cell('LinePattern',1)+cell('Rounding',0)+cell('EndArrowSize',2)+cell('BeginArrow',0)+cell('EndArrow',0)+cell('LineCap',0)+cell('BeginArrowSize',2)+cell('LineColorTrans',0)+cell('CompoundType',0)+cell('FillForegnd','#FFFFFF')+cell('FillBkgnd','#000000')+cell('FillPattern',1)+cell('ShdwForegnd','#000000')+cell('ShdwPattern',0)+cell('FillForegndTrans',0)+cell('FillBkgndTrans',0)+cell('ShdwForegndTrans',0)+cell('ShapeShdwType',0)+cell('ShapeShdwOffsetX',0)+cell('ShapeShdwOffsetY',0)+cell('ShapeShdwObliqueAngle',0)+cell('ShapeShdwScaleFactor',1)+cell('ShapeShdwBlur',0)+cell('ShapeShdwShow',0)+cell('LeftMargin',0.05555555555555555)+cell('RightMargin',0.05555555555555555)+cell('TopMargin',0.05555555555555555)+cell('BottomMargin',0.05555555555555555)+cell('VerticalAlign',1)+cell('TextBkgnd',0)+cell('DefaultTabStop',0.5)+cell('TextDirection',0)+cell('TextBkgndTrans',0)+cell('LockTextEdit',0)+cell('LockVtxEdit',0)+cell('ObjType',0)+
    '<Section N="Character"><Row IX="0">'+cell('Font',1)+cell('Color','#000000')+cell('Style',0)+cell('Case',0)+cell('Pos',0)+cell('FontScale',1)+cell('Size',0.1666666666666667)+cell('DblUnderline',0)+cell('Overline',0)+cell('Strikethru',0)+cell('DoubleStrikethrough',0)+cell('Letterspace',0)+cell('ColorTrans',0)+cell('AsianFont',0)+cell('ComplexScriptFont',0)+cell('ComplexScriptSize',-1)+cell('LangID','en-US')+'</Row></Section><Section N="Paragraph"><Row IX="0">'+cell('IndFirst',0)+cell('IndLeft',0)+cell('IndRight',0)+cell('SpLine',-1.2)+cell('SpBefore',0)+cell('SpAfter',0)+cell('HorzAlign',1)+cell('Bullet',0)+cell('BulletStr','')+cell('BulletFont',0)+cell('BulletFontSize',-1)+cell('TextPosAfterBullet',0)+cell('Flags',0)+'</Row></Section></StyleSheet></StyleSheets></VisioDocument>';
  }
- function packageFiles(title,mainType,docRels,parts){
+ function packageFiles(title,mainType,docRels,parts,extraDefaults){
   var files=[];
-  files.push(['[Content_Types].xml','<?xml version="1.0" encoding="utf-8" standalone="yes"?>\n<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/visio/document.xml" ContentType="'+mainType+'"/>'+parts.filter(function(p){return !/\.rels$/.test(p[0]);}).map(function(p){return '<Override PartName="/'+p[0]+'" ContentType="'+p[2]+'"/>';}).join('')+'<Override PartName="/docProps/core.xml" ContentType="application/vnd.openxmlformats-package.core-properties+xml"/><Override PartName="/docProps/app.xml" ContentType="application/vnd.openxmlformats-officedocument.extended-properties+xml"/></Types>']);
+  files.push(['[Content_Types].xml','<?xml version="1.0" encoding="utf-8" standalone="yes"?>\n<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/visio/document.xml" ContentType="'+mainType+'"/>'+(extraDefaults||[]).map(function(e){return '<Default Extension="'+e+'" ContentType="'+(MEDIA[e]||'application/octet-stream')+'"/>';}).join('')+parts.filter(function(p){return p[2]&&!/\.rels$/.test(p[0]);}).map(function(p){return '<Override PartName="/'+p[0]+'" ContentType="'+p[2]+'"/>';}).join('')+'<Override PartName="/docProps/core.xml" ContentType="application/vnd.openxmlformats-package.core-properties+xml"/><Override PartName="/docProps/app.xml" ContentType="application/vnd.openxmlformats-officedocument.extended-properties+xml"/></Types>']);
   files.push(['_rels/.rels','<?xml version="1.0" encoding="utf-8" standalone="yes"?>\n<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.microsoft.com/visio/2010/relationships/document" Target="visio/document.xml"/><Relationship Id="rId2" Type="http://schemas.openxmlformats.org/package/2006/relationships/metadata/core-properties" Target="docProps/core.xml"/><Relationship Id="rId3" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/extended-properties" Target="docProps/app.xml"/></Relationships>']);
   files.push(['docProps/app.xml','<?xml version="1.0" encoding="utf-8" standalone="yes"?>\n<Properties xmlns="http://schemas.openxmlformats.org/officeDocument/2006/extended-properties"><Application>Config Inspector</Application><Template></Template></Properties>']);
   files.push(['docProps/core.xml','<?xml version="1.0" encoding="utf-8" standalone="yes"?>\n<cp:coreProperties xmlns:cp="http://schemas.openxmlformats.org/package/2006/metadata/core-properties" xmlns:dc="http://purl.org/dc/elements/1.1/"><dc:title>'+esc(title)+'</dc:title><dc:creator>Config Inspector</dc:creator></cp:coreProperties>']);
@@ -383,12 +449,14 @@
   return zip(files);
  }
  function vsdx(pages,title){
-  var parts=[],rels=[],entries=[];
-  pages.forEach(function(p,i){parts.push(['visio/pages/page'+(i+1)+'.xml',pageXML(p),'application/vnd.ms-visio.page+xml']);rels.push('<Relationship Id="rId'+(i+1)+'" Type="http://schemas.microsoft.com/visio/2010/relationships/page" Target="page'+(i+1)+'.xml"/>');
+  var parts=[],rels=[],entries=[],ctx={masters:mastersOf(pages)},mp=masterParts(ctx);
+  pages.forEach(function(p,i){var prels=[];parts.push(['visio/pages/page'+(i+1)+'.xml',pageXML(p,ctx,prels),'application/vnd.ms-visio.page+xml']);
+   var mrel=[];ctx.masters.forEach(function(mm){mrel.push('<Relationship Id="rM'+mm.id+'" Type="http://schemas.microsoft.com/visio/2010/relationships/master" Target="../masters/master'+mm.id+'.xml"/>');});
+   if(prels.length||mrel.length)parts.push(['visio/pages/_rels/page'+(i+1)+'.xml.rels','<?xml version="1.0" encoding="utf-8" standalone="yes"?>\n<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">'+mrel.join('')+prels.map(function(r){return '<Relationship Id="'+r.id+'" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="../media/'+r.target+'"/>';}).join('')+'</Relationships>',null]);rels.push('<Relationship Id="rId'+(i+1)+'" Type="http://schemas.microsoft.com/visio/2010/relationships/page" Target="page'+(i+1)+'.xml"/>');
    var name=esc(String(p.title).slice(0,31));entries.push('<Page ID="'+i+'" NameU="'+name+'" Name="'+name+'" ViewScale="-1" ViewCenterX="0" ViewCenterY="0"><PageSheet LineStyle="0" FillStyle="0" TextStyle="0">'+cell('PageWidth',n(p.w/96))+cell('PageHeight',n(p.h/96))+cell('PageScale',1)+cell('DrawingScale',1)+cell('DrawingSizeType',0)+cell('DrawingScaleType',0)+cell('PrintPageOrientation',p.w>p.h?2:1)+'</PageSheet><Rel r:id="rId'+(i+1)+'"/></Page>');});
   parts.push(['visio/pages/pages.xml','<?xml version="1.0" encoding="utf-8" standalone="yes"?>\n<Pages xmlns="'+NS+'" xmlns:r="'+RNS+'" xml:space="preserve">'+entries.join('')+'</Pages>','application/vnd.ms-visio.pages+xml']);
   parts.push(['visio/pages/_rels/pages.xml.rels','<?xml version="1.0" encoding="utf-8" standalone="yes"?>\n<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">'+rels.join('')+'</Relationships>','application/vnd.openxmlformats-package.relationships+xml']);
-  return packageFiles(title||'Network diagram','application/vnd.ms-visio.drawing.main+xml','<Relationship Id="rId1" Type="http://schemas.microsoft.com/visio/2010/relationships/pages" Target="pages/pages.xml"/>',parts);
+  return packageFiles(title||'Network diagram','application/vnd.ms-visio.drawing.main+xml','<Relationship Id="rId1" Type="http://schemas.microsoft.com/visio/2010/relationships/pages" Target="pages/pages.xml"/>'+(mp?'<Relationship Id="rId2" Type="http://schemas.microsoft.com/visio/2010/relationships/masters" Target="masters/masters.xml"/>':''),parts.concat(mp?mp.parts:[]),mp?mp.media:[]);
  }
  // Faceplates of every catalog model (and generic sizes) as plain-shape pages.
  function stencilPages(){
