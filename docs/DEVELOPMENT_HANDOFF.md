@@ -9,8 +9,10 @@
 - `trunkPages()` sizes columns per page from `DOC_W` (64 px minimum) and drops rows no column
   on the page carries. The first diagram tab reads "Core network".
 - Tall access points scale (`AP_SCALE`, up to 2x) to the room left within their device's width.
-- Next: port NetworkDiagramStudio's verified hardware catalog (docs/HARDWARE_LAYOUTS.md there)
-  into `webview/hardware.js`.
+- `NDS_LAYOUTS` in hardware.js: 130 profiles (208 models) converted from NetworkDiagramStudio's
+  `src/web/imports/faceplates.mjs` (socket coordinates grouped into banks by connector and gaps;
+  T/M socket pairs become shared RJ45/SFP ports; blank rates filled from labels or connector).
+  Only models without an existing profile; one 100 Mbit MT-RJ module skipped.
 
 ## 5.49.0 — endpoints within their device
 

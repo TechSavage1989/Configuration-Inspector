@@ -18,7 +18,7 @@ function run(){
   eq(p.banks.map(x=>[x.names.length,x.form,x.rate,x.rows]),[[48,'RJ45','1G',2],[2,'SFP','1G',1],[2,'SFP+','10G',1]],sku+' complete fixed port specification');
  }
  ok(!HW.profile('WS-C3650-12X48FD-L'),'multigigabit model not mistaken for 48FD');
- ok(!HW.profile('WS-C3650-48FQ-L'),'different uplink model not guessed');
+ {const fq=HW.profile('WS-C3650-48FQ-L');ok(!fq||fq.models.some(m=>/48FQ/.test(m))&&fq.banks.some(b=>b.form==='SFP+'&&b.names.length===4),'a different uplink model is never given the 48FD layout (the 48FQ has its own: four SFP+)');}
  const source=configuration(),m=C.parse(source,{filename:'example-3650.conf'});
  eq(m.meta.vendorId,'cisco');eq(m.meta.firmware,'16.9','no invented patch version');
  eq(HW.inventory(m).members.map(x=>x.id),['1','2']);
