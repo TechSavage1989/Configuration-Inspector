@@ -152,6 +152,8 @@ function visioChecks(name,pages){
   const ti=input(t),ha=stackHw('JL558A',3),hb=stackHw('JL558A',7);[ti.layout.all,ti.layout.nodes].forEach(l=>l.forEach(n=>{if(n.key===ta)n.hw=ha;if(n.key===tb)n.hw=hb;}));
   for(const scope of ['downstream','site']){const p=D.diagram(ti,{scope,focus:tc,style:'plate',title:'Uneven stacks'}),col=k=>p.devices.filter(d=>d.key.startsWith(k+'#')).map(d=>Math.round(d.x)),a=col(ta),b=col(tb);
    ok(a.length===3&&b.length===7&&new Set(a).size===1&&new Set(b).size===1&&a[0]!==b[0],scope+': every stack keeps its own column, however many members: '+a.join(',')+' / '+b.join(','));
+   const ms=p.devices.filter(d=>d.key.startsWith(tb+'#')).sort((x,y)=>x.y-y.y),gaps=ms.slice(1).map((d,i)=>Math.round(d.y-(ms[i].y+ms[i].h)));
+   ok(gaps.length===6&&gaps.every(g=>g>0&&g<=108)&&gaps.filter(g=>g<=54).length>=5,scope+': stack members sit close together, except where the other stack\'s ring turns (owner request: no wasted space): '+gaps.join(', '));
    const r=routing(p);ok(r.length===0,scope+': uneven stacks follow the routing rules: '+r.slice(0,4).join('; '));}}
  ok(slowest<8000,'every drawing finishes quickly: slowest '+slowest+' ms ('+slowName+')');
  if(fails.length){console.log(fails.length+' FAILED');const seen=new Map();fails.forEach(f=>{const key=f.replace(/: .*/s,'').replace(/^.*?(routing rules|nothing above|WAN circuits sit|hops are|finite|SVG|port modules|Port modules|site book|Visio|line weights|numbered|uniquely|drawn with|anchors|drawing failed|quickly).*/,'$1');seen.set(f.slice(0,160),1);});[...seen.keys()].slice(0,60).forEach(x=>console.log(' - '+x));}
