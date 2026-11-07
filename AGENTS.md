@@ -22,6 +22,12 @@ are green, and release it (bump `VERSION`, add `docs/releases/VERSION.md`, merge
 `main`) without asking, then verify the published assets. Never replace an
 existing release or its assets. Preserve the polished README layout.
 
+Owner's standing instructions (2026-11-07): never ask permission for routine work; merge when all
+checks are green and release without waiting. Make anything the owner must see impossible to miss,
+as a bold line at the top of the message: **🚀 PUBLISHED: Config Inspector X.Y.Z is live** when a
+release is out (with the link and what to check), and **⚠️ ACTION NEEDED: ...** whenever input,
+a decision or a test on the owner's own machine (for example opening an export in Visio) is needed.
+
 ## Gotchas
 
 - CLI dialects with Cisco-like interface names (Arista EOS, Huawei VRP) must be
