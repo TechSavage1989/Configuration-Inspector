@@ -165,13 +165,15 @@
  // rows, order and side, so ports sit where they are on the device.
  Device.prototype.fromProfile=function(hw){
   var self=this,x=0;this.plates=[];this.hw=hw;
-  hw.members.filter(function(m){return m.profile;}).slice(0,8).forEach(function(mem,i){
-   var gx=81,col=0,groups=[],banks=mem.profile.banks.filter(function(b){return !b.mirror;}),front=banks.filter(function(b){return b.side!=='rear';}),rear=banks.filter(function(b){return b.side==='rear';});
+  // A modular chassis (hw.chassis) draws each module as its own card in slot order, the
+  // chassis icon on the first only (owner request: real modules, not a blank faceplate).
+  hw.members.filter(function(m){return m.profile;}).slice(0,hw.chassis?12:8).forEach(function(mem,i){
+   var gx=hw.chassis&&i?27:81,col=0,groups=[],banks=mem.profile.banks.filter(function(b){return !b.mirror;}),front=banks.filter(function(b){return b.side!=='rear';}),rear=banks.filter(function(b){return b.side==='rear';});
    front.concat(rear).forEach(function(b){var bi=mem.profile.banks.indexOf(b),f=formOf(b.displayForm||b.form),rows=b.rows||2,g={name:'b'+bi,bank:bi,count:b.names.length,rows:rows,rowOffset:b.rowOffset||0,names:b.names,labels:b.names.map(portLabel),form:f,fiber:f==='sfp'||f==='qsfp',pitch:f==='qsfp'?27:18,per:rows===2&&b.names.length>=24?12:b.names.length,rear:b.side==='rear',title:b.label};
     g.x=gx;g.col=col;col+=Math.ceil(g.count/rows)+1;gx+=groupWidth(g)+27;groups.push(g);});
    var w=up9(gx-27+9+18);
-   self.plates.push({member:mem.id,x:x,w:w,groups:groups,first:i===0,title:mem.profile.title});x+=w+27;});
-  this.w=x-27;this.plateH=72;this.h=HEAD+72+FOOT;
+   self.plates.push({member:mem.id,x:x,w:w,groups:groups,first:i===0,title:mem.profile.title,model:mem.model||'',slot:!!hw.chassis});x+=w+(hw.chassis?9:27);});
+  this.w=x-(hw.chassis?9:27);this.plateH=72;this.h=HEAD+72+FOOT;
  };
  Device.prototype.stencilPlate=function(node){
   var x;
@@ -191,7 +193,7 @@
  // Name above the faceplate, model and address below it (owner request: details stacked
  // with the device, not in a card beside it): the device is at least as wide as that text.
  function textW(t,size,bold){return String(t||'').length*size*(bold?0.6:0.54);}
- function footOf(dev){var n=dev.node;return [n.model||(dev.stencil&&dev.stencil.master&&dev.stencil.master.name)||ROLE_LABEL[n.role]||'',(n.ips||[])[0]||''].filter(Boolean).join('  |  ');}
+ function footOf(dev){var n=dev.node;return [n.model||(dev.stencil&&dev.stencil.master&&dev.stencil.master.name)||(dev.hw&&dev.hw.model)||ROLE_LABEL[n.role]||'',(n.ips||[])[0]||''].filter(Boolean).join('  |  ');}
  Device.prototype.room=function(){var need=up9(Math.max(textW(clip(this.node.name,40),11,true),textW(footOf(this),9.5))+G*2);if(this.w>=need)return;var last=this.plates[this.plates.length-1];last.w+=need-this.w;this.w=need;};
  // The port slot for a port name: plate, column center and row (0 top, 1 bottom).
  Device.prototype.slot=function(name){
@@ -247,7 +249,8 @@
      if(fl.label)page.text(x0+a.p.x-w/2,y+a.p.y-hh/2+(hh-Math.min(9,hh*0.62))/2-1,w,hh,fl.label,{size:Math.min(9,hh*0.62,w/(Math.max(2,fl.label.length)*0.62)),bold:true,color:'#1f2937'});});}
    return;}
   dev.plates.forEach(function(pl){var x=x0+pl.x,y=y0+HEAD;
-   page.rect(x,y,pl.w,72,{fill:'#dfe7f3',stroke:'#3d5a80',width:1.5,radius:4});page.rect(x+10,y+10,44,52,{fill:ROLE_FILL[node.role]||'#4f81bd',stroke:'none'});
+   page.rect(x,y,pl.w,72,{fill:'#dfe7f3',stroke:'#3d5a80',width:1.5,radius:4});if(!pl.slot||pl.first)page.rect(x+10,y+10,44,52,{fill:ROLE_FILL[node.role]||'#4f81bd',stroke:'none'});
+   if(pl.slot)page.text(pl.first?x+56:x+3,y+2,18,10,String(pl.member),{size:8,bold:true,align:'left',color:'#1b3a4b'});
    pl.groups.forEach(function(g){for(var i=0;i<g.count;i++){var pp=portPos(g,i),row=pp.row,cx=x+pp.dx,cy=y+(g.mid?36:row?51:21),key=pl.member+'|'+g.name+'|'+i,u=used&&used.get(key),label=g.labels?g.labels[i]:g.name==='other'?'':String((g.base||0)+(g.zero?i:i+1));
     var fl=fills&&fills.get(key),md=u&&!fl&&dev.mods&&dev.mods.get(key);drawPort(page,g.form||(g.fiber?'sfp':'rj45'),cx,cy,row,u,fl,md);
     if(label&&!md)page.text(cx-9,cy-4.5,18,9,label,{size:label.length>2?5:6.5,bold:!!(fl&&fl.up),color:(g.form==='sfp'||g.form==='qsfp'||!g.form&&g.fiber)&&!u&&!fl?'#ffffff':'#1f2937'});}});
@@ -267,7 +270,7 @@
   for(var k=0;k<60;k++){var side=fits();if(side){this.nameSide=side;return;}var last=this.plates[this.plates.length-1];last.w+=G;this.w+=G;}this.nameSide='top';};
  function drawHeader(page,dev){if(dev.noLabel)return;var node=dev.node,x0=dev.x,y=dev.y,name=clip(node.name,40),foot=footOf(dev),up=dev.nameSide!=='bottom',topY=y+1,botY=y+HEAD+dev.plateH+2;
   var a=freeSpan(dev,up?'top':'bottom',4,dev.w-4,textW(name,11,true)),aw=a[1]-a[0];page.text(x0+a[0],up?topY:botY,aw,15,clip(name,Math.max(4,Math.floor(aw/6.6))),{size:11,bold:true,align:'left',color:'#1b3a4b'});
-  dev.plates.forEach(function(pl,i){var t=i?'Member '+pl.member:foot;if(!t)return;var side=up?'bottom':'top',b=freeSpan(dev,side,pl.x+4,pl.x+pl.w-4,textW(t,9.5)),bw=b[1]-b[0];page.text(x0+b[0],up?botY:topY+1,bw,14,clip(t,Math.max(4,Math.floor(bw/5.1))),{size:9.5,align:'left',color:'#4a5568'});});}
+  dev.plates.forEach(function(pl,i){var t=pl.slot?(i?pl.model:[node.model||(dev.hw&&dev.hw.model)||'',pl.model].filter(Boolean).join('  ·  ')+((node.ips||[])[0]?'  |  '+node.ips[0]:'')):i?'Member '+pl.member:foot;if(!t)return;var side=up?'bottom':'top',b=freeSpan(dev,side,pl.x+4,pl.x+pl.w-4,textW(t,9.5)),bw=b[1]-b[0];page.text(x0+b[0],up?botY:topY+1,bw,14,clip(t,Math.max(4,Math.floor(bw/5.1))),{size:9.5,align:'left',color:'#4a5568'});});}
  // Port shapes in real proportions: an RJ45 jack (11.7 x 13.5 mm) with its latch notch on
  // the outer edge (top row up, bottom row down), an SFP cage (13.7 x 8.6 mm) and a QSFP cage
  // (18.4 x 8.5 mm), at the 18 px column pitch of a 14.5 mm port spacing.
@@ -499,7 +502,7 @@
   // A stack's members inside one frame, its name and member count on the frame (drawn first, behind).
   var stackBoxes=new Map();devices.forEach(function(d){var k=d.node.stackOf;if(!k)return;var b=stackBoxes.get(k)||{x0:1e9,y0:1e9,x1:-1e9,y1:-1e9,n:0,name:d.node.stackName,tech:d.node.stackTech,size:d.node.stackSize};b.x0=Math.min(b.x0,d.x);b.y0=Math.min(b.y0,d.y);b.x1=Math.max(b.x1,d.x+d.w);b.y1=Math.max(b.y1,d.y+d.h);b.n++;stackBoxes.set(k,b);});
   stackBoxes.forEach(function(b,k){if(b.n<2)return;var pad=G;page.rect(b.x0-pad,b.y0-pad,b.x1-b.x0+2*pad,b.y1-b.y0+2*pad,{fill:'none',stroke:LINK_MEDIA.stack.color,width:1.2,radius:6,dash:true});
-   var label=(b.tech&&!/backplane/i.test(b.tech)?b.tech+' stack':'Stack')+' \u00b7 '+b.size+' members';page.text(b.x1+pad-textW(label,9,true)-6,b.y1+pad-14,textW(label,9,true)+6,12,label,{size:9,bold:true,align:'right',color:LINK_MEDIA.stack.color});});
+   var label=(b.tech&&!/backplane|^stack$/i.test(b.tech)?b.tech+' stack':'Stack')+' \u00b7 '+b.size+' members';page.text(b.x1+pad-textW(label,9,true)-6,b.y1+pad-14,textW(label,9,true)+6,12,label,{size:9,bold:true,align:'right',color:LINK_MEDIA.stack.color});});
   // Devices, endpoints and summaries.
   devices.forEach(function(dev){page.begin(dev.key);if(style==='box')drawBox(page,dev);else{var u=new Map();usedPorts.forEach(function(color,k){if(k.indexOf(dev.key+'|')===0)u.set(k.slice(dev.key.length+1),color);});drawPlate(page,dev,u);}page.end();
    dev.top.concat(dev.bot).forEach(function(e){var x=dev.x+e.rx,y=epY(dev,e),a=e.a;page.begin(epKey(dev,a),'ep');
@@ -614,11 +617,11 @@
  // the member that has its port, the devices below the stack under its last member, and the stack
  // links between members from the configuration (VSF link 2 of a member to link 1 of the next; a ring
  // closes back to the first). A frame with the stack's name groups the members.
- function splitStacks(input,o){var L=input.layout,stacks=L.all.filter(function(n){return n.hw&&n.hw.members&&n.hw.members.filter(function(m){return m.profile;}).length>1;});if(!stacks.length)return null;
+ function splitStacks(input,o){var L=input.layout,stacks=L.all.filter(function(n){return n.hw&&!n.hw.chassis&&n.hw.members&&n.hw.members.filter(function(m){return m.profile;}).length>1;});if(!stacks.length)return null;
   var byKey=new Map(),members=new Map(),memberOf=function(n,port){var at=port&&n.hw.portOf(port);return at?String(at.member):null;},posOf=new Map(L.nodes.map(function(n){return [n.key,n];}));
   function mk(n,id){return n.key+'#'+id;}
   stacks.forEach(function(n){var ms=n.hw.members.filter(function(m){return m.profile;}).slice(0,8);members.set(n.key,ms.map(function(m,i){var own={members:[m],portOf:function(name){var at=n.hw.portOf(name);return at&&String(at.member)===String(m.id)?at:null;},links:[],technology:n.hw.technology};
-   return Object.assign({},n,{key:mk(n,m.id),name:n.name+' \u00b7 member '+m.id,stackOf:n.key,stackName:n.name,stackMember:String(m.id),stackIndex:i,stackSize:ms.length,stackTech:n.hw.technology||'',ips:i?[]:n.ips,hw:own,x:(posOf.get(n.key)||n).x,y:((posOf.get(n.key)||n).y||0)+i*4,
+   return Object.assign({},n,{key:mk(n,m.id),name:n.name+' \u00b7 member '+m.id,model:m.model||n.model,stackOf:n.key,stackName:n.name,stackMember:String(m.id),stackIndex:i,stackSize:ms.length,stackTech:n.hw.technology||'',ips:i?[]:n.ips,hw:own,x:(posOf.get(n.key)||n).x,y:((posOf.get(n.key)||n).y||0)+i*4,
     attached:(n.attached||[]).filter(function(a){var w=memberOf(n,a.port);return w?w===String(m.id):i===0;})});}));byKey.set(n.key,n);});
   function swap(list){var out=[];list.forEach(function(n){if(members.has(n.key))out.push.apply(out,members.get(n.key));else out.push(n);});return out;}
   var all=swap(L.all),nodes=swap(L.nodes),first=function(k){return members.get(k)[0].key;},last=function(k){var m=members.get(k);return m[m.length-1].key;},yOf=function(k){var n=posOf.get(k);return n?n.y:0;};
@@ -721,7 +724,7 @@
   p.rect(DM,94,DOC_W-2*DM,1,{fill:'#c9d3df',stroke:'none'});p.y=110;return p;}
  // Pages that continue when their content runs past the bottom margin.
  function Flow(title,sub,o,out){this.title=title;this.sub=sub;this.o=o;this.out=out;this.page=null;this.n=0;}
- Flow.prototype.need=function(h){if(!this.page||this.page.y+h>DOC_BOTTOM){this.page=docPage(this.title+(this.n?' (continued)':''),this.sub,this.o);this.n++;this.out.push(this.page);}return this.page;};
+ Flow.prototype.need=function(h){if(!this.page||this.page.y+h>DOC_BOTTOM){this.page=docPage(this.title+(this.n?' (continued)':''),this.sub,this.o);this.n++;this.out.push(this.page);if(this.onPage)this.onPage(this.page);}return this.page;};
  function cellText(v){return v==null?'':typeof v==='object'?String(v.text==null?'':v.text):String(v);}
  function rowHeight(r,widths){var n=1;r.forEach(function(v,i){var t=cellText(v),per=Math.max(8,Math.floor((widths[i]-14)/5.4));t.split('\n').forEach(function(line,j){n=Math.max(n,(j?n:0)+0);});var lines=t.split('\n').reduce(function(c,line){return c+Math.max(1,Math.ceil(line.length/per));},0);n=Math.max(n,lines);});return 10+13*n;}
  function wrap(t,width){var per=Math.max(8,Math.floor((width-14)/5.4));return cellText(t).split('\n').map(function(line){var out=[],cur='';line.split(/(?<=[,;] )|(?= \| )| |(?<=-)(?=[^\s-]{3,})/).forEach(function(w){if((cur+w).length>per&&cur){out.push(cur.trim());cur=w;}else cur+=(cur&&!/[,;] $/.test(cur)&&!/-$/.test(cur)?' ':'')+w;});out.push(cur.trim());return out.join('\n');}).join('\n');}
@@ -753,14 +756,19 @@
   // Firewalls and routers each on a page of their own; switches two to a page.
   var groups=[];devs.filter(function(d){return /firewall|router/.test(d.role);}).forEach(function(d){groups.push([d]);});var sw=devs.filter(function(d){return !/firewall|router/.test(d.role);});for(var gi=0;gi<sw.length;gi+=2)groups.push(sw.slice(gi,gi+2));
   for(var start=0;start<groups.length;start++){var group=groups[start],flow=new Flow('Port map',group.map(function(d){return d.name;}).join(' and ')+': front panels, configured port roles and observed link state',o,out),used={},rowsByKey=new Map();
+   // The port role legend heads every page of the port map (owner request), not only the last.
+   group.forEach(function(d){d.ports.forEach(function(p){used[portRole(p)]=true;});});
+   flow.onPage=function(p){var lx=DM;p.text(lx,p.y,90,16,'PORT ROLES',{size:9.5,bold:true,align:'left',color:'#1d5b79'});lx+=96;
+    Object.keys(PORT_ROLES).filter(function(r){return used[r];}).forEach(function(r){var lw=40+PORT_ROLES[r].label.length*5.6;if(lx+lw>DOC_W-DM){lx=DM+96;p.y+=20;}p.rect(lx,p.y,26,14,{fill:PORT_ROLES[r].fill,stroke:'#7a8ca8',width:0.75});p.text(lx+32,p.y,170,16,PORT_ROLES[r].label,{size:10,align:'left'});lx+=lw;});p.y+=22;
+    p.text(DM,p.y,DOC_W-2*DM,14,'Filled: link up (or no link state imported). Outlined: link down.',{size:9,align:'left',color:'#4a5568'});p.y+=24;};
    group.forEach(function(d){var st=o.stencils&&o.stencils.get(d.key),dev=new Device({key:d.key,name:d.name,model:d.model,role:d.role,hw:d.hw,ips:d.ip?[d.ip]:[],stencil:st},d.ports.map(function(p){return p.name;}),[],'plate'),fills=new Map();
     d.ports.forEach(function(p){var role=portRole(p),slot=d.hw&&dev.hw&&!dev.hw.portOf(p.name)?null:dev.slot(p.name);used[role]=true;if(slot&&slot.key)fills.set(slot.key,{fill:PORT_ROLES[role].fill,up:p.up!==false,stroke:'#3d4a5c',label:portNumber(p.name)});
      var detail=portDetail(p,role),k=role+'|'+detail;if(!rowsByKey.has(k))rowsByKey.set(k,{role:role,detail:detail,ports:{}});(rowsByKey.get(k).ports[d.key]=rowsByKey.get(k).ports[d.key]||[]).push(p.name);});
-    dev.plates.forEach(function(pl){var ph=dev.h+40,pg=flow.need(ph+14);pg.text(DM,pg.y,560,20,d.name+(dev.plates.length>1?'  ·  member '+pl.member:''),{size:15,bold:true,align:'left',color:'#1b3a4b'});pg.text(DM+420,pg.y+3,DOC_W-2*DM-420,16,[d.model,upCount(d),d.ip].filter(Boolean).join('   |   '),{size:10,align:'right',color:'#4a5568'});
+    var chassis=dev.hw&&dev.hw.chassis;dev.plates.forEach(function(pl,pi){var ph=dev.h+40,pg=flow.need(ph+14),own=dev.plates.length>1?(chassis?'  ·  slot '+pl.member:'  ·  member '+pl.member):'';pg.text(DM,pg.y,560,20,d.name+own,{size:15,bold:true,align:'left',color:'#1b3a4b'});
+     // Each stack member or module names its own model (members of one stack can differ).
+     pg.text(DM+420,pg.y+3,DOC_W-2*DM-420,16,[dev.plates.length>1?pl.model||d.model:d.model,!pi?upCount(d):'',!pi?d.ip:''].filter(Boolean).join('   |   '),{size:10,align:'right',color:'#4a5568'});
      var keep=pl.x;pl.x=0;var one=Object.create(dev);one.noLabel=true;one.plates=[pl];one.x=DM;one.y=pg.y+26-HEAD;one.w=pl.w;drawPlate(pg,one,null,fills);pl.x=keep;pg.y+=26+dev.plateH+18;});});
-   var p=flow.need(40),lx=DM;p.text(lx,p.y,90,16,'PORT ROLES',{size:9.5,bold:true,align:'left',color:'#1d5b79'});lx+=96;
-   Object.keys(PORT_ROLES).filter(function(r){return used[r];}).forEach(function(r){p.rect(lx,p.y,26,14,{fill:PORT_ROLES[r].fill,stroke:'#7a8ca8',width:0.75});p.text(lx+32,p.y,170,16,PORT_ROLES[r].label,{size:10,align:'left'});lx+=40+PORT_ROLES[r].label.length*5.6;});p.y+=24;
-   note(flow,'A filled port means the link is up (or no link state was imported); an outlined port means down.'+(function(){var pre=commonPrefix([].concat.apply([],group.map(function(d){return d.ports.map(function(x){return x.name;});})));return pre?' Port numbers use the prefix '+pre+'.':'';})());
+   (function(){var pre=commonPrefix([].concat.apply([],group.map(function(d){return d.ports.map(function(x){return x.name;});})));if(pre)note(flow,'Port numbers use the prefix '+pre+'.');})();
    var pre=commonPrefix([].concat.apply([],group.map(function(d){return d.ports.map(function(x){return x.name;});}))),order=Object.keys(PORT_ROLES);
    var rows=Array.from(rowsByKey.values()).sort(function(a,b){return order.indexOf(a.role)-order.indexOf(b.role);}).map(function(r){return [{text:PORT_ROLES[r.role].label,bold:true,bar:PORT_ROLES[r.role].fill}].concat(group.map(function(d){return r.ports[d.key]?ranges(r.ports[d.key],pre):'';}),[r.detail]);});
    var cw=group.length===1?[0.24,0.28,0.48]:[0.22,0.2,0.2,0.38];docTable(flow,[{label:'Port assignment',w:cw[0]}].concat(group.map(function(d,i){return {label:d.name+' ports',w:cw[i+1]};}),[{label:'VLANs and link details',w:cw[cw.length-1]}]),rows);}

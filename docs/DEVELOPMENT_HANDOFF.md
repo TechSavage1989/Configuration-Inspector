@@ -1,5 +1,18 @@
 # Configuration Inspector development handoff
 
+## 5.57.0 — real hardware on the diagram, aggregated uplinks, port map legends
+
+- `portsModel()` (hardware.js) identifies models from unique interface sets (C9500-24Y4C/48Y4C,
+  CRS326-24S+2Q+RM) and family layouts (3560E 48-port with X2/TwinGig, CX 6000/6100 12G). New profiles:
+  WS-C3560E-48PD/TD/PF (X2 bank, aliases `te1`/`te2`) and CRS326-24S+2Q+RM (QSFP+ breakout aliases).
+- Chassis (`hw.chassis`, index.html `diagramHardware`): modules as cards in slot order, slot letter and
+  model on each; `splitStacks` skips chassis.
+- `configLinks`: best-match descriptions, LAG member expansion, far-end uplink fallback with equal
+  counts, gateway links prefer aggregated trunks and skip disabled ports.
+- Port maps: legend on every page (`Flow.onPage`), per-member/per-module model headings.
+- Tests: identification cases in `tests/hardware-tests.cjs`; `tests/diagram-hardware-browser.cjs`
+  (chassis, mixed stack, aggregated uplinks, legends) is part of `npm run test:browser`.
+
 ## 5.56.1 — stacks of different sizes keep their columns
 
 - `render()` places each stack member at or right of the member above it (`above`), so a taller stack beside a
