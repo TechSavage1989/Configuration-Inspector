@@ -5,6 +5,8 @@
 - Endpoint rows (`d.top`/`d.bot` in render) use a per-row pitch: `EP_PITCH`, shrunk to fit
   `d.w` (minimum `EP_W + G`); rows within the device are packed between 0 and `d.w - EP_W`,
   rows that cannot fit are centered. `page.eps[].dev` names the owning device.
+- Circuit endpoints (`role === 'circuit'`) always take the top side (`e.side`), whatever the port
+  row; the port stub still leaves a bottom-row port downward. `page.eps[]` carries `role`/`side`.
 - Tall access points (wireless pages) size `EP_W` from the name alone (`14 + text`, min 90).
 
 ## 5.48.0 — NetworkDiagramStudio's error 271 repair
