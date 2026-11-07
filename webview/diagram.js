@@ -483,23 +483,32 @@
    var out={left:0,right:0};['left','right'].forEach(function(sd){var inner=side[sd].ring?G*Math.ceil((4*side[sd].ring+4)/G):0,ups=side[sd].up.slice().sort(function(p,q){return p.slot.gy-q.slot.gy;}),downs=side[sd].down.slice().sort(function(p,q){return q.slot.gy-p.slot.gy;}),all=ups.concat(downs);
     all.forEach(function(e,i){var off=inner+G+2*G*i;e.slot.lane=sd==='left'?-off:d.w+off;});out[sd]=all.length?inner+G+2*G*(all.length-1)+G*2:inner?inner+G:0;});
    d.sideL=out.left;d.sideR=out.right;});
-  // Chassis leaders (as in a hand-drawn chassis): a link to an inner module runs straight across the chassis
-  // face to its edge, moved into the gap beside its port column when a linked port or another leader is in
-  // the way. Lanes are relative to the device, chosen nearest the edge first.
-  devices.forEach(function(d){if(!d.grid||!d.grid.chassis)return;var ts=d.terms.filter(function(t){return t.slot&&!t.shared;}),top=HEAD,bot=HEAD+d.plateH,lanes=[],marks=[],span=function(t){return Math.abs((t.side==='top'?top:bot)-t.slot.py);};
-   var LANE_STEPS=[0];for(var ls=1;ls<=14;ls++)LANE_STEPS.push(9*ls,-9*ls);
-  // Leaders pass between ports, not over them (owner request: no overlaps): every port on the face counts.
-   // So do the drawn role block and the member or module label.
-   var blocks=[];d.plates.forEach(function(pl){var py=HEAD+(pl.y||0),lab=pl.card?String(pl.member)+(pl.model?'  \u00b7  '+pl.model:pl.empty?'  \u00b7  empty':''):'';if(lab)blocks.push({x0:pl.x+5,x1:pl.x+5+textW(lab,7.5,true),y0:py,y1:py+11});if(!pl.card)blocks.push({x0:pl.x+10,x1:pl.x+54,y0:py+10,y1:py+62});
-    if(pl.empty)return;pl.groups.forEach(function(g){if(g.rear)return;for(var i=0;i<g.count;i++){var pp=portPos(g,i);marks.push({x:pl.x+pp.dx,y:py+(g.mid?36:pp.row?51:21)});}});});
-   // No two leaders' sideways steps lie on one another (owner request: parallel lines never overlap exactly):
-   // a step that would is moved to another lane, or else to its own track between the port rows.
-   var vias=[];
-   ts.slice().sort(function(a,b){return span(a)-span(b);}).forEach(function(t){if(t.conn&&t.conn.internal)return;var x0=t.slot.dx,y0=t.slot.py,y1=t.side==='top'?top:bot,lo=Math.min(y0,y1),hi=Math.max(y0,y1),dir=t.side==='top'?-1:1,lead=11*dir;
-    var stepFree=function(x){var yv=y0+lead,a=Math.min(x,x0),b=Math.max(x,x0);return x===x0||!vias.some(function(v){return Math.abs(v.y-yv)<1&&Math.min(b,v.b)-Math.max(a,v.a)>0.5;})&&!lanes.some(function(l){return l.x>a+0.5&&l.x<b-0.5&&Math.abs(l.vy-yv)<1;});};
-    var free=function(x){return stepFree(x)&&!ts.some(function(o){return o!==t&&Math.abs(o.slot.dx-x)<8&&o.slot.py>lo-8&&o.slot.py<hi+8;})&&!marks.some(function(o){return (o.x!==x0||o.y!==y0)&&Math.abs(o.x-x)<8&&o.y>lo-8&&o.y<hi+8;})&&!blocks.some(function(b){var yv=y0+lead;return x>b.x0-3&&x<b.x1+3&&b.y1>lo&&b.y0<hi||x!==x0&&yv>b.y0-2&&yv<b.y1+2&&Math.max(x,x0)>b.x0-3&&Math.min(x,x0)<b.x1+3;})&&!lanes.some(function(l){return Math.abs(l.x-x)<4&&l.hi>lo-12&&l.lo<hi+12||l.side===t.side&&Math.abs(l.x-x)<14;});},lane=x0;
-    [11,15,19].some(function(m){lead=m*dir;return LANE_STEPS.some(function(dx){if(free(x0+dx)){lane=x0+dx;return true;}return false;});})||(lead=11*dir);
-    t.slot.lane=lane;t.slot.lead=lead;lanes.push({x:lane,lo:lo,hi:hi,side:t.side,vy:y0+lead});if(lane!==x0)vias.push({y:y0+lead,a:Math.min(lane,x0),b:Math.max(lane,x0)});});});
+  // Chassis leaders (owner request: lines clearly apart, none crossing another): planned per module column and
+  // edge. A link from the last module before its edge drops straight out; any other takes one step beside its
+  // port (between the port rows, or between its row and the module's edge) to its own lane in the module's right
+  // margin, lanes two grid steps apart. Steps are staircased (the rightmost port's step nearest the ports) and
+  // lanes ordered by how near their step is to the edge (nearest innermost), so no step crosses another link.
+  // The ports move left in their module when the margin is short (the module title sits above them), and the
+  // modules widen only when that is not enough.
+  devices.forEach(function(d){if(!d.grid||!d.grid.chassis)return;var ts=d.terms.filter(function(t){return t.slot&&t.slot.plate&&!t.shared&&!(t.conn&&t.conn.internal);}),cols={};
+   function rows(pl){var ys=[];pl.groups.forEach(function(g){if(g.rear)return;for(var i=0;i<g.count;i++){var y=g.mid?36:portPos(g,i).row?51:21;if(ys.indexOf(y)<0)ys.push(y);}});return ys.sort(function(a,b){return a-b;});}
+   function full(pl){return !pl.empty&&pl.groups.some(function(g){return g.count&&!g.rear;});}
+   function right(pl){return Math.max.apply(null,[0].concat(pl.groups.filter(function(g){return g.count&&!g.rear;}).map(function(g){return g.x+groupWidth(g);})));}
+   ts.forEach(function(t){var pl=t.slot.plate,c=pl.col||0,down=t.side!=='top',others=d.plates.filter(function(o){return (o.col||0)===c&&full(o)&&(down?o.row>pl.row:o.row<pl.row);}),ry=rows(pl),py=t.slot.py-HEAD-(pl.y||0),beyond=ry.filter(function(y){return down?y>py:y<py;});
+    t.slot.lane=null;t.slot.gy=null;if(!others.length&&!beyond.length)return;var near=beyond.length?(down?beyond[0]:beyond[beyond.length-1]):null,z0=py+(down?11:-11),z1=near!=null?near+(down?-11:11):(down?68:4);
+    (cols[c]=cols[c]||[]).push({t:t,pl:pl,down:down,z0:z0,z1:z1,zone:pl.member+'|'+py+'|'+down});});
+   Object.keys(cols).forEach(function(c){var list=cols[c],zones={};list.forEach(function(e){(zones[e.zone]=zones[e.zone]||[]).push(e);});
+    Object.keys(zones).forEach(function(z){var es=zones[z].sort(function(a,b){return b.t.slot.dx-a.t.slot.dx;}),k=es.length,span=Math.abs(es[0].z1-es[0].z0),step=k>1?Math.min(9,span/(k-1)):0,sign=es[0].down?1:-1;es.forEach(function(e,i){e.y=e.z0+sign*step*i;e.gy=HEAD+(e.pl.y||0)+e.y;});});
+    // Edge distance: from the step to the edge its link leaves by.
+    list.forEach(function(e){e.dist=e.down?d.plateH-(e.pl.y||0)-e.y:(e.pl.y||0)+e.y;});
+    list.sort(function(a,b){return (a.down?0:1)-(b.down?0:1)||a.dist-b.dist;});
+    var n=list.length,colPl=d.plates.filter(function(o){return String(o.col||0)===c;});
+    for(var guard=0;guard<12;guard++){var limit=d.grid.cw-G-2*G*n,ok=true;colPl.forEach(function(pl){if(!full(pl))return;var over=right(pl)-limit;if(over>0){var room=pl.groups[0].x-2*G,mv=Math.min(room,Math.ceil(over/G)*G);if(mv>0)pl.groups.forEach(function(g){g.x-=mv;});if(right(pl)>limit)ok=false;}});
+     if(ok)break;var cw=d.grid.cw+2*G;d.grid.cw=cw;d.plates.forEach(function(pl){var gs=pl.groups;if(gs.length){var last=gs[gs.length-1],used=last.x+groupWidth(last)-gs[0].x,sh=snap((cw-used)/2)-gs[0].x;gs.forEach(function(g){g.x+=sh;});}pl.w=cw;pl.x=d.grid.pad+(pl.col||0)*(cw+G);});d.w=2*d.grid.pad+d.grid.cols*cw+(d.grid.cols-1)*G;}
+    var base=Math.max.apply(null,colPl.filter(full).map(right));list.forEach(function(e,k){e.lane=base+2*G*(k+1);});
+    list.forEach(function(e){e.t.slot.gy=e.gy;e.t.slot.laneRel=e.lane;});});
+   // Ports may have moved: every terminal's point follows its port.
+   d.terms.forEach(function(t){var sl=t.slot;if(!sl||!sl.plate||!sl.key)return;var parts=sl.key.split('|'),g=sl.plate.groups.find(function(x){return x.name===parts[1];}),idx=Number(parts[2]);if(!g||!(idx>=0))return;var dx=sl.plate.x+portPos(g,idx).dx;sl.dx=dx;if(sl.laneRel!=null){sl.lane=sl.plate.x+sl.laneRel;delete sl.laneRel;}});});
   // Names and model lines go between the leaders where they leave the device.
   devices.forEach(function(dev){dev.fit();});
   devices.forEach(function(d){if(style==='box'){d.bt=d.bb=BAND;return;}var a=bandFor(d,'top'),b=bandFor(d,'bottom');d.bt=a.h;d.bb=b.h;d.ft=a.flat;d.fb=b.flat;});
@@ -596,7 +605,7 @@
   // direction out of the stub, and the label box inside the band.
   function geo(t){if(t.shared){var b=geo(t.shared),out=b.dir===3?-1:1;return {px:b.sx,py:b.sy,sx:b.sx,sy:b.sy+out*2*G*t.k,dir:b.dir,trunk:b};}
    var d=t.dev;if(t.ep!=null){var e=d.top.concat(d.bot).find(function(x){return x.conn===t.conn;}),ex=d.x+e.rx+EP_W/2,ey=epY(d,e);return e.side==='top'?{px:ex,py:ey+EP_H,sx:ex,sy:ey+EP_H+G,dir:1}:{px:ex,py:ey,sx:ex,sy:ey-G,dir:3};}
-   var x=d.x+(style==='box'?t.dx:t.slot.lane!=null?t.slot.lane:t.slot.dx),top=t.side==='top',py=style==='box'?(top?d.y:d.y+d.h):t.slot.py!=null?d.y+t.slot.py:d.y+HEAD+(top?21:51),px=style==='box'?x:d.x+t.slot.dx,lead=t.slot&&t.slot.lead!=null?t.slot.lead:top?-11:11,
+   var x=d.x+(style==='box'?t.dx:t.slot.lane!=null?t.slot.lane:t.slot.dx),top=t.side==='top',py=style==='box'?(top?d.y:d.y+d.h):t.slot.py!=null?d.y+t.slot.py:d.y+HEAD+(top?21:51),px=style==='box'?x:d.x+t.slot.dx,lead=top?-11:11,
     via=style!=='box'&&t.slot.gy!=null?[[px,d.y+t.slot.gy],[x,d.y+t.slot.gy]]:px!==x?[[px,py+lead],[x,py+lead]]:null;
    return {px:px,py:py,via:via,sx:x,sy:top?d.y-d.bt:d.y+d.h+d.bb,dir:top?3:1,lx:x+3,ly:top?d.y-d.bt+4:d.y+d.h+4,lalign:top?'left':'right',flat:top?d.ft:d.fb,band:top?d.bt:d.bb,top:top,dy:d.y,dh:d.h};}
   conns.forEach(function(c){if(c.ep!=null)c.tb={dev:c.A,ep:c.ep,conn:c};});

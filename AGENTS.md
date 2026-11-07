@@ -201,14 +201,19 @@ a decision or a test on the owner's own machine (for example opening an export i
   VSF link 2 to the next member's link 1, three or more close a ring) are `c.internal`: straight across the
   gap between neighbours, otherwise (`c.ring`) through their gaps and along a lane 4 px from the stack on the
   side with fewer links. Each member's number and model sit inside its role block. Box style keeps one box.
-- Chassis leaders across the face (`t.slot.lane`) pass between ports, never over a port or a module label
-  (`marks`, `blocks`, `LANE_STEPS`), including the sideways step (`via`); names and model lines go between the
-  lanes (`gapsOf` uses `lane`; `fit()` runs after the lanes, and never widens a grid device; a grid device's
-  model line with no room between its lanes goes beside its name).
+- Chassis leaders (owner request: clearly apart, none crossing): planned per module column and edge in render.
+  A link from the last full module before its edge drops straight out; any other takes one step beside its port
+  (`t.slot.gy`: between the port rows, or between its row and the module edge) to its own lane in the module's
+  right margin (`t.slot.lane`, 18 px apart; module titles sit top-left, so never use the left margin for lanes
+  that pass other modules). Steps are staircased (rightmost port nearest its row) and lanes ordered by the step's
+  distance to the edge (nearest innermost), which keeps every step clear of other links. Ports move left inside
+  their module when the margin is short; modules widen (`d.grid.cw`) only when that is not enough, and terminals
+  are re-read from their ports afterwards. Names and model lines go between the lanes (`gapsOf` uses `lane`;
+  `fit()` runs after the lanes and never widens a grid device; a model line with no room goes beside the name).
 - Lines never lie on one another (owner request: parallel lines in perfect alignment are confusing): the
-  router keeps routed stretches apart, and everything drawn outside it must too: chassis leader steps take
-  another lane or their own track (`t.slot.lead`, 11/15/19 px, `vias`), stack gap tracks and side lanes are one
-  per line. `tests/diagram-hardware-browser.cjs` checks every drawn route (`data-route`) for shared stretches.
+  router keeps routed stretches apart, and everything drawn outside it must too: chassis leader steps and lanes,
+  stack gap tracks and side lanes are one per line. `tests/diagram-hardware-browser.cjs` checks every drawn route (`data-route`) for shared stretches and for
+  crossings inside the chassis.
 - Hardware from ports (owner request: no blank faceplates): `portsModel()` in hardware.js names the model
   when a configuration names none and only one model has its interface set (C9500-24Y4C/48Y4C,
   CRS326-24S+2Q+RM; `inv.inferred`), or gives a family layout (`uncertain`) when several share it

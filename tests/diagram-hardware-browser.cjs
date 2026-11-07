@@ -44,6 +44,13 @@ const SW=(name,ports,ip)=>['; JL253A Configuration Editor; Created on release #W
     const V=g=>Math.abs(g.a[0]-g.b[0])<0.5,Hz=g=>Math.abs(g.a[1]-g.b[1])<0.5,ov=(p,q,r,w)=>Math.min(Math.max(p,q),Math.max(r,w))-Math.max(Math.min(p,q),Math.min(r,w));
     if(V(s)&&V(u)&&Math.abs(s.a[0]-u.a[0])<0.5&&ov(s.a[1],s.b[1],u.a[1],u.b[1])>1||Hz(s)&&Hz(u)&&Math.abs(s.a[1]-u.a[1])<0.5&&ov(s.a[0],s.b[0],u.a[0],u.b[0])>1)out.push(ls[s.i].k+' / '+ls[u.i].k+' at '+s.a.join(','));}return out;});
   ok(overlaps.length===0,'no two lines run on top of each other: '+overlaps.slice(0,4).join('; '));
+  // Owner request: links leaving a chassis are clearly apart: inside the chassis no link crosses another.
+  const inside=await page.evaluate(()=>{const g=[...document.querySelectorAll('.diagram-scroll svg [data-diagram-node]')].find(el=>/excore/.test(el.getAttribute('data-diagram-node')));if(!g)return ['no chassis'];const b=g.getBBox();
+   const ls=[...document.querySelectorAll('.diagram-scroll svg [data-line][data-route]')].map(el=>({k:el.getAttribute('data-line'),p:el.getAttribute('data-route').split(' ').filter(Boolean).map(q=>q.split(',').map(Number))}));const out=[];
+   const segs=ls.flatMap((l,i)=>l.p.slice(1).map((q,j)=>({i,a:l.p[j],b:q})));const inB=(x,y)=>x>b.x&&x<b.x+b.width&&y>b.y&&y<b.y+b.height;
+   for(const h of segs){if(Math.abs(h.a[1]-h.b[1])>0.5)continue;for(const v of segs){if(v.i===h.i||Math.abs(v.a[0]-v.b[0])>0.5)continue;const x=v.a[0],y=h.a[1];
+    if(x>Math.min(h.a[0],h.b[0])+0.5&&x<Math.max(h.a[0],h.b[0])-0.5&&y>Math.min(v.a[1],v.b[1])+0.5&&y<Math.max(v.a[1],v.b[1])-0.5&&inB(x,y))out.push(ls[h.i].k.split('~')[0]+' x '+ls[v.i].k.split('~')[0]);}}return out;});
+  ok(inside.length===0,'no link crosses another inside the chassis: '+inside.slice(0,4).join('; '));
   // Owner request: stack members evenly spaced, as far apart as the lines between them need, and no line across a member.
   const mg=await page.evaluate(()=>{const ys=[...document.querySelectorAll('.diagram-scroll svg text')].filter(t=>/^Member \d+$/.test(t.textContent.trim())).map(t=>Math.round(t.getBBox().y*10)/10).sort((a,b)=>a-b);return ys.slice(1).map((y,i)=>Math.round((y-ys[i])*10)/10);});
   ok(mg.length===2&&Math.abs(mg[0]-mg[1])<0.6,'stack members are evenly spaced: '+mg.join(', '));

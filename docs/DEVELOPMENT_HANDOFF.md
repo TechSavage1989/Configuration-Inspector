@@ -14,8 +14,10 @@
 - Router: `BEND` 90, `NEAR_R` 3, header strip `router.shun(...,2)` exempting lines that start there (`hdrOk`),
   crossing re-routes bounded in length and bends. `chanCaps(page, dense)` tries denser caps first; any cap
   that adds relaxed routes, hops, bends or length is dropped.
-- Chassis leader steps never overlap (`t.slot.lead`, `vias`); `diagram-hardware-browser.cjs` mirrors a busy
-  5406R (A3, A5/A6, C6/C7, E7/E8, F8 to fictional closets) and checks every `data-route` for shared stretches.
+- Chassis leaders are planned per module column: straight out from the last module, otherwise a staircased
+  step to an ordered right-margin lane (ports move left before modules widen). `diagram-hardware-browser.cjs`
+  mirrors a busy 5406R (A3, A5/A6, C6/C7, E7/E8, F8 to fictional closets) and checks every `data-route` for
+  shared stretches and for crossings inside the chassis.
 - Tests: variety stacks read `page.devices[].members` (equal gaps, `faces()`: no line across a member); `routing()` lets a grid device carry
   its own lines across its face; vendors browser expects one stack device with two members.
 
