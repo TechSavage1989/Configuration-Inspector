@@ -149,6 +149,15 @@ existing release or its assets. Preserve the polished README layout.
   (`linePoints`), Visio writes `ArcTo` rows whose `A` bows upward (`VBOW`, checked against LibreOffice
   renders). Scale `arcs` with the points (`onLetter`). Lines spread out through `router.near`
   (cost `NEAR` within `NEAR_R` cells of other lines); the A* estimate is weighted (`HW`) to keep that fast.
+- Dropdowns are in-app (owner request): the `ui-pickers` script at the end of index.html opens a styled
+  menu for every `<select>` and every `input[list]` (it moves `list` to `data-pick-list` so the native
+  popup never shows) and floats one clear button over text boxes. Inside an open modal `<dialog>` both
+  must live in that dialog (`host()`), or the dialog makes them inert. Tests may still `selectOption`.
+- Port modules (owner request): cage ports in use draw the module from `moduleFor()` (link type cable
+  and speed, or `linkStyles[kind].module`), listed in the legend's PORT MODULES; keep `MODULES` names in
+  step with the Link type dialog's Port module choices.
+- The updater UI (`updateCardBody`, `updateWhatsNew`, `updateTransfer` in index.html) renders release
+  notes through `updateNotesHTML` (escaped first; bullets, headings, bold, code only).
 - Access points and other endpoints stay within their device's left and right edges when they fit
   (owner request); shrink the row gap before letting a row run past, and center rows that cannot fit.
 - Diagram editor drags go through `dragPoint()` (Shift locks to one axis); link type speed and cable
