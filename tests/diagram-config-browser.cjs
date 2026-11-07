@@ -37,7 +37,7 @@ const file=(name,text)=>({name,mimeType:'text/plain',buffer:Buffer.from(text)});
   await page.locator('.diagram-page-view [data-sitemap-zoom="fit"]').click();await page.waitForTimeout(200);
   // A box drawn on empty space selects the devices inside it.
   const sb=await page.locator('.diagram-scroll > svg').boundingBox();await page.mouse.move(sb.x+sb.width-3,sb.y+sb.height-3);await page.mouse.down();await page.mouse.move(sb.x+3,sb.y+3,{steps:5});await page.mouse.up();await page.waitForTimeout(200);
-  ok(await page.locator('.diagram-scroll .selected').count()>=2&&/selected/i.test(await page.locator('.diagram-editbar .pop-label').first().innerText()),'a selection box selects several devices');
+  ok(await page.locator('.diagram-scroll .selected').count()>=2&&/selected/i.test(await page.locator('.diagram-editbar .pop-label').first().innerText()),'a selection box selects several devices: '+(await page.locator('.diagram-scroll .selected').count())+' '+(await page.locator('.diagram-editbar .pop-label').first().innerText())+' handles '+(await page.locator('.line-handles').count()));
   await page.locator('[data-site-add="link"]').click();await page.locator('[data-add-link-dev="0"]').selectOption('EXAMPLE-ISP');await page.locator('[data-add-link-dev="1"]').selectOption('EXAMPLE-CORE');await page.locator('[data-add-link-port="1"]').fill('GigabitEthernet1/0/2');await page.locator('[data-add-link-save]').click();await page.waitForTimeout(400);
   ok(await page.locator('.diagram-scroll polyline[data-line]').count()===2,'a link can be added by hand');
   await page.keyboard.press('Control+z');await page.waitForTimeout(300);ok(await page.locator('.diagram-scroll polyline[data-line]').count()===1,'Ctrl+Z undoes it');

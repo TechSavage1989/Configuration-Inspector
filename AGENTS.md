@@ -181,6 +181,17 @@ a decision or a test on the owner's own machine (for example opening an export i
   problem turns up. Link kinds: an RJ45 end with no media is copper; AOC is its own kind (`aoc`).
 - Access points and other endpoints stay within their device's left and right edges when they fit
   (owner request); shrink the row gap before letting a row run past, and center rows that cannot fit.
+- Link editing follows NetworkDiagramStudio (owner request): `state.lineSel` {key, pt} selects a link and
+  bend; `drawLineHandles` draws bend squares, port-end dots and + buttons (redrawn by
+  `markDiagramSelection` after every render); `routeBump` adds bends, `routeRemoveBend` removes the
+  shortest run that keeps right angles and port directions; `snapTargets`/`snapGuides` snap to other
+  links and device edges (Alt off); `showBendPoints` edits points as numbers. Checked by
+  `tests/diagram-lines-browser.cjs`.
+- Paper sizes (owner request): `setPaper({key,orient})` in diagram.js sets the sheet (`PAPERS`), and
+  `fitLetter`/`onLetter` fit every page to it (letter keeps the letter/A4 shared area and never scales up;
+  larger sheets scale small drawings up to 2x via `paperInfo().maxScale`). `DOC_W`/`DOC_H` follow the
+  sheet. index.html stores it in `config-inspector-paper` (`applyPaper` before every build; part of the
+  cache key) and the printable HTML uses its size.
 - Diagram editor drags go through `dragPoint()` (Shift locks to one axis); link type speed and cable
   type live in `kindStyle()` with the rest of the style, so legend and lines stay in step.
 - Label bands are per device (`d.bt`/`d.bb`, from `bandFor`); never use the `BAND` constant for
