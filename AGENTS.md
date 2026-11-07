@@ -141,6 +141,8 @@ existing release or its assets. Preserve the polished README layout.
   port names to [x, y] fractions from the top left (`stencilAnchors`); NDS-only shapes import as
   picture masters (`SWStencils.fromImage`) placed by anchor name (`anchorAt`). Saved packs must pass
   NDS's `cleanStencil` checks (mirrored in `tests/supplementary-browser.cjs`). Never commit a real pack.
+  Visio master IDs must be numbers: `masterParts` renumbers every master (NDS ids such as `art-...`
+  left in masters.xml make Visio draw the instances empty while LibreOffice still shows them).
 - Links use right angles and as few bends as possible (owner request): keep endpoint widths a
   multiple of 18 (`EP_W`) so centers stay on the grid; `tests/diagram-tests.cjs` allows at most
   two bends on access point links.
