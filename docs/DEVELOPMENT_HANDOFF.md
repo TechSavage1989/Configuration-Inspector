@@ -6,6 +6,9 @@
 - Devices popover: On / Not on this diagram, × and Add per row, Clear all; stack/chassis keys stripped of `#id`.
 - Tests: `diagram-lines-browser.cjs` (fit default, Visio page = fitted size, print size still selectable),
   `supplementary-browser.cjs` (× removes, Clear all leaves the focus).
+- Chassis as one grid device (`dev.grid`, leaders via `slot.lane`/`geo().via`), replacing 5.58.0's split
+  cards; port maps draw stacks with member bars and a grid chassis whole. `diagram-hardware-browser.cjs`
+  checks the 81 px module row pitch.
 
 ## 5.58.0 — chassis grids, tighter spacing, port map headings, trunk tables
 

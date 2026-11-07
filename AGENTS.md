@@ -203,17 +203,19 @@ a decision or a test on the owner's own machine (for example opening an export i
 - Modular chassis (5400R zl2 and others listing `module X type ...`): `diagramHardware` returns
   `hw.chassis` with one member per slot. For a known front panel (`SWHardware.chassis(model)`: MM1/MM2
   then slots two across) it also gives `hw.grid` and members carry `row`/`col`, empty slots and MM2 as
-  blanks (`empty`). `splitStacks` turns a grid chassis into one card device per slot (`chassisCard`,
-  `gridRow`/`gridCol`, `alignKey` per column, `hideName` except the first card); `scope()` completes each
-  grid row (MM2 has no parent), rows of cards are never split by `maxRow`, cards share one width, and the
-  chassis frame is drawn with the stack frames. Port maps draw the grid themselves (portMapPages).
+  blanks (`empty`). `fromProfile` lays a grid chassis out as ONE device (owner request: edge to edge as
+  built): cards one width, 9 px apart (`dev.grid`, `plate.y`); `place()` adds `plate.y` and picks the
+  nearer edge (`side`); leaders (`t.slot.lane`, `geo().via`) run across the face to that edge, moved into
+  column gaps when a linked port or another leader is in the way (lanes on one edge >= 14 px apart for
+  labels). Do not split a chassis into separate devices (the router would add channels between rows).
   Stack members carry `model` too, so mixed stacks name each member's own model.
 - Links from configurations (`configLinks` in index.html): only the closest name matches count, LAG
   members are expanded on both ends (`members`, `lagOf`) and paired in port order, and a far end that
   names no device uses its uplink ports (`uplinks`) only when the counts match. Keep the "paired in
   port order" note in `why`; configurations cannot prove which cable joins which port.
 - Port map pages draw the role legend through `Flow.onPage` (every page), not after the plates; the
-  model goes right after the heading (`heading()` in portMapPages). Trunk VLAN tables share one Flow
+  model goes right after the heading (`heading()` in portMapPages). Stacks are compact (a bar per member:
+  "Member N | model | ports" from `summary()`); a grid chassis is drawn whole, scaled to fit the page. Trunk VLAN tables share one Flow
   with a heading per column group.
 - Spacing (owner request: no open space): `diagram()` re-renders plate diagrams with `view.chanCap` from
   `chanCaps()` (each channel cut to the span its horizontal runs use plus one track each side), kept only
