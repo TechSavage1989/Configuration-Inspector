@@ -201,14 +201,24 @@ a decision or a test on the owner's own machine (for example opening an export i
   (3560E 48-port, CX 6000/6100 12G). Add a signature there, never a guess from a partial port list.
   Cisco `TenGigabitEthernet0/N` looks up `teN` first (3560E X2 slots alias `te1`/`te2`).
 - Modular chassis (5400R zl2 and others listing `module X type ...`): `diagramHardware` returns
-  `hw.chassis` with one member per module (id = slot letter, `model`); `fromProfile` draws them as cards
-  in slot order, `splitStacks` skips them, and port maps head each card "slot X". Stack members carry
-  `model` too, so mixed stacks name each member's own model.
+  `hw.chassis` with one member per slot. For a known front panel (`SWHardware.chassis(model)`: MM1/MM2
+  then slots two across) it also gives `hw.grid` and members carry `row`/`col`, empty slots and MM2 as
+  blanks (`empty`). `splitStacks` turns a grid chassis into one card device per slot (`chassisCard`,
+  `gridRow`/`gridCol`, `alignKey` per column, `hideName` except the first card); `scope()` completes each
+  grid row (MM2 has no parent), rows of cards are never split by `maxRow`, cards share one width, and the
+  chassis frame is drawn with the stack frames. Port maps draw the grid themselves (portMapPages).
+  Stack members carry `model` too, so mixed stacks name each member's own model.
 - Links from configurations (`configLinks` in index.html): only the closest name matches count, LAG
   members are expanded on both ends (`members`, `lagOf`) and paired in port order, and a far end that
   names no device uses its uplink ports (`uplinks`) only when the counts match. Keep the "paired in
   port order" note in `why`; configurations cannot prove which cable joins which port.
-- Port map pages draw the role legend through `Flow.onPage` (every page), not after the plates.
+- Port map pages draw the role legend through `Flow.onPage` (every page), not after the plates; the
+  model goes right after the heading (`heading()` in portMapPages). Trunk VLAN tables share one Flow
+  with a heading per column group.
+- Spacing (owner request: no open space): `diagram()` re-renders plate diagrams with `view.chanCap` from
+  `chanCaps()` (each channel cut to the span its horizontal runs use plus one track each side), kept only
+  when relaxed routes and hops do not increase; caps come from the drawing without edits. A device side
+  with no port labels gets a `G*2` band (`bandFor`).
 - Paper sizes (owner request): `setPaper({key,orient})` in diagram.js sets the sheet (`PAPERS`), and
   `fitLetter`/`onLetter` fit every page to it (letter keeps the letter/A4 shared area and never scales up;
   larger sheets scale small drawings up to 2x via `paperInfo().maxScale`). `DOC_W`/`DOC_H` follow the

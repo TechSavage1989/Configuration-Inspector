@@ -24,15 +24,19 @@ const IDF=['; hpStack_WC Configuration Editor; Created on release #WC.16.10.0025
   await page.locator('#diagram-focus').selectOption({label:'EX-CORE'});await page.waitForTimeout(1500);
   const texts=async()=>page.evaluate(()=>[...document.querySelectorAll('.diagram-scroll svg text')].map(t=>t.textContent.trim()).filter(Boolean));
   let t=await texts();
-  ok(t.some(x=>/J9850A\s+·\s+J9993A/.test(x))&&t.includes('J9987A')&&t.filter(x=>x==='J9993A').length>=1,'the chassis draws its modules in slot order, each named by its model: '+t.filter(x=>/J99/.test(x)).join(' / '));
-  ok(['A','B','C'].every(s=>t.includes(s)),'each module card carries its slot letter');
+  ok(t.some(x=>/J9850A 5406R zl2/.test(x))&&t.includes('J9987A')&&t.filter(x=>x==='J9993A').length>=2,'the chassis names its model and each module card its module: '+t.filter(x=>/J9/.test(x)).join(' / '));
+  // The 5406R zl2 grid (owner request: modules where they really are): MM1 | MM2, then A | B, C | D, E | F.
+  const at=async()=>page.evaluate(()=>{const o={};for(const el of document.querySelectorAll('.diagram-scroll svg text')){const k=el.textContent.trim();if(/^(MM1|MM2|[A-F])$/.test(k)&&!o[k]){const b=el.getBBox();o[k]={x:Math.round(b.x+b.width/2),y:Math.round(b.y+b.height/2)};}}return o;});
+  const g=await at(),row=(a,b)=>g[a]&&g[b]&&Math.abs(g[a].y-g[b].y)<2&&g[b].x>g[a].x+40,col=(a,b)=>g[a]&&g[b]&&Math.abs(g[a].x-g[b].x)<2&&g[b].y>g[a].y+40;
+  ok(row('MM1','MM2')&&row('A','B')&&row('C','D')&&row('E','F')&&col('MM1','A')&&col('A','C')&&col('C','E')&&col('B','D'),'the chassis is drawn as its slot grid, empty slots included: '+JSON.stringify(g));
   ok(t.includes('A1')&&t.includes('C1')&&t.includes('1/50')&&t.includes('2/50'),'both aggregated uplinks are drawn, each to a numbered uplink port on the stack');
   ok(!t.includes('A2'),'a port naming another switch (…-IDF-SW01) is not taken for the stack uplink');
   ok(t.some(x=>x==='JL256A'),'a stack member of another model names its own model');
   // Port map pages: the legend heads every page, and each member and module names its model.
   const tabs=await page.locator('[data-diagram-tab]').allInnerTexts(),maps=tabs.map((x,i)=>[x,i]).filter(([x])=>/^Port map/.test(x));ok(maps.length>=2,'the port map runs over several pages: '+maps.length);
-  const heads=[];for(const [,i] of maps){await page.locator('[data-diagram-tab="'+i+'"]').click();await page.waitForTimeout(300);const pt=await texts();ok(pt.includes('PORT ROLES'),'port map page '+(i)+' has the port role legend');heads.push(...pt.filter(x=>/·\s+(member|slot)\s/.test(x)||/^JL\d{3}A$|^J99\d\dA$/.test(x)));}
-  ok(heads.some(x=>/EX-CORE\s+·\s+slot A/.test(x))&&heads.some(x=>/member 3/.test(x))&&heads.includes('JL256A'),'port map headings name each module slot and stack member with its own model: '+heads.slice(0,8).join(' / '));
+  const heads=[];for(const [,i] of maps){await page.locator('[data-diagram-tab="'+i+'"]').click();await page.waitForTimeout(300);const pt=await texts();ok(pt.includes('PORT ROLES'),'port map page '+(i)+' has the port role legend');heads.push(...pt.filter(x=>/·\s+(member|slot)\s/.test(x)||/^JL\d{3}A$|^J9\d{3}A/.test(x)));}
+  ok(heads.includes('J9850A 5406R zl2')||heads.some(x=>/J9850A 5406R zl2/.test(x)),'the port map heads the chassis with its model beside the name');
+  ok(heads.some(x=>/member 3/.test(x))&&heads.includes('JL256A'),'port map headings name each module slot and stack member with its own model: '+heads.slice(0,8).join(' / '));
   ok(!errors.length,'no page errors: '+errors.join('; '));
   console.log(checks+' diagram hardware browser checks passed');
  }finally{await browser.close();}

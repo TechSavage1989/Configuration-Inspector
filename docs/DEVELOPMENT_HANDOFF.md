@@ -1,5 +1,14 @@
 # Configuration Inspector development handoff
 
+## 5.58.0 — chassis grids, tighter spacing, port map headings, trunk tables
+
+- Chassis with a known front panel (`SWHardware.chassis`): grid of slot cards on the diagram (split in
+  `splitStacks`, rows completed in `scope()`) and on port maps; `J9827A` management module profile (OOBM).
+- `chanCaps()` compaction pass in `diagram()`; thin bands for unlabeled sides.
+- Port map headings put the model beside the name; trunk VLAN tables flow on one page set.
+- Gateway links avoid ports already linked (`usedBy`) and ports described for other equipment.
+- `tests/diagram-hardware-browser.cjs` checks the 5406R grid positions and the port map chassis heading.
+
 ## 5.57.0 — real hardware on the diagram, aggregated uplinks, port map legends
 
 - `portsModel()` (hardware.js) identifies models from unique interface sets (C9500-24Y4C/48Y4C,
