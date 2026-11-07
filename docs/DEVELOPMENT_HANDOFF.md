@@ -7,6 +7,12 @@
   rows that cannot fit are centered. `page.eps[].dev` names the owning device.
 - Circuit endpoints (`role === 'circuit'`) always take the top side (`e.side`), whatever the port
   row; the port stub still leaves a bottom-row port downward. `page.eps[]` carries `role`/`side`.
+- Default diagram options: `upstream`, `aps`, `others` and `unconfigured` false (WAN circuits shown).
+  `diagramCurrent()` hides nodes without an open configuration (`open < 0`) unless a configured
+  node lies below them, they are circuits, the focus or added by hand. Browser tests that need the
+  full view set `window.DIAGRAM_SHOW_ALL` (`tests/diagram-defaults-browser.cjs` checks defaults).
+- `kindStyle()` returns `width` and `dash` (from `linkStyles` or per-link `lineKinds`); lines and
+  legend swatches both use them; the Link type dialog edits thickness and line pattern.
 - Tall access points (wireless pages) size `EP_W` from the name alone (`14 + text`, min 90).
 
 ## 5.48.0 — NetworkDiagramStudio's error 271 repair

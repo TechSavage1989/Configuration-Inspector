@@ -138,6 +138,9 @@ existing release or its assets. Preserve the polished README layout.
 - Links use right angles and as few bends as possible (owner request): keep endpoint widths a
   multiple of 18 (`EP_W`) so centers stay on the grid; `tests/diagram-tests.cjs` allows at most
   two bends on access point links.
+- Default diagram view (owner request): the selected device and configured devices below it plus
+  WAN circuits; access points, other devices and unconfigured switches only via Show. Link type
+  style (color, name, width, dash) is shared by legend and lines through `kindStyle`.
 - The diagram runs from the WAN down (owner request): circuits sit above their device even on a
   bottom-row port; `tests/diagram-tests.cjs` checks it with routing rules.
 - Access points and other endpoints stay within their device's left and right edges when they fit
