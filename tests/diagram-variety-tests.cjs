@@ -126,6 +126,26 @@ function visioChecks(name,pages){
   ok(/100 Gbps QSFP AOC/.test(dc)&&/AOC\s+cable\s+end/.test(dc)&&!/100 Gbps fiber/.test(dc),'an AOC link is its own link type with an AOC cable end');
   ok(/1 Gbps copper/.test(ha)&&/RJ45\s+copper\s+module/.test(ha)&&!/1 Gbps fiber/.test(ha),'a link from an RJ45 jack into a cage is copper, with an RJ45 module in the cage');
   const legend=D.diagram(input(designs[7]),{scope:'site',title:'DC',style:'plate'}).shapes.filter(x=>x.type==='text'&&x.lmod);ok(legend.length&&legend.every(x=>x.text.split('\n').every(l=>l.length*9.5*0.6<=200-62+2)),'module names fit the legend column');}
+ {// Owner request: stacks drawn as stacks. Each member is its own faceplate directly beneath the one before,
+  // in a frame named for the stack; the VSF links from the configuration join the members (a ring closes
+  // back to the first); uplinks and access points land on the member that has their port.
+  function stackHw(model,n){const p=HW.profile(model),members=[...Array(n)].map((_,i)=>({id:String(i+1),profile:p})),links=[];for(let i=1;i<=n;i++)links.push({member:String(i),link:'1',port:i+'/51',technology:'VSF'},{member:String(i),link:'2',port:i+'/52',technology:'VSF'});
+   return {members,links,technology:'VSF',portOf:name=>{const m=/^(\d+)\/(\d+)$/.exec(String(name));if(!m)return null;const b=p.banks.find(b=>b.names.includes(m[2]));return b?{member:m[1],bank:p.banks.indexOf(b),index:b.names.indexOf(m[2])}:null;}};}
+  const s=site('Example stacks'),core=s.dev('EX-MDF','Switch','JL675A','JL675A'),st1=s.dev('EX-1FL-STACK','Switch','JL558A'),st2=s.dev('EX-2FL-STACK','Switch','JL558A'),ap=s.dev('EX-AP1','Access Point','AP-515');
+  s.link(core,st1,'1/1/49','1/49','10 Gb/s','10GBase-SR');s.link(core,st2,'1/1/50','2/50','10 Gb/s','10GBase-SR');s.link(st1,ap,'3/7','eth0','1 Gb/s');
+  const inp=input(s),hw1=stackHw('JL558A',5),hw2=stackHw('JL558A',2);[inp.layout.all,inp.layout.nodes].forEach(l=>l.forEach(n=>{if(n.key===st1)n.hw=hw1;if(n.key===st2)n.hw=hw2;}));
+  for(const scope of ['downstream','site']){const p=D.diagram(inp,{scope,focus:core,style:'plate',aps:true,title:'Stacks'}),m1=p.devices.filter(d=>d.key.startsWith(st1+'#')).sort((a,b)=>a.y-b.y),m2=p.devices.filter(d=>d.key.startsWith(st2+'#'));
+   ok(m1.length===5&&m2.length===2&&m1.every((d,i)=>!i||Math.abs(d.x-m1[0].x)<1&&d.y>m1[i-1].y+m1[i-1].h),scope+': each stack member is drawn beneath the one before: '+m1.map(d=>Math.round(d.x)+','+Math.round(d.y)).join(' '));
+   const sl=p.lines.filter(l=>/^stack/.test(l.conn.type));ok(sl.length===5+2,scope+': VSF links join the members, as a ring: '+sl.length);
+   ok(sl.every(l=>/#/.test(l.conn.A.key)&&/#/.test(l.conn.B.key)&&l.conn.A.node.stackOf===l.conn.B.node.stackOf),scope+': stack links stay within their stack');
+   const up=p.lines.find(l=>l.conn.aPorts[0]==='1/1/50');ok(up&&up.conn.B.key===st2+'#2','the uplink lands on the member that has its port (2/50 on member 2)');
+   const apl=p.lines.find(l=>l.conn.ep!=null&&l.conn.A.key.startsWith(st1+'#'));ok(apl&&apl.conn.A.key===st1+'#3','an access point is drawn on its member (3/7 on member 3)');
+   ok(p.shapes.some(x=>x.type==='rect'&&x.dash)&&p.shapes.some(x=>x.type==='text'&&/VSF stack \u00b7 5 members/.test(x.text)),scope+': a frame names the stack');
+   const txt=p.shapes.filter(x=>x.type==='text').map(x=>x.text).join('\n');ok(/VSF stack link/.test(txt),scope+': the legend names the VSF stack link');
+   const r=routing(p);ok(r.length===0,scope+': stacks follow the routing rules: '+r.slice(0,4).join('; '));}
+  const title=D.diagram(inp,{scope:'downstream',focus:st1,style:'plate',title:'Stacks'}).title;ok(title==='EX-1FL-STACK and below','a stack drawn from itself is titled with its name: '+title);
+  visioChecks('Example stacks',[D.onLetter(D.diagram(inp,{scope:'downstream',focus:core,style:'plate',title:'Stacks'}))]);
+  ok(D.diagram(inp,{scope:'site',style:'box',title:'Stacks'}).devices.some(d=>d.key===st1),'box style keeps a stack as one box');}
  ok(slowest<8000,'every drawing finishes quickly: slowest '+slowest+' ms ('+slowName+')');
  if(fails.length){console.log(fails.length+' FAILED');const seen=new Map();fails.forEach(f=>{const key=f.replace(/: .*/s,'').replace(/^.*?(routing rules|nothing above|WAN circuits sit|hops are|finite|SVG|port modules|Port modules|site book|Visio|line weights|numbered|uniquely|drawn with|anchors|drawing failed|quickly).*/,'$1');seen.set(f.slice(0,160),1);});[...seen.keys()].slice(0,60).forEach(x=>console.log(' - '+x));}
  console.log(checks+' network design variety checks passed (slowest drawing '+slowest+' ms)');

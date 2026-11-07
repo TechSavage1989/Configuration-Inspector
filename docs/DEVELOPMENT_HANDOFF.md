@@ -1,5 +1,13 @@
 # Configuration Inspector development handoff
 
+## 5.56.0 — stacks drawn as stacks with their VSF links
+
+- `splitStacks(input,o)` runs at the start of `diagram()` (not for the box style): member devices
+  `key#id` with `stackOf/stackName/stackMember/stackIndex/stackSize/stackTech`, a few px apart in y so
+  each takes its own row; stack links `{stack:true,tech}`; a dashed frame per stack (rects support `dash`
+  in SVG and Visio). Checked in `tests/diagram-variety-tests.cjs` (stack design) and
+  `tests/diagram-vendors-browser.cjs` (fixtures/hardware-stack.conf).
+
 ## 5.55.0 — link editing like NetworkDiagramStudio, paper sizes
 
 - Link editing: `state.lineSel`, `drawLineHandles`, `routeBump`, `routeRemoveBend`, `snapTargets`,

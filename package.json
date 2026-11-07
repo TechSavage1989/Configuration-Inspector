@@ -1,6 +1,6 @@
 {
   "name": "configuration-inspector",
-  "version": "5.55.0",
+  "version": "5.56.0",
   "private": true,
   "scripts": {
     "test": "node tests/run-tests.cjs",
