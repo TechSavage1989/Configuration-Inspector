@@ -81,6 +81,8 @@
  function score(node,master){
   var model=String(node.model||''),parts=node.parts||[],hay=norm(model+' '+parts.join(' ')+' '+(node.name||'')),best=0,mn=norm(master.name);
   if(master.part&&norm(master.part).length>=4&&hay.indexOf(norm(master.part))>=0)best=100;
+  // NetworkDiagramStudio shapes name the models they fit (vendor/MODEL keys, letters and digits only).
+  if(master.models&&master.models.length){var codes=(model+' '+parts.join(' ')).toUpperCase().split(/\s+/).map(function(t){return t.replace(/[^A-Z0-9]/g,'');}).filter(function(t){return t.length>=4&&/\d/.test(t);}),whole=(model+parts.join('')).toUpperCase().replace(/[^A-Z0-9]/g,'');if(master.view==='rear')return 0;if(master.models.some(function(k){var m=String(k).split('/').pop();return m.length>=4&&(codes.indexOf(m)>=0||whole.indexOf(m)>=0);}))best=100;}
   parts.forEach(function(p){var k=norm(p);if(k.length>=4&&(mn.indexOf(k)>=0||norm(master.product).indexOf(k)>=0))best=Math.max(best,95);});
   tokens(model).concat(parts.map(norm)).forEach(function(t){if(t.length<4)return;if(mn.indexOf(t)>=0||norm(master.product).indexOf(t)>=0)best=Math.max(best,60+Math.min(30,t.length*2));});
   var fam=familyRE(master.name),pfam=master.part?familyRE(master.part):null;if(fam&&fam.test(norm(model))||pfam&&pfam.test(norm(model)))best=Math.max(best,75);
@@ -399,6 +401,25 @@
    file[0]=0x42;file[1]=0x4d;var dv=new DataView(file.buffer);dv.setUint32(2,file.length,true);dv.setUint32(10,offset,true);file.set(d,14);return {ext:'bmp',data:file};}
   return null;
  }
- root.SWStencils={bankLayout:bankLayout,edgePorts:edgePorts,portPoints:portPoints,read:read,match:match,score:score,ports:ports,layout:layout,artwork:artwork,emf:emf,unzip:unzip};
+ // A NetworkDiagramStudio hardware shape (its NDS-hardware pack form: a PNG or JPEG front or rear
+ // panel picture, its size in pixels and port anchors by port name as [x, y] fractions from the
+ // top left) as a master: one picture filling the frame, a connection point on each anchor, and
+ // master XML so Visio exports keep it as a master with instances.
+ function fromImage(o){
+  var ext=o.ext==='jpeg'?'jpg':o.ext,px=Math.max(1,Number(o.width)||1),py=Math.max(1,Number(o.height)||1),ratio=px/py,
+   // A front panel (much wider than tall) is drawn about rack width; anything else about 4 in.
+   w=ratio>=3?17.4:ratio>=1?4:4*ratio,h=w/ratio,name=String(o.name||'Hardware shape').slice(0,200),file=o.file||'hardware pack',id=String(o.id),anchors={};
+  Object.keys(o.anchors||{}).forEach(function(k){var v=o.anchors[k];if(Array.isArray(v)&&v.length===2&&v.every(function(n){return typeof n==='number'&&n>=0&&n<=1;}))anchors[k]=[v[0],v[1]];});
+  var conns=Object.keys(anchors).map(function(k){return {x:anchors[k][0]*w,y:(1-anchors[k][1])*h,name:k};}),rid='rId1',path='visio/media/nds'+guid(file+'#'+id).replace(/\W/g,'').slice(0,12)+'.'+ext;
+  var rels={};rels[rid]={type:'http://schemas.openxmlformats.org/officeDocument/2006/relationships/image',target:'../media/'+path.split('/').pop()};var media={};media[path]=o.data;
+  var pic='<Shape ID="6" Type="Foreign" LineStyle="0" FillStyle="0" TextStyle="0">'+xc('PinX',w/2)+xc('PinY',h/2)+xc('Width',w)+xc('Height',h)+xc('LocPinX',w/2)+xc('LocPinY',h/2)+xc('ImgOffsetX',0)+xc('ImgOffsetY',0)+xc('ImgWidth',w)+xc('ImgHeight',h)+'<ForeignData ForeignType="Bitmap" CompressionType="'+(ext==='png'?'PNG':'JPEG')+'"><Rel r:id="'+rid+'"/></ForeignData></Shape>';
+  var xml='<?xml version="1.0" encoding="utf-8" standalone="yes"?>\n<MasterContents xmlns="http://schemas.microsoft.com/office/visio/2012/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" xml:space="preserve"><Shapes><Shape ID="5" NameU="'+escX(name)+'" Name="'+escX(name)+'" Type="Group" LineStyle="0" FillStyle="0" TextStyle="0">'+xc('PinX',w/2)+xc('PinY',h/2)+xc('Width',w)+xc('Height',h)+xc('LocPinX',w/2)+xc('LocPinY',h/2)+
+   (conns.length?'<Section N="Connection">'+conns.map(function(c,i){return '<Row T="Connection" IX="'+i+'">'+xc('X',c.x)+xc('Y',c.y)+'</Row>';}).join('')+'</Section>':'')+'<Shapes>'+pic+'</Shapes></Shape></Shapes></MasterContents>';
+  var element='<Master ID="'+escX(id)+'" NameU="'+escX(name)+'" Name="'+escX(name)+'" IconSize="1" AlignName="2" MatchByName="0" IconUpdate="1" UniqueID="'+guid(file+'#'+id+'#u')+'" BaseID="'+guid(file+'#'+name+'#b')+'" PatternFlags="0" Hidden="0" MasterType="2"><PageSheet LineStyle="0" FillStyle="0" TextStyle="0">'+xc('PageWidth',w)+xc('PageHeight',h)+'</PageSheet><Rel r:id="rId1"/></Master>';
+  var part=((name.match(/^([A-Z0-9][A-Z0-9-]{3,14})(?=[\s/(]|$)/)||[])[1]||'');if(!/\d/.test(part))part='';
+  return {cells:{PinX:w/2,PinY:h/2,LocPinX:w/2,LocPinY:h/2},type:'Group',file:file,id:id,name:name,element:element,xml:xml,rels:rels,media:media,props:{},part:part,product:'',manufacturer:'',shapeW:w,shapeH:h,w:w,h:h,x0:0,y0:0,oneD:false,connections:conns.map(function(c){return {x:c.x,y:c.y};}),
+   pictures:[{x:0,y:0,w:w,h:h,ext:ext,data:o.data}],anchors:anchors,models:Array.isArray(o.models)?o.models.filter(function(x){return typeof x==='string';}).slice(0,50):[],view:o.view==='rear'?'rear':'front',nds:id,px:[px,py]};
+ }
+ root.SWStencils={fromImage:fromImage,bankLayout:bankLayout,edgePorts:edgePorts,portPoints:portPoints,read:read,match:match,score:score,ports:ports,layout:layout,artwork:artwork,emf:emf,unzip:unzip};
  if(typeof module==='object'&&module.exports)module.exports=root.SWStencils;
 })(typeof globalThis!=='undefined'?globalThis:this);

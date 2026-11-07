@@ -1,5 +1,17 @@
 # Configuration Inspector development handoff
 
+## 5.54.0 — hardware packs shared with NetworkDiagramStudio
+
+- `saveHardwarePack`/`importHardwarePack` (index.html) write and read `NDS-hardware` schema 1 packs;
+  the older `config-inspector-hardware-pack` files still import. PNG pictures: an NDS shape's own
+  picture, or the Visio artwork drawn on a canvas (`shapePicture`). Model keys follow NDS
+  `modelKey` (`VENDOR/MODEL`, letters and digits).
+- `SWStencils.fromImage` builds a picture master (Foreign PNG/JPEG, connection points on anchors);
+  `score()` uses `master.models`; `Device.place` uses `anchorAt(stencil.anchors, port name)` after
+  hand-placed points. NDS `optics` choices are kept in localStorage and written back.
+- Checked by hand against NetworkDiagramStudio 5166bf1: a pack saved here imports there with
+  every shape and its mapped ports; an NDS pack round-trips here with identical pictures and anchors.
+
 ## 5.53.0 — in-app dropdowns, clear buttons, port modules, polished updater
 
 - `ui-pickers` script (end of index.html): styled menu for selects and suggestion lists (full list on
