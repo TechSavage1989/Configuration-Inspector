@@ -37,7 +37,7 @@ const SW=(name,ports,ip)=>['; JL253A Configuration Editor; Created on release #W
   ok(t.includes('A1')&&t.includes('C1')&&t.includes('1/50')&&t.includes('2/50'),'both aggregated uplinks are drawn, each to a numbered uplink port on the stack');
   ok(['A3','A5','A6'].every(p=>t.includes(p)),'links from neighbouring ports of one module are all drawn: '+t.filter(x=>/^A\d$/.test(x)).join(','));
   ok(!t.includes('A2'),'a port naming another switch (…-IDF-SW01) is not taken for the stack uplink');
-  ok(t.some(x=>x==='JL256A'),'a stack member of another model names its own model');
+  ok(t.some(x=>x==='JL256A'||/^Member 3\s+·\s+JL256A$/.test(x)),'a stack member of another model names its own model: '+t.filter(x=>/^Member/.test(x)).join(' / '));
   // Owner request: parallel lines never lie exactly on one another (chassis leaders, stack gaps and lanes included).
   const overlaps=await page.evaluate(()=>{const ls=[...document.querySelectorAll('.diagram-scroll svg [data-line][data-route]')].map(el=>({k:el.getAttribute('data-line'),p:el.getAttribute('data-route').split(' ').filter(Boolean).map(q=>q.split(',').map(Number))}));const out=[];
    const segs=ls.flatMap((l,i)=>l.p.slice(1).map((b,j)=>({i,a:l.p[j],b})));for(let x=0;x<segs.length;x++)for(let y=x+1;y<segs.length;y++){const s=segs[x],u=segs[y];if(s.i===u.i)continue;
@@ -52,7 +52,7 @@ const SW=(name,ports,ip)=>['; JL253A Configuration Editor; Created on release #W
     if(x>Math.min(h.a[0],h.b[0])+0.5&&x<Math.max(h.a[0],h.b[0])-0.5&&y>Math.min(v.a[1],v.b[1])+0.5&&y<Math.max(v.a[1],v.b[1])-0.5&&inB(x,y))out.push(ls[h.i].k.split('~')[0]+' x '+ls[v.i].k.split('~')[0]);}}return out;});
   ok(inside.length===0,'no link crosses another inside the chassis: '+inside.slice(0,4).join('; '));
   // Owner request: stack members evenly spaced, as far apart as the lines between them need, and no line across a member.
-  const mg=await page.evaluate(()=>{const ys=[...document.querySelectorAll('.diagram-scroll svg text')].filter(t=>/^Member \d+$/.test(t.textContent.trim())).map(t=>Math.round(t.getBBox().y*10)/10).sort((a,b)=>a-b);return ys.slice(1).map((y,i)=>Math.round((y-ys[i])*10)/10);});
+  const mg=await page.evaluate(()=>{const ys=[...document.querySelectorAll('.diagram-scroll svg text')].filter(t=>/^Member \d+(?:\s|$)/.test(t.textContent.trim())).map(t=>Math.round(t.getBBox().y*10)/10).sort((a,b)=>a-b);return ys.slice(1).map((y,i)=>Math.round((y-ys[i])*10)/10);});
   ok(mg.length===2&&Math.abs(mg[0]-mg[1])<0.6,'stack members are evenly spaced: '+mg.join(', '));
   // Port map pages: the legend heads every page, and each member and module names its model.
   const tabs=await page.locator('[data-diagram-tab]').allInnerTexts(),maps=tabs.map((x,i)=>[x,i]).filter(([x])=>/^Port map/.test(x));ok(maps.length>=2,'the port map runs over several pages: '+maps.length);

@@ -1,6 +1,6 @@
 // Network diagrams: scope, faceplates, routing rules, SVG and Visio (.vsdx / .vssx).
 const assert=require('node:assert/strict'),zlib=require('node:zlib'),E=require('../webview/evidence.js'),M=require('../webview/site_map.js'),D=require('../webview/diagram.js'),{demoSite}=require('./xlsx-writer.cjs');
-let checks=0;function ok(v,m){checks++;assert.ok(v,m);}function eq(a,b,m){checks++;assert.equal(a,b,m);}
+const G=D.GRID;let checks=0;function ok(v,m){checks++;assert.ok(v,m);}function eq(a,b,m){checks++;assert.equal(a,b,m);}
 function unzip(buf){const files={};let o=0;while(buf.readUInt32LE(o)===0x04034b50){const method=buf.readUInt16LE(o+8),size=buf.readUInt32LE(o+18),nl=buf.readUInt16LE(o+26),xl=buf.readUInt16LE(o+28),name=buf.slice(o+30,o+30+nl).toString(),data=buf.slice(o+30+nl+xl,o+30+nl+xl+size);files[name]=(method===8?zlib.inflateRawSync(data):data).toString();o+=30+nl+xl+size;}return files;}
 // Routing rules on a page: lines never share a collinear stretch (except branches of one
 // shared port), never cross a device except the end stubs, and end on port centers
@@ -178,20 +178,26 @@ function campus(){
  let zo=0,dates=true;while(raw.readUInt32LE(zo)===0x04034b50){if(raw.readUInt16LE(zo+12)===0)dates=false;zo+=30+raw.readUInt16LE(zo+26)+raw.readUInt16LE(zo+28)+raw.readUInt32LE(zo+18);}ok(dates,'ZIP entries carry valid dates');
  // Faceplates from the verified hardware profiles (hardware.js): every profile draws with
  // ports on the routing grid, in its own banks and order, without overlapping shapes.
- {const HW=require('./harness.cjs').boot().ctx.SWHardware;let drawn=0;const problems=[];
+ {const HW=require('./harness.cjs').boot().ctx.SWHardware;let drawn=0,arts=0;const problems=[];
   HW.profiles.forEach(prof=>{const node={key:'hw'+drawn,name:'HW-'+drawn,role:'switch',model:prof.title,hw:{members:[{id:'1',profile:prof}],portOf:()=>null}};
    const pg=D.diagram({layout:M.layout([{key:node.key,name:node.name,type:'Switch',model:prof.title,ips:[],open:-1}],[],{}),links:[],vlans:new Map(),ports:new Map(),title:'x'},{scope:'site'});drawn++;
    const dev=new (D._Device)(node,[],[],'plate');const centers=[];dev.plates[0].groups.forEach(g=>{for(let i=0;i<g.count;i++){const sl=dev.place(dev.plates[0],g,i,g.names[i]);centers.push({x:sl.dx,row:sl.row,mid:g.mid,label:sl.number,pitch:g.pitch});}});
    if(centers.some(c=>c.x%9))problems.push(prof.title+': off grid');
-   const byRow={};centers.forEach(c=>{(byRow[c.row]=byRow[c.row]||[]).push(c);});Object.values(byRow).forEach(r=>{r.sort((a,b)=>a.x-b.x);for(let i=1;i<r.length;i++)if(r[i].x-r[i-1].x<Math.max(r[i].pitch,r[i-1].pitch)-0.1&&!(r[i].pitch===27||r[i-1].pitch===27)&&r[i].x-r[i-1].x<18)problems.push(prof.title+': overlap at '+r[i].label);});
+   // A panel drawn with NetworkDiagramStudio's shared art keeps its real jack spacing: every port still has
+   // its own routing column, at least one grid step from the next.
+   const art=!!dev.plates[0].nds;if(art)arts++;
+   const byRow={};centers.forEach(c=>{(byRow[c.row]=byRow[c.row]||[]).push(c);});Object.values(byRow).forEach(r=>{r.sort((a,b)=>a.x-b.x);for(let i=1;i<r.length;i++){const gap=r[i].x-r[i-1].x;if(art?gap<9:gap<Math.max(r[i].pitch,r[i-1].pitch)-0.1&&!(r[i].pitch===27||r[i-1].pitch===27)&&gap<18)problems.push(prof.title+': overlap at '+r[i].label);}});
    const total=prof.banks.filter(b=>!b.mirror).reduce((n,b)=>n+b.names.length,0);if(centers.length!==total)problems.push(prof.title+': '+centers.length+' of '+total+' ports');
    if(!pg.shapes.length)problems.push(prof.title+': nothing drawn');});
   ok(drawn>=40&&!problems.length,drawn+' hardware profiles draw cleanly: '+problems.slice(0,6).join('; '));
+  ok(arts>=200,'most hardware profiles use the front panels shared with NetworkDiagramStudio: '+arts+' of '+drawn);
   const cx=HW.profile('JL675A'),fg=HW.profile('FG-120G');ok(cx&&fg,'Aruba 6100 and FortiGate 120G profiles');
   const sw={key:'cx',name:'CX',role:'switch',model:'JL675A',hw:{members:[{id:'1',profile:cx}],portOf:n=>{const m=/(\d+)$/.exec(n);const local=m&&m[1];const b=cx.banks.find(b=>b.names.includes(local));return b?{member:'1',bank:cx.banks.indexOf(b),index:b.names.indexOf(local)}:null;}}};
   const d=new (D._Device)(sw,[],[],'plate'),p1=d.slot('1/1/1'),p2=d.slot('1/1/2'),p12=d.slot('1/1/12'),p13=d.slot('1/1/13'),p49=d.slot('1/1/49'),p51=d.slot('1/1/51');
   ok(p49.dx<p1.dx&&p49.number==='49'&&p51.row===0&&p49.row===0&&d.slot('1/1/50').row===1,'Aruba 6100: 49-52 at the left as on the switch, numbered 49-52: '+JSON.stringify([p49.dx,p1.dx,p49.number]));
-  ok(p1.row===0&&p2.row===1&&p2.dx===p1.dx&&p13.dx-p12.dx===27,'odd ports on top, blocks of 12 with a gap: '+(p13.dx-p12.dx));
+  // The classic drawing groups ports in blocks of 12; the shared NetworkDiagramStudio panel has the 6100's own
+  // even spacing. Either way odd ports are on top, each pair in one column.
+  ok(p1.row===0&&p2.row===1&&Math.abs((p2.ex??p2.dx)-(p1.ex??p1.dx))<1&&(d.plates[0].nds?p13.dx-p12.dx>=G:p13.dx-p12.dx===27),'odd ports on top, in pairs, in order: '+(p13.dx-p12.dx));
   const fw={key:'fg',name:'FG',role:'firewall',model:'FortiGate-120G',hw:{members:[{id:'1',profile:fg}],portOf:n=>{const b=fg.banks.find(b=>b.names.includes(n));return b?{member:'1',bank:fg.banks.indexOf(b),index:b.names.indexOf(n)}:null;}}};
   const f=new (D._Device)(fw,[],[],'plate'),x3=f.slot('x3'),port1=f.slot('port1'),ha=f.slot('ha');ok(ha.dx<port1.dx&&port1.dx<x3.dx&&x3.number==='X3'&&ha.number==='HA'&&f.plates[0].groups.find(g=>g.names.includes('x3')).form==='sfp','FortiGate 120G: HA/MGMT, ports, SFP and X1-X4 in order, SFP+ drawn as cages');
   const svg=D.svg({w:900,h:200,title:'t',shapes:[],lines:[],devices:[]});ok(typeof svg==='string','svg');}
