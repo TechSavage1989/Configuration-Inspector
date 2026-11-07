@@ -195,6 +195,20 @@ a decision or a test on the owner's own machine (for example opening an export i
   a click on a member focuses the stack (`#id` stripped). Members sit under the member above them (`above` in render's row placement), so a taller stack
   right of a shorter one keeps its column. Straight member-to-member drops (`straight()` in render) take no channel track, and a
   member side with only such drops gets an 18 px label band; don't overlap bands instead (the router blocks them).
+- Hardware from ports (owner request: no blank faceplates): `portsModel()` in hardware.js names the model
+  when a configuration names none and only one model has its interface set (C9500-24Y4C/48Y4C,
+  CRS326-24S+2Q+RM; `inv.inferred`), or gives a family layout (`uncertain`) when several share it
+  (3560E 48-port, CX 6000/6100 12G). Add a signature there, never a guess from a partial port list.
+  Cisco `TenGigabitEthernet0/N` looks up `teN` first (3560E X2 slots alias `te1`/`te2`).
+- Modular chassis (5400R zl2 and others listing `module X type ...`): `diagramHardware` returns
+  `hw.chassis` with one member per module (id = slot letter, `model`); `fromProfile` draws them as cards
+  in slot order, `splitStacks` skips them, and port maps head each card "slot X". Stack members carry
+  `model` too, so mixed stacks name each member's own model.
+- Links from configurations (`configLinks` in index.html): only the closest name matches count, LAG
+  members are expanded on both ends (`members`, `lagOf`) and paired in port order, and a far end that
+  names no device uses its uplink ports (`uplinks`) only when the counts match. Keep the "paired in
+  port order" note in `why`; configurations cannot prove which cable joins which port.
+- Port map pages draw the role legend through `Flow.onPage` (every page), not after the plates.
 - Paper sizes (owner request): `setPaper({key,orient})` in diagram.js sets the sheet (`PAPERS`), and
   `fitLetter`/`onLetter` fit every page to it (letter keeps the letter/A4 shared area and never scales up;
   larger sheets scale small drawings up to 2x via `paperInfo().maxScale`). `DOC_W`/`DOC_H` follow the
