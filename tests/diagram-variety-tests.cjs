@@ -145,7 +145,14 @@ function visioChecks(name,pages){
    const r=routing(p);ok(r.length===0,scope+': stacks follow the routing rules: '+r.slice(0,4).join('; '));}
   const title=D.diagram(inp,{scope:'downstream',focus:st1,style:'plate',title:'Stacks'}).title;ok(title==='EX-1FL-STACK and below','a stack drawn from itself is titled with its name: '+title);
   visioChecks('Example stacks',[D.onLetter(D.diagram(inp,{scope:'downstream',focus:core,style:'plate',title:'Stacks'}))]);
-  ok(D.diagram(inp,{scope:'site',style:'box',title:'Stacks'}).devices.some(d=>d.key===st1),'box style keeps a stack as one box');}
+  ok(D.diagram(inp,{scope:'site',style:'box',title:'Stacks'}).devices.some(d=>d.key===st1),'box style keeps a stack as one box');
+  // A taller stack to the right of a shorter one keeps its own column below the shorter one's last member.
+  const t=site('Uneven stacks'),tc=t.dev('EX-MDF','Switch','JL675A','JL675A'),ta=t.dev('EX-1FL-STACK','Switch','JL558A'),tb=t.dev('EX-2FL-STACK','Switch','JL558A');
+  t.link(tc,ta,'1/1/49','1/49','10 Gb/s','10GBase-SR');t.link(tc,tb,'1/1/50','1/49','10 Gb/s','10GBase-SR');
+  const ti=input(t),ha=stackHw('JL558A',3),hb=stackHw('JL558A',7);[ti.layout.all,ti.layout.nodes].forEach(l=>l.forEach(n=>{if(n.key===ta)n.hw=ha;if(n.key===tb)n.hw=hb;}));
+  for(const scope of ['downstream','site']){const p=D.diagram(ti,{scope,focus:tc,style:'plate',title:'Uneven stacks'}),col=k=>p.devices.filter(d=>d.key.startsWith(k+'#')).map(d=>Math.round(d.x)),a=col(ta),b=col(tb);
+   ok(a.length===3&&b.length===7&&new Set(a).size===1&&new Set(b).size===1&&a[0]!==b[0],scope+': every stack keeps its own column, however many members: '+a.join(',')+' / '+b.join(','));
+   const r=routing(p);ok(r.length===0,scope+': uneven stacks follow the routing rules: '+r.slice(0,4).join('; '));}}
  ok(slowest<8000,'every drawing finishes quickly: slowest '+slowest+' ms ('+slowName+')');
  if(fails.length){console.log(fails.length+' FAILED');const seen=new Map();fails.forEach(f=>{const key=f.replace(/: .*/s,'').replace(/^.*?(routing rules|nothing above|WAN circuits sit|hops are|finite|SVG|port modules|Port modules|site book|Visio|line weights|numbered|uniquely|drawn with|anchors|drawing failed|quickly).*/,'$1');seen.set(f.slice(0,160),1);});[...seen.keys()].slice(0,60).forEach(x=>console.log(' - '+x));}
  console.log(checks+' network design variety checks passed (slowest drawing '+slowest+' ms)');
