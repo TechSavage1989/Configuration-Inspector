@@ -28,11 +28,12 @@
  // Link kinds by cable or fiber type and speed, as the reference drawing names them ("10 Gbps
  // SR fiber", "10 Gbps SFP+ DAC", "1 Gbps local handoff", "AP copper"). The media comes from
  // the port's reported media (show interfaces status) or else its connector (SFP cage or RJ45).
- var LINK_MEDIA={custom:{name:'',color:'#8a94a6',order:8.5},sr:{name:'SR fiber',color:'#e02b20',order:1},lr:{name:'LR fiber',color:'#00a3e0',order:2},fiber:{name:'fiber',color:'#e02b20',order:3},dac:{name:'DAC',color:'#111111',order:4},aoc:{name:'AOC',color:'#7b3fa0',order:4.5},wan:{name:'local handoff',color:'#f0c330',order:5},copper:{name:'copper',color:'#f0c330',order:6},wap:{name:'AP copper',color:'#18a34a',order:7},other:{name:'Media unspecified',color:'#8a94a6',order:8}};
+ var LINK_MEDIA={custom:{name:'',color:'#8a94a6',order:8.5},sr:{name:'SR fiber',color:'#e02b20',order:1},lr:{name:'LR fiber',color:'#00a3e0',order:2},fiber:{name:'fiber',color:'#e02b20',order:3},dac:{name:'DAC',color:'#111111',order:4},aoc:{name:'AOC',color:'#7b3fa0',order:4.5},stack:{name:'Stack link',color:'#5a3fc0',order:0.5},wan:{name:'local handoff',color:'#f0c330',order:5},copper:{name:'copper',color:'#f0c330',order:6},wap:{name:'AP copper',color:'#18a34a',order:7},other:{name:'Media unspecified',color:'#8a94a6',order:8}};
  var KINDS={};
  function speedText(v){return v>=1000?(Math.round(v/100)/10)+' Gbps':v>0?v+' Mbps':'';}
  function mediaOf(s){s=String(s||'');if(!s)return '';if(/twinax|\bDAC\b|-CU\d|CU\d+M|copper.*sfp|sfp.*copper/i.test(s))return 'dac';if(/\bAOC\b|active optical|-AOC\d/i.test(s))return 'aoc';if(/(?:base-?|-|\b)(?:LR|LX|ER|ZR|LRM)\d?\b/i.test(s))return 'lr';if(/(?:base-?|-|\b)(?:SR|SX)\d?\b/i.test(s))return 'sr';if(/base-?T\b|RJ-?45|10\/100|BaseTX/i.test(s))return 'copper';if(/sfp|fiber|fibre|optic/i.test(s))return 'fiber';return '';}
  function linkKind(l,aRole,bRole,aFiber,bFiber,aCopper,bCopper){var speed=Math.max(speedValue(l.aSpeed),speedValue(l.bSpeed)),ports=(l.aPort||'')+' '+(l.bPort||''),m;
+  if(l.stack){var sk='stack'+(l.tech?'-'+String(l.tech).toLowerCase().replace(/[^a-z0-9]+/g,''):'');if(!KINDS[sk])KINDS[sk]={label:(l.tech?l.tech+' stack link':'Stack link'),color:LINK_MEDIA.stack.color,dash:false,media:'stack',speed:0,width:2.5};return sk;}
   if(aRole==='circuit'||bRole==='circuit')m='wan';else if(aRole==='ap'||bRole==='ap')m='wap';
   else m=mediaOf(l.aMedia)||mediaOf(l.bMedia)||(aCopper||bCopper?'copper':'')||((aFiber||bFiber||/\b(?:te|ten|tw|twe|twenty|fo|forty|hu|hundred|xe|et)\s*\d|tengig|twentyfive|forty|hundred|sfp|^x\d|\sx\d/i.test(ports)?'fiber':speed>=10||/gigabit|\bgi\s*\d|\bfa\s*\d|fastethernet|\beth\d|port\d/i.test(ports)?'copper':'other'));
   if(!speed&&/^(?:sr|lr|fiber|dac|aoc)$/.test(m))speed=/\bhu|hundred/i.test(ports)?100000:/\bfo|forty/i.test(ports)?40000:/\btw|twe|twentyfive/i.test(ports)?25000:10000;
@@ -481,6 +482,10 @@
   // Copper links and provider handoffs share the copper color: one legend entry for both.
   var legendTypes=Array.from(used).sort(function(a,b){var ka=KINDS[a]||{},kb=KINDS[b]||{};return ((LINK_MEDIA[ka.media]||{order:9}).order-(LINK_MEDIA[kb.media]||{order:9}).order)||((kb.speed||0)-(ka.speed||0));});
   var legendBottom=legendColumn(page,MARGIN,TOP,legendTypes,style==='box'?Array.from(new Set(Array.from(devices.values()).map(function(d){return d.node.role;}))):null,view,Array.from(modulesUsed.values())),legendRight=MARGIN;
+  // A stack's members inside one frame, its name and member count on the frame (drawn first, behind).
+  var stackBoxes=new Map();devices.forEach(function(d){var k=d.node.stackOf;if(!k)return;var b=stackBoxes.get(k)||{x0:1e9,y0:1e9,x1:-1e9,y1:-1e9,n:0,name:d.node.stackName,tech:d.node.stackTech,size:d.node.stackSize};b.x0=Math.min(b.x0,d.x);b.y0=Math.min(b.y0,d.y);b.x1=Math.max(b.x1,d.x+d.w);b.y1=Math.max(b.y1,d.y+d.h);b.n++;stackBoxes.set(k,b);});
+  stackBoxes.forEach(function(b,k){if(b.n<2)return;var pad=G;page.rect(b.x0-pad,b.y0-pad,b.x1-b.x0+2*pad,b.y1-b.y0+2*pad,{fill:'none',stroke:LINK_MEDIA.stack.color,width:1.2,radius:6,dash:true});
+   var label=(b.tech&&!/backplane/i.test(b.tech)?b.tech+' stack':'Stack')+' \u00b7 '+b.size+' members';page.text(b.x1+pad-textW(label,9,true)-6,b.y1+pad-14,textW(label,9,true)+6,12,label,{size:9,bold:true,align:'right',color:LINK_MEDIA.stack.color});});
   // Devices, endpoints and summaries.
   devices.forEach(function(dev){page.begin(dev.key);if(style==='box')drawBox(page,dev);else{var u=new Map();usedPorts.forEach(function(color,k){if(k.indexOf(dev.key+'|')===0)u.set(k.slice(dev.key.length+1),color);});drawPlate(page,dev,u);}page.end();
    dev.top.concat(dev.bot).forEach(function(e){var x=dev.x+e.rx,y=epY(dev,e),a=e.a;page.begin(epKey(dev,a),'ep');
@@ -590,10 +595,38 @@
   return page;
  }
  // A page for a scope; the title says what it shows.
+ // Stacks (owner request: stacks drawn as stacks, with their VSF or stacking links): a stacked switch becomes
+ // one device per member, members directly beneath one another in order, each link and access point on
+ // the member that has its port, the devices below the stack under its last member, and the stack
+ // links between members from the configuration (VSF link 2 of a member to link 1 of the next; a ring
+ // closes back to the first). A frame with the stack's name groups the members.
+ function splitStacks(input,o){var L=input.layout,stacks=L.all.filter(function(n){return n.hw&&n.hw.members&&n.hw.members.filter(function(m){return m.profile;}).length>1;});if(!stacks.length)return null;
+  var byKey=new Map(),members=new Map(),memberOf=function(n,port){var at=port&&n.hw.portOf(port);return at?String(at.member):null;},posOf=new Map(L.nodes.map(function(n){return [n.key,n];}));
+  function mk(n,id){return n.key+'#'+id;}
+  stacks.forEach(function(n){var ms=n.hw.members.filter(function(m){return m.profile;}).slice(0,8);members.set(n.key,ms.map(function(m,i){var own={members:[m],portOf:function(name){var at=n.hw.portOf(name);return at&&String(at.member)===String(m.id)?at:null;},links:[],technology:n.hw.technology};
+   return Object.assign({},n,{key:mk(n,m.id),name:n.name+' \u00b7 member '+m.id,stackOf:n.key,stackName:n.name,stackMember:String(m.id),stackIndex:i,stackSize:ms.length,stackTech:n.hw.technology||'',ips:i?[]:n.ips,hw:own,x:(posOf.get(n.key)||n).x,y:((posOf.get(n.key)||n).y||0)+i*4,
+    attached:(n.attached||[]).filter(function(a){var w=memberOf(n,a.port);return w?w===String(m.id):i===0;})});}));byKey.set(n.key,n);});
+  function swap(list){var out=[];list.forEach(function(n){if(members.has(n.key))out.push.apply(out,members.get(n.key));else out.push(n);});return out;}
+  var all=swap(L.all),nodes=swap(L.nodes),first=function(k){return members.get(k)[0].key;},last=function(k){var m=members.get(k);return m[m.length-1].key;},yOf=function(k){var n=posOf.get(k);return n?n.y:0;};
+  var edges=[];L.edges.forEach(function(e){var a=e.a,b=e.b;if(members.has(a))a=yOf(e.b)<yOf(e.a)-1?first(e.a):last(e.a);if(members.has(b))b=yOf(e.a)<yOf(e.b)-1?first(e.b):last(e.b);edges.push(Object.assign({},e,{a:a,b:b}));});
+  members.forEach(function(ms){for(var i=1;i<ms.length;i++)edges.push({a:ms[i-1].key,b:ms[i].key,ports:[]});});
+  var links=(input.links||[]).map(function(l){var x=Object.assign({},l);[['a','aPort'],['b','bPort']].forEach(function(f){if(!members.has(l[f[0]]))return;var n=byKey.get(l[f[0]]),w=memberOf(n,l[f[1]]);x[f[0]]=w?mk(n,w):first(l[f[0]]);});return x;});
+  stacks.forEach(function(n){var ms=members.get(n.key),sl=n.hw.links||[],tech=n.hw.technology||'Stack',port=function(id,lk){var p=sl.find(function(x){return String(x.member)===String(id)&&String(x.link)===String(lk);});return p&&p.port;};
+   for(var i=0;i<ms.length;i++){var j=i+1;if(j===ms.length){if(ms.length<3)break;j=0;}var a=ms[i].stackMember,b=ms[j].stackMember,pa=port(a,2),pb=port(b,1);if(!pa||!pb)continue;links.push({a:ms[i].key,b:ms[j].key,aPort:pa,bPort:pb,stack:true,tech:/vsf/i.test(tech)?'VSF':tech==='Backplane stacking'?'':tech});}
+   if(ms.length===2){var p1=port(ms[1].stackMember,2),p0=port(ms[0].stackMember,1);if(p1&&p0)links.push({a:ms[1].key,b:ms[0].key,aPort:p1,bPort:p0,stack:true,tech:/vsf/i.test(tech)?'VSF':''});}});
+  var ports=new Map(input.ports||[]);members.forEach(function(ms,k){var list=ports.get(k)||[],n=byKey.get(k);ms.forEach(function(m){ports.set(m.key,list.filter(function(p){var w=memberOf(n,p);return w?w===m.stackMember:m.stackIndex===0;}));});});
+  var stencils=input.stencils?new Map(input.stencils):null;if(stencils)members.forEach(function(ms,k){var st=stencils.get(k);if(st)ms.forEach(function(m){stencils.set(m.key,st);});});
+  var vlans=new Map(input.vlans||[]);members.forEach(function(ms,k){if(vlans.has(k))vlans.set(ms[0].key,vlans.get(k));});
+  var mapSet=function(set){if(!set)return set;var out=new Set();set.forEach(function(k){if(members.has(k))members.get(k).forEach(function(m){out.add(m.key);});else out.add(k);});return out;};
+  var o2=Object.assign({},o,{focus:members.has(o.focus)?first(o.focus):o.focus,hidden:mapSet(o.hidden),added:mapSet(o.added)});
+  return {input:Object.assign({},input,{layout:Object.assign({},L,{all:all,nodes:nodes,edges:edges}),links:links,ports:ports,stencils:stencils,vlans:vlans}),o:o2};}
  function diagram(input,o){
+  var t0=tree(input.layout),f0=t0.byKey.get(o.focus),style0=o.style&&o.style!=='auto'?o.style:o.scope==='site'||!f0?'box':'plate';
+  if(style0!=='box'){var sp=splitStacks(input,o);if(sp){input=sp.input;o=Object.assign(sp.o,{style:style0});}}
   var s=scope(input.layout,o),t=s.tree,focus=t.byKey.get(o.focus),style=o.style&&o.style!=='auto'?o.style:o.scope==='site'||!focus?'box':'plate';
-  var title=o.scope==='site'||!focus?(o.title||'Site')+' - Existing Topology':focus.name+(o.scope==='neighbors'?' - Connections':' and below');
-  var kicker=(o.title||'Site')+(o.scope==='site'||!focus?'':' / '+focus.name),sub=o.subtitle||(o.scope==='site'||!focus?'Devices and links from imported neighbor and monitoring data':[focus.model,(focus.ips||[])[0]].filter(Boolean).join('  |  '));
+  var fname=focus&&(focus.stackName||focus.name);
+  var title=o.scope==='site'||!focus?(o.title||'Site')+' - Existing Topology':fname+(o.scope==='neighbors'?' - Connections':' and below');
+  var kicker=(o.title||'Site')+(o.scope==='site'||!focus?'':' / '+fname),sub=o.subtitle||(o.scope==='site'||!focus?'Devices and links from imported neighbor and monitoring data':[focus.model,(focus.ips||[])[0]].filter(Boolean).join('  |  '));
   if(o.customTitle)title=o.customTitle;if(o.customSubtitle)sub=o.customSubtitle;
   var view={company:o.company?String(o.company).toUpperCase():'',footer:o.author?'Prepared by '+o.author+(o.date?'  |  '+o.date:''):(o.date||''),title:title,kicker:kicker,subtitle:sub,rows:s.rows,context:s.context,style:style,aps:o.aps,apGroup:!!o.apGroup,others:o.others,wan:o.wan,modules:o.modules,moduleArt:o.moduleArt||null,vlansFor:o.scope==='site'||o.noVlans?null:o.focus,maxRow:o.maxRow,linkStyles:o.linkStyles,tallAps:!!o.tallAps};
   // Diagrams are meant to print on a letter sheet: try several row widths and keep the
@@ -768,7 +801,7 @@
   var lines=s.text.split('\n'),lh=s.lineHeight||size*1.3,anchor=s.align==='left'?'start':s.align==='right'?'end':'middle',x=s.align==='left'?s.x:s.align==='right'?s.x+s.w:s.x+s.w/2;
   return '<text x="'+x+'" y="'+(s.y+size)+'" font-size="'+size+'" text-anchor="'+anchor+'" fill="'+fill+'"'+weight+'>'+lines.map(function(l,i){return '<tspan x="'+x+'" dy="'+(i?lh:0)+'"'+(s.firstBold&&i===0?' font-weight="700"':'')+'>'+esc(l)+'</tspan>';}).join('')+'</text>';}
  function shapeSVG(s){
-  if(s.type==='rect')return '<rect x="'+s.x+'" y="'+s.y+'" width="'+s.w+'" height="'+s.h+'" rx="'+(s.radius||0)+'" fill="'+(s.fill||'none')+'" stroke="'+(s.stroke&&s.stroke!=='none'?s.stroke:'none')+'" stroke-width="'+(s.width||1)+'"'+(s.pkey?' data-port="'+esc(s.pkey)+'"':'')+'/>';
+  if(s.type==='rect')return '<rect x="'+s.x+'" y="'+s.y+'" width="'+s.w+'" height="'+s.h+'" rx="'+(s.radius||0)+'" fill="'+(s.fill||'none')+'" stroke="'+(s.stroke&&s.stroke!=='none'?s.stroke:'none')+'" stroke-width="'+(s.width||1)+'"'+(s.dash?' stroke-dasharray="6 4"':'')+(s.pkey?' data-port="'+esc(s.pkey)+'"':'')+'/>';
   if(s.type==='image')return s.art?'<svg x="'+s.x+'" y="'+s.y+'" width="'+s.w+'" height="'+s.h+'" viewBox="0 0 '+s.art.w+' '+s.art.h+'" preserveAspectRatio="none" overflow="hidden">'+s.art.body+'</svg>':'';
   if(s.type==='line')return '<polyline'+(s.lkind?' data-kind="'+esc(s.lkind)+'"':'')+(s.lineKey?' data-line="'+esc(s.lineKey)+'" data-route="'+(s.route||[]).map(function(p){return p[0]+','+p[1];}).join(' ')+'"':'')+' points="'+linePoints(s).map(function(p){return p[0]+','+p[1];}).join(' ')+'" fill="none" stroke="'+s.color+'" stroke-width="'+(s.width||2)+'"'+(s.dash?' stroke-dasharray="8 5"':'')+' stroke-linejoin="round" stroke-linecap="'+(s.dash?'butt':'round')+'"'+(s.ltitle?'><title>'+esc(s.ltitle)+'</title></polyline>':'/>');
   var t=textSVG(s);if(s.lkind)t=t.replace(/^<text /,'<text data-kind="'+esc(s.lkind)+'" ');return s.tkey?t.replace(/^<text /,'<text data-text="'+esc(s.tkey)+'" '):t;}
@@ -866,7 +899,7 @@
     '<Section N="Geometry" IX="0">'+cell('NoFill',1)+cell('NoLine',0)+s.points.map(function(p,i){var arc=i&&s.arcs&&s.arcs[i];return '<Row T="'+(arc?'ArcTo':i?'LineTo':'MoveTo')+'" IX="'+(i+1)+'">'+cell('X',n(p[0]/96-ox-minX))+cell('Y',n(H-p[1]/96-oy-minY))+(arc?cell('A',n(VBOW*(p[0]>s.points[i-1][0]?1:-1)*arc/96)):'')+'</Row>';}).join('')+'</Section></Shape>';}
   var isText=s.type==='text',cx=(s.x+s.w/2)/96-ox,cy=H-(s.y+s.h/2)/96-oy,w=Math.max((s.rotate?s.h:s.w)/96,0.01),h=Math.max((s.rotate?s.w:s.h)/96,0.01);
   return '<Shape ID="'+id+'" Type="Shape" LineStyle="0" FillStyle="0" TextStyle="0">'+cell('PinX',n(cx))+cell('PinY',n(cy))+cell('Width',n(w))+cell('Height',n(h))+cell('LocPinX',n(w/2))+cell('LocPinY',n(h/2))+cell('Angle',s.rotate?'1.5707963':0)+
-   (isText?cell('LinePattern',0)+cell('FillPattern',0)+cell('VerticalAlign',s.rotate?1:0):(s.fill&&s.fill!=='none'?cell('FillForegnd',s.fill):'')+cell('FillPattern',s.fill&&s.fill!=='none'?1:0)+cell('LineColor',s.stroke&&s.stroke!=='none'?s.stroke:'#000000')+cell('LinePattern',s.stroke&&s.stroke!=='none'?1:0)+weightCell(s.width||1)+(s.radius?cell('Rounding',n(s.radius/96)):''))+
+   (isText?cell('LinePattern',0)+cell('FillPattern',0)+cell('VerticalAlign',s.rotate?1:0):(s.fill&&s.fill!=='none'?cell('FillForegnd',s.fill):'')+cell('FillPattern',s.fill&&s.fill!=='none'?1:0)+cell('LineColor',s.stroke&&s.stroke!=='none'?s.stroke:'#000000')+cell('LinePattern',s.stroke&&s.stroke!=='none'?(s.dash?2:1):0)+weightCell(s.width||1)+(s.radius?cell('Rounding',n(s.radius/96)):''))+
    (isText?cell('LeftMargin',0)+cell('RightMargin',0)+cell('TopMargin',0)+cell('BottomMargin',0)+charSection(s)+'<Section N="Paragraph"><Row IX="0">'+cell('HorzAlign',s.align==='left'?0:s.align==='right'?2:1)+'</Row></Section>':'')+
    '<Section N="Geometry" IX="0">'+cell('NoFill',isText?1:0)+cell('NoLine',isText?1:0)+boxGeom(w,h)+'</Section>'+(isText?'<Text><cp IX="0"/><pp IX="0"/>'+esc(s.text)+'</Text>':'')+'</Shape>';
  }
@@ -970,6 +1003,6 @@
    page.rect(MARGIN,84,page.w-2*MARGIN,1,{fill:'#c9d3df',stroke:'none'});pages.push(page);}
   return pages;
  }
- root.SWDiagram={setPaper:setPaper,paperInfo:paperInfo,PAPERS:PAPERS,fitPaper:fitLetter,stencilAnchors:stencilAnchors,moduleFor:moduleFor,MODULES:MODULES,autoModule:autoModule,build:build,diagram:diagram,scope:scope,tree:tree,render:render,svg:svg,vsdx:vsdx,library:library,fitLetter:fitLetter,onLetter:onLetter,stencilPages:stencilPages,linkType:linkType,parsePort:parsePort,physicalPort:physicalPort,catalogFor:catalogFor,_Device:Device,stencilPorts:stencilPorts,kinds:KINDS,kindStyle:kindStyle,linkKind:linkKind,shortPort:short,docPages:docPages,number:number,CATALOG:CATALOG,LINK_TYPES:LINK_TYPES,GRID:G};
+ root.SWDiagram={splitStacks:splitStacks,setPaper:setPaper,paperInfo:paperInfo,PAPERS:PAPERS,fitPaper:fitLetter,stencilAnchors:stencilAnchors,moduleFor:moduleFor,MODULES:MODULES,autoModule:autoModule,build:build,diagram:diagram,scope:scope,tree:tree,render:render,svg:svg,vsdx:vsdx,library:library,fitLetter:fitLetter,onLetter:onLetter,stencilPages:stencilPages,linkType:linkType,parsePort:parsePort,physicalPort:physicalPort,catalogFor:catalogFor,_Device:Device,stencilPorts:stencilPorts,kinds:KINDS,kindStyle:kindStyle,linkKind:linkKind,shortPort:short,docPages:docPages,number:number,CATALOG:CATALOG,LINK_TYPES:LINK_TYPES,GRID:G};
  if(typeof module==='object'&&module.exports)module.exports=root.SWDiagram;
 })(typeof globalThis!=='undefined'?globalThis:this);

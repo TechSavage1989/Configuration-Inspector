@@ -187,6 +187,12 @@ a decision or a test on the owner's own machine (for example opening an export i
   shortest run that keeps right angles and port directions; `snapTargets`/`snapGuides` snap to other
   links and device edges (Alt off); `showBendPoints` edits points as numbers. Checked by
   `tests/diagram-lines-browser.cjs`.
+- Stacks (owner request): `splitStacks` (diagram.js) turns a node whose `hw.members` has more than one
+  profiled member into one device per member (`key#id`, `stackOf`), chained beneath one another, with
+  links and access points on the member that has their port, downstream edges on the last member, and
+  stack links (`stack:true`, kind `stack-vsf`) from `hw.links` (VSF link 2 to the next member's link 1;
+  three or more close a ring). Box style keeps one box. `diagramHardware` passes `links`/`technology`;
+  a click on a member focuses the stack (`#id` stripped).
 - Paper sizes (owner request): `setPaper({key,orient})` in diagram.js sets the sheet (`PAPERS`), and
   `fitLetter`/`onLetter` fit every page to it (letter keeps the letter/A4 shared area and never scales up;
   larger sheets scale small drawings up to 2x via `paperInfo().maxScale`). `DOC_W`/`DOC_H` follow the
