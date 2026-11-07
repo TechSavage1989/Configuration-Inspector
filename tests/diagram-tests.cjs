@@ -80,6 +80,20 @@ function campus(){
   const svgHop=D.svg(p);ok(/<polyline[^>]*points="[^"]*"/.test(svgHop),'the hop is drawn on the page');
   const pg=unzip(Buffer.from(D.vsdx([p],'WAN')))['visio/pages/page1.xml'],arcs=[...pg.matchAll(/<Row T="ArcTo" IX="(\d+)"><Cell N="X" V="([-\d.]+)"\/><Cell N="Y" V="[-\d.]+"\/><Cell N="A" V="([-\d.]+)"\/>/g)];
   ok(arcs.length>=1&&arcs.every(m=>{const prev=pg.slice(0,m.index).match(/<Cell N="X" V="([-\d.]+)"\/><Cell N="Y" V="[-\d.]+"\/>(?:<\/Row>)?(?!.*<Cell N="X")/s);return prev&&(+m[3])*((+m[2])-(+prev[1]))<0;}),'Visio hops are ArcTo rows that bow upward: '+arcs.length);}
+ {// Owner request: port modules fill the cages in use from the link type and speed, can be chosen per
+  // link type, and are listed in the legend with the ports that use them.
+  ok(D.autoModule('10 Gbps SR fiber')==='sr'&&D.autoModule('SFP+ DAC')==='dac'&&D.autoModule('OS2 single-mode fiber')==='lr'&&D.autoModule('QSFP AOC')==='aoc'&&D.autoModule('Cat6 copper')==='copper'&&D.autoModule('Media unspecified')==='','modules follow the cable type');
+  const dv=(name,type,model,ip)=>({key:E.deviceKey(name),name,type,model,ips:[ip],open:-1}),k=E.deviceKey;
+  const devs=[dv('EXAMPLE-CORE','Switch','JL675A','10.0.0.2'),dv('EXAMPLE-EDGE','Switch','JL675A','10.0.0.3')];
+  const links=[{a:k('EXAMPLE-CORE'),b:k('EXAMPLE-EDGE'),aPort:'1/1/49',bPort:'1/1/49',aSpeed:'10 Gb/s',aMedia:'10GBase-SR'},{a:k('EXAMPLE-CORE'),b:k('EXAMPLE-EDGE'),aPort:'1/1/1',bPort:'1/1/1',aSpeed:'1 Gb/s'}];
+  const draw=view=>D.diagram({layout:M.layout(devs,links,{}),links,vlans:new Map(),ports:new Map(),title:'Modules'},Object.assign({scope:'downstream',focus:k('EXAMPLE-CORE')},view||{})),texts=p=>p.shapes.filter(x=>x.type==='text').map(x=>x.text).join('\n');
+  let p=draw(),t=texts(p);
+  ok(t.includes('PORT MODULES')&&t.includes('SFP+ 10G SR fiber optic')&&/EXAMPLE-CORE 1\/1\/49/.test(t)&&/EXAMPLE-EDGE 1\/1\/49/.test(t),'an SR link fills both cages with an SR optic, listed in the legend with its ports');
+  ok(!/RJ45 copper module/.test(t),'copper RJ45 ports get no module');
+  const kind=p.lines.find(l=>l.conn.aPorts[0]==='1/1/49').conn.type;
+  t=texts(draw({linkStyles:{[kind]:{module:'dac'}}}));ok(t.includes('SFP+ 10G DAC cable end')&&!t.includes('SR fiber optic'),'a module chosen for the link type replaces the automatic one');
+  t=texts(draw({linkStyles:{[kind]:{module:'none'}}}));ok(!t.includes('PORT MODULES'),'No module leaves the cage empty');
+  t=texts(draw({modules:false}));ok(!t.includes('PORT MODULES'),'Show > Port modules can turn them off');}
  {// Owner request: right angles and as few bends as possible; an access point's link needs at most two.
   const bends=pts=>pts.filter((p,k)=>k&&k<pts.length-1&&!((pts[k-1][0]===p[0]&&p[0]===pts[k+1][0])||(pts[k-1][1]===p[1]&&p[1]===pts[k+1][1]))).length;
   const ep=core.lines.filter(l=>l.conn.ep!=null);ok(ep.length&&ep.every(l=>bends(l.points)<=2),'access point links take at most two bends: '+ep.map(l=>bends(l.points)).join(','));

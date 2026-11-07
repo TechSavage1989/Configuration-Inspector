@@ -1,5 +1,16 @@
 # Configuration Inspector development handoff
 
+## 5.53.0 — in-app dropdowns, clear buttons, port modules, polished updater
+
+- `ui-pickers` script (end of index.html): styled menu for selects and suggestion lists (full list on
+  click even with text; typing filters; keyboard: arrows, Enter, Escape, Alt+Down/F4), one floating
+  clear button for text boxes; both are re-hosted into an open modal dialog. Test:
+  `tests/ui-pickers-browser.cjs` (in `test:browser`).
+- Port modules: `MODULES`, `autoModule`, `moduleFor`, `drawModule` in diagram.js; `Device.slot` returns
+  `form`; Link type dialog `data-link-style="module"`; Show option `modules`.
+- Updater: version pills, What's new card (`updateNotesHTML`), striped download bar with
+  `<progress>` kept for tests and accessibility, install review with assurance list.
+
 ## 5.52.0 — line hops as arcs, links spread out, more cable types
 
 - Hops: `l.arcs` / shape `arcs` map a point index to a bow (px, upward); `arcPoints`/`linePoints`
