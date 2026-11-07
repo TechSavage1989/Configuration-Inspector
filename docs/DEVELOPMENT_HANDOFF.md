@@ -1,5 +1,10 @@
 # Configuration Inspector development handoff
 
+## 5.47.1 — split diagrams keep the Show choices
+
+- `splitDiagram()` no longer swaps in an `apGroup:true` overview: the first page is the
+  diagram as chosen; continuation pages are added when it is too small to read.
+
 ## 5.47.0 — Visio package in NetworkDiagramStudio's form
 
 - The owner confirmed NetworkDiagramStudio's .vsdx files open in their Visio while ours gave
