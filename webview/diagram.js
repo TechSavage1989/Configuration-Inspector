@@ -125,6 +125,39 @@
  function sizeFor(n){for(var i=0;i<SIZES.length;i++)if(SIZES[i]>=n)return SIZES[i];return n+n%2;}
  // A device drawn as one faceplate per stack member: groups of two-row ports (odd
  // numbers on top), then a label area with the name, model and address.
+ // Device drawings shared with NetworkDiagramStudio (owner request: one set of designs for both apps).
+ // webview/nds_faceplates.js is generated from NDS's source by scripts/sync-nds-faceplates.py; a plate whose
+ // model NDS draws, with every one of its ports on an NDS jack, uses NDS's front panel as plain shapes.
+ var ndsCache=new Map();
+ function ndsLib(){var r=root.NDSFaceplates;if(!r&&typeof require==='function'){try{r=require('./nds_faceplates.js');}catch(e){r=null;}}return r||null;}
+ function ndsResolve(f,names){var lower={},rects={},map={};Object.keys(f.ports).forEach(function(k){lower[k.toLowerCase()]=k;});
+  f.children.forEach(function(c){if(c.anchorName&&!rects[c.anchorName])rects[c.anchorName]=c;});
+  var ok=names.every(function(n){var s=String(n).toLowerCase().replace(/\s+/g,''),k=f.ports[n]?n:lower[s]||lower[s.replace(/^.*\//,'')]||lower[s.replace(/^(?:gigabitethernet|tengigabitethernet|ethernet|port)/,'')];if(!k)return false;map[n]={pt:f.ports[k],key:k};return true;});
+  // Top and bottom rows come from the bank's own order (the same in both apps), not from the drawing:
+  // a panel with front and rear panes has both front rows in its upper half.
+  return ok?{children:f.children,ports:map,ratio:f.ratio,rects:rects}:null;}
+ function ndsArt(model,names){if(!model||!names.length)return null;var k=String(model)+'|'+names.join(',');if(ndsCache.has(k))return ndsCache.get(k);var out=null;
+  if(/^J9827A$/i.test(model))out=ndsResolve(managementArt(),names);
+  else{var N=ndsLib();if(N){try{var f=N.deviceFaceplate({model:model,ports:names.map(function(n){return {name:n};})});if(f&&f.verified&&f.ratio>0)out=ndsResolve(f,names);}catch(e){out=null;}}}
+  ndsCache.set(k,out);return out;}
+ // The 5400R zl2 management module in NDS's style (NDS draws it as part of its chassis panel).
+ function managementArt(){var c=[],r=function(x,y,w,h,fill,stroke,weight){c.push({type:'rect',x:x,y:y,w:w,h:h,fill:fill,stroke:stroke||'none',weight:weight||0.5});};
+  r(0,0,1,1,'#C5CED1','#7A8B92',0.7);c.push({type:'text',x:0.03,y:0.06,w:0.4,h:0.16,value:'Management module',size:5,color:'#33434A',bold:false,align:'left'});
+  for(var row=0;row<2;row++)for(var j=0;j<7;j++)r(0.04+j*0.072,0.36+row*0.24,0.027,0.1,j%3?'#8D9DA3':'#6C925E');
+  var socket=function(name,x,y,w,h){var first=c.length;r(x-w/2,y-h/2,w,h,'#1D282D','#66757B',0.5);r(x-w*0.36,y-h*0.28,w*0.72,h*0.49,'#101A1E');r(x-w*0.18,y+h*0.13,w*0.36,h*0.3,'#879296');for(var p=0;p<4;p++)r(x-w*0.29+p*w*0.17,y-h*0.3,w*0.05,h*0.13,'#D3B266');if(name){c[first].anchorName=name;}};
+  socket('oobm',0.674,0.6,0.06,0.42);socket('',0.843,0.6,0.06,0.42);r(0.958,0.32,0.02,0.44,'#20313A');
+  return {ratio:5,children:c,ports:{oobm:[0.674,0.6]},verified:true};}
+ // A port's point on shared art (plate-relative), or null.
+ function artPoint(pl,g,i){var nm=g.names&&g.names[i],k=nm!=null&&pl.nds&&pl.nds.ports[nm];if(!k)return null;return {x:(pl.artX||0)+k.pt[0]*pl.artW,y:(pl.artY||0)+k.pt[1]*pl.artH,row:pl.artRows&&pl.artRows[nm]!=null?pl.artRows[nm]:portPos(g,i).row,key:k.key};}
+ // Rows on shared art come from the drawing: in each column of jacks the upper one is reached from above and
+ // the lower one from below, a lone jack by which half of the panel it is in. The art is used only when that
+ // leaves every port its own routing column (at least one grid step from the next port of its row); a panel
+ // with three jacks in one column keeps the classic drawing.
+ function artRows(pl){var pts=[];pl.groups.forEach(function(g){(g.names||[]).forEach(function(nm){var k=pl.nds.ports[nm];if(k)pts.push({nm:nm,x:(pl.artX||0)+k.pt[0]*pl.artW,y:k.pt[1]});});});
+  var rows={},ys=pts.map(function(p){return p.y;}),mid=(Math.min.apply(null,ys)+Math.max.apply(null,ys))/2,ok=true;
+  pts.forEach(function(p){var col=pts.filter(function(q){return Math.abs(q.x-p.x)<3;});if(col.length>2)ok=false;if(col.length===2){var other=col[0]===p?col[1]:col[0];rows[p.nm]=p.y>other.y?1:0;}else rows[p.nm]=p.y>mid+0.02?1:0;});
+  if(!ok)return null;var byRow=[[],[]];pts.forEach(function(p){byRow[rows[p.nm]].push(snap(p.x));});
+  if(byRow.some(function(r){r.sort(function(a,b){return a-b;});for(var i=1;i<r.length;i++)if(r[i]-r[i-1]<G)return true;return false;}))return null;return rows;}
  function Device(node,inventory,linkPorts,style){
   this.node=node;this.key=node.key;this.style=style;this.terms=[];this.cat=node.cat||catalogFor([node.model].concat(node.parts||[]).join(' '));
   if(style==='box'){this.w=198;this.h=72;return;}
@@ -171,14 +204,19 @@
    var gx=card?(hw.grid?18:36):81,col=0,groups=[],banks=mem.profile.banks.filter(function(b){return !b.mirror;}),front=banks.filter(function(b){return b.side!=='rear';}),rear=banks.filter(function(b){return b.side==='rear';});
    front.concat(rear).forEach(function(b){var bi=mem.profile.banks.indexOf(b),f=formOf(b.displayForm||b.form),rows=b.rows||2,g={name:'b'+bi,bank:bi,count:b.names.length,rows:rows,rowOffset:b.rowOffset||0,names:b.names,labels:b.names.map(portLabel),form:f,fiber:f==='sfp'||f==='qsfp',pitch:f==='qsfp'?27:18,per:rows===2&&b.names.length>=24?12:b.names.length,rear:b.side==='rear',title:b.label};
     g.x=gx;g.col=col;col+=Math.ceil(g.count/rows)+1;gx+=groupWidth(g)+27;groups.push(g);});
-   var w=up9(gx-27+9+18);
-   self.plates.push({member:mem.id,x:x,y:0,w:w,groups:groups,first:i===0,title:mem.profile.title,model:mem.model||'',slot:!!hw.chassis,card:card,empty:!!(mem.empty||mem.profile.empty),row:mem.row||0,col:mem.col||0});x+=w+(hw.chassis?9:27);});
+   var w=up9(gx-27+9+18),pl={member:mem.id,x:x,y:0,w:w,groups:groups,first:i===0,title:mem.profile.title,model:mem.model||'',slot:!!hw.chassis,card:card,empty:!!(mem.empty||mem.profile.empty),row:mem.row||0,col:mem.col||0};
+   // Shared NDS front panel at its real proportions: full height on a switch or stack member, below the
+   // slot title on a chassis module card.
+   var names=[];groups.forEach(function(g){(g.names||[]).forEach(function(n){names.push(n);});});var art=null;
+   if(!pl.empty)[mem.model,hw.members.length===1?(hw.model||self.node.model):'',mem.profile.models&&mem.profile.models[0]].some(function(m){art=m?ndsArt(m,names):null;return !!art;});
+   if(art){pl.nds=art;pl.artY=card?12:0;pl.artH=card?60:72;pl.artW=Math.round(pl.artH*art.ratio*100)/100;pl.artX=card?4:0;pl.artRows=artRows(pl);if(pl.artRows)pl.w=w=up9(pl.artW+(card?8:0));else{delete pl.nds;delete pl.artRows;}}
+   self.plates.push(pl);x+=w+(hw.chassis?9:27);});
   this.w=x-(hw.chassis?9:27);this.plateH=72;this.h=HEAD+72+FOOT;
   // A chassis with a known front panel is built as it is in the rack (owner request): its module cards in
   // the slot grid 9 px apart inside the chassis frame, all one width, ports centred on each card.
   // A stack is the same with one column: its members 9 px apart, one under the next, no chassis frame.
   if(hw.grid){var P=hw.chassis?9:0,cw=up9(Math.max.apply(null,this.plates.map(function(p){return p.w;}).concat([hw.chassis?270:0]))),rows=hw.grid.rows,cols=hw.grid.cols;
-   this.plates.forEach(function(pl){var gs=pl.groups,last=gs[gs.length-1],used=gs.length?last.x+groupWidth(last)-gs[0].x:0,shift=card&&gs.length?snap((cw-used)/2)-gs[0].x:0;gs.forEach(function(g){g.x+=shift;});pl.w=cw;pl.x=P+pl.col*(cw+G);pl.y=P+pl.row*(72+G);});
+   this.plates.forEach(function(pl){var gs=pl.groups,last=gs[gs.length-1],used=gs.length?last.x+groupWidth(last)-gs[0].x:0,shift=card&&gs.length?snap((cw-used)/2)-gs[0].x:0;gs.forEach(function(g){g.x+=shift;});if(pl.nds&&card)pl.artX=snap((cw-pl.artW)/2);pl.w=cw;pl.x=P+pl.col*(cw+G);pl.y=P+pl.row*(72+G);});
    this.grid={rows:rows,cols:cols,cw:cw,pad:P,chassis:!!hw.chassis};this.w=2*P+cols*cw+(cols-1)*G;this.plateH=2*P+rows*72+(rows-1)*G;this.h=HEAD+this.plateH+FOOT;}
  };
  Device.prototype.stencilPlate=function(node){
@@ -230,6 +268,9 @@
    else{var cols=plate.groups.reduce(function(c,x){return Math.max(c,x.col+Math.ceil(x.count/2));},1);dx=plate.x+G+(col+0.5)/cols*img.w;py=row?this.imgTop+img.h:this.imgTop;}
    var ex=dx;dx=snap(dx);this.positions[key]={x:ex,y:py,exact:!!pos&&pos.exact!==false};
    return {key:key,plate:plate,dx:dx,ex:ex,py:py,row:row,fiber:g.fiber,form:g.form||(g.fiber?'sfp':''),number:'',name:p.name};}
+  // Shared art: the port is at its NDS jack (on the grid for routing, exact for the line's end).
+  var ap=plate.nds&&artPoint(plate,g,idx);if(ap){var ax=plate.x+ap.x,ay=HEAD+(plate.y||0)+ap.y,sd=this.grid?((plate.row||0)+(ap.row?0.5:0)<this.grid.rows/2?'top':'bottom'):null;
+   return {key:key,plate:plate,dx:snap(ax),ex:ax,py:ay,row:ap.row,side:sd,fiber:g.fiber,form:g.form||(g.fiber?'sfp':''),number:g.labels?g.labels[idx]:String((g.base||0)+(g.zero?idx:idx+1)),name:p.name};}
   // In a chassis grid a link leaves toward the nearer edge of the chassis (top half up, bottom half down).
   var side=this.grid?((plate.row||0)+(row?0.5:0)<this.grid.rows/2?'top':'bottom'):null;
   return {key:key,plate:plate,dx:plate.x+pp.dx,row:row,side:side,fiber:g.fiber,form:g.form||(g.fiber?'sfp':''),py:HEAD+(plate.y||0)+(g.mid?36:row?51:21),number:g.labels?g.labels[idx]:g.name==='other'?'':String((g.base||0)+(g.zero?idx:idx+1)),name:p.name};
@@ -256,8 +297,9 @@
      page.rect(x0+a.p.x-w/2,y+a.p.y-hh/2,w,hh,{fill:down?'#ffffff':fl.fill,stroke:down?(fl.fill==='#f4f5f7'?'#b6bfcc':fl.fill):'#3d4a5c',width:down?1.5:0.75});
      if(fl.label)page.text(x0+a.p.x-w/2,y+a.p.y-hh/2+(hh-Math.min(9,hh*0.62))/2-1,w,hh,fl.label,{size:Math.min(9,hh*0.62,w/(Math.max(2,fl.label.length)*0.62)),bold:true,color:'#1f2937'});});}
    return;}
-  if(dev.grid&&dev.grid.chassis)page.rect(x0,y0+HEAD,dev.w,dev.plateH,{fill:'#c3ccd8',stroke:'#3d5a80',width:1.5,radius:5});
+  if(dev.grid&&dev.grid.chassis){page.rect(x0,y0+HEAD,dev.w,dev.plateH,{fill:'#d8ddde',stroke:'#5d7079',width:1.2,radius:3});page.rect(x0+2,y0+HEAD+dev.plateH*0.1,4,dev.plateH*0.8,{fill:'#8d9c9f',stroke:'none'});}
   dev.plates.forEach(function(pl){var x=x0+pl.x,y=y0+HEAD+(pl.y||0);
+   if(pl.nds){drawArt(page,dev,pl,x,y,used,fills);return;}
    page.rect(x,y,pl.w,72,{fill:pl.empty?'#eef2f7':'#dfe7f3',stroke:pl.empty?'#9aa9bd':'#3d5a80',width:pl.empty?1:1.5,radius:4,dash:!!pl.empty});if(!pl.card)page.rect(x+10,y+10,44,52,{fill:ROLE_FILL[node.role]||'#4f81bd',stroke:'none'});
    // A chassis module card carries its slot name in a ring at the left, as on the chassis.
    // A stack member's number and model inside its role block, beside its ports (owner request), leaving
@@ -271,6 +313,27 @@
   });
   drawHeader(page,dev);
  }
+ // A plate with shared NDS art: the panel's own shapes, then the ports in use (link color ring, or the module
+ // in its cage) and, on port maps, a numbered role square over each port.
+ function drawArt(page,dev,pl,x,y,used,fills){var ax=x+(pl.artX||0),ay=y+(pl.artY||0),aw=pl.artW,ah=pl.artH,k=ah/60;
+  if(pl.card)page.rect(x,y,pl.w,72,{fill:'#c2cccf',stroke:'#7a8b92',width:1,radius:3});
+  pl.nds.children.forEach(function(c){if(c.type==='rect'){var st=c.stroke&&c.stroke!=='none';page.rect(ax+c.x*aw,ay+c.y*ah,c.w*aw,c.h*ah,{fill:c.fill||'none',stroke:st?c.stroke:'none',width:st?Math.max(0.3,(c.weight||0.5)*0.8):0});}
+   else if(c.type==='text')page.text(ax+c.x*aw,ay+c.y*ah,Math.max(6,c.w*aw),Math.max(4,c.h*ah),String(c.value),{size:(c.size||5)*k,bold:!!c.bold,align:'left',color:c.color||'#33434a'});});
+  var body=pl.nds.children[0]&&pl.nds.children[0].fill||'#d9dddf',hex=/^#([0-9a-f]{6})$/i.exec(body),lum=hex?(parseInt(hex[1].slice(0,2),16)*0.3+parseInt(hex[1].slice(2,4),16)*0.59+parseInt(hex[1].slice(4,6),16)*0.11):200;
+  // A stack member's number and model on its own panel, top left (owner request: beside its ports).
+  // It takes the first stretch of the panel's top margin that no line enters through (a stack cable dropping
+  // into a top-row port, a link leaving one).
+  if(dev.grid&&!pl.card){var lab='Member '+pl.member+(pl.model?'  \u00b7  '+pl.model:''),lw=textW(lab,6.5,true)+6,cuts=(dev.terms||[]).filter(function(t){return t.slot&&t.slot.plate===pl&&!t.slot.row;}).map(function(t){return x-pl.x+(t.slot.ex!=null?t.slot.ex:t.slot.dx);}).sort(function(a,b){return a-b;}),lx=ax+aw*0.02;
+   cuts.some(function(c){if(c-8>=lx+lw)return true;lx=Math.max(lx,c+8);return false;});
+   page.text(lx,ay+2,lw,9,lab,{size:6.5,bold:true,align:'left',color:lum<120?'#f3f5f6':'#1b3a4b'});}
+  if(pl.card&&dev.grid){var cl=String(pl.member)+(pl.model?'  \u00b7  '+pl.model:'');page.text(x+5,y+2,pl.w-10,10,cl,{size:7.5,bold:true,align:'left',color:'#1b3a4b'});}
+  var pts=[];pl.groups.forEach(function(g){(g.names||[]).forEach(function(nm,i){var ap=artPoint(pl,g,i);if(ap)pts.push({key:pl.member+'|'+g.name+'|'+i,ap:ap});});});
+  pts.forEach(function(o){var u=used&&used.get(o.key),fl=fills&&fills.get(o.key);if(!u&&!fl)return;var r=pl.nds.rects[o.ap.key],sw=r?r.w*aw:12,sh=r?r.h*ah:10,cx=x+o.ap.x,cy=y+o.ap.y,pk=dev.portKeys&&dev.portKeys[o.key];
+   if(fl){var dx=1e9;pts.forEach(function(q){if(q!==o&&Math.abs(q.ap.y-o.ap.y)<4)dx=Math.min(dx,Math.abs(q.ap.x-o.ap.x));});var w=Math.max(9,Math.min(24,dx<1e9?dx*0.82:sw+4,sw+6)),hh=Math.max(9,Math.min(w*0.95,sh+4)),down=!fl.up;
+    page.rect(cx-w/2,cy-hh/2,w,hh,{fill:down?'#ffffff':fl.fill,stroke:down?(fl.fill==='#f4f5f7'?'#b6bfcc':fl.fill):'#3d4a5c',width:down?1.5:0.75});
+    if(fl.label)page.text(cx-w/2,cy-hh/2+(hh-Math.min(9,hh*0.62))/2-1,w,hh,fl.label,{size:Math.min(9,hh*0.62,w/(Math.max(2,fl.label.length)*0.62)),bold:true,color:'#1f2937'});return;}
+   var md=dev.mods&&dev.mods.get(o.key);if(md){page.rect(cx-sw/2-1.5,cy-sh/2-1.5,sw+3,sh+3,{fill:'#ffffff',stroke:u,width:2,radius:2,pkey:pk});drawModule(page,md.id,cx-sw/2,cy-sh/2,sw,sh,u,md.art);return;}
+   page.rect(cx-sw/2-1.5,cy-sh/2-1.5,sw+3,sh+3,{fill:'none',stroke:u,width:2,radius:2,pkey:pk});});}
  // The widest span along one edge of a device (from lo to hi) that no link stub crosses,
  // preferring the leftmost span the text fits in.
  function gapsOf(dev,side,lo,hi){var xs=(dev.terms||[]).filter(function(t){return t.side===side&&t.slot&&!(t.conn&&t.conn.internal);}).map(function(t){return t.slot.lane!=null?t.slot.lane:t.slot.ex!=null?t.slot.ex:t.slot.dx;}).filter(function(x){return x>lo-12&&x<hi+12;}).sort(function(a,b){return a-b;}),gaps=[],from=lo;
@@ -493,9 +556,9 @@
   // The ports move left in their module when the margin is short (the module title sits above them), and the
   // modules widen only when that is not enough.
   devices.forEach(function(d){if(!d.grid||!d.grid.chassis)return;var ts=d.terms.filter(function(t){return t.slot&&t.slot.plate&&!t.shared&&!(t.conn&&t.conn.internal);}),cols={};
-   function rows(pl){var ys=[];pl.groups.forEach(function(g){if(g.rear)return;for(var i=0;i<g.count;i++){var y=g.mid?36:portPos(g,i).row?51:21;if(ys.indexOf(y)<0)ys.push(y);}});return ys.sort(function(a,b){return a-b;});}
+   function rows(pl){var ys=[];pl.groups.forEach(function(g){if(g.rear)return;for(var i=0;i<g.count;i++){var ap=pl.nds&&artPoint(pl,g,i),y=ap?Math.round(ap.y):g.mid?36:portPos(g,i).row?51:21;if(ys.indexOf(y)<0)ys.push(y);}});return ys.sort(function(a,b){return a-b;});}
    function full(pl){return !pl.empty&&pl.groups.some(function(g){return g.count&&!g.rear;});}
-   function right(pl){return Math.max.apply(null,[0].concat(pl.groups.filter(function(g){return g.count&&!g.rear;}).map(function(g){return g.x+groupWidth(g);})));}
+   function right(pl){if(pl.nds){var xs=[0];pl.groups.forEach(function(g){for(var i=0;i<g.count;i++){var ap=artPoint(pl,g,i);if(ap)xs.push(ap.x);}});return Math.max.apply(null,xs)+G;}return Math.max.apply(null,[0].concat(pl.groups.filter(function(g){return g.count&&!g.rear;}).map(function(g){return g.x+groupWidth(g);})));}
    ts.forEach(function(t){var pl=t.slot.plate,c=pl.col||0,down=t.side!=='top',others=d.plates.filter(function(o){return (o.col||0)===c&&full(o)&&(down?o.row>pl.row:o.row<pl.row);}),ry=rows(pl),py=t.slot.py-HEAD-(pl.y||0),beyond=ry.filter(function(y){return down?y>py:y<py;});
     t.slot.lane=null;t.slot.gy=null;if(!others.length&&!beyond.length)return;var near=beyond.length?(down?beyond[0]:beyond[beyond.length-1]):null,z0=py+(down?11:-11),z1=near!=null?near+(down?-11:11):(down?68:4);
     (cols[c]=cols[c]||[]).push({t:t,pl:pl,down:down,z0:z0,z1:z1,zone:pl.member+'|'+py+'|'+down});});
@@ -505,12 +568,12 @@
     list.forEach(function(e){e.dist=e.down?d.plateH-(e.pl.y||0)-e.y:(e.pl.y||0)+e.y;});
     list.sort(function(a,b){return (a.down?0:1)-(b.down?0:1)||a.dist-b.dist;});
     var n=list.length,colPl=d.plates.filter(function(o){return String(o.col||0)===c;});
-    for(var guard=0;guard<12;guard++){var limit=d.grid.cw-G-2*G*n,ok=true;colPl.forEach(function(pl){if(!full(pl))return;var over=right(pl)-limit;if(over>0){var room=pl.groups[0].x-2*G,mv=Math.min(room,Math.ceil(over/G)*G);if(mv>0)pl.groups.forEach(function(g){g.x-=mv;});if(right(pl)>limit)ok=false;}});
-     if(ok)break;var cw=d.grid.cw+2*G;d.grid.cw=cw;d.plates.forEach(function(pl){var gs=pl.groups;if(gs.length){var last=gs[gs.length-1],used=last.x+groupWidth(last)-gs[0].x,sh=snap((cw-used)/2)-gs[0].x;gs.forEach(function(g){g.x+=sh;});}pl.w=cw;pl.x=d.grid.pad+(pl.col||0)*(cw+G);});d.w=2*d.grid.pad+d.grid.cols*cw+(d.grid.cols-1)*G;}
+    for(var guard=0;guard<12;guard++){var limit=d.grid.cw-G-2*G*n,ok=true;colPl.forEach(function(pl){if(!full(pl))return;var over=right(pl)-limit;if(over>0){var room=pl.nds?(pl.artX||0)-4:pl.groups[0].x-2*G,mv=Math.min(room,Math.ceil(over/G)*G);if(mv>0){if(pl.nds)pl.artX-=mv;else pl.groups.forEach(function(g){g.x-=mv;});}if(right(pl)>limit)ok=false;}});
+     if(ok)break;var cw=d.grid.cw+2*G;d.grid.cw=cw;d.plates.forEach(function(pl){var gs=pl.groups;if(gs.length){var last=gs[gs.length-1],used=last.x+groupWidth(last)-gs[0].x,sh=snap((cw-used)/2)-gs[0].x;gs.forEach(function(g){g.x+=sh;});}if(pl.nds)pl.artX=snap((cw-pl.artW)/2);pl.w=cw;pl.x=d.grid.pad+(pl.col||0)*(cw+G);});d.w=2*d.grid.pad+d.grid.cols*cw+(d.grid.cols-1)*G;}
     var base=Math.max.apply(null,colPl.filter(full).map(right));list.forEach(function(e,k){e.lane=base+2*G*(k+1);});
     list.forEach(function(e){e.t.slot.gy=e.gy;e.t.slot.laneRel=e.lane;});});
    // Ports may have moved: every terminal's point follows its port.
-   d.terms.forEach(function(t){var sl=t.slot;if(!sl||!sl.plate||!sl.key)return;var parts=sl.key.split('|'),g=sl.plate.groups.find(function(x){return x.name===parts[1];}),idx=Number(parts[2]);if(!g||!(idx>=0))return;var dx=sl.plate.x+portPos(g,idx).dx;sl.dx=dx;if(sl.laneRel!=null){sl.lane=sl.plate.x+sl.laneRel;delete sl.laneRel;}});});
+   d.terms.forEach(function(t){var sl=t.slot;if(!sl||!sl.plate||!sl.key)return;var parts=sl.key.split('|'),g=sl.plate.groups.find(function(x){return x.name===parts[1];}),idx=Number(parts[2]);if(!g||!(idx>=0))return;var ap=sl.plate.nds&&artPoint(sl.plate,g,idx);if(ap){sl.ex=sl.plate.x+ap.x;sl.dx=snap(sl.ex);}else sl.dx=sl.plate.x+portPos(g,idx).dx;if(sl.laneRel!=null){sl.lane=sl.plate.x+sl.laneRel;delete sl.laneRel;}});});
   // Names and model lines go between the leaders where they leave the device.
   devices.forEach(function(dev){dev.fit();});
   devices.forEach(function(d){if(style==='box'){d.bt=d.bb=BAND;return;}var a=bandFor(d,'top'),b=bandFor(d,'bottom');d.bt=a.h;d.bb=b.h;d.ft=a.flat;d.fb=b.flat;});
@@ -617,7 +680,7 @@
   router.block(0,0,Math.max(legendRight,600),TOP-G);router.block(0,0,LEFT-G*3,RH);
   // Stack cables (see above): straight across the gap between neighbours, otherwise through their gap tracks
   // and along their side lane.
-  var internalLines=[];conns.forEach(function(c){if(!c.internal)return;var d=c.A,a=c.ta.slot,b=c.tb.slot,pa=[d.x+a.dx,d.y+a.py],pb=[d.x+b.dx,d.y+b.py],pts;
+  var internalLines=[];conns.forEach(function(c){if(!c.internal)return;var d=c.A,a=c.ta.slot,b=c.tb.slot,pa=[d.x+(a.ex!=null?a.ex:a.dx),d.y+a.py],pb=[d.x+(b.ex!=null?b.ex:b.dx),d.y+b.py],pts;
    if(c.ring&&a.gy!=null&&b.gy!=null){var lx=c.ring.side==='left'?d.x-4-4*c.ring.k:d.x+d.w+4+4*c.ring.k,ya=d.y+a.gy,yb=d.y+b.gy;pts=[pa,[pa[0],ya],[lx,ya],[lx,yb],[pb[0],yb],pb];}
    else{var hi=(a.plate.row||0)<(b.plate.row||0)?a:b,mid=d.y+HEAD+(hi.plate.y||0)+72+(d.grid&&d.grid.gap||G)/2;pts=pa[0]===pb[0]?[pa,pb]:[pa,[pa[0],mid],[pb[0],mid],pb];}
    internalLines.push({points:pts,color:kindStyle(c.type,view).color,width:kindStyle(c.type,view).width,conn:c,routed:true,strict:true,groups:[],internal:true});});
