@@ -8,6 +8,7 @@ let checks=0;const fails=[];function ok(v,m){checks++;if(process.env.VARIETY_REP
 function unzip(buf){const files={};let o=0;while(buf.readUInt32LE(o)===0x04034b50){const method=buf.readUInt16LE(o+8),size=buf.readUInt32LE(o+18),nl=buf.readUInt16LE(o+26),xl=buf.readUInt16LE(o+28),name=buf.slice(o+30,o+30+nl).toString(),data=buf.slice(o+30+nl+xl,o+30+nl+xl+size);files[name]=(method===8?zlib.inflateRawSync(data):data).toString();o+=30+nl+xl+size;}return files;}
 // The routing rules (as tests/diagram-tests.cjs checks them): no shared collinear stretches, no line
 // through a device other than its end stubs, and no relaxed (overlapping) routes.
+// A stack or chassis carries its own lines across its face (leaders between the ports, stack cables in the gaps).
 function routing(page){
  const issues=[],segs=[];
  page.lines.forEach((l,i)=>{if(!l.strict)issues.push('relaxed route '+(l.conn.A.key+'|'+(l.conn.aPorts[0]||'')));for(let j=1;j<l.points.length;j++)segs.push({i,a:l.points[j-1],b:l.points[j],end:j===1||j===l.points.length-1});});
@@ -15,9 +16,15 @@ function routing(page){
  for(let x=0;x<segs.length;x++)for(let y=x+1;y<segs.length;y++){const s=segs[x],t=segs[y];if(s.i===t.i||page.lines[s.i].groups.some(g=>page.lines[t.i].groups.includes(g)))continue;
   if(s.a[0]===s.b[0]&&t.a[0]===t.b[0]&&s.a[0]===t.a[0]&&overlap(s.a[1],s.b[1],t.a[1],t.b[1])>0)issues.push('vertical overlap at x='+s.a[0]);
   if(s.a[1]===s.b[1]&&t.a[1]===t.b[1]&&s.a[1]===t.a[1]&&overlap(s.a[0],s.b[0],t.a[0],t.b[0])>0)issues.push('horizontal overlap at y='+s.a[1]);}
- segs.forEach(s=>page.devices.forEach(d=>{const x0=Math.min(s.a[0],s.b[0]),x1=Math.max(s.a[0],s.b[0]),y0=Math.min(s.a[1],s.b[1]),y1=Math.max(s.a[1],s.b[1]);if(x1<=d.x||x0>=d.x+d.w||y1<=d.y||y0>=d.y+d.h)return;if(s.end&&x0===x1)return;issues.push('line through '+d.name);}));
+ segs.forEach(s=>page.devices.forEach(d=>{const x0=Math.min(s.a[0],s.b[0]),x1=Math.max(s.a[0],s.b[0]),y0=Math.min(s.a[1],s.b[1]),y1=Math.max(s.a[1],s.b[1]);if(x1<=d.x||x0>=d.x+d.w||y1<=d.y||y0>=d.y+d.h)return;if(s.end&&x0===x1)return;const c=page.lines[s.i].conn;if(d.members&&(c.A.key===d.key||c.B&&c.B.key===d.key))return;issues.push('line through '+d.name);}));
  return issues;
 }
+// Stacks (owner request): a line meets a member only on its last stretch, straight into its own port from
+// the port's side (above for a top-row port, below for a bottom-row port); nothing else crosses a member.
+function faces(page){const out=[];page.devices.filter(d=>d.members&&!/chassis/i.test(d.name)).forEach(d=>d.members.forEach(m=>{
+ page.lines.forEach(l=>{if(l.internal)return;const q=l.points;for(let i=1;i<q.length;i++){const a=q[i-1],b=q[i],x0=Math.min(a[0],b[0]),x1=Math.max(a[0],b[0]),y0=Math.min(a[1],b[1]),y1=Math.max(a[1],b[1]);
+  if(x1<=m.x+1||x0>=m.x+m.w-1||y1<=m.y+1||y0>=m.y+m.h-1)continue;const end=i===1?a:i===q.length-1?b:null;
+  if(end&&a[0]===b[0]){const other=end===a?b:a,mid=m.y+m.h/2;if(end[1]<mid?other[1]<end[1]:other[1]>end[1])continue;}out.push(d.name+' member '+m.id+' crossed by '+l.conn.A.key+'|'+l.conn.aPorts[0]);}});}));return out;}
 // ---------- fictional designs ----------
 const k=E.deviceKey;
 function site(name){const devices=[],links=[],ports=new Map();let ip=1;
@@ -134,13 +141,18 @@ function visioChecks(name,pages){
   const s=site('Example stacks'),core=s.dev('EX-MDF','Switch','JL675A','JL675A'),st1=s.dev('EX-1FL-STACK','Switch','JL558A'),st2=s.dev('EX-2FL-STACK','Switch','JL558A'),ap=s.dev('EX-AP1','Access Point','AP-515');
   s.link(core,st1,'1/1/49','1/49','10 Gb/s','10GBase-SR');s.link(core,st2,'1/1/50','2/50','10 Gb/s','10GBase-SR');s.link(st1,ap,'3/7','eth0','1 Gb/s');
   const inp=input(s),hw1=stackHw('JL558A',5),hw2=stackHw('JL558A',2);[inp.layout.all,inp.layout.nodes].forEach(l=>l.forEach(n=>{if(n.key===st1)n.hw=hw1;if(n.key===st2)n.hw=hw2;}));
-  for(const scope of ['downstream','site']){const p=D.diagram(inp,{scope,focus:core,style:'plate',aps:true,title:'Stacks'}),m1=p.devices.filter(d=>d.key.startsWith(st1+'#')).sort((a,b)=>a.y-b.y),m2=p.devices.filter(d=>d.key.startsWith(st2+'#'));
-   ok(m1.length===5&&m2.length===2&&m1.every((d,i)=>!i||Math.abs(d.x-m1[0].x)<1&&d.y>m1[i-1].y+m1[i-1].h),scope+': each stack member is drawn beneath the one before: '+m1.map(d=>Math.round(d.x)+','+Math.round(d.y)).join(' '));
+  // One device per stack (owner request: as close as possible): members 9 px apart, VSF cables inside the stack.
+  const on=(dev,pt)=>dev&&dev.members.find(m=>pt[0]>=m.x-1&&pt[0]<=m.x+m.w+1&&pt[1]>=m.y-1&&pt[1]<=m.y+m.h+1);
+  for(const scope of ['downstream','site']){const p=D.diagram(inp,{scope,focus:core,style:'plate',aps:true,title:'Stacks'}),d1=p.devices.find(d=>d.key===st1),d2=p.devices.find(d=>d.key===st2),m1=d1&&d1.members||[],m2=d2&&d2.members||[];
+   const gapsOf=ms=>ms.slice(1).map((m,i)=>Math.round(m.y-(ms[i].y+ms[i].h)));
+   ok(m1.length===5&&m2.length===2&&m1.every((m,i)=>!i||Math.abs(m.x-m1[0].x)<1&&m.y>m1[i-1].y+m1[i-1].h)&&new Set(gapsOf(m1)).size===1,scope+': each stack member is drawn beneath the one before, evenly spaced: '+m1.map(d=>Math.round(d.x)+','+Math.round(d.y)).join(' '));
+   ok(faces(p).length===0,scope+': no line runs across a stack member, each port entered from its own side: '+faces(p).slice(0,3).join('; '));
+   ok(!p.devices.some(d=>/#/.test(d.key)),scope+': a stack stays one device');
    const sl=p.lines.filter(l=>/^stack/.test(l.conn.type));ok(sl.length===5+2,scope+': VSF links join the members, as a ring: '+sl.length);
-   ok(sl.every(l=>/#/.test(l.conn.A.key)&&/#/.test(l.conn.B.key)&&l.conn.A.node.stackOf===l.conn.B.node.stackOf),scope+': stack links stay within their stack');
-   const up=p.lines.find(l=>l.conn.aPorts[0]==='1/1/50');ok(up&&up.conn.B.key===st2+'#2','the uplink lands on the member that has its port (2/50 on member 2)');
-   const apl=p.lines.find(l=>l.conn.ep!=null&&l.conn.A.key.startsWith(st1+'#'));ok(apl&&apl.conn.A.key===st1+'#3','an access point is drawn on its member (3/7 on member 3)');
-   ok(p.shapes.some(x=>x.type==='rect'&&x.dash)&&p.shapes.some(x=>x.type==='text'&&/VSF stack \u00b7 5 members/.test(x.text)),scope+': a frame names the stack');
+   ok(sl.every(l=>l.conn.A===l.conn.B&&l.points.every(q=>q[0]>=l.conn.A.x-20&&q[0]<=l.conn.A.x+l.conn.A.w+20&&q[1]>=l.conn.A.y&&q[1]<=l.conn.A.y+l.conn.A.h)),scope+': stack cables stay with their stack (the ring closes along its side)');
+   const up=p.lines.find(l=>l.conn.aPorts[0]==='1/1/50'),end=up&&(up.conn.B.key===st2?up.points[up.points.length-1]:up.points[0]);ok(up&&on(d2,end)&&on(d2,end).id==='2','the uplink lands on the member that has its port (2/50 on member 2)');
+   const apl=p.lines.find(l=>l.conn.ep!=null&&l.conn.A.key===st1);ok(apl&&on(d1,apl.points[0])&&on(d1,apl.points[0]).id==='3','an access point is drawn on its member (3/7 on member 3)');
+   ok(p.shapes.some(x=>x.type==='text'&&/VSF stack \u00b7 5 members/.test(x.text))&&p.shapes.some(x=>x.type==='text'&&x.text==='Member 5'),scope+': the stack and each member are named');
    const txt=p.shapes.filter(x=>x.type==='text').map(x=>x.text).join('\n');ok(/VSF stack link/.test(txt),scope+': the legend names the VSF stack link');
    const r=routing(p);ok(r.length===0,scope+': stacks follow the routing rules: '+r.slice(0,4).join('; '));}
   const title=D.diagram(inp,{scope:'downstream',focus:st1,style:'plate',title:'Stacks'}).title;ok(title==='EX-1FL-STACK and below','a stack drawn from itself is titled with its name: '+title);
@@ -150,10 +162,11 @@ function visioChecks(name,pages){
   const t=site('Uneven stacks'),tc=t.dev('EX-MDF','Switch','JL675A','JL675A'),ta=t.dev('EX-1FL-STACK','Switch','JL558A'),tb=t.dev('EX-2FL-STACK','Switch','JL558A');
   t.link(tc,ta,'1/1/49','1/49','10 Gb/s','10GBase-SR');t.link(tc,tb,'1/1/50','1/49','10 Gb/s','10GBase-SR');
   const ti=input(t),ha=stackHw('JL558A',3),hb=stackHw('JL558A',7);[ti.layout.all,ti.layout.nodes].forEach(l=>l.forEach(n=>{if(n.key===ta)n.hw=ha;if(n.key===tb)n.hw=hb;}));
-  for(const scope of ['downstream','site']){const p=D.diagram(ti,{scope,focus:tc,style:'plate',title:'Uneven stacks'}),col=k=>p.devices.filter(d=>d.key.startsWith(k+'#')).map(d=>Math.round(d.x)),a=col(ta),b=col(tb);
+  for(const scope of ['downstream','site']){const p=D.diagram(ti,{scope,focus:tc,style:'plate',title:'Uneven stacks'}),col=k=>((p.devices.find(d=>d.key===k)||{}).members||[]).map(m=>Math.round(m.x)),a=col(ta),b=col(tb);
    ok(a.length===3&&b.length===7&&new Set(a).size===1&&new Set(b).size===1&&a[0]!==b[0],scope+': every stack keeps its own column, however many members: '+a.join(',')+' / '+b.join(','));
-   const ms=p.devices.filter(d=>d.key.startsWith(tb+'#')).sort((x,y)=>x.y-y.y),gaps=ms.slice(1).map((d,i)=>Math.round(d.y-(ms[i].y+ms[i].h)));
-   ok(gaps.length===6&&gaps.every(g=>g>0&&g<=108)&&gaps.filter(g=>g<=54).length>=5,scope+': stack members sit close together, except where the other stack\'s ring turns (owner request: no wasted space): '+gaps.join(', '));
+   const ms=(p.devices.find(d=>d.key===tb)||{members:[]}).members,gaps=ms.slice(1).map((m,i)=>Math.round(m.y-(ms[i].y+ms[i].h)));
+   ok(gaps.length===6&&gaps.every(g=>g===gaps[0]&&g>=9&&g<=36),scope+': stack members are evenly spaced, no further apart than their lines need (owner request): '+gaps.join(', '));
+   ok(faces(p).length===0,scope+': no line runs across a member of an uneven stack: '+faces(p).slice(0,3).join('; '));
    const r=routing(p);ok(r.length===0,scope+': uneven stacks follow the routing rules: '+r.slice(0,4).join('; '));}}
  ok(slowest<8000,'every drawing finishes quickly: slowest '+slowest+' ms ('+slowName+')');
  if(fails.length){console.log(fails.length+' FAILED');const seen=new Map();fails.forEach(f=>{const key=f.replace(/: .*/s,'').replace(/^.*?(routing rules|nothing above|WAN circuits sit|hops are|finite|SVG|port modules|Port modules|site book|Visio|line weights|numbered|uniquely|drawn with|anchors|drawing failed|quickly).*/,'$1');seen.set(f.slice(0,160),1);});[...seen.keys()].slice(0,60).forEach(x=>console.log(' - '+x));}

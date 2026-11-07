@@ -187,14 +187,33 @@ a decision or a test on the owner's own machine (for example opening an export i
   shortest run that keeps right angles and port directions; `snapTargets`/`snapGuides` snap to other
   links and device edges (Alt off); `showBendPoints` edits points as numbers. Checked by
   `tests/diagram-lines-browser.cjs`.
-- Stacks (owner request): `splitStacks` (diagram.js) turns a node whose `hw.members` has more than one
-  profiled member into one device per member (`key#id`, `stackOf`), chained beneath one another, with
-  links and access points on the member that has their port, downstream edges on the last member, and
-  stack links (`stack:true`, kind `stack-vsf`) from `hw.links` (VSF link 2 to the next member's link 1;
-  three or more close a ring). Box style keeps one box. `diagramHardware` passes `links`/`technology`;
-  a click on a member focuses the stack (`#id` stripped). Members sit under the member above them (`above` in render's row placement), so a taller stack
-  right of a shorter one keeps its column. Straight member-to-member drops (`straight()` in render) take no channel track, and a
-  member side with only such drops gets an 18 px label band; don't overlap bands instead (the router blocks them).
+- Stacks (owner request): a stack is ONE grid device, members in one column (`diagramHardware` gives `hw.grid`
+  with `stack:true`; `diagram()` adds one for any hw with several profiled members and no grid). Never split
+  a stack into member devices. No line runs across a member's face: a link leaves a top-row port upward and
+  a bottom-row port downward into the gap on that side, runs along the gap (tracks 6 px apart) to the side of
+  the stack, then along a side lane (two grid steps apart, room for port labels) to the stack's edge
+  (`t.slot.gy`, `t.slot.lane`, `geo().via`). Only member 1's top-row and the last member's bottom-row links
+  go straight out. Every gap of a stack is as tall as its busiest gap needs (members evenly spaced, at least
+  9 px; `d.grid.gap`, pads above the first and below the last member when needed), and `d.sideL`/`d.sideR`
+  widen the stack's cell for its lanes. Track and lane order (from-above lines on upper tracks, lower origins
+  on outer lanes going up) keeps the lines from crossing each other; `faces()` in
+  `tests/diagram-variety-tests.cjs` checks it. Stack links (`stack:true`, kind `stack-vsf`, from `hw.links`:
+  VSF link 2 to the next member's link 1, three or more close a ring) are `c.internal`: straight across the
+  gap between neighbours, otherwise (`c.ring`) through their gaps and along a lane 4 px from the stack on the
+  side with fewer links. Each member's number and model sit inside its role block. Box style keeps one box.
+- Chassis leaders (owner request: clearly apart, none crossing): planned per module column and edge in render.
+  A link from the last full module before its edge drops straight out; any other takes one step beside its port
+  (`t.slot.gy`: between the port rows, or between its row and the module edge) to its own lane in the module's
+  right margin (`t.slot.lane`, 18 px apart; module titles sit top-left, so never use the left margin for lanes
+  that pass other modules). Steps are staircased (rightmost port nearest its row) and lanes ordered by the step's
+  distance to the edge (nearest innermost), which keeps every step clear of other links. Ports move left inside
+  their module when the margin is short; modules widen (`d.grid.cw`) only when that is not enough, and terminals
+  are re-read from their ports afterwards. Names and model lines go between the lanes (`gapsOf` uses `lane`;
+  `fit()` runs after the lanes and never widens a grid device; a model line with no room goes beside the name).
+- Lines never lie on one another (owner request: parallel lines in perfect alignment are confusing): the
+  router keeps routed stretches apart, and everything drawn outside it must too: chassis leader steps and lanes,
+  stack gap tracks and side lanes are one per line. `tests/diagram-hardware-browser.cjs` checks every drawn route (`data-route`) for shared stretches and for
+  crossings inside the chassis.
 - Hardware from ports (owner request: no blank faceplates): `portsModel()` in hardware.js names the model
   when a configuration names none and only one model has its interface set (C9500-24Y4C/48Y4C,
   CRS326-24S+2Q+RM; `inv.inferred`), or gives a family layout (`uncertain`) when several share it
@@ -218,9 +237,13 @@ a decision or a test on the owner's own machine (for example opening an export i
   "Member N | model | ports" from `summary()`); a grid chassis is drawn whole, scaled to fit the page. Trunk VLAN tables share one Flow
   with a heading per column group.
 - Spacing (owner request: no open space): `diagram()` re-renders plate diagrams with `view.chanCap` from
-  `chanCaps()` (each channel cut to the span its horizontal runs use plus one track each side), kept only
-  when relaxed routes and hops do not increase; caps come from the drawing without edits. A device side
-  with no port labels gets a `G*2` band (`bandFor`).
+  `chanCaps(page, dense)`, trying the levels the routes use (dense 1), halfway (0.5), then their span (0),
+  and keeps the first that adds no relaxed route, hop, bend or length; caps come from the drawing without
+  edits. A device side with no port labels gets a `G*2` band (`bandFor`). `NEAR_R` (3) keeps lines one or
+  two tracks apart; a larger radius made lines bend to keep away from each other (owner: fewest bends).
+- No loops into the page header (owner request): the strip above the top row is `router.shun(...,2)`, paid
+  only by lines whose stubs start below it (`router.hdrOk`). A crossing re-route is kept only when it is at
+  most half as long again and adds at most two bends (`BEND` is 90).
 - Fit to drawing (owner request, the app default as in Visio): `PAPERS.fit`; `fitLetter` returns the
   drawing's own size at scale 1 (raw still rates layouts against 17 x 11 in), `splitDiagram` never splits,
   doc pages stay letter-sized. index.html `applyPaper` defaults to `{key:'fit'}`; the library default

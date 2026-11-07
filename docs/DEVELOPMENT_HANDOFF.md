@@ -1,5 +1,26 @@
 # Configuration Inspector development handoff
 
+## 5.60.0 — compact stacks, no header loops, fewer bends
+
+- Stacks are one grid device (`hw.grid.stack`, members 9 px apart); `splitStacks`, `stackBoxes`, `dropTerms` and
+  the `above` placement are gone. `diagram()` gives any hw with several profiled members a stack grid.
+- Stack cables are `c.internal` (`internalLines` in render): straight drops between neighbours, gap tracks and
+  side lanes for the rest (ring closing cables, crossed link ports). No hops on them.
+- Stack links leave a port on its own row side into the gap, along the gap (`slot.gy`) and a side lane
+  (`slot.lane`, 18 px apart) outside the stack; gaps sized by the busiest gap and equal (`d.grid.gap`, pads),
+  cells widened by `d.sideL`/`d.sideR`, lanes blocked for the router. Chassis leaders avoid every port and
+  module label (`marks`, `blocks`, `LANE_STEPS`); member number and model are drawn inside the role block;
+  `fit()` (names) runs after lanes and never widens a grid device; `gapsOf` uses `lane`.
+- Router: `BEND` 90, `NEAR_R` 3, header strip `router.shun(...,2)` exempting lines that start there (`hdrOk`),
+  crossing re-routes bounded in length and bends. `chanCaps(page, dense)` tries denser caps first; any cap
+  that adds relaxed routes, hops, bends or length is dropped.
+- Chassis leaders are planned per module column: straight out from the last module, otherwise a staircased
+  step to an ordered right-margin lane (ports move left before modules widen). `diagram-hardware-browser.cjs`
+  mirrors a busy 5406R (A3, A5/A6, C6/C7, E7/E8, F8 to fictional closets) and checks every `data-route` for
+  shared stretches and for crossings inside the chassis.
+- Tests: variety stacks read `page.devices[].members` (equal gaps, `faces()`: no line across a member); `routing()` lets a grid device carry
+  its own lines across its face; vendors browser expects one stack device with two members.
+
 ## 5.59.0 — fit to drawing, devices list
 
 - `PAPERS.fit` (default in the app): page = drawing size, no continuation split; printable/SVG per-page sizes.
