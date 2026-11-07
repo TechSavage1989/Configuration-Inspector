@@ -1,5 +1,12 @@
 # Configuration Inspector development handoff
 
+## 5.51.0 — WAN circuits head the drawing
+
+- `Router.shun()` marks cells above a device's WAN circuits (soft cost 200 per cell) so lines
+  route around them instead of over them; `router.free[net]` marks circuit links, whose
+  crossings cost only `CROSS` and are not counted by `score()` in the strict re-route pass.
+- `tests/diagram-tests.cjs` checks a firewall with handoffs on a top- and a bottom-row port.
+
 ## 5.50.0 — link type palette, speed and cable, Shift drags, trunk pages
 
 - Link type dialog: `LINK_SWATCHES` (48 base colors), `LINK_SPEEDS`/`LINK_CABLES` datalists;

@@ -63,6 +63,15 @@ function campus(){
   const fwd=wan.devices.find(d=>d.name==='CAMPUS-FW'),circ=wan.eps.filter(e=>e.role==='circuit');
   ok(fwd&&circ.length===2&&circ.every(e=>e.y+e.h<=fwd.y),'WAN circuits sit above the firewall, including one on a bottom-row port: '+circ.map(e=>e.key+'@'+e.y).join(', ')+' fw@'+(fwd&&fwd.y));
   ok(routing(wan).length===0,'and their links follow the routing rules: '+routing(wan).slice(0,4).join('; '));}
+ {// Owner request: nothing runs above a WAN circuit; a circuit's link may cross other lines (with a hop)
+  // rather than loop over the circuits. A firewall with handoffs on a top-row and a bottom-row port.
+  const dv=(name,type,model,ip)=>({key:E.deviceKey(name),name,type,model,ips:[ip],open:-1}),k=E.deviceKey;
+  const devs=[dv('EXAMPLE-FW','Firewall','FortiGate-120G','10.0.0.1'),dv('EXAMPLE-MDF1','Switch','JL675A','10.0.0.2'),dv('EXAMPLE-MDF2','Switch','JL675A','10.0.0.3'),dv('ISP-A circuit','Circuit','','192.0.2.1'),dv('ISP-B circuit','Circuit','','192.0.2.9')];
+  const links=[{a:k('EXAMPLE-FW'),b:k('ISP-A circuit'),aPort:'port1',bPort:'',aSpeed:'1 Gb/s'},{a:k('EXAMPLE-FW'),b:k('ISP-B circuit'),aPort:'port2',bPort:'',aSpeed:'1 Gb/s'},{a:k('EXAMPLE-FW'),b:k('EXAMPLE-MDF1'),aPort:'x3',bPort:'1/1/49',aSpeed:'10 Gb/s',aMedia:'10GBase-SR'},{a:k('EXAMPLE-MDF1'),b:k('EXAMPLE-MDF2'),aPort:'1/1/51',bPort:'1/1/51',aSpeed:'10 Gb/s'}];
+  const p=D.diagram({layout:M.layout(devs,links,{}),links,vlans:new Map(),ports:new Map(),title:'WAN'},{scope:'downstream',focus:k('EXAMPLE-FW')}),circ=p.eps.filter(e=>e.role==='circuit');
+  const over=p.lines.filter(l=>l.points.some((q,i)=>i&&circ.some(e=>{const r=l.points[i-1];return Math.min(q[1],r[1])<e.y&&Math.max(q[0],r[0])>e.x&&Math.min(q[0],r[0])<e.x+e.w;})));
+  ok(circ.length===2&&over.length===0,'no line passes above a WAN circuit: '+over.map(l=>l.conn.A.key+'|'+l.conn.aPorts[0]).join(', '));
+  ok(routing(p).length===0,'and the WAN page follows the routing rules: '+routing(p).slice(0,4).join('; '));}
  {// Owner request: right angles and as few bends as possible; an access point's link needs at most two.
   const bends=pts=>pts.filter((p,k)=>k&&k<pts.length-1&&!((pts[k-1][0]===p[0]&&p[0]===pts[k+1][0])||(pts[k-1][1]===p[1]&&p[1]===pts[k+1][1]))).length;
   const ep=core.lines.filter(l=>l.conn.ep!=null);ok(ep.length&&ep.every(l=>bends(l.points)<=2),'access point links take at most two bends: '+ep.map(l=>bends(l.points)).join(','));

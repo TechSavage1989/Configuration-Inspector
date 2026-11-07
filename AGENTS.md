@@ -143,6 +143,8 @@ existing release or its assets. Preserve the polished README layout.
   style (color, name, width, dash) is shared by legend and lines through `kindStyle`.
 - The diagram runs from the WAN down (owner request): circuits sit above their device even on a
   bottom-row port; `tests/diagram-tests.cjs` checks it with routing rules.
+  No line passes above a circuit when any route avoids it (`router.shun`), and circuit links may
+  cross other links (`router.free`) rather than loop around them.
 - Access points and other endpoints stay within their device's left and right edges when they fit
   (owner request); shrink the row gap before letting a row run past, and center rows that cannot fit.
 - Diagram editor drags go through `dragPoint()` (Shift locks to one axis); link type speed and cable
