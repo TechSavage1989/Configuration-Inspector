@@ -145,6 +145,10 @@ existing release or its assets. Preserve the polished README layout.
   bottom-row port; `tests/diagram-tests.cjs` checks it with routing rules.
   No line passes above a circuit when any route avoids it (`router.shun`), and circuit links may
   cross other links (`router.free`) rather than loop around them.
+- Line hops are true arcs: a drawn line carries `arcs` ({point index: bow px}); SVG samples them
+  (`linePoints`), Visio writes `ArcTo` rows whose `A` bows upward (`VBOW`, checked against LibreOffice
+  renders). Scale `arcs` with the points (`onLetter`). Lines spread out through `router.near`
+  (cost `NEAR` within `NEAR_R` cells of other lines); the A* estimate is weighted (`HW`) to keep that fast.
 - Access points and other endpoints stay within their device's left and right edges when they fit
   (owner request); shrink the row gap before letting a row run past, and center rows that cannot fit.
 - Diagram editor drags go through `dragPoint()` (Shift locks to one axis); link type speed and cable
