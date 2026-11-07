@@ -100,6 +100,10 @@ const {stencil,unzip,vss}=require('./stencil-writer.cjs');
   const art=T.artwork(nm),node={key:'sw',name:'SW',role:'switch',model:'EX-NDS24',stencil:{art:art,master:nm,anchors:nm.anchors}},ports=['1/1/1','1/1/2','1/1/25','1/1/3'];
   const a=D.stencilAnchors(node,ports);
   ok(a['1/1/1']&&Math.abs(a['1/1/1'][0]-0.2)<1e-3&&Math.abs(a['1/1/1'][1]-0.3)<1e-3&&Math.abs(a['1/1/25'][0]-0.9)<1e-3&&Math.abs(a['1/1/2'][1]-0.7)<1e-3,'ports land on their anchors by name: '+JSON.stringify(a));
-  ok(!a['1/1/3'],'a port without an anchor is not written as one (its place is only an estimate)');}
+  ok(!a['1/1/3'],'a port without an anchor is not written as one (its place is only an estimate)');
+  // Visio needs numeric master IDs: an NDS shape's own id (art-...) must not reach masters.xml.
+  const nl=[{a:'sw',b:'sw2',aPort:'1/1/25',bPort:'1/1/25',aSpeed:'10 Gb/s'}],pg=D.diagram({layout:M.layout([{key:'sw',name:'SW',type:'Switch',model:'EX-NDS24',ips:['10.0.0.9'],open:-1},{key:'sw2',name:'SW2',type:'Switch',model:'EX-NDS24',ips:['10.0.0.10'],open:-1}],nl,{}),links:nl,vlans:new Map(),ports:new Map([['sw',ports],['sw2',ports]]),stencils:new Map([['sw',node.stencil],['sw2',node.stencil]]),title:'NDS'},{scope:'downstream',focus:'sw',style:'plate'});
+  const vf=unzip(Buffer.from(D.vsdx([pg],'NDS shapes'))),mx=vf['visio/masters/masters.xml'].toString(),ids=[...mx.matchAll(/<Master ID="([^"]*)"/g)].map(m=>m[1]),refs=[...vf['visio/pages/page1.xml'].toString().matchAll(/ Master="([^"]*)"/g)].map(m=>m[1]);
+  ok(ids.length===1&&ids.every(i=>/^\d+$/.test(i))&&refs.length&&refs.every(r=>ids.includes(r))&&Object.keys(vf).some(n=>/^visio\/media\/.*\.png$/.test(n)),'an NDS shape is exported to Visio as a numbered master its instances use: '+ids.join(',')+' / '+refs.join(','));}
  console.log(checks+' stencil checks passed');
 })().catch(e=>{console.error(e);process.exit(1);});

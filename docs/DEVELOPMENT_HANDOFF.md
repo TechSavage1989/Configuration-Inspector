@@ -1,5 +1,11 @@
 # Configuration Inspector development handoff
 
+## 5.54.1 — Visio exports keep NetworkDiagramStudio shapes
+
+- `masterParts` renumbers every master's `ID` (it only replaced numeric ones, so an NDS shape's
+  `art-...` id reached masters.xml and Visio drew its instances empty); `fromImage` writes `ID="1"`.
+  `tests/stencil-tests.cjs` checks numeric master IDs and instance references.
+
 ## 5.54.0 — hardware packs shared with NetworkDiagramStudio
 
 - `saveHardwarePack`/`importHardwarePack` (index.html) write and read `NDS-hardware` schema 1 packs;
