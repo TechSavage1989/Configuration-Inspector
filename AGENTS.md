@@ -138,6 +138,8 @@ existing release or its assets. Preserve the polished README layout.
 - Links use right angles and as few bends as possible (owner request): keep endpoint widths a
   multiple of 18 (`EP_W`) so centers stay on the grid; `tests/diagram-tests.cjs` allows at most
   two bends on access point links.
+- Access points and other endpoints stay within their device's left and right edges when they fit
+  (owner request); shrink the row gap before letting a row run past, and center rows that cannot fit.
 - Label bands are per device (`d.bt`/`d.bb`, from `bandFor`); never use the `BAND` constant for
   plate geometry. A split diagram's first page must keep every device below the focus.
 - Neighbor port corrections (`correctLinkPort`) apply to the diagram and to `liveFor()` neighbors;

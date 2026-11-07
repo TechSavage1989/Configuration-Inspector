@@ -1,5 +1,12 @@
 # Configuration Inspector development handoff
 
+## 5.49.0 — endpoints within their device
+
+- Endpoint rows (`d.top`/`d.bot` in render) use a per-row pitch: `EP_PITCH`, shrunk to fit
+  `d.w` (minimum `EP_W + G`); rows within the device are packed between 0 and `d.w - EP_W`,
+  rows that cannot fit are centered. `page.eps[].dev` names the owning device.
+- Tall access points (wireless pages) size `EP_W` from the name alone (`14 + text`, min 90).
+
 ## 5.48.0 — NetworkDiagramStudio's error 271 repair
 
 - 5.47.0 copied an old NDS writer. NDS's current writer (`src/web/diagram/visio.mjs`, its

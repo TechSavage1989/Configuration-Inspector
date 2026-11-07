@@ -48,6 +48,9 @@ function campus(){
  ok(site.title==='Example Site - Existing Topology'&&site.devices.length===5,'whole site page: '+site.devices.map(d=>d.name).join(', '));
  const core=D.diagram(input,{scope:'downstream',focus:'examplecore'}),texts=core.shapes.filter(s=>s.type==='text').map(s=>s.text).join('\n');
  ok(core.title==='EXAMPLE-CORE and below'&&['EXAMPLE-FW1','EXAMPLE-ACCESS1','EXAMPLE-ACCESS3','EXAMPLE-AP1','VLAN 10 – USERS'].every(t=>texts.includes(t)),'device page: upstream device, switches below, access points and VLANs');
+ {// Owner request: access points and other endpoints stay within the left and right edges of their device when they fit.
+  const inside=core.eps.map(e=>{const d=core.devices.find(v=>v.key===e.dev),row=core.eps.filter(o=>o.dev===e.dev&&o.y===e.y),need=row.length*e.w+(row.length-1)*9;if(!d)return false;if(need<=d.w)return e.x>=d.x-0.5&&e.x+e.w<=d.x+d.w+0.5;const l=Math.min(...row.map(o=>o.x)),r=Math.max(...row.map(o=>o.x+o.w));return Math.abs((d.x-l)-(r-d.x-d.w))<=18;});
+  ok(core.eps.length&&inside.every(Boolean),'endpoints sit within their device\'s width when they fit, otherwise centered on it: '+core.eps.map((e,i)=>e.key+(inside[i]?'':' (outside)')).join(', '));}
  {// Owner request: right angles and as few bends as possible; an access point's link needs at most two.
   const bends=pts=>pts.filter((p,k)=>k&&k<pts.length-1&&!((pts[k-1][0]===p[0]&&p[0]===pts[k+1][0])||(pts[k-1][1]===p[1]&&p[1]===pts[k+1][1]))).length;
   const ep=core.lines.filter(l=>l.conn.ep!=null);ok(ep.length&&ep.every(l=>bends(l.points)<=2),'access point links take at most two bends: '+ep.map(l=>bends(l.points)).join(','));

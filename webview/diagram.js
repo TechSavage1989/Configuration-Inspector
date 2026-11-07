@@ -356,7 +356,7 @@
   // points show their whole name); the image takes 52 px when a stencil draws the endpoint.
   var longest=0;devices.forEach(function(dev){(dev.eps||[]).forEach(function(a){if(!a.node.group)longest=Math.max(longest,String(a.node.name||'').length);});});
   // Even grid steps, so an endpoint's center (where its link lands) is on the routing grid.
-  if(longest){EP_W=Math.max(126,Math.ceil((60+longest*9*0.56)/18)*18);EP_PITCH=EP_W+27;}
+  if(longest){EP_W=view.tallAps?Math.max(90,Math.ceil((14+longest*9*0.56)/18)*18):Math.max(126,Math.ceil((60+longest*9*0.56)/18)*18);EP_PITCH=EP_W+27;}
   // Connections: one per physical link on faceplates, one per device pair on boxes.
   var conns=[],seenLinks=new Set();
   (input.links||[]).forEach(function(l){var A=devices.get(l.a),B=devices.get(l.b);if(!A||!B||A===B)return;var key=[l.a+'|'+short(l.aPort),l.b+'|'+short(l.bPort)].sort().join('~');if(seenLinks.has(key))return;seenLinks.add(key);
@@ -389,12 +389,17 @@
   // bottom-row port, each near its port.
   devices.forEach(function(d){d.top=[];d.bot=[];});
   conns.forEach(function(c){if(c.ep==null)return;var t=c.ta.shared||c.ta,e={conn:c,a:c.A.eps[c.ep],dx:t.slot.dx,side:c.ta.side};(e.side==='top'?c.A.top:c.A.bot).push(e);});
-  // Compact (owner request): a row of endpoints stays within the device's width where it fits,
-  // each as near its port as its neighbors allow, instead of running off to one side.
-  devices.forEach(function(d){[d.top,d.bot].forEach(function(list){var x=null;list.sort(function(p,q){return p.dx-q.dx;}).forEach(function(e){var ideal=snap(e.dx-EP_W/2);x=x==null?ideal:Math.max(ideal,x+EP_PITCH);e.rx=x;});
-    var body=d.w,n=list.length,span=n?(n-1)*EP_PITCH+EP_W:0,lo=-2*G,hi=Math.max(0,snap(body-EP_W))+2*G;if(n&&span<=body){for(var i=n-1;i>=0;i--){var cap=i===n-1?hi:list[i+1].rx-EP_PITCH;if(list[i].rx>cap)list[i].rx=cap;}for(var j=0;j<n;j++){var floor=j?list[j-1].rx+EP_PITCH:lo;if(list[j].rx<floor)list[j].rx=floor;}}
-    // A row wider than the body still starts where it stays within the device's width if it can.
-    else if(n){var start=Math.max(0,Math.min(list[0].rx,snap(d.w-span)));list.forEach(function(e,k){e.rx=start+k*EP_PITCH;});}});
+  // Compact (owner request): access points and other endpoints stay within the left and right edges
+  // of their switch, firewall or stack whenever they fit, each as near its port as its neighbors
+  // allow; the gap between them shrinks (down to one grid step) before the row may run past the
+  // device, and a row that still cannot fit is centered on the device.
+  devices.forEach(function(d){[d.top,d.bot].forEach(function(list){var n=list.length;if(!n)return;list.sort(function(p,q){return p.dx-q.dx;});
+    var body=d.w,lo=0,hi=Math.max(0,snap(body-EP_W)),pitch=EP_PITCH;
+    if(n>1&&(n-1)*pitch+EP_W>body)pitch=Math.max(EP_W+G,Math.floor((body-EP_W)/(n-1)/G)*G);
+    var x=null;list.forEach(function(e){var ideal=snap(e.dx-EP_W/2);x=x==null?ideal:Math.max(ideal,x+pitch);e.rx=x;});
+    var span=(n-1)*pitch+EP_W;
+    if(span<=body){for(var i=n-1;i>=0;i--){var cap=i===n-1?hi:list[i+1].rx-pitch;if(list[i].rx>cap)list[i].rx=cap;}for(var j=0;j<n;j++){var floor=j?list[j-1].rx+pitch:lo;if(list[j].rx<floor)list[j].rx=floor;}}
+    else{var start=snap((body-span)/2);list.forEach(function(e,k){e.rx=start+k*pitch;});}});
    var left=Math.min.apply(null,[0].concat(d.top.concat(d.bot).map(function(e){return e.rx;}))),right=Math.max.apply(null,[d.w+(d.others?G*2+EP_W:0)].concat(d.top.concat(d.bot).map(function(e){return e.rx+EP_W;})));d.offset=-left;d.cellW=right-left;});
   // Horizontal placement: cells left to right, rows centered.
   // Rows start on one vertical line: the first device of every row has the same left edge
@@ -528,7 +533,7 @@
   page.rect(MARGIN,84,page.w-2*MARGIN,1,{fill:'#c9d3df',stroke:'none'});
   page.lines=lines;page.devices=Array.from(devices.values()).map(function(d){return {key:d.key,name:d.node.name,x:d.x,y:d.y,w:d.w,h:d.h};});
   // Endpoints with the x of the port they use, for the editor's alignment tools.
-  page.eps=[];devices.forEach(function(d){d.top.concat(d.bot).forEach(function(e){var c=e.conn,port=c&&c.ga?c.ga.px:null;page.eps.push({key:epKey(d,e.a),x:d.x+e.rx,y:epY(d,e),w:EP_W,h:EP_H,portX:port,ox:e.ox||0,oy:e.oy||0});});});
+  page.eps=[];devices.forEach(function(d){d.top.concat(d.bot).forEach(function(e){var c=e.conn,port=c&&c.ga?c.ga.px:null;page.eps.push({key:epKey(d,e.a),dev:d.key,x:d.x+e.rx,y:epY(d,e),w:EP_W,h:EP_H,portX:port,ox:e.ox||0,oy:e.oy||0});});});
   return page;
  }
  // A page for a scope; the title says what it shows.
