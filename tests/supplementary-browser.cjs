@@ -13,6 +13,8 @@ const file=(name,buffer,type)=>({name,mimeType:type||'text/plain',buffer:Buffer.
  const browser=await playwright.chromium.launch({headless:true,args:['--no-sandbox'],...(process.env.CI_CHROME_PATH?{executablePath:process.env.CI_CHROME_PATH}:{})});
  try{
   const page=await browser.newPage({viewport:{width:1440,height:900}}),errors=[];page.on('pageerror',e=>errors.push(e.message));
+  // These checks were written for the full view (every device type shown); the default view is checked separately.
+  await page.addInitScript(()=>{window.DIAGRAM_SHOW_ALL=true;});
   await page.goto('file://'+path.resolve('webview/index.html'));
   // Supplementary data alone builds a site map.
   await page.locator('#import-file').setInputFiles(file('example-site.xlsx',demoSite(),'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'));

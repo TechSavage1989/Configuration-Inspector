@@ -40,7 +40,9 @@
   if(m==='wap'&&speed===1000)speed=0;var st=speedText(speed),key=m+(speed?'-'+speed:''),label=m==='wap'?'AP copper'+(speed&&speed!==1000?', '+st:''):m==='other'?'Media unspecified'+(st?', '+st:''):m==='dac'?st+' '+(speed>=40000?'QSFP':speed>=25000?'SFP28':'SFP+')+' DAC':(st?st+' ':'')+LINK_MEDIA[m].name;
   if(!KINDS[key])KINDS[key]={label:label.charAt(0).toUpperCase()+label.slice(1),color:LINK_MEDIA[m].color,dash:speed>0&&speed<1000,media:m,speed:speed};return key;}
  // A kind's look, with the colors and names changed by hand (view.linkStyles, kept per kind).
- function kindStyle(key,view){var k=KINDS[key]||LINK_TYPES[key]||LINK_TYPES.other,o=view&&view.linkStyles&&view.linkStyles[key]||{};return {label:o.label||k.label,color:o.color||k.color,dash:k.dash,media:k.media||key};}
+ // One style per link type (owner request): its legend entry and every link of the type share the
+ // color, name, thickness and line pattern, so an edit to either changes both.
+ function kindStyle(key,view){var k=KINDS[key]||LINK_TYPES[key]||LINK_TYPES.other,o=view&&view.linkStyles&&view.linkStyles[key]||{};return {label:o.label||k.label,color:o.color||k.color,dash:o.dash!=null?!!o.dash:k.dash,width:Number(o.width||k.width)||(isFiberKind(key)?2.5:2),media:k.media||key};}
  function isFiberKind(key){return /^(?:sr|lr|fiber|dac)(?:-|$)/.test(key);}
  function slowLink(l){var s=Math.max(speedValue(l.aSpeed),speedValue(l.bSpeed));return s>0&&s<1000;}
  function short(p){var s=String(p||'').trim(),m=s.match(/\bport:?\s*(\d+)/i);if(m&&/unit|slot/i.test(s))return 'Port '+m[1];
@@ -258,7 +260,7 @@
  var LEGEND_W=198;
  function legendColumn(page,x,y,types,roles,view){
   page.text(x,y,LEGEND_W-36,14,'CONNECTION TYPES',{size:9.5,bold:true,align:'left',color:'#1d5b79'});y+=30;
-  types.forEach(function(t){var k=kindStyle(t,view);page.line([[x,y+7],[x+30,y+7]],{color:k.color,width:2.5,dash:k.dash,lkind:t});page.text(x+40,y,LEGEND_W-80,16,k.label,{size:10,align:'left',lkind:t});y+=27;});
+  types.forEach(function(t){var k=kindStyle(t,view);page.line([[x,y+7],[x+30,y+7]],{color:k.color,width:k.width,dash:k.dash,lkind:t});page.text(x+40,y,LEGEND_W-80,16,k.label,{size:10,align:'left',lkind:t});y+=27;});
   if(roles&&roles.length){y+=12;page.text(x,y,LEGEND_W-36,14,'DEVICES',{size:9.5,bold:true,align:'left',color:'#1d5b79'});y+=30;roles.forEach(function(r){page.rect(x,y+2,24,12,{fill:ROLE_FILL[r],stroke:'none'});page.text(x+40,y,LEGEND_W-80,16,ROLE_LABEL[r],{size:10,align:'left'});y+=27;});}
   return y;
  }
@@ -356,7 +358,7 @@
   // points show their whole name); the image takes 52 px when a stencil draws the endpoint.
   var longest=0;devices.forEach(function(dev){(dev.eps||[]).forEach(function(a){if(!a.node.group)longest=Math.max(longest,String(a.node.name||'').length);});});
   // Even grid steps, so an endpoint's center (where its link lands) is on the routing grid.
-  if(longest){EP_W=Math.max(126,Math.ceil((60+longest*9*0.56)/18)*18);EP_PITCH=EP_W+27;}
+  if(longest){EP_W=view.tallAps?Math.max(90,Math.ceil((14+longest*9*0.56)/18)*18):Math.max(126,Math.ceil((60+longest*9*0.56)/18)*18);EP_PITCH=EP_W+27;}
   // Connections: one per physical link on faceplates, one per device pair on boxes.
   var conns=[],seenLinks=new Set();
   (input.links||[]).forEach(function(l){var A=devices.get(l.a),B=devices.get(l.b);if(!A||!B||A===B)return;var key=[l.a+'|'+short(l.aPort),l.b+'|'+short(l.bPort)].sort().join('~');if(seenLinks.has(key))return;seenLinks.add(key);
@@ -365,7 +367,7 @@
    conns.push({A:A,B:B,aPorts:[l.aPort],bPorts:[l.bPort],type:type,dash:dash});});
   devices.forEach(function(dev){dev.eps.forEach(function(a,j){var l=(input.links||[]).find(function(x){return x.a===dev.key&&x.b===a.node.key&&short(x.aPort)===short(a.port)||x.b===dev.key&&x.a===a.node.key&&short(x.bPort)===short(a.port);})||{aPort:a.port};conns.push({A:dev,ep:j,aPorts:[a.port],bPorts:[],type:linkKind(l,dev.node.role,a.node.role,false,false),dash:slowLink(l)});});});
   // A link given its own type by hand (name and color): links sharing that name share one legend entry.
-  var lk=view.edits&&view.edits.lineKinds;if(lk)conns.forEach(function(c){var key=c.A.key+'|'+short(c.aPorts[0]||'')+'~'+(c.B?c.B.key+'|'+short(c.bPorts[0]||''):'ep:'+epKey(c.A,c.A.eps[c.ep])),o=lk[key];if(!o||!o.label)return;var k='custom:'+String(o.label).toLowerCase();KINDS[k]={label:o.label,color:o.color||'#8a94a6',dash:false,media:'custom',speed:0};c.type=k;});
+  var lk=view.edits&&view.edits.lineKinds;if(lk)conns.forEach(function(c){var key=c.A.key+'|'+short(c.aPorts[0]||'')+'~'+(c.B?c.B.key+'|'+short(c.bPorts[0]||''):'ep:'+epKey(c.A,c.A.eps[c.ep])),o=lk[key];if(!o||!o.label)return;var k='custom:'+String(o.label).toLowerCase();KINDS[k]={label:o.label,color:o.color||'#8a94a6',dash:!!o.dash,width:Number(o.width)||0,media:'custom',speed:0};c.type=k;});
   conns.forEach(function(c){used.add(c.type);});
   // Terminals on faceplates come from the port slot; boxes get a side per direction.
   var usedPorts=new Map();
@@ -388,13 +390,20 @@
   // Endpoints sit above their switch when cabled to a top-row port and below it for a
   // bottom-row port, each near its port.
   devices.forEach(function(d){d.top=[];d.bot=[];});
-  conns.forEach(function(c){if(c.ep==null)return;var t=c.ta.shared||c.ta,e={conn:c,a:c.A.eps[c.ep],dx:t.slot.dx,side:c.ta.side};(e.side==='top'?c.A.top:c.A.bot).push(e);});
-  // Compact (owner request): a row of endpoints stays within the device's width where it fits,
-  // each as near its port as its neighbors allow, instead of running off to one side.
-  devices.forEach(function(d){[d.top,d.bot].forEach(function(list){var x=null;list.sort(function(p,q){return p.dx-q.dx;}).forEach(function(e){var ideal=snap(e.dx-EP_W/2);x=x==null?ideal:Math.max(ideal,x+EP_PITCH);e.rx=x;});
-    var body=d.w,n=list.length,span=n?(n-1)*EP_PITCH+EP_W:0,lo=-2*G,hi=Math.max(0,snap(body-EP_W))+2*G;if(n&&span<=body){for(var i=n-1;i>=0;i--){var cap=i===n-1?hi:list[i+1].rx-EP_PITCH;if(list[i].rx>cap)list[i].rx=cap;}for(var j=0;j<n;j++){var floor=j?list[j-1].rx+EP_PITCH:lo;if(list[j].rx<floor)list[j].rx=floor;}}
-    // A row wider than the body still starts where it stays within the device's width if it can.
-    else if(n){var start=Math.max(0,Math.min(list[0].rx,snap(d.w-span)));list.forEach(function(e,k){e.rx=start+k*EP_PITCH;});}});
+  // WAN circuits sit above their device whatever the port row (owner request: the hierarchy runs
+  // from the WAN down); a bottom-row port's link leaves downward and routes around to the circuit.
+  conns.forEach(function(c){if(c.ep==null)return;var t=c.ta.shared||c.ta,a0=c.A.eps[c.ep],e={conn:c,a:a0,dx:t.slot.dx,side:a0.node.role==='circuit'?'top':c.ta.side};(e.side==='top'?c.A.top:c.A.bot).push(e);});
+  // Compact (owner request): access points and other endpoints stay within the left and right edges
+  // of their switch, firewall or stack whenever they fit, each as near its port as its neighbors
+  // allow; the gap between them shrinks (down to one grid step) before the row may run past the
+  // device, and a row that still cannot fit is centered on the device.
+  devices.forEach(function(d){[d.top,d.bot].forEach(function(list){var n=list.length;if(!n)return;list.sort(function(p,q){return p.dx-q.dx;});
+    var body=d.w,lo=0,hi=Math.max(0,snap(body-EP_W)),pitch=EP_PITCH;
+    if(n>1&&(n-1)*pitch+EP_W>body)pitch=Math.max(EP_W+G,Math.floor((body-EP_W)/(n-1)/G)*G);
+    var x=null;list.forEach(function(e){var ideal=snap(e.dx-EP_W/2);x=x==null?ideal:Math.max(ideal,x+pitch);e.rx=x;});
+    var span=(n-1)*pitch+EP_W;
+    if(span<=body){for(var i=n-1;i>=0;i--){var cap=i===n-1?hi:list[i+1].rx-pitch;if(list[i].rx>cap)list[i].rx=cap;}for(var j=0;j<n;j++){var floor=j?list[j-1].rx+pitch:lo;if(list[j].rx<floor)list[j].rx=floor;}}
+    else{var start=snap((body-span)/2);list.forEach(function(e,k){e.rx=start+k*pitch;});}});
    var left=Math.min.apply(null,[0].concat(d.top.concat(d.bot).map(function(e){return e.rx;}))),right=Math.max.apply(null,[d.w+(d.others?G*2+EP_W:0)].concat(d.top.concat(d.bot).map(function(e){return e.rx+EP_W;})));d.offset=-left;d.cellW=right-left;});
   // Horizontal placement: cells left to right, rows centered.
   // Rows start on one vertical line: the first device of every row has the same left edge
@@ -486,7 +495,7 @@
    // onto the port itself, so the line meets the port's center.
    function onPort(t,first){if(!t||t.shared||!t.slot||t.slot.ex==null||t.slot.ex===t.slot.dx)return;var x0=t.dev.x+t.slot.dx,x1=t.dev.x+t.slot.ex,list=first?points:points.slice().reverse();if(list[0][0]!==x0)return;for(var k=0;k<list.length&&list[k][0]===x0;k++)list[k]=[x1,list[k][1]];if(!first)points=list.reverse();else points=list;}
    if(style==='plate'){onPort(c.ta,true);onPort(c.tb,false);}
-   lines.push({points:points,color:kindStyle(c.type,view).color,width:isFiberKind(c.type)?2.5:style==='box'&&c.aPorts.length>1?3.5:2,conn:c,routed:!!path,strict:!!strict,groups:c.groups});});
+   lines.push({points:points,color:kindStyle(c.type,view).color,width:style==='box'&&c.aPorts.length>1?Math.max(3.5,kindStyle(c.type,view).width):kindStyle(c.type,view).width,conn:c,routed:!!path,strict:!!strict,groups:c.groups});});
   // Fewest bends (owner request): a short sideways step next to a port (stub, step of one or two
   // grid units, vertical run) is removed by moving that run onto the port's column when the
   // column is free of devices and of other lines' collinear stretches.
@@ -528,7 +537,7 @@
   page.rect(MARGIN,84,page.w-2*MARGIN,1,{fill:'#c9d3df',stroke:'none'});
   page.lines=lines;page.devices=Array.from(devices.values()).map(function(d){return {key:d.key,name:d.node.name,x:d.x,y:d.y,w:d.w,h:d.h};});
   // Endpoints with the x of the port they use, for the editor's alignment tools.
-  page.eps=[];devices.forEach(function(d){d.top.concat(d.bot).forEach(function(e){var c=e.conn,port=c&&c.ga?c.ga.px:null;page.eps.push({key:epKey(d,e.a),x:d.x+e.rx,y:epY(d,e),w:EP_W,h:EP_H,portX:port,ox:e.ox||0,oy:e.oy||0});});});
+  page.eps=[];devices.forEach(function(d){d.top.concat(d.bot).forEach(function(e){var c=e.conn,port=c&&c.ga?c.ga.px:null;page.eps.push({key:epKey(d,e.a),dev:d.key,role:e.a.node.role,side:e.side,x:d.x+e.rx,y:epY(d,e),w:EP_W,h:EP_H,portX:port,ox:e.ox||0,oy:e.oy||0});});});
   return page;
  }
  // A page for a scope; the title says what it shows.

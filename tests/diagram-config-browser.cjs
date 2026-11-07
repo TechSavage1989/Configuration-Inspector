@@ -16,6 +16,8 @@ const file=(name,text)=>({name,mimeType:'text/plain',buffer:Buffer.from(text)});
  const browser=await playwright.chromium.launch({headless:true,args:['--no-sandbox'],...(process.env.CI_CHROME_PATH?{executablePath:process.env.CI_CHROME_PATH}:{})});
  try{
   const page=await browser.newPage({viewport:{width:1440,height:900}}),errors=[];page.on('pageerror',e=>errors.push(e.message));
+  // These checks were written for the full view (every device type shown); the default view is checked separately.
+  await page.addInitScript(()=>{window.DIAGRAM_SHOW_ALL=true;});
   await page.goto('file://'+path.resolve('webview/index.html'));
   await page.locator('#import-file').setInputFiles([file('example-core.conf',core),file('example-edge.conf',edge)]);await page.waitForTimeout(1500);
   ok(await page.locator('.nav-scroll [data-view="diagram"]').count()===1,'the network diagram is offered with configurations alone');
@@ -69,10 +71,14 @@ ok((await routeOf()).split(' ').length===r0.split(' ').length,'dragging the jog 
   {const entry=page.locator('.diagram-scroll text[data-kind]').first();await entry.scrollIntoViewIfNeeded();await entry.hover();
    {const st=await entry.evaluate(e=>[getComputedStyle(e).cursor,getComputedStyle(e).textDecorationLine,!!e.querySelector('title'),e.outerHTML.slice(0,200)]);ok(st[0]==='pointer'&&st[1].includes('underline')&&st[2],'a legend entry shows that it can be edited: '+JSON.stringify(st));}
    const kind=await entry.getAttribute('data-kind');await entry.click({button:'right'});
-   const opts=await page.locator('[data-legend-menu] [data-legend-ctx]').allInnerTexts();ok(opts.some(t=>/color and name/.test(t))&&opts.some(t=>/Highlight/.test(t)),'right-click opens its options: '+opts.join(' | '));
+   const opts=await page.locator('[data-legend-menu] [data-legend-ctx]').allInnerTexts();ok(opts.some(t=>/color, name and thickness/.test(t))&&opts.some(t=>/Highlight/.test(t)),'right-click opens its options: '+opts.join(' | '));
    await page.locator('[data-legend-ctx="highlight"]').click();const dim=await page.locator('.diagram-scroll polyline[data-line]').evaluateAll((ls,k)=>ls.map(l=>[l.getAttribute('data-kind')===k,l.style.opacity]),kind);
    ok(dim.some(d=>d[0]&&d[1]==='')&&dim.every(d=>d[0]||d[1]==='0.15'),'highlighting dims every other type of link');
-   await entry.click({button:'right'});await page.locator('[data-legend-ctx="style"]').click();ok(await page.locator('[data-link-style="label"]').count()===1,'and changes its color and name');await page.keyboard.press('Escape');await page.waitForTimeout(200);}
+   await entry.click({button:'right'});await page.locator('[data-legend-ctx="style"]').click();ok(await page.locator('[data-link-style="label"]').count()===1&&await page.locator('[data-link-style="width"]').count()===1,'and changes its color, name and thickness');
+   await page.locator('[data-link-style="width"]').selectOption('4');await page.locator('[data-link-style="dash"]').selectOption('1');await page.locator('[data-link-style-save]').click();await page.waitForTimeout(500);
+   const st=await page.evaluate(k=>{const q=s=>[...document.querySelectorAll(s)];return {lines:q('.diagram-scroll polyline[data-line][data-kind="'+k+'"]').map(l=>[l.getAttribute('stroke-width'),l.getAttribute('stroke-dasharray')]),legend:q('.diagram-scroll polyline[data-kind="'+k+'"]:not([data-line])').map(l=>[l.getAttribute('stroke-width'),l.getAttribute('stroke-dasharray')])};},kind);
+   ok(st.lines.length&&st.legend.length&&st.lines.concat(st.legend).every(x=>x[0]==='4'&&!!x[1]),'a thickness and line change in the legend reaches every link of the type and the legend: '+JSON.stringify(st));
+   await entry.click({button:'right'});await page.locator('[data-legend-ctx="reset"]').click();await page.waitForTimeout(400);}
   const theme=()=>page.locator('html').getAttribute('data-theme');const t0=await theme();await page.locator('#theme-choice').click();ok(await theme()!==t0&&await page.locator('#theme-choice').getAttribute('aria-pressed')===String(await theme()==='dark'),'the theme is one button that switches light and dark');await page.locator('#theme-choice').click();ok(await theme()===t0,'and back');
   ok(!errors.length,'no page errors: '+errors.join('; '));
   console.log(checks+' configuration-only diagram browser checks passed');

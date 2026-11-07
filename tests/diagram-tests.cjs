@@ -48,6 +48,18 @@ function campus(){
  ok(site.title==='Example Site - Existing Topology'&&site.devices.length===5,'whole site page: '+site.devices.map(d=>d.name).join(', '));
  const core=D.diagram(input,{scope:'downstream',focus:'examplecore'}),texts=core.shapes.filter(s=>s.type==='text').map(s=>s.text).join('\n');
  ok(core.title==='EXAMPLE-CORE and below'&&['EXAMPLE-FW1','EXAMPLE-ACCESS1','EXAMPLE-ACCESS3','EXAMPLE-AP1','VLAN 10 – USERS'].every(t=>texts.includes(t)),'device page: upstream device, switches below, access points and VLANs');
+ {// Owner request: access points and other endpoints stay within the left and right edges of their device when they fit.
+  const inside=core.eps.map(e=>{const d=core.devices.find(v=>v.key===e.dev),row=core.eps.filter(o=>o.dev===e.dev&&o.y===e.y),need=row.length*e.w+(row.length-1)*9;if(!d)return false;if(need<=d.w)return e.x>=d.x-0.5&&e.x+e.w<=d.x+d.w+0.5;const l=Math.min(...row.map(o=>o.x)),r=Math.max(...row.map(o=>o.x+o.w));return Math.abs((d.x-l)-(r-d.x-d.w))<=18;});
+  ok(core.eps.length&&inside.every(Boolean),'endpoints sit within their device\'s width when they fit, otherwise centered on it: '+core.eps.map((e,i)=>e.key+(inside[i]?'':' (outside)')).join(', '));}
+ {// Owner request: the hierarchy runs from the WAN down; circuits sit above their firewall even on a bottom-row port.
+  const c=campus(),add=(name,port)=>{const k=E.deviceKey(name);c.layout=null;return {key:k,name,type:'Circuit',model:'',ips:['192.0.2.'+(port.length)],open:-1,port};};
+  const devs=[],lks=[];const base=campus();base.layout.all.forEach(n=>devs.push({key:n.key,name:n.name,type:n.type,model:n.model,ips:n.ips||[],open:-1}));
+  const isp1=add('ISP-A circuit','port3'),isp2=add('ISP-B circuit','port4');devs.push(isp1,isp2);
+  const links=base.links.concat([{a:E.deviceKey('CAMPUS-FW'),b:isp1.key,aPort:'port3',bPort:'',aSpeed:'1 Gb/s'},{a:E.deviceKey('CAMPUS-FW'),b:isp2.key,aPort:'port4',bPort:'',aSpeed:'1 Gb/s'}]);
+  const wan=D.diagram({layout:M.layout(devs,links,{}),links,vlans:new Map(),ports:new Map(),title:'WAN'},{scope:'downstream',focus:E.deviceKey('CAMPUS-FW')});
+  const fwd=wan.devices.find(d=>d.name==='CAMPUS-FW'),circ=wan.eps.filter(e=>e.role==='circuit');
+  ok(fwd&&circ.length===2&&circ.every(e=>e.y+e.h<=fwd.y),'WAN circuits sit above the firewall, including one on a bottom-row port: '+circ.map(e=>e.key+'@'+e.y).join(', ')+' fw@'+(fwd&&fwd.y));
+  ok(routing(wan).length===0,'and their links follow the routing rules: '+routing(wan).slice(0,4).join('; '));}
  {// Owner request: right angles and as few bends as possible; an access point's link needs at most two.
   const bends=pts=>pts.filter((p,k)=>k&&k<pts.length-1&&!((pts[k-1][0]===p[0]&&p[0]===pts[k+1][0])||(pts[k-1][1]===p[1]&&p[1]===pts[k+1][1]))).length;
   const ep=core.lines.filter(l=>l.conn.ep!=null);ok(ep.length&&ep.every(l=>bends(l.points)<=2),'access point links take at most two bends: '+ep.map(l=>bends(l.points)).join(','));

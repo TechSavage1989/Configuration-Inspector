@@ -963,7 +963,7 @@ body{font-size:14px}.brand-mark{background:linear-gradient(145deg,#287dc6,#15578
       <div id="page-heading"></div>
       <div id="workspace-tabs"></div><div id="workspace-notice"></div>
       <div id="content"></div>
-      <footer class="page-footer"><span id="version-label">Config Inspector 5.48.0</span></footer>
+      <footer class="page-footer"><span id="version-label">Config Inspector 5.49.0</span></footer>
     </main>
   </div>
   <input type="file" id="import-file" multiple accept=".exp,.txt,.json,.conf,.cfg,.xml,.tar,.set,.log,.backup,.rsc,.xlsx,.csv,.vssx,.vstx,.vsdx,.vss" hidden>
@@ -6126,7 +6126,9 @@ function pJ(L,pan){const d=E(),I={},R={},T={};
   if(m==='wap'&&speed===1000)speed=0;var st=speedText(speed),key=m+(speed?'-'+speed:''),label=m==='wap'?'AP copper'+(speed&&speed!==1000?', '+st:''):m==='other'?'Media unspecified'+(st?', '+st:''):m==='dac'?st+' '+(speed>=40000?'QSFP':speed>=25000?'SFP28':'SFP+')+' DAC':(st?st+' ':'')+LINK_MEDIA[m].name;
   if(!KINDS[key])KINDS[key]={label:label.charAt(0).toUpperCase()+label.slice(1),color:LINK_MEDIA[m].color,dash:speed>0&&speed<1000,media:m,speed:speed};return key;}
  // A kind's look, with the colors and names changed by hand (view.linkStyles, kept per kind).
- function kindStyle(key,view){var k=KINDS[key]||LINK_TYPES[key]||LINK_TYPES.other,o=view&&view.linkStyles&&view.linkStyles[key]||{};return {label:o.label||k.label,color:o.color||k.color,dash:k.dash,media:k.media||key};}
+ // One style per link type (owner request): its legend entry and every link of the type share the
+ // color, name, thickness and line pattern, so an edit to either changes both.
+ function kindStyle(key,view){var k=KINDS[key]||LINK_TYPES[key]||LINK_TYPES.other,o=view&&view.linkStyles&&view.linkStyles[key]||{};return {label:o.label||k.label,color:o.color||k.color,dash:o.dash!=null?!!o.dash:k.dash,width:Number(o.width||k.width)||(isFiberKind(key)?2.5:2),media:k.media||key};}
  function isFiberKind(key){return /^(?:sr|lr|fiber|dac)(?:-|$)/.test(key);}
  function slowLink(l){var s=Math.max(speedValue(l.aSpeed),speedValue(l.bSpeed));return s>0&&s<1000;}
  function short(p){var s=String(p||'').trim(),m=s.match(/\bport:?\s*(\d+)/i);if(m&&/unit|slot/i.test(s))return 'Port '+m[1];
@@ -6344,7 +6346,7 @@ function pJ(L,pan){const d=E(),I={},R={},T={};
  var LEGEND_W=198;
  function legendColumn(page,x,y,types,roles,view){
   page.text(x,y,LEGEND_W-36,14,'CONNECTION TYPES',{size:9.5,bold:true,align:'left',color:'#1d5b79'});y+=30;
-  types.forEach(function(t){var k=kindStyle(t,view);page.line([[x,y+7],[x+30,y+7]],{color:k.color,width:2.5,dash:k.dash,lkind:t});page.text(x+40,y,LEGEND_W-80,16,k.label,{size:10,align:'left',lkind:t});y+=27;});
+  types.forEach(function(t){var k=kindStyle(t,view);page.line([[x,y+7],[x+30,y+7]],{color:k.color,width:k.width,dash:k.dash,lkind:t});page.text(x+40,y,LEGEND_W-80,16,k.label,{size:10,align:'left',lkind:t});y+=27;});
   if(roles&&roles.length){y+=12;page.text(x,y,LEGEND_W-36,14,'DEVICES',{size:9.5,bold:true,align:'left',color:'#1d5b79'});y+=30;roles.forEach(function(r){page.rect(x,y+2,24,12,{fill:ROLE_FILL[r],stroke:'none'});page.text(x+40,y,LEGEND_W-80,16,ROLE_LABEL[r],{size:10,align:'left'});y+=27;});}
   return y;
  }
@@ -6442,7 +6444,7 @@ function pJ(L,pan){const d=E(),I={},R={},T={};
   // points show their whole name); the image takes 52 px when a stencil draws the endpoint.
   var longest=0;devices.forEach(function(dev){(dev.eps||[]).forEach(function(a){if(!a.node.group)longest=Math.max(longest,String(a.node.name||'').length);});});
   // Even grid steps, so an endpoint's center (where its link lands) is on the routing grid.
-  if(longest){EP_W=Math.max(126,Math.ceil((60+longest*9*0.56)/18)*18);EP_PITCH=EP_W+27;}
+  if(longest){EP_W=view.tallAps?Math.max(90,Math.ceil((14+longest*9*0.56)/18)*18):Math.max(126,Math.ceil((60+longest*9*0.56)/18)*18);EP_PITCH=EP_W+27;}
   // Connections: one per physical link on faceplates, one per device pair on boxes.
   var conns=[],seenLinks=new Set();
   (input.links||[]).forEach(function(l){var A=devices.get(l.a),B=devices.get(l.b);if(!A||!B||A===B)return;var key=[l.a+'|'+short(l.aPort),l.b+'|'+short(l.bPort)].sort().join('~');if(seenLinks.has(key))return;seenLinks.add(key);
@@ -6451,7 +6453,7 @@ function pJ(L,pan){const d=E(),I={},R={},T={};
    conns.push({A:A,B:B,aPorts:[l.aPort],bPorts:[l.bPort],type:type,dash:dash});});
   devices.forEach(function(dev){dev.eps.forEach(function(a,j){var l=(input.links||[]).find(function(x){return x.a===dev.key&&x.b===a.node.key&&short(x.aPort)===short(a.port)||x.b===dev.key&&x.a===a.node.key&&short(x.bPort)===short(a.port);})||{aPort:a.port};conns.push({A:dev,ep:j,aPorts:[a.port],bPorts:[],type:linkKind(l,dev.node.role,a.node.role,false,false),dash:slowLink(l)});});});
   // A link given its own type by hand (name and color): links sharing that name share one legend entry.
-  var lk=view.edits&&view.edits.lineKinds;if(lk)conns.forEach(function(c){var key=c.A.key+'|'+short(c.aPorts[0]||'')+'~'+(c.B?c.B.key+'|'+short(c.bPorts[0]||''):'ep:'+epKey(c.A,c.A.eps[c.ep])),o=lk[key];if(!o||!o.label)return;var k='custom:'+String(o.label).toLowerCase();KINDS[k]={label:o.label,color:o.color||'#8a94a6',dash:false,media:'custom',speed:0};c.type=k;});
+  var lk=view.edits&&view.edits.lineKinds;if(lk)conns.forEach(function(c){var key=c.A.key+'|'+short(c.aPorts[0]||'')+'~'+(c.B?c.B.key+'|'+short(c.bPorts[0]||''):'ep:'+epKey(c.A,c.A.eps[c.ep])),o=lk[key];if(!o||!o.label)return;var k='custom:'+String(o.label).toLowerCase();KINDS[k]={label:o.label,color:o.color||'#8a94a6',dash:!!o.dash,width:Number(o.width)||0,media:'custom',speed:0};c.type=k;});
   conns.forEach(function(c){used.add(c.type);});
   // Terminals on faceplates come from the port slot; boxes get a side per direction.
   var usedPorts=new Map();
@@ -6474,13 +6476,20 @@ function pJ(L,pan){const d=E(),I={},R={},T={};
   // Endpoints sit above their switch when cabled to a top-row port and below it for a
   // bottom-row port, each near its port.
   devices.forEach(function(d){d.top=[];d.bot=[];});
-  conns.forEach(function(c){if(c.ep==null)return;var t=c.ta.shared||c.ta,e={conn:c,a:c.A.eps[c.ep],dx:t.slot.dx,side:c.ta.side};(e.side==='top'?c.A.top:c.A.bot).push(e);});
-  // Compact (owner request): a row of endpoints stays within the device's width where it fits,
-  // each as near its port as its neighbors allow, instead of running off to one side.
-  devices.forEach(function(d){[d.top,d.bot].forEach(function(list){var x=null;list.sort(function(p,q){return p.dx-q.dx;}).forEach(function(e){var ideal=snap(e.dx-EP_W/2);x=x==null?ideal:Math.max(ideal,x+EP_PITCH);e.rx=x;});
-    var body=d.w,n=list.length,span=n?(n-1)*EP_PITCH+EP_W:0,lo=-2*G,hi=Math.max(0,snap(body-EP_W))+2*G;if(n&&span<=body){for(var i=n-1;i>=0;i--){var cap=i===n-1?hi:list[i+1].rx-EP_PITCH;if(list[i].rx>cap)list[i].rx=cap;}for(var j=0;j<n;j++){var floor=j?list[j-1].rx+EP_PITCH:lo;if(list[j].rx<floor)list[j].rx=floor;}}
-    // A row wider than the body still starts where it stays within the device's width if it can.
-    else if(n){var start=Math.max(0,Math.min(list[0].rx,snap(d.w-span)));list.forEach(function(e,k){e.rx=start+k*EP_PITCH;});}});
+  // WAN circuits sit above their device whatever the port row (owner request: the hierarchy runs
+  // from the WAN down); a bottom-row port's link leaves downward and routes around to the circuit.
+  conns.forEach(function(c){if(c.ep==null)return;var t=c.ta.shared||c.ta,a0=c.A.eps[c.ep],e={conn:c,a:a0,dx:t.slot.dx,side:a0.node.role==='circuit'?'top':c.ta.side};(e.side==='top'?c.A.top:c.A.bot).push(e);});
+  // Compact (owner request): access points and other endpoints stay within the left and right edges
+  // of their switch, firewall or stack whenever they fit, each as near its port as its neighbors
+  // allow; the gap between them shrinks (down to one grid step) before the row may run past the
+  // device, and a row that still cannot fit is centered on the device.
+  devices.forEach(function(d){[d.top,d.bot].forEach(function(list){var n=list.length;if(!n)return;list.sort(function(p,q){return p.dx-q.dx;});
+    var body=d.w,lo=0,hi=Math.max(0,snap(body-EP_W)),pitch=EP_PITCH;
+    if(n>1&&(n-1)*pitch+EP_W>body)pitch=Math.max(EP_W+G,Math.floor((body-EP_W)/(n-1)/G)*G);
+    var x=null;list.forEach(function(e){var ideal=snap(e.dx-EP_W/2);x=x==null?ideal:Math.max(ideal,x+pitch);e.rx=x;});
+    var span=(n-1)*pitch+EP_W;
+    if(span<=body){for(var i=n-1;i>=0;i--){var cap=i===n-1?hi:list[i+1].rx-pitch;if(list[i].rx>cap)list[i].rx=cap;}for(var j=0;j<n;j++){var floor=j?list[j-1].rx+pitch:lo;if(list[j].rx<floor)list[j].rx=floor;}}
+    else{var start=snap((body-span)/2);list.forEach(function(e,k){e.rx=start+k*pitch;});}});
    var left=Math.min.apply(null,[0].concat(d.top.concat(d.bot).map(function(e){return e.rx;}))),right=Math.max.apply(null,[d.w+(d.others?G*2+EP_W:0)].concat(d.top.concat(d.bot).map(function(e){return e.rx+EP_W;})));d.offset=-left;d.cellW=right-left;});
   // Horizontal placement: cells left to right, rows centered.
   // Rows start on one vertical line: the first device of every row has the same left edge
@@ -6572,7 +6581,7 @@ function pJ(L,pan){const d=E(),I={},R={},T={};
    // onto the port itself, so the line meets the port's center.
    function onPort(t,first){if(!t||t.shared||!t.slot||t.slot.ex==null||t.slot.ex===t.slot.dx)return;var x0=t.dev.x+t.slot.dx,x1=t.dev.x+t.slot.ex,list=first?points:points.slice().reverse();if(list[0][0]!==x0)return;for(var k=0;k<list.length&&list[k][0]===x0;k++)list[k]=[x1,list[k][1]];if(!first)points=list.reverse();else points=list;}
    if(style==='plate'){onPort(c.ta,true);onPort(c.tb,false);}
-   lines.push({points:points,color:kindStyle(c.type,view).color,width:isFiberKind(c.type)?2.5:style==='box'&&c.aPorts.length>1?3.5:2,conn:c,routed:!!path,strict:!!strict,groups:c.groups});});
+   lines.push({points:points,color:kindStyle(c.type,view).color,width:style==='box'&&c.aPorts.length>1?Math.max(3.5,kindStyle(c.type,view).width):kindStyle(c.type,view).width,conn:c,routed:!!path,strict:!!strict,groups:c.groups});});
   // Fewest bends (owner request): a short sideways step next to a port (stub, step of one or two
   // grid units, vertical run) is removed by moving that run onto the port's column when the
   // column is free of devices and of other lines' collinear stretches.
@@ -6614,7 +6623,7 @@ function pJ(L,pan){const d=E(),I={},R={},T={};
   page.rect(MARGIN,84,page.w-2*MARGIN,1,{fill:'#c9d3df',stroke:'none'});
   page.lines=lines;page.devices=Array.from(devices.values()).map(function(d){return {key:d.key,name:d.node.name,x:d.x,y:d.y,w:d.w,h:d.h};});
   // Endpoints with the x of the port they use, for the editor's alignment tools.
-  page.eps=[];devices.forEach(function(d){d.top.concat(d.bot).forEach(function(e){var c=e.conn,port=c&&c.ga?c.ga.px:null;page.eps.push({key:epKey(d,e.a),x:d.x+e.rx,y:epY(d,e),w:EP_W,h:EP_H,portX:port,ox:e.ox||0,oy:e.oy||0});});});
+  page.eps=[];devices.forEach(function(d){d.top.concat(d.bot).forEach(function(e){var c=e.conn,port=c&&c.ga?c.ga.px:null;page.eps.push({key:epKey(d,e.a),dev:d.key,role:e.a.node.role,side:e.side,x:d.x+e.rx,y:epY(d,e),w:EP_W,h:EP_H,portX:port,ox:e.ox||0,oy:e.oy||0});});});
   return page;
  }
  // A page for a scope; the title says what it shows.
@@ -7421,7 +7430,7 @@ function pJ(L,pan){const d=E(),I={},R={},T={};
     return {compareText:compareText,compareMode:['records','text','fields'].includes(data.compareMode)?data.compareMode:'records',models:models.slice(0,data.count),model:data.selected<0?null:models[data.selected],comparison:data.comparison<0?null:models[data.comparison],view:typeof data.view==='string'?data.view:'overview',scope:typeof data.scope==='string'?data.scope:'',categoryTabs:data.categoryTabs&&typeof data.categoryTabs==='object'&&!Array.isArray(data.categoryTabs)?data.categoryTabs:{},showUnassigned:!!data.showUnassigned,showEmpty:!!data.showEmpty};
   }
   function create(options){
-    options=options||{};var bridge=options.bridge||root.chrome&&root.chrome.webview,native=!!(bridge&&typeof bridge.postMessage==='function'&&typeof bridge.addEventListener==='function'),state={current:'5.48.0',state:'idle',message:'',automatic:true,busy:false,ready:false,available:false},handlers={},restoring=false,installing=false;
+    options=options||{};var bridge=options.bridge||root.chrome&&root.chrome.webview,native=!!(bridge&&typeof bridge.postMessage==='function'&&typeof bridge.addEventListener==='function'),state={current:'5.49.0',state:'idle',message:'',automatic:true,busy:false,ready:false,available:false},handlers={},restoring=false,installing=false;
     var commands=['update-ui-ready','update-status','update-check','update-download','update-later','update-auto-on','update-auto-off','update-restored','update-restore-failed'];
     function request(command){if(!native)throw new Error('Built-in updates are available in the Windows desktop edition.');if(!commands.includes(command))throw new Error('Unknown update action.');bridge.postMessage(command);}
     if(native)bridge.addEventListener('message',async function(event){
@@ -9091,7 +9100,7 @@ function pJ(L,pan){const d=E(),I={},R={},T={};
   // What the diagram shows. It follows the selected configuration's device until a
   // device is chosen here; clicking a device in the diagram draws from it down.
   function diagramOptions(){
-    var input=diagramInput();if(!input)return null;var d=state.diagram||(state.diagram={scope:'downstream',depth:0,style:'auto',upstream:true,aps:true,others:true,hidden:new Set(),added:new Set(),focus:'',focusModel:undefined});
+    var input=diagramInput();if(!input)return null;var d=state.diagram||(state.diagram=Object.assign({scope:'downstream',depth:0,style:'auto',upstream:false,aps:false,others:false,unconfigured:false,hidden:new Set(),added:new Set(),focus:'',focusModel:undefined},window.DIAGRAM_SHOW_ALL?{upstream:true,aps:true,others:true,unconfigured:true}:{}));
     var keys=new Set(input.layout.nodes.map(function(n){return n.key;}));
     if(d.focusModel!==state.model||!keys.has(d.focus)){var own=state.model?input.layout.nodes.find(function(n){return n.open===workspace.indexOf(state.model);}):null;
       var top=input.layout.nodes.filter(function(n){return !n.isolated;}).sort(function(a,b){return a.y-b.y||b.degree-a.degree;})[0];if(d.focusModel!==state.model)d.scope=own?(d.scope==='site'?'downstream':d.scope):'site';d.focus=own?own.key:top?top.key:'';d.focusModel=state.model;}
@@ -9099,7 +9108,13 @@ function pJ(L,pan){const d=E(),I={},R={},T={};
   }
   function diagramCurrent(){
     var input=diagramInput(),d=diagramOptions();if(!input||!d)return null;
-    var meta=diagramMeta(),o={linkStyles:linkStyles(),scope:d.scope,focus:d.focus,depth:d.depth,style:d.style,upstream:d.upstream,aps:d.aps,apGroup:!!d.apGroup,others:d.others,wan:d.wan,hidden:d.hidden,added:d.added,title:diagramTitle(),customTitle:meta.title,customSubtitle:meta.subtitle,author:meta.author,company:meta.company,date:meta.date},key=JSON.stringify([o.scope,o.focus,o.depth,o.style,o.upstream,o.aps,o.apGroup,o.others,o.wan,Array.from(d.hidden).sort(),Array.from(d.added).sort(),o.title,meta,o.linkStyles]);
+    // By default (owner request) the diagram shows the selected configuration's device and the
+    // devices below it that also have imported configurations, plus WAN circuits; devices without
+    // one appear only on the way to one that has, or when Show includes them.
+    var hidden=d.hidden;if(d.unconfigured===false){hidden=new Set(d.hidden);var nodes=input.layout.nodes,byKey=new Map(nodes.map(function(n){return [n.key,n];})),t=window.SWDiagram.tree(input.layout),memo=new Map();
+      function needed(k,seen){if(memo.has(k))return memo.get(k);if(seen.has(k))return false;seen.add(k);var n=byKey.get(k),v=!!n&&(n.open>=0||n.role==='circuit'||/^wan:/.test(k)||k===d.focus||d.added.has(k));(t.children.get(k)||[]).forEach(function(c){if(needed(c,seen))v=true;});memo.set(k,v);return v;}
+      nodes.forEach(function(n){if(!needed(n.key,new Set()))hidden.add(n.key);});}
+    var meta=diagramMeta(),o={linkStyles:linkStyles(),scope:d.scope,focus:d.focus,depth:d.depth,style:d.style,upstream:d.upstream,aps:d.aps,apGroup:!!d.apGroup,others:d.others,wan:d.wan,hidden:hidden,added:d.added,title:diagramTitle(),customTitle:meta.title,customSubtitle:meta.subtitle,author:meta.author,company:meta.company,date:meta.date},key=JSON.stringify([o.scope,o.focus,o.depth,o.style,o.upstream,o.aps,o.apGroup,o.others,o.wan,Array.from(hidden).sort(),Array.from(d.added).sort(),o.title,meta,o.linkStyles]);
     var ek=diagramEditKey(d),edits=diagramEdits()[ek],baseKey=key;if(edits){o.edits=edits;key+='#'+JSON.stringify(edits);}
     key+='|r'+readable();
     if(!diagramCache.pages.has(key)){if(diagramCache.pages.size>12)diagramCache.pages.clear();diagramCache.pages.set(key,splitDiagram(d.style==='plate'?Object.assign({},input,{stencils:null}):input,o));}
@@ -9233,7 +9248,7 @@ function pJ(L,pan){const d=E(),I={},R={},T={};
   function highlightKind(kind){var svg=document.querySelector('.diagram-scroll > svg');if(!svg)return;var on=kind&&svg.getAttribute('data-highlight')!==kind;svg.querySelectorAll('polyline[data-line]').forEach(function(l){l.style.opacity=on&&l.getAttribute('data-kind')!==kind?'0.15':'';});if(on)svg.setAttribute('data-highlight',kind);else svg.removeAttribute('data-highlight');}
   onDoc('contextmenu',function(event){var kind=legendKind(event.target);if(!kind)return;event.preventDefault();event.stopPropagation();closeCtx();
     var cur=diagramCurrent(),ed=cur&&diagramEdits()[editKeyOf(cur)]||{},custom=kind.indexOf('custom:')===0,styled=!!linkStyles()[kind],lit=(document.querySelector('.diagram-scroll > svg')||{getAttribute:function(){return null;}}).getAttribute('data-highlight')===kind;
-    var items=[['style','Change color and name…'],['highlight',lit?'Show every link again':'Highlight links of this type'],styled?['reset','Reset to the default color and name']:null,custom?['unkind','Return its links to their own types']:null].filter(Boolean);
+    var items=[['style','Change color, name and thickness…'],['highlight',lit?'Show every link again':'Highlight links of this type'],styled?['reset','Reset to the default color and name']:null,custom?['unkind','Return its links to their own types']:null].filter(Boolean);
     ctxMenu=document.createElement('div');ctxMenu.className='diagram-ctx pop-body';ctxMenu.setAttribute('data-legend-menu',kind);ctxMenu.style.cssText='position:fixed;left:'+Math.max(4,Math.min(event.clientX,window.innerWidth-260))+'px;top:'+Math.max(4,Math.min(event.clientY,window.innerHeight-200))+'px;z-index:100;min-width:220px';ctxMenu.innerHTML='<div class="pop-menu" role="menu">'+items.map(function(x){return '<button class="pop-item" role="menuitem" data-legend-ctx="'+x[0]+'"><b>'+x[1]+'</b></button>';}).join('')+'</div>';document.body.appendChild(ctxMenu);
     ctxMenu.addEventListener('click',function(e){var b=e.target.closest('[data-legend-ctx]');if(!b)return;var act=b.getAttribute('data-legend-ctx');closeCtx();
       if(act==='style'){showLinkStyle(kind);return;}
@@ -9244,13 +9259,14 @@ function pJ(L,pan){const d=E(),I={},R={},T={};
   // Colors and names of link types (by cable or fiber type and speed), kept on this computer for
   // every diagram: changing one recolors its links and its legend entry together.
   function linkStyles(){if(!state.linkStyles){try{state.linkStyles=JSON.parse(localStorage.getItem('config-inspector-link-styles')||'{}');}catch(e){state.linkStyles={};}}return state.linkStyles;}
-  function showLinkStyle(kind,lineKey){if(!kind||!window.SWDiagram.kindStyle)return;var cur=diagramCurrent();var base=window.SWDiagram.kindStyle(kind,{}),now=window.SWDiagram.kindStyle(kind,{linkStyles:linkStyles()}),own=lineKey&&cur&&(diagramEdits()[editKeyOf(cur)]||{}).lineKinds;own=own&&own[lineKey];if(own)now={label:own.label,color:own.color||now.color};state.linkStyleEdit=kind;state.linkStyleLine=lineKey||null;
+  function showLinkStyle(kind,lineKey){if(!kind||!window.SWDiagram.kindStyle)return;var cur=diagramCurrent();var base=window.SWDiagram.kindStyle(kind,{}),now=window.SWDiagram.kindStyle(kind,{linkStyles:linkStyles()}),own=lineKey&&cur&&(diagramEdits()[editKeyOf(cur)]||{}).lineKinds;own=own&&own[lineKey];if(own)now={label:own.label,color:own.color||now.color,width:Number(own.width)||now.width,dash:own.dash!=null?!!own.dash:now.dash};state.linkStyleEdit=kind;state.linkStyleLine=lineKey||null;
     var scope=lineKey?'<div class="pop-section"><label class="diagram-check"><input type="radio" name="link-style-scope" value="line" checked> This link only (its own type and legend entry)</label><label class="diagram-check"><input type="radio" name="link-style-scope" value="kind"> Every link of this type</label></div>':'';
-    openModal(modalHeader('Link type',''+(lineKey?'This link, or every link of its type, on the drawing and in the legend':'Color and name of every link of this type, on the drawing and in its legend'))+'<div class="modal-body">'+scope+'<div class="diagram-meta-grid"><label class="diagram-field stacked"><span class="pop-label">Name in the legend</span><input class="select" data-link-style="label" value="'+h(now.label)+'" placeholder="'+h(base.label)+'"></label><label class="diagram-field stacked"><span class="pop-label">Color</span><input type="color" class="link-color" data-link-style="color" value="'+h(now.color)+'"></label></div><p class="live-note">Default: '+h(base.label)+', <span class="link-swatch" style="background:'+h(base.color)+'"></span> '+h(base.color)+'. Kept on this computer for every diagram.</p></div><div class="modal-foot"><button class="button" data-link-style-reset>Default</button><span class="diagram-editbar-gap"></span><button class="button" data-action="close-modal">Cancel</button><button class="button primary" data-link-style-save>Apply</button></div>');}
+    openModal(modalHeader('Link type',''+(lineKey?'This link, or every link of its type, on the drawing and in the legend':'Color, name, thickness and line of every link of this type, on the drawing and in its legend'))+'<div class="modal-body">'+scope+'<div class="diagram-meta-grid"><label class="diagram-field stacked"><span class="pop-label">Name in the legend</span><input class="select" data-link-style="label" value="'+h(now.label)+'" placeholder="'+h(base.label)+'"></label><label class="diagram-field stacked"><span class="pop-label">Color</span><input type="color" class="link-color" data-link-style="color" value="'+h(now.color)+'"></label><label class="diagram-field stacked"><span class="pop-label">Thickness</span><select class="select" data-link-style="width">'+[1,1.5,2,2.5,3,4,5].map(function(w){return '<option value="'+w+'"'+(Math.abs(w-now.width)<0.01?' selected':'')+'>'+(w*0.75)+' pt</option>';}).join('')+'</select></label><label class="diagram-field stacked"><span class="pop-label">Line</span><select class="select" data-link-style="dash"><option value="0"'+(now.dash?'':' selected')+'>Solid</option><option value="1"'+(now.dash?' selected':'')+'>Dashed</option></select></label></div><p class="live-note">Default: '+h(base.label)+', <span class="link-swatch" style="background:'+h(base.color)+'"></span> '+h(base.color)+'. Kept on this computer for every diagram.</p></div><div class="modal-foot"><button class="button" data-link-style-reset>Default</button><span class="diagram-editbar-gap"></span><button class="button" data-action="close-modal">Cancel</button><button class="button primary" data-link-style-save>Apply</button></div>');}
   onDoc('click',function(event){var t=event.target.closest&&event.target.closest('[data-link-style-save],[data-link-style-reset]');if(!t||!state.linkStyleEdit)return;var k=state.linkStyleEdit,all=linkStyles(),base=window.SWDiagram.kindStyle(k,{});
     var sc=el.modal.querySelector('input[name="link-style-scope"]:checked'),lineKey=state.linkStyleLine;
-    if(lineKey&&sc&&sc.value==='line'){var lab0=el.modal.querySelector('[data-link-style="label"]').value.trim(),col0=el.modal.querySelector('[data-link-style="color"]').value,reset0=t.hasAttribute('data-link-style-reset');state.linkStyleEdit=null;el.modal.close();saveDiagramEdits(function(e){e.lineKinds=e.lineKinds||{};if(reset0||!lab0)delete e.lineKinds[lineKey];else e.lineKinds[lineKey]={label:lab0,color:col0};});return;}
-    if(t.hasAttribute('data-link-style-reset'))delete all[k];else{var lab=el.modal.querySelector('[data-link-style="label"]').value.trim(),col=el.modal.querySelector('[data-link-style="color"]').value,o={};if(lab&&lab!==base.label)o.label=lab;if(col&&col.toLowerCase()!==String(base.color).toLowerCase())o.color=col;if(Object.keys(o).length)all[k]=o;else delete all[k];}
+    var wid=Number(el.modal.querySelector('[data-link-style="width"]').value),dsh=el.modal.querySelector('[data-link-style="dash"]').value==='1';
+    if(lineKey&&sc&&sc.value==='line'){var lab0=el.modal.querySelector('[data-link-style="label"]').value.trim(),col0=el.modal.querySelector('[data-link-style="color"]').value,reset0=t.hasAttribute('data-link-style-reset');state.linkStyleEdit=null;el.modal.close();saveDiagramEdits(function(e){e.lineKinds=e.lineKinds||{};if(reset0||!lab0)delete e.lineKinds[lineKey];else e.lineKinds[lineKey]={label:lab0,color:col0,width:wid,dash:dsh};});return;}
+    if(t.hasAttribute('data-link-style-reset'))delete all[k];else{var lab=el.modal.querySelector('[data-link-style="label"]').value.trim(),col=el.modal.querySelector('[data-link-style="color"]').value,o={};if(lab&&lab!==base.label)o.label=lab;if(col&&col.toLowerCase()!==String(base.color).toLowerCase())o.color=col;if(Math.abs(wid-base.width)>0.01)o.width=wid;if(dsh!==!!base.dash)o.dash=dsh;if(Object.keys(o).length)all[k]=o;else delete all[k];}
     try{localStorage.setItem('config-inspector-link-styles',JSON.stringify(all));}catch(e){}state.linkStyleEdit=null;el.modal.close();renderKeepingView();});
   // The ports a link uses, chosen from each device's ports.
   function showLinkPorts(lineKey){var cur=diagramCurrent();if(!cur)return;var ends=lineKey.split('~').filter(function(p){return p.indexOf('ep:')!==0;}).map(function(p){var i=p.lastIndexOf('|');return {dev:p.slice(0,i),port:p.slice(i+1)};}),edits=diagramEdits()[editKeyOf(cur)]||{},ports=edits.ports||{},S=window.SWDiagram;
@@ -9349,7 +9365,7 @@ function pJ(L,pan){const d=E(),I={},R={},T={};
     var cur=diagramCurrent();if(!cur)return '';var page=cur.page,d=cur.options,input=cur.input,z=state.diagramZoom||1,nodes=input.layout.nodes.slice().sort(function(a,b){return a.name.localeCompare(b.name,undefined,{numeric:true});}),trail=diagramTrail(input,d.focus);
     var scopes=[['downstream','Device and below','The device and everything connected below it'],['neighbors','Connections','The device and the devices linked to it'],['site','Whole site','Every device of the site']];
     function pop(name,cls,summary,body,title){return '<details class="diagram-pop '+cls+'" data-diagram-pop="'+name+'"'+(state.diagramPop===name?' open':'')+'><summary class="button small"'+(title?' title="'+h(title)+'"':'')+'>'+summary+'<span class="pop-caret" aria-hidden="true">▾</span></summary><div class="pop-body">'+body+'</div></details>';}
-    var shown=[['upstream','Upstream device','The device above the one the diagram is drawn from'],['aps','Access points',''],['wan','WAN circuits','Provider circuits on the firewall\'s WAN ports, from its configuration'],['others','Other devices','Servers, phones, printers and other end devices']],shownOn=shown.filter(function(x){return d[x[0]]!==false;}).length;
+    var shown=[['upstream','Upstream device','The device above the one the diagram is drawn from'],['aps','Access points',''],['wan','WAN circuits','Provider circuits on the firewall\'s WAN ports, from its configuration'],['others','Other devices','Servers, phones, printers and other end devices'],['unconfigured','Switches without a configuration','Network devices below that have no imported configuration (one on the way to a device that has one is always drawn)']],shownOn=shown.filter(function(x){return d[x[0]]!==false;}).length;
     var showBody='<div class="pop-section"><div class="pop-label">Include</div>'+shown.map(function(x){return '<label class="diagram-check"'+(x[2]?' title="'+h(x[2])+'"':'')+'><input type="checkbox" data-diagram-option="'+x[0]+'"'+(d[x[0]]!==false?' checked':'')+'> '+x[1]+'</label>'+(x[0]==='aps'?'<label class="diagram-check sub" title="One box per switch with the ports of its access points, instead of a box for each"><input type="checkbox" data-diagram-option="apGroup"'+(d.apGroup?' checked':'')+(d.aps===false?' disabled':'')+'> Group into one box per switch</label>':'');}).join('')+'</div>'+
       '<div class="pop-section"><label class="diagram-field stacked"><span class="pop-label">Draw devices as</span><select class="select" id="diagram-style" aria-label="Drawing style">'+[['auto','Stencils where available'],['plate','Drawn faceplates'],['box','Boxes']].map(function(x){return '<option value="'+x[0]+'"'+(d.style===x[0]?' selected':'')+'>'+x[1]+'</option>';}).join('')+'</select></label></div>';
     var bar='<div class="diagram-bar diagram-toolbar" role="toolbar" aria-label="Diagram contents"><div class="segmented" role="group" aria-label="What to draw">'+scopes.map(function(s){return '<button class="button small'+(d.scope===s[0]?' primary':'')+'" data-diagram-scope="'+s[0]+'" aria-pressed="'+(d.scope===s[0])+'" title="'+h(s[2])+'">'+s[1]+'</button>';}).join('')+'</div>'+
@@ -10191,7 +10207,7 @@ function pJ(L,pan){const d=E(),I={},R={},T={};
     return '<div class="site-page">'+tabs+summary+panels[current]+'</div>';
   }
   // Kept current by scripts/version.py, which replaces the release string on each bump.
-  var APP_VERSION='5.48.0';
+  var APP_VERSION='5.49.0';
   // Client report: one section per open configuration. Port states use the same
   // classification as Interfaces at a glance, evaluated with each model active.
   function withModel(m,fn){var saved={model:state.model,usage:state.interfaceUsageCache,recordMap:state.recordMap};state.model=m;state.interfaceUsageCache=null;state.recordMap=new Map(m.records.map(function(r){return [r.id,r];}));try{return fn();}finally{state.model=saved.model;state.interfaceUsageCache=saved.usage;state.recordMap=saved.recordMap;}}
@@ -10834,7 +10850,7 @@ function pJ(L,pan){const d=E(),I={},R={},T={};
     }
   }
   function showHelp(){
-    openModal(modalHeader('About Config Inspector','Firewall and switch configuration explorer / version 5.48.0')+
+    openModal(modalHeader('About Config Inspector','Firewall and switch configuration explorer / version 5.49.0')+
       '<div class="modal-body"><div class="help-section"><h3>Open and explore</h3><p>Import SonicWall EXP, FortiGate FortiOS text, Palo Alto configuration XML, Sophos Firewall XML or export TAR, Aruba AOS or AOS-CX text, Cisco IOS or NX-OS text, Juniper Junos text or XML, Meraki API JSON, or a JSON snapshot exported by this application. The device type is detected automatically. You can also drop a file anywhere in the window. Select an interface or record for a plain-language explanation and key facts. Related objects show their IP addresses or service ports. Advanced details contains all original fields. Use Copy summary for readable facts and Back to return from a related item.</p></div>'+
       '<div class="help-section"><h3>Configuration sections</h3><p>Choose a root section in the sidebar, then select one of its indented subsections. Each subsection opens its own page. Routes, objects, members and other primary definitions appear before related settings. Security pages are grouped by function, including web, applications, files, intrusion prevention and SSL/TLS inspection. Certificate objects remain under Certificates. Empty subsections are hidden by default. Use View options to show empty sections, or Configuration sections and All original fields to inspect untranslated settings. Configuration context, search and table filters apply to the selected view.</p></div>'+
       '<div class="help-section"><h3>Choose access rule zones</h3><p>In Access Rules, choose From zone and To zone independently. All zones leaves that side unrestricted. Swap reverses the direction. Clear zone filters removes the pair while keeping the table filters. Search, configured state, and IP version filters combine with the pair, and CSV includes all matching rules. A matrix cell selects its zone pair. Interface and zone details offer outgoing and incoming rules.</p></div>'+
