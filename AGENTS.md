@@ -187,17 +187,23 @@ a decision or a test on the owner's own machine (for example opening an export i
   shortest run that keeps right angles and port directions; `snapTargets`/`snapGuides` snap to other
   links and device edges (Alt off); `showBendPoints` edits points as numbers. Checked by
   `tests/diagram-lines-browser.cjs`.
-- Stacks (owner request: as close as possible): a stack is ONE grid device, members in one column 9 px
-  apart (`diagramHardware` gives `hw.grid` with `stack:true`; `diagram()` adds one for any hw with several
-  profiled members and no grid). Never split a stack into member devices. Stack links (`stack:true`, kind
-  `stack-vsf`, from `hw.links`: VSF link 2 to the next member's link 1, three or more close a ring) are
-  `c.internal`: drawn without a route, straight across the gap between neighbours, otherwise out through
-  the gaps (tracks 3 px apart) and along a lane hugging the stack's side (4 px apart, `internalLines`).
-  Each member's number and model sit inside its role block, so the face stays clear for leaders. A link
-  to a grid device leaves on the side facing the far device (`termPlate`). Box style keeps one box.
-- Leaders across a grid face (`t.slot.lane`) pass between ports, never over a port, the role block or a
-  module label (`marks`, `blocks`, `LANE_STEPS`), including the sideways step (`via`); names and model
-  lines go between the lanes (`gapsOf` uses `lane`; `fit()` runs after the lanes).
+- Stacks (owner request): a stack is ONE grid device, members in one column (`diagramHardware` gives `hw.grid`
+  with `stack:true`; `diagram()` adds one for any hw with several profiled members and no grid). Never split
+  a stack into member devices. No line runs across a member's face: a link leaves a top-row port upward and
+  a bottom-row port downward into the gap on that side, runs along the gap (tracks 6 px apart) to the side of
+  the stack, then along a side lane (two grid steps apart, room for port labels) to the stack's edge
+  (`t.slot.gy`, `t.slot.lane`, `geo().via`). Only member 1's top-row and the last member's bottom-row links
+  go straight out. Every gap of a stack is as tall as its busiest gap needs (members evenly spaced, at least
+  9 px; `d.grid.gap`, pads above the first and below the last member when needed), and `d.sideL`/`d.sideR`
+  widen the stack's cell for its lanes. Track and lane order (from-above lines on upper tracks, lower origins
+  on outer lanes going up) keeps the lines from crossing each other; `faces()` in
+  `tests/diagram-variety-tests.cjs` checks it. Stack links (`stack:true`, kind `stack-vsf`, from `hw.links`:
+  VSF link 2 to the next member's link 1, three or more close a ring) are `c.internal`: straight across the
+  gap between neighbours, otherwise (`c.ring`) through their gaps and along a lane 4 px from the stack on the
+  side with fewer links. Each member's number and model sit inside its role block. Box style keeps one box.
+- Chassis leaders across the face (`t.slot.lane`) pass between ports, never over a port or a module label
+  (`marks`, `blocks`, `LANE_STEPS`), including the sideways step (`via`); names and model lines go between the
+  lanes (`gapsOf` uses `lane`; `fit()` runs after the lanes, and never widens a grid device).
 - Hardware from ports (owner request: no blank faceplates): `portsModel()` in hardware.js names the model
   when a configuration names none and only one model has its interface set (C9500-24Y4C/48Y4C,
   CRS326-24S+2Q+RM; `inv.inferred`), or gives a family layout (`uncertain`) when several share it

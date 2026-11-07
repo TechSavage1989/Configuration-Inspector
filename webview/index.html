@@ -6407,6 +6407,8 @@ function pJ(L,pan){const d=E(),I={},R={},T={};
  // stubs and the model and address on the other; the device widens only if neither fits.
  Device.prototype.fitHeader=function(){var name=textW(clip(this.node.name,40),11,true),foot=textW(footOf(this),9.5),self=this;
   function fits(){var t=widest(self,'top'),b=widest(self,'bottom');if(name<=t&&foot<=b)return 'top';if(name<=b&&foot<=t)return 'bottom';return null;}
+  // A stack or chassis keeps its members' widths (its side lanes are planned on them).
+  if(this.grid){this.nameSide=fits()||'top';return;}
   for(var k=0;k<60;k++){var side=fits();if(side){this.nameSide=side;return;}var last=this.plates[this.plates.length-1];last.w+=G;this.w+=G;}this.nameSide='top';};
  function drawHeader(page,dev){if(dev.noLabel)return;var node=dev.node,x0=dev.x,y=dev.y,name=clip(node.name,40),foot=footOf(dev),up=dev.nameSide!=='bottom',topY=y+1,botY=y+HEAD+dev.plateH+2;
   var a=freeSpan(dev,up?'top':'bottom',4,dev.w-4,textW(name,11,true)),aw=a[1]-a[0];page.text(x0+a[0],up?topY:botY,aw,15,clip(name,Math.max(4,Math.floor(aw/6.6))),{size:11,bold:true,align:'left',color:'#1b3a4b'});
@@ -6577,10 +6579,37 @@ function pJ(L,pan){const d=E(),I={},R={},T={};
    if(!ts.length)return {h:G*2,flat:true};
    if(ts.every(function(t,i){return i===ts.length-1||ts[i+1].x-t.x>=t.w+10;}))return {h:36,flat:true};
    return {h:Math.min(90,Math.max(36,up9(Math.max.apply(null,ts.map(function(t){return t.w;}))+16))),flat:false};}
+  // Stacks (owner request: no line runs across a member's face; a top-row port is reached from above and a
+  // bottom-row port from below): a link leaves its port into the gap on the port's own side, runs along that
+  // gap to the side of the stack and along the side to the stack's edge. Each gap is as tall as the lines the
+  // busiest gap carries need (6 px apart), and every gap of a stack is that tall (members evenly spaced).
+  devices.forEach(function(d){if(!d.grid||d.grid.chassis)return;var n=d.grid.rows,regs=[],side={left:{up:[],down:[],ring:0},right:{up:[],down:[],ring:0}},mid=d.w/2;for(var r=0;r<=n;r++)regs.push([]);
+   function reg(sl){return sl.row?(sl.plate.row||0)+1:(sl.plate.row||0);}
+   function dist(x,sd){return sd==='left'?x:d.w-x;}
+   d.terms.forEach(function(t){if(!t.slot||!t.slot.plate||t.shared||t.conn&&t.conn.internal)return;var m=t.slot.plate.row||0,low=!!t.slot.row,up=t.side==='top';t.slot.lane=null;t.slot.gy=null;
+    if(!low&&up&&m===0||low&&!up&&m===n-1)return;var sd=t.slot.dx<mid?'left':'right',e={slot:t.slot,r:reg(t.slot),above:low,x:t.slot.dx,side:sd};regs[e.r].push(e);side[sd][up?'up':'down'].push(e);});
+   var ext=function(sd){return side[sd].up.length+side[sd].down.length;};
+   // Stack cables other than straight drops take the side with fewer links (no crossings), nearest the stack.
+   conns.forEach(function(c){if(!c.internal||c.A!==d)return;var a=c.ta.slot,b=c.tb.slot,ra=a.plate.row||0,rb=b.plate.row||0,hi=ra<rb?a:b,lo=hi===a?b:a;
+    if(Math.abs(ra-rb)===1&&hi.row===1&&lo.row===0&&(a.plate.col||0)===(b.plate.col||0)){c.drop=true;return;}
+    var sd=ext('left')<ext('right')?'left':ext('right')<ext('left')?'right':(a.dx+b.dx)/2<mid?'left':'right';c.ring={side:sd,k:side[sd].ring++};
+    [a,b].forEach(function(sl){regs[reg(sl)].push({slot:sl,r:reg(sl),above:!!sl.row,x:sl.dx,side:sd});});});
+   // In a gap, lines from the member above take the upper tracks and those from below the lower ones; of two
+   // from above the one nearer the side stays higher, of two from below the one nearer the side lower.
+   regs.forEach(function(list){list.sort(function(p,q){return (p.above?0:1)-(q.above?0:1)||(p.above?dist(p.x,p.side)-dist(q.x,q.side):dist(q.x,q.side)-dist(p.x,p.side));});});
+   var H=function(k){return k?up9(6*(k+1)):0},gap=G;for(var r2=1;r2<n;r2++)gap=Math.max(gap,H(regs[r2].length));var p0=H(regs[0].length),pn=H(regs[n].length),olds=new Map(),seen=new Set();
+   d.plates.forEach(function(pl){olds.set(pl,pl.y||0);pl.y=p0+(pl.row||0)*(72+gap);});d.grid.gap=gap;d.plateH=p0+n*72+(n-1)*gap+pn;d.h=HEAD+d.plateH+FOOT;
+   d.terms.forEach(function(t){var sl=t.slot;if(!sl||!sl.plate||seen.has(sl)||!olds.has(sl.plate))return;seen.add(sl);sl.py+=(sl.plate.y||0)-olds.get(sl.plate);});
+   regs.forEach(function(list,r){if(!list.length)return;var top=HEAD+(r===0?0:p0+r*72+(r-1)*gap),h=r===0?p0:r===n?pn:gap;list.forEach(function(e,i){e.slot.gy=Math.round((top+h*(i+1)/(list.length+1))*2)/2;});});
+   // Side lanes: stack cables innermost (4 px apart), then links two grid steps apart (room for their port labels), the one leaving from
+   // lower down further out when going up (higher up when going down), so no lane crosses a gap's line.
+   var out={left:0,right:0};['left','right'].forEach(function(sd){var inner=side[sd].ring?G*Math.ceil((4*side[sd].ring+4)/G):0,ups=side[sd].up.slice().sort(function(p,q){return p.slot.gy-q.slot.gy;}),downs=side[sd].down.slice().sort(function(p,q){return q.slot.gy-p.slot.gy;}),all=ups.concat(downs);
+    all.forEach(function(e,i){var off=inner+G+2*G*i;e.slot.lane=sd==='left'?-off:d.w+off;});out[sd]=all.length?inner+G+2*G*(all.length-1)+G*2:inner?inner+G:0;});
+   d.sideL=out.left;d.sideR=out.right;});
   // Chassis leaders (as in a hand-drawn chassis): a link to an inner module runs straight across the chassis
   // face to its edge, moved into the gap beside its port column when a linked port or another leader is in
   // the way. Lanes are relative to the device, chosen nearest the edge first.
-  devices.forEach(function(d){if(!d.grid)return;var ts=d.terms.filter(function(t){return t.slot&&!t.shared;}),top=HEAD,bot=HEAD+d.plateH,lanes=[],marks=[],span=function(t){return Math.abs((t.side==='top'?top:bot)-t.slot.py);};
+  devices.forEach(function(d){if(!d.grid||!d.grid.chassis)return;var ts=d.terms.filter(function(t){return t.slot&&!t.shared;}),top=HEAD,bot=HEAD+d.plateH,lanes=[],marks=[],span=function(t){return Math.abs((t.side==='top'?top:bot)-t.slot.py);};
    var LANE_STEPS=[0];for(var ls=1;ls<=14;ls++)LANE_STEPS.push(9*ls,-9*ls);
   // Leaders pass between ports, not over them (owner request: no overlaps): every port on the face counts.
    // So do the drawn role block and the member or module label.
@@ -6597,7 +6626,7 @@ function pJ(L,pan){const d=E(),I={},R={},T={};
   devices.forEach(function(d){d.top=[];d.bot=[];});
   // WAN circuits sit above their device whatever the port row (owner request: the hierarchy runs
   // from the WAN down); a bottom-row port's link leaves downward and routes around to the circuit.
-  conns.forEach(function(c){if(c.ep==null)return;var t=c.ta.shared||c.ta,a0=c.A.eps[c.ep],e={conn:c,a:a0,dx:t.slot.dx,side:a0.node.role==='circuit'?'top':c.ta.side};(e.side==='top'?c.A.top:c.A.bot).push(e);});
+  conns.forEach(function(c){if(c.ep==null)return;var t=c.ta.shared||c.ta,a0=c.A.eps[c.ep],e={conn:c,a:a0,dx:t.slot.lane!=null?t.slot.lane:t.slot.dx,side:a0.node.role==='circuit'?'top':c.ta.side};(e.side==='top'?c.A.top:c.A.bot).push(e);});
   // Access points grow to use the room their switch leaves (owner request), up to twice the size,
   // while every row still fits within its device's width and stays on the routing grid.
   if(view.tallAps){var fit=2;devices.forEach(function(d){[d.top,d.bot].forEach(function(list){var n=list.length;if(!n)return;fit=Math.min(fit,((d.w-(n-1)*27)/n)/EP_W);});});
@@ -6613,7 +6642,7 @@ function pJ(L,pan){const d=E(),I={},R={},T={};
     var span=(n-1)*pitch+EP_W;
     if(span<=body){for(var i=n-1;i>=0;i--){var cap=i===n-1?hi:list[i+1].rx-pitch;if(list[i].rx>cap)list[i].rx=cap;}for(var j=0;j<n;j++){var floor=j?list[j-1].rx+pitch:lo;if(list[j].rx<floor)list[j].rx=floor;}}
     else{var start=snap((body-span)/2);list.forEach(function(e,k){e.rx=start+k*pitch;});}});
-   var left=Math.min.apply(null,[0].concat(d.top.concat(d.bot).map(function(e){return e.rx;}))),right=Math.max.apply(null,[d.w+(d.others?G*2+EP_W:0)].concat(d.top.concat(d.bot).map(function(e){return e.rx+EP_W;})));d.offset=-left;d.cellW=right-left;});
+   var left=Math.min.apply(null,[-(d.sideL||0)].concat(d.top.concat(d.bot).map(function(e){return e.rx;}))),right=Math.max.apply(null,[d.w+(d.sideR||0)+(d.others?G*2+EP_W:0)].concat(d.top.concat(d.bot).map(function(e){return e.rx+EP_W;})));d.offset=-left;d.cellW=right-left;});
   // Horizontal placement: cells left to right, rows centered.
   // Rows start on one vertical line: the first device of every row has the same left edge
   // (owner request), so stacked devices line up.
@@ -6627,7 +6656,7 @@ function pJ(L,pan){const d=E(),I={},R={},T={};
   var chan=rowsOut.map(function(){return 3;});chan.push(3);
   // A link that drops straight down from one row to the next (such as a stack link between members)
   // needs no track of its own in the channel between them (owner request: no wasted space).
-  function termX(t){return t.dev.x+(t.slot?(t.slot.ex!=null?t.slot.ex:t.slot.dx):t.dev.w/2);}
+  function termX(t){return t.dev.x+(t.slot?(t.slot.lane!=null?t.slot.lane:t.slot.ex!=null?t.slot.ex:t.slot.dx):t.dev.w/2);}
   function straight(c){if(style!=='plate'||!c.B||!c.ta||!c.tb||c.ta.shared||c.tb.shared)return false;var up=c.A.row<c.B.row?c.ta:c.tb,dn=up===c.ta?c.tb:c.ta;return Math.abs(c.A.row-c.B.row)===1&&up.side==='bottom'&&dn.side==='top'&&Math.abs(termX(up)-termX(dn))<G/2;}
   var busy=chan.map(function(){return false;}),drops=chan.map(function(){return false;});
   conns.forEach(function(c){if(c.ep!=null||c.internal)return;if(straight(c)){drops[Math.max(c.A.row,c.B.row)]=true;return;}[c.ta,c.tb].forEach(function(t){if(!t)return;var r=t.dev.row,i=t.side==='top'?r:r+1;chan[i]++;busy[i]=true;});var a=Math.min(c.A.row,c.B.row),b=Math.max(c.A.row,c.B.row);var inStack=c.B&&c.A.node.stackOf&&c.A.node.stackOf===c.B.node.stackOf;for(var r=a+1;r<=b;r++){chan[r]+=0.34;if(!inStack)busy[r]=true;}});
@@ -6686,25 +6715,23 @@ function pJ(L,pan){const d=E(),I={},R={},T={};
   function geo(t){if(t.shared){var b=geo(t.shared),out=b.dir===3?-1:1;return {px:b.sx,py:b.sy,sx:b.sx,sy:b.sy+out*2*G*t.k,dir:b.dir,trunk:b};}
    var d=t.dev;if(t.ep!=null){var e=d.top.concat(d.bot).find(function(x){return x.conn===t.conn;}),ex=d.x+e.rx+EP_W/2,ey=epY(d,e);return e.side==='top'?{px:ex,py:ey+EP_H,sx:ex,sy:ey+EP_H+G,dir:1}:{px:ex,py:ey,sx:ex,sy:ey-G,dir:3};}
    var x=d.x+(style==='box'?t.dx:t.slot.lane!=null?t.slot.lane:t.slot.dx),top=t.side==='top',py=style==='box'?(top?d.y:d.y+d.h):t.slot.py!=null?d.y+t.slot.py:d.y+HEAD+(top?21:51),px=style==='box'?x:d.x+t.slot.dx,lead=top?-11:11,
-    via=px!==x?[[px,py+lead],[x,py+lead]]:null;
+    via=style!=='box'&&t.slot.gy!=null?[[px,d.y+t.slot.gy],[x,d.y+t.slot.gy]]:px!==x?[[px,py+lead],[x,py+lead]]:null;
    return {px:px,py:py,via:via,sx:x,sy:top?d.y-d.bt:d.y+d.h+d.bb,dir:top?3:1,lx:x+3,ly:top?d.y-d.bt+4:d.y+d.h+4,lalign:top?'left':'right',flat:top?d.ft:d.fb,band:top?d.bt:d.bb,top:top,dy:d.y,dh:d.h};}
   conns.forEach(function(c){if(c.ep!=null)c.tb={dev:c.A,ep:c.ep,conn:c};});
   // Router over the whole page area.
   var lastBottom=Math.max.apply(null,Array.from(devices.values()).map(function(d){return Math.max.apply(null,[d.y+d.h+d.bb].concat(d.top.concat(d.bot).map(function(e){return epY(d,e)+EP_H;})));}));
   var RW=MARGIN*2+LEGEND_W+maxW+G*16,RH=lastBottom+G*8,router=new Router(RW,RH);
   router.block(0,0,Math.max(legendRight,600),TOP-G);router.block(0,0,LEFT-G*3,RH);
-  // Stack cables (see above): the gap tracks (3 px apart) and the side lanes (4 px apart, inside the
-  // margin the router keeps clear of the device) are given out per cable, nearest first.
-  var internalLines=[];devices.forEach(function(d){var own=conns.filter(function(c){return c.internal&&c.A===d;});if(!own.length)return;var gaps={},lanes={left:0,right:0};
-   function plateTop(sl){return d.y+HEAD+(sl.plate.y||0);}
-   function track(sl){var t=plateTop(sl),edge=sl.row?t+72:t,key=Math.round(sl.row?edge:edge-G),used=gaps[key]=gaps[key]||[],end=sl.plate.row===0&&!sl.row||sl.plate.row===d.grid.rows-1&&sl.row,opts=end?[3,6]:sl.row?[3,6]:[6,3],o=opts.find(function(v){return used.indexOf(v)<0;})||opts[0];used.push(o);return sl.row?edge+(end?2.5+(o-3):o):(end?edge-2.5-(o-3):edge-G+o);}
-   own.sort(function(a,b){return Math.abs(a.ta.slot.plate.row-a.tb.slot.plate.row)-Math.abs(b.ta.slot.plate.row-b.tb.slot.plate.row);}).forEach(function(c){var a=c.ta.slot,b=c.tb.slot,pa=[d.x+a.dx,d.y+a.py],pb=[d.x+b.dx,d.y+b.py],ra=a.plate.row||0,rb=b.plate.row||0,up=ra<rb?a:b,dn=up===a?b:a,pts;
-    if(Math.abs(ra-rb)===1&&up.row===1&&dn.row===0&&(a.plate.col||0)===(b.plate.col||0)){var mid=d.y+HEAD+(up.plate.y||0)+72+G/2;pts=pa[0]===pb[0]?[pa,pb]:[pa,[pa[0],mid],[pb[0],mid],pb];}
-    else{var side=(a.dx+b.dx)/2<d.w/2?'left':'right',k=lanes[side]++,lx=side==='left'?d.x-4-4*k:d.x+d.w+4+4*k,ya=track(a),yb=track(b);pts=[pa,[pa[0],ya],[lx,ya],[lx,yb],[pb[0],yb],pb];
-     if(k>=1)router.block(side==='left'?lx-G:lx,Math.min(ya,yb),G,Math.abs(ya-yb));}
-    internalLines.push({points:pts,color:kindStyle(c.type,view).color,width:kindStyle(c.type,view).width,conn:c,routed:true,strict:true,groups:[],internal:true});});});
+  // Stack cables (see above): straight across the gap between neighbours, otherwise through their gap tracks
+  // and along their side lane.
+  var internalLines=[];conns.forEach(function(c){if(!c.internal)return;var d=c.A,a=c.ta.slot,b=c.tb.slot,pa=[d.x+a.dx,d.y+a.py],pb=[d.x+b.dx,d.y+b.py],pts;
+   if(c.ring&&a.gy!=null&&b.gy!=null){var lx=c.ring.side==='left'?d.x-4-4*c.ring.k:d.x+d.w+4+4*c.ring.k,ya=d.y+a.gy,yb=d.y+b.gy;pts=[pa,[pa[0],ya],[lx,ya],[lx,yb],[pb[0],yb],pb];}
+   else{var hi=(a.plate.row||0)<(b.plate.row||0)?a:b,mid=d.y+HEAD+(hi.plate.y||0)+72+(d.grid&&d.grid.gap||G)/2;pts=pa[0]===pb[0]?[pa,pb]:[pa,[pa[0],mid],[pb[0],mid],pb];}
+   internalLines.push({points:pts,color:kindStyle(c.type,view).color,width:kindStyle(c.type,view).width,conn:c,routed:true,strict:true,groups:[],internal:true});});
   var zoneId=0;devices.forEach(function(d){d.zone=++zoneId;var l=d.cellX,w=d.cellW;if(d.top.length)router.reserve(l,d.epTopY+EP_H+G,w,d.y-d.bt-(d.epTopY+EP_H+G),d.zone);if(d.bot.length)router.reserve(l,d.y+d.h+d.bb,w,d.epBotY-G-(d.y+d.h+d.bb),d.zone);});
   devices.forEach(function(d){router.block(d.x-G,d.y-d.bt+G,d.w+2*G,d.h+d.bt+d.bb-2*G);d.top.forEach(function(e){router.block(d.x+e.rx-G,epY(d,e)-G,EP_W+2*G,EP_H+G);});d.bot.forEach(function(e){router.block(d.x+e.rx-G,epY(d,e),EP_W+2*G,EP_H+G);});if(d.others)router.block(d.x+d.w+G,d.y+18,EP_W+G,36);});
+  // A stack link's run along the side of the stack is its own: other lines keep off it.
+  devices.forEach(function(d){if(!d.grid||d.grid.chassis)return;d.terms.forEach(function(t){var sl=t.slot;if(!sl||sl.gy==null||sl.lane==null||t.shared)return;var x=d.x+sl.lane,top=t.side==='top',y0=top?d.y-d.bt+G:d.y+sl.gy,y1=top?d.y+sl.gy:d.y+d.h+d.bb-G;router.block(sl.lane<0?x-G:x,y0,G,y1-y0);});});
   // WAN circuits head the drawing (owner request): no line passes above a circuit when any other
   // route exists, and a circuit's link may cross other lines rather than detour around them.
   devices.forEach(function(d){var cs=d.top.filter(function(e){return e.a.node.role==='circuit';});if(!cs.length)return;var x0=Math.min.apply(null,cs.map(function(e){return d.x+e.rx;}))-G,x1=Math.max.apply(null,cs.map(function(e){return d.x+e.rx+EP_W;}))+G,y1=Math.max.apply(null,cs.map(function(e){return epY(d,e);}))-G;router.shun(x0,d.row?d.epTopY-G*4:0,x1-x0,y1-(d.row?d.epTopY-G*4:0));cs.forEach(function(e){router.free[e.conn.net]=1;});});
