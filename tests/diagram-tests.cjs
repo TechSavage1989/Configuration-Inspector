@@ -5,6 +5,7 @@ function unzip(buf){const files={};let o=0;while(buf.readUInt32LE(o)===0x04034b5
 // Routing rules on a page: lines never share a collinear stretch (except branches of one
 // shared port), never cross a device except the end stubs, and end on port centers
 // entered vertically.
+// A stack or chassis carries its own lines across its face (leaders between the ports, stack cables in the gaps).
 function routing(page){
  const issues=[],segs=[];
  page.lines.forEach((l,i)=>{if(!l.strict)issues.push('relaxed route '+i);for(let j=1;j<l.points.length;j++)segs.push({i,a:l.points[j-1],b:l.points[j],end:j===1||j===l.points.length-1});});
@@ -12,7 +13,7 @@ function routing(page){
  for(let x=0;x<segs.length;x++)for(let y=x+1;y<segs.length;y++){const s=segs[x],t=segs[y];if(s.i===t.i||page.lines[s.i].groups.some(g=>page.lines[t.i].groups.includes(g)))continue;
   if(s.a[0]===s.b[0]&&t.a[0]===t.b[0]&&s.a[0]===t.a[0]&&overlap(s.a[1],s.b[1],t.a[1],t.b[1])>0)issues.push('vertical overlap at x='+s.a[0]);
   if(s.a[1]===s.b[1]&&t.a[1]===t.b[1]&&s.a[1]===t.a[1]&&overlap(s.a[0],s.b[0],t.a[0],t.b[0])>0)issues.push('horizontal overlap at y='+s.a[1]);}
- segs.forEach(s=>page.devices.forEach(d=>{const x0=Math.min(s.a[0],s.b[0]),x1=Math.max(s.a[0],s.b[0]),y0=Math.min(s.a[1],s.b[1]),y1=Math.max(s.a[1],s.b[1]);if(x1<=d.x||x0>=d.x+d.w||y1<=d.y||y0>=d.y+d.h)return;if(s.end&&x0===x1)return;issues.push('line through '+d.name);}));
+ segs.forEach(s=>page.devices.forEach(d=>{const x0=Math.min(s.a[0],s.b[0]),x1=Math.max(s.a[0],s.b[0]),y0=Math.min(s.a[1],s.b[1]),y1=Math.max(s.a[1],s.b[1]);if(x1<=d.x||x0>=d.x+d.w||y1<=d.y||y0>=d.y+d.h)return;if(s.end&&x0===x1)return;const c=page.lines[s.i].conn;if(d.members&&(c.A.key===d.key||c.B&&c.B.key===d.key))return;issues.push('line through '+d.name);}));
  return issues;
 }
 // A fictional campus: firewall, core, distribution and access switches with access points.
@@ -166,7 +167,7 @@ function campus(){
   ok([...all.matchAll(/<Shape [^>]*>((?:<Cell [^>]*\/>)*)/g)].every(m=>{const n=[...m[1].matchAll(/N="(\w+)"/g)].map(x=>x[1]);return new Set(n).size===n.length;}),'no shape repeats a cell (one Angle on rotated text)');}
  const faces=[...doc.matchAll(/<FaceName NameU="([^"]+)"/g)].map(m=>m[1]),fontCells=[...Object.values(files).join('').matchAll(/<Cell N="Font" V="([^"]*)"/g)].map(m=>m[1]);
  ok(!/Panos=/.test(doc)&&fontCells.length&&fontCells.every(c=>faces.includes(c)),'fonts are named and declared: '+faces.join(','));
- const VISIO_CELLS=new Set(['PinX','PinY','Width','Height','LocPinX','LocPinY','Angle','LineWeight','LineColor','LinePattern','FillForegnd','FillPattern','Rounding','VerticalAlign','HorzAlign','LeftMargin','RightMargin','TopMargin','BottomMargin','Font','Color','Style','Size','NoFill','NoLine','X','Y','PageWidth','PageHeight','PageScale','DrawingScale','DrawingSizeType','DrawingScaleType','PrintPageOrientation','BeginX','BeginY','EndX','EndY','ImgOffsetX','ImgOffsetY','ImgWidth','ImgHeight',
+ const VISIO_CELLS=new Set(['A','PinX','PinY','Width','Height','LocPinX','LocPinY','Angle','LineWeight','LineColor','LinePattern','FillForegnd','FillPattern','Rounding','VerticalAlign','HorzAlign','LeftMargin','RightMargin','TopMargin','BottomMargin','Font','Color','Style','Size','NoFill','NoLine','X','Y','PageWidth','PageHeight','PageScale','DrawingScale','DrawingSizeType','DrawingScaleType','PrintPageOrientation','BeginX','BeginY','EndX','EndY','ImgOffsetX','ImgOffsetY','ImgWidth','ImgHeight',
   'EnableLineProps','EnableFillProps','EnableTextProps','HideForApply','EndArrowSize','BeginArrow','EndArrow','LineCap','BeginArrowSize','LineColorTrans','CompoundType','FillBkgnd','ShdwForegnd','ShdwPattern','FillForegndTrans','FillBkgndTrans','ShdwForegndTrans','ShapeShdwType','ShapeShdwOffsetX','ShapeShdwOffsetY','ShapeShdwObliqueAngle','ShapeShdwScaleFactor','ShapeShdwBlur','ShapeShdwShow','TextBkgnd','DefaultTabStop','TextDirection','TextBkgndTrans','LockTextEdit','LockVtxEdit','ObjType','Case','Pos','FontScale','DblUnderline','Overline','Strikethru','DoubleStrikethrough','Letterspace','ColorTrans','AsianFont','ComplexScriptFont','ComplexScriptSize','LangID','IndFirst','IndLeft','IndRight','SpLine','SpBefore','SpAfter','Bullet','BulletStr','BulletFont','BulletFontSize','TextPosAfterBullet','Flags','LineJumpCode','LineJumpStyle','LineToLineX','LineToLineY','LineJumpFactorX','LineJumpFactorY','OutputFormat','LockPreview','AddMarkup','ViewMarkup','PreviewQuality','PreviewScope','DocLangID']);
  const used=new Set((Object.values(files).join('').match(/<Cell N="[^"]+"/g)||[]).map(c=>c.slice(9,-1)));ok([...used].every(c=>VISIO_CELLS.has(c)),'only known cell names: '+[...used].filter(c=>!VISIO_CELLS.has(c)).join(','));
  const balanced=x=>{const st=[];for(const m of x.replace(/<\?[^>]*\?>/g,'').matchAll(/<(\/?)([A-Za-z:]+)[^>]*?(\/?)>/g)){if(m[3])continue;if(m[1]){if(st.pop()!==m[2])return false;}else st.push(m[2]);}return !st.length;};
