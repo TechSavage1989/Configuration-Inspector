@@ -214,6 +214,11 @@ const boxed=Number((await page.locator('.sp-count').innerText()).split(' ')[0]);
   await page.mouse.move(edBefore.x+20,edBefore.y+edBefore.height/2);await page.mouse.down();await page.mouse.move(edBefore.x+120,edBefore.y+edBefore.height/2+40,{steps:6});await page.mouse.up();await page.waitForTimeout(400);
   const edAfter=await devGroup('exampleaccess1').boundingBox();ok(edAfter.x>edBefore.x+20,'a device can be dragged to a new place: '+Math.round(edBefore.x)+' -> '+Math.round(edAfter.x));
   const edStored=JSON.parse(await page.evaluate(()=>localStorage.getItem('config-inspector-diagram-edits')||'{}'));ok(Object.values(edStored).some(v=>v.moves&&v.moves.exampleaccess1),'the move is kept');
+  {// Shift while dragging keeps the move horizontal or vertical (owner request).
+   await devGroup('exampleaccess1').evaluate(g=>g.scrollIntoView({block:'center'}));await page.waitForTimeout(200);const b0=await devGroup('exampleaccess1').boundingBox();
+   await page.mouse.move(b0.x+20,b0.y+b0.height/2);await page.mouse.down();await page.mouse.move(b0.x+30,b0.y+b0.height/2+3,{steps:2});await page.keyboard.down('Shift');await page.mouse.move(b0.x+130,b0.y+b0.height/2+35,{steps:6});await page.mouse.up();await page.keyboard.up('Shift');await page.waitForTimeout(400);
+   const b1=await devGroup('exampleaccess1').boundingBox();ok(b1.x>b0.x+20&&Math.abs(b1.y-b0.y)<1,'Shift keeps a drag horizontal: '+JSON.stringify([[b0.x,b0.y],[b1.x,b1.y]]));
+   await page.keyboard.press('Control+z');await page.waitForTimeout(300);}
   ok((await page.locator('.diagram-panel .panel-title').innerText())==='EXAMPLE-ACCESS1 and below','clicking in the editor does not open another view');
   await devGroup('exampleaccess1').click();await devGroup('examplecore').click({modifiers:['Shift']});await page.waitForTimeout(200);ok(await page.locator('[data-diagram-align="left"]:not([disabled])').count()===1,'two selected devices can be aligned');
   await page.locator('[data-diagram-align="left"]').click();await page.waitForTimeout(400);const l1=await devGroup('exampleaccess1').boundingBox(),l2=await devGroup('examplecore').boundingBox();ok(Math.abs(l1.x-l2.x)<6,'left edges aligned: '+Math.round(l1.x)+' / '+Math.round(l2.x));

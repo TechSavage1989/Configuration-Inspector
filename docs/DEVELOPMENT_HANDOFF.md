@@ -1,5 +1,19 @@
 # Configuration Inspector development handoff
 
+## 5.50.0 — link type palette, speed and cable, Shift drags, trunk pages
+
+- Link type dialog: `LINK_SWATCHES` (48 base colors), `LINK_SPEEDS`/`LINK_CABLES` datalists;
+  `kindStyle()` returns `speed`/`cable` (from `linkStyles`, per-link `lineKinds`, or the kind) and
+  composes the label from them when no name was set; lines carry an SVG `<title>` with them.
+- `dragPoint()` locks editor drags to one axis while Shift is held (not box selection).
+- `trunkPages()` sizes columns per page from `DOC_W` (64 px minimum) and drops rows no column
+  on the page carries. The first diagram tab reads "Core network".
+- Tall access points scale (`AP_SCALE`, up to 2x) to the room left within their device's width.
+- `NDS_LAYOUTS` in hardware.js: 130 profiles (208 models) converted from NetworkDiagramStudio's
+  `src/web/imports/faceplates.mjs` (socket coordinates grouped into banks by connector and gaps;
+  T/M socket pairs become shared RJ45/SFP ports; blank rates filled from labels or connector).
+  Only models without an existing profile; one 100 Mbit MT-RJ module skipped.
+
 ## 5.49.0 — endpoints within their device
 
 - Endpoint rows (`d.top`/`d.bot` in render) use a per-row pitch: `EP_PITCH`, shrunk to fit
