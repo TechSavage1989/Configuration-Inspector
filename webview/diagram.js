@@ -50,12 +50,16 @@
  // the ports that use it.
  var MODULES={sr:{name:'SR fiber optic',optic:2},lr:{name:'LR fiber optic',optic:2},er:{name:'ER fiber optic',optic:2},zr:{name:'ZR fiber optic',optic:2},bidi:{name:'BiDi fiber optic',optic:1},wdm:{name:'CWDM/DWDM optic',optic:2},fiber:{name:'Fiber optic',optic:2},dac:{name:'DAC cable end',cable:1},aoc:{name:'AOC cable end',cable:2},copper:{name:'RJ45 copper module',jack:1}};
  function autoModule(text){var t=String(text||'');if(/\bDAC\b|twinax|\bACC\b|direct attach/i.test(t))return 'dac';if(/\bAOC\b|active optical/i.test(t))return 'aoc';if(/\bZR\d?\b/i.test(t))return 'zr';if(/\bER\d?\b/i.test(t))return 'er';if(/bidi/i.test(t))return 'bidi';if(/[CD]WDM/i.test(t))return 'wdm';if(/\bLR\d?\b|\bLX\b|single-?mode|\bOS[12]\b/i.test(t))return 'lr';if(/\bSR\d?\b|\bSX\b|multi-?mode|\bOM[1-5]\b/i.test(t))return 'sr';if(/fib|optic/i.test(t))return 'fiber';if(/copper|\bcat\s?\d|rj-?45|\bpoe\b|handoff|base-?t\b/i.test(t))return 'copper';return '';}
- function moduleFor(kind,view,form){var st=kindStyle(kind,view),k=KINDS[kind]||{},id=st.module&&st.module!=='auto'?st.module:autoModule([st.cable,st.label,LINK_MEDIA[st.media]?LINK_MEDIA[st.media].name:''].join(' '));if(!id||id==='none'||!MODULES[id])return null;
+ function moduleFor(kind,view,form,role){var st=kindStyle(kind,view),k=KINDS[kind]||{},id=st.module&&st.module!=='auto'?st.module:autoModule([st.cable,st.label,LINK_MEDIA[st.media]?LINK_MEDIA[st.media].name:''].join(' '));if(!id||id==='none'||!MODULES[id])return null;
   var sp=speedValue(st.speed)||k.speed||0,ff=form==='qsfp'?(sp>=100000?'QSFP28':sp>=40000?'QSFP+':'QSFP'):(sp>=25000?'SFP28':sp>=10000?'SFP+':'SFP'),sl=sp>=1000?(sp/1000)+'G':sp?sp+'M':'';
-  return {id:id,ff:ff,label:[ff,sl,MODULES[id].name].filter(Boolean).join(' ')};}
+  // Module artwork from a NetworkDiagramStudio hardware pack (its optics: switch and firewall SR optic,
+  // LR optic, DAC cable end) replaces the schematic module.
+  var ma=view&&view.moduleArt,slot=id==='dac'||id==='aoc'?'dac':/^(lr|er|zr)$/.test(id)?'lr':/^(sr|fiber|wdm|bidi)$/.test(id)?(role==='firewall'&&ma&&ma.fg_sr?'fg_sr':'sr'):'';
+  return {id:id,ff:ff,label:[ff,sl,MODULES[id].name].filter(Boolean).join(' '),art:ma&&slot&&ma[slot]||null};}
  // A module drawn in a cage (or a legend swatch): optics show their LC receptacles, cable ends a
  // dark plug, copper modules an RJ45 jack.
- function drawModule(page,id,x,y,w,h,color){var m=MODULES[id]||MODULES.fiber;
+ function drawModule(page,id,x,y,w,h,color,art){var m=MODULES[id]||MODULES.fiber;
+  if(art&&art.art){page.rect(x,y,w,h,{fill:'#ffffff',stroke:'none'});page.image(x,y,w,h,{art:art.art,master:art.master});page.rect(x,y,w,h,{fill:'none',stroke:color||'#5b6b82',width:1});return;}
   if(m.cable){page.rect(x,y,w,h,{fill:'#2d3748',stroke:color||'#2d3748',width:1});page.rect(x+w*0.2,y+h/2-0.75,w*0.6,1.5,{fill:m.cable===2?(color||'#9aa9c0'):'#9aa9c0',stroke:'none'});return;}
   if(m.jack){page.rect(x,y,w,h,{fill:'#ffffff',stroke:color||'#5b6b82',width:1});page.rect(x+w*0.28,y+h*0.22,w*0.44,h*0.56,{fill:'#5b6b82',stroke:'none'});return;}
   page.rect(x,y,w,h,{fill:'#d5dbe3',stroke:color||'#5b6b82',width:1});var n=m.optic,sw=w*(n===1?0.34:0.27),sh=h*0.5;
@@ -226,7 +230,13 @@
     page.rect(x,y+HEAD,pl.w,dev.plateH,{fill:'#f4f7fb',stroke:'#c9d3df',width:1,radius:4});page.image(x+G,y+dev.imgTop,dev.img.w,dev.img.h,{art:dev.stencil.art,master:dev.stencil.master});});
    drawHeader(page,dev);
    // Linked ports: a ring in the link color on the stencil.
-   if(used)used.forEach(function(color,key){var p=dev.positions[key];if(p)page.rect(x0+p.x-6,y+p.y-6,12,12,{fill:'none',stroke:color,width:2,radius:6,pkey:dev.portKeys&&dev.portKeys[key]});});
+   // A port with a module (owner request: modules fill the ports in use) shows the module in its cage,
+   // sized to the port pitch on the stencil; other linked ports keep the ring.
+   var pitch=1e9;if(dev.mods&&dev.mods.size){var pts=Object.keys(dev.positions).map(function(k){return dev.positions[k];});pts.forEach(function(a){pts.forEach(function(b){var ex=Math.abs(b.x-a.x);if(a!==b&&Math.abs(b.y-a.y)<4&&ex>3)pitch=Math.min(pitch,ex);});});}
+   var mw=Math.max(10,Math.min(26,pitch<1e9?pitch*0.82:16)),mh=Math.max(7,mw*0.6);
+   if(used)used.forEach(function(color,key){var p=dev.positions[key];if(!p)return;var md=dev.mods&&dev.mods.get(key);
+    if(md){page.rect(x0+p.x-mw/2-1.5,y+p.y-mh/2-1.5,mw+3,mh+3,{fill:'#ffffff',stroke:color,width:2,radius:2,pkey:dev.portKeys&&dev.portKeys[key]});drawModule(page,md.id,x0+p.x-mw/2,y+p.y-mh/2,mw,mh,color,md.art);return;}
+    page.rect(x0+p.x-6,y+p.y-6,12,12,{fill:'none',stroke:color,width:2,radius:6,pkey:dev.portKeys&&dev.portKeys[key]});});
    // Port roles on a stencil (port map pages, as in the reference drawing): a numbered square
    // over each port in the role color, sized to the port pitch; outlined only when down.
    if(fills){var all=[];fills.forEach(function(fl,key){var p=dev.positions[key];if(p)all.push({p:p,fl:fl});});
@@ -261,7 +271,7 @@
  // the outer edge (top row up, bottom row down), an SFP cage (13.7 x 8.6 mm) and a QSFP cage
  // (18.4 x 8.5 mm), at the 18 px column pitch of a 14.5 mm port spacing.
  function drawPort(page,form,cx,cy,row,u,fl,md){var line=u||(fl?fl.stroke||'#3d4a5c':'#7a8ca8'),w=u?1.6:fl?1:0.75,fill=fl?fl.up?fl.fill:'#ffffff':null;
-  if(form==='sfp'||form==='qsfp'){var cw=form==='qsfp'?22:15,ch=10;if(md){page.rect(cx-cw/2,cy-ch/2,cw,ch,{fill:'#ffffff',stroke:u,width:1.6});drawModule(page,md.id,cx-cw/2+1.8,cy-ch/2+1.8,cw-3.6,ch-3.6,u);return;}page.rect(cx-cw/2,cy-ch/2,cw,ch,{fill:fill||(u?'#ffffff':'#5b6b82'),stroke:fl?line:u?u:'#3d4a5c',width:fl&&!fl.up?1.6:w});return;}
+  if(form==='sfp'||form==='qsfp'){var cw=form==='qsfp'?22:15,ch=10;if(md){page.rect(cx-cw/2,cy-ch/2,cw,ch,{fill:'#ffffff',stroke:u,width:1.6});drawModule(page,md.id,cx-cw/2+1.8,cy-ch/2+1.8,cw-3.6,ch-3.6,u,md.art);return;}page.rect(cx-cw/2,cy-ch/2,cw,ch,{fill:fill||(u?'#ffffff':'#5b6b82'),stroke:fl?line:u?u:'#3d4a5c',width:fl&&!fl.up?1.6:w});return;}
   page.rect(cx-6.5,cy-7.5,13,15,{fill:fill||'#ffffff',stroke:fl&&!fl.up?fl.fill==='#f4f5f7'?'#b6bfcc':fl.fill:line,width:fl&&!fl.up?1.6:w});if(form==='shared')page.rect(cx-6.5,cy-7.5,4,4,{fill:'#5b6b82',stroke:'none'});
   page.rect(cx-2.5,row?cy+5.5:cy-7.5,5,2,{fill:u||'#9aa9c0',stroke:'none'});}
  function drawBox(page,dev){var n=dev.node,x=dev.x,y=dev.y,extra=[(n.attached||[]).filter(function(a){return a.role==='ap';}).length,(n.attached||[]).filter(function(a){return a.role!=='ap';}).length];
@@ -284,7 +294,7 @@
   page.text(x,y,LEGEND_W-36,14,'CONNECTION TYPES',{size:9.5,bold:true,align:'left',color:'#1d5b79'});y+=30;
   types.forEach(function(t){var k=kindStyle(t,view);page.line([[x,y+7],[x+30,y+7]],{color:k.color,width:k.width,dash:k.dash,lkind:t});page.text(x+40,y,LEGEND_W-80,16,k.label,{size:10,align:'left',lkind:t});y+=27;});
   if(modules&&modules.length){y+=12;page.text(x,y,LEGEND_W-36,14,'PORT MODULES',{size:9.5,bold:true,align:'left',color:'#1d5b79'});y+=26;
-   modules.forEach(function(m){page.rect(x,y,34,22,{fill:'#eef2f7',stroke:'#9aa9c0',width:1});drawModule(page,m.mod.id,x+5,y+5,24,12,m.color);page.text(x+40,y+1,LEGEND_W-76,28,m.mod.label,{size:9.5,bold:true,align:'left',lineHeight:13,lmod:m.mod.id});
+   modules.forEach(function(m){page.rect(x,y,34,22,{fill:'#eef2f7',stroke:'#9aa9c0',width:1});drawModule(page,m.mod.id,x+5,y+5,24,12,m.color,m.mod.art);page.text(x+40,y+1,LEGEND_W-76,28,m.mod.label,{size:9.5,bold:true,align:'left',lineHeight:13,lmod:m.mod.id});
     var rows=[],cur='',maxW=LEGEND_W-44;m.ports.forEach(function(pt,i){var add=(cur?' / ':'')+pt;if(cur&&textW(cur+add,8)>maxW){rows.push(cur+' /');cur=pt;}else cur+=add;});if(cur)rows.push(cur);if(rows.length>5){rows=rows.slice(0,5);rows[4]=clip(rows[4],30)+' …';}page.text(x,y+30,LEGEND_W-40,rows.length*11+2,rows.join('\n'),{size:8,align:'left',lineHeight:11,color:'#4a5568'});y+=30+rows.length*11+14;});}
   if(roles&&roles.length){y+=12;page.text(x,y,LEGEND_W-36,14,'DEVICES',{size:9.5,bold:true,align:'left',color:'#1d5b79'});y+=30;roles.forEach(function(r){page.rect(x,y+2,24,12,{fill:ROLE_FILL[r],stroke:'none'});page.text(x+40,y,LEGEND_W-80,16,ROLE_LABEL[r],{size:10,align:'left'});y+=27;});}
   return y;
@@ -404,7 +414,7 @@
   function portList(list){var s=list.filter(Boolean).map(short);return s.length?clip(s[0],10)+(s.length>1?' +'+(s.length-1):''):'';}
   function termPlate(dev,port,c){var po=view.edits&&view.edits.ports&&view.edits.ports[dev.key+'|'+short(port||'')];if(po){port=po;}var s=dev.slot(port||'');
    // A port's link point moved by hand (a stencil whose marks miss its ports).
-   var pp=view.edits&&view.edits.portPos&&view.edits.portPos[dev.key+'|'+short(port||'')];if(pp&&style==='plate'){s=Object.assign({},s);var ex=(s.ex!=null?s.ex:s.dx)+pp[0];s.ex=ex;s.dx=snap(ex);s.py=(s.py!=null?s.py:HEAD+(s.row?51:21))+pp[1];if(dev.positions&&dev.positions[s.key])dev.positions[s.key]={x:ex,y:s.py,exact:true};}var t={dev:dev,slot:s,side:s.row?'bottom':'top',label:clip(short(port),10),conn:c};(dev.portKeys=dev.portKeys||{})[s.key]=dev.portKeys[s.key]||dev.key+'|'+short(port||'');var prior=dev.terms.find(function(x){return x.slot.key===s.key;});if(prior){t.shared=prior;prior.shares=(prior.shares||0)+1;t.k=prior.shares;t.label='';}else{dev.terms.push(t);usedPorts.set(dev.key+'|'+s.key,kindStyle(c.type,view).color);if(view.modules!==false&&(s.form==='sfp'||s.form==='qsfp')){var md=moduleFor(c.type,view,s.form);if(md){(dev.mods=dev.mods||new Map()).set(s.key,md);var mu=modulesUsed.get(md.label)||{mod:md,color:kindStyle(c.type,view).color,ports:[]};mu.ports.push(dev.node.name+' '+short(port||''));modulesUsed.set(md.label,mu);}}}return t;}
+   var pp=view.edits&&view.edits.portPos&&view.edits.portPos[dev.key+'|'+short(port||'')];if(pp&&style==='plate'){s=Object.assign({},s);var ex=(s.ex!=null?s.ex:s.dx)+pp[0];s.ex=ex;s.dx=snap(ex);s.py=(s.py!=null?s.py:HEAD+(s.row?51:21))+pp[1];if(dev.positions&&dev.positions[s.key])dev.positions[s.key]={x:ex,y:s.py,exact:true};}var t={dev:dev,slot:s,side:s.row?'bottom':'top',label:clip(short(port),10),conn:c};(dev.portKeys=dev.portKeys||{})[s.key]=dev.portKeys[s.key]||dev.key+'|'+short(port||'');var prior=dev.terms.find(function(x){return x.slot.key===s.key;});if(prior){t.shared=prior;prior.shares=(prior.shares||0)+1;t.k=prior.shares;t.label='';}else{dev.terms.push(t);usedPorts.set(dev.key+'|'+s.key,kindStyle(c.type,view).color);if(view.modules!==false&&(s.form==='sfp'||s.form==='qsfp')){var md=moduleFor(c.type,view,s.form,dev.node.role);if(md){(dev.mods=dev.mods||new Map()).set(s.key,md);var mu=modulesUsed.get(md.label)||{mod:md,color:kindStyle(c.type,view).color,ports:[]};mu.ports.push(dev.node.name+' '+short(port||''));modulesUsed.set(md.label,mu);}}}return t;}
   devices.forEach(function(dev){(dev.eps||[]).forEach(function(a){(a.ports||[]).forEach(function(p){if(style!=='plate')return;var sl=dev.slot(p||'');if(!usedPorts.has(dev.key+'|'+sl.key))usedPorts.set(dev.key+'|'+sl.key,kindStyle(linkKind({},dev.node.role,'ap'),view).color);});});});
   devices.forEach(function(dev){dev.fit();});
   // Label bands above and below each faceplate, as small as their port labels allow (owner
@@ -582,7 +592,7 @@
   var title=o.scope==='site'||!focus?(o.title||'Site')+' - Existing Topology':focus.name+(o.scope==='neighbors'?' - Connections':' and below');
   var kicker=(o.title||'Site')+(o.scope==='site'||!focus?'':' / '+focus.name),sub=o.subtitle||(o.scope==='site'||!focus?'Devices and links from imported neighbor and monitoring data':[focus.model,(focus.ips||[])[0]].filter(Boolean).join('  |  '));
   if(o.customTitle)title=o.customTitle;if(o.customSubtitle)sub=o.customSubtitle;
-  var view={company:o.company?String(o.company).toUpperCase():'',footer:o.author?'Prepared by '+o.author+(o.date?'  |  '+o.date:''):(o.date||''),title:title,kicker:kicker,subtitle:sub,rows:s.rows,context:s.context,style:style,aps:o.aps,apGroup:!!o.apGroup,others:o.others,wan:o.wan,modules:o.modules,vlansFor:o.scope==='site'||o.noVlans?null:o.focus,maxRow:o.maxRow,linkStyles:o.linkStyles,tallAps:!!o.tallAps};
+  var view={company:o.company?String(o.company).toUpperCase():'',footer:o.author?'Prepared by '+o.author+(o.date?'  |  '+o.date:''):(o.date||''),title:title,kicker:kicker,subtitle:sub,rows:s.rows,context:s.context,style:style,aps:o.aps,apGroup:!!o.apGroup,others:o.others,wan:o.wan,modules:o.modules,moduleArt:o.moduleArt||null,vlansFor:o.scope==='site'||o.noVlans?null:o.focus,maxRow:o.maxRow,linkStyles:o.linkStyles,tallAps:!!o.tallAps};
   // Diagrams are meant to print on a letter sheet: try several row widths and keep the
   // one that needs the least shrinking (in either orientation).
   // Hand edits keep the arrangement they were made on.

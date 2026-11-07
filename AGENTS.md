@@ -164,6 +164,8 @@ existing release or its assets. Preserve the polished README layout.
 - Port modules (owner request): cage ports in use draw the module from `moduleFor()` (link type cable
   and speed, or `linkStyles[kind].module`), listed in the legend's PORT MODULES; keep `MODULES` names in
   step with the Link type dialog's Port module choices.
+  Stencil devices draw the module in each cage too (sized to the port pitch), and NDS pack optics
+  (`ndsOptics`, `diagramModuleArt` -> `view.moduleArt`) replace the drawn module with their artwork.
 - The updater UI (`updateCardBody`, `updateWhatsNew`, `updateTransfer` in index.html) renders release
   notes through `updateNotesHTML` (escaped first; bullets, headings, bold, code only).
 - Access points and other endpoints stay within their device's left and right edges when they fit
