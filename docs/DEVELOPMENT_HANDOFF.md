@@ -1,5 +1,15 @@
 # Configuration Inspector development handoff
 
+## 5.48.0 — NetworkDiagramStudio's error 271 repair
+
+- 5.47.0 copied an old NDS writer. NDS's current writer (`src/web/diagram/visio.mjs`, its
+  preview.8 repair for error 271) adds `visio/windows.xml` (+ relationship), `docProps/custom.xml`
+  with `RecalcDocument` (+ relationship and content type), `DefaultGuideStyle`, `Colors`, a
+  "No Style" sheet, LineWeight as inches with `U="PT"` and an `"x pt"` formula (`weightCell`),
+  style references and an Angle cell on every shape, and page line-jump cells. The owner's own
+  NDS export (which opens in their Visio) and ours both pass NDS `scripts/check-visio-package.py`. Confirmed by the owner: exports with and
+  without vendor stencils open in Microsoft Visio.
+
 ## 5.47.1 — split diagrams keep the Show choices
 
 - `splitDiagram()` no longer swaps in an `apGroup:true` overview: the first page is the

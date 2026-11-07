@@ -52,9 +52,10 @@ existing release or its assets. Preserve the polished README layout.
   elements, FaceName uses `Panose`, Font cells name a declared face, a shape's cells come
   before its sections, cell names must be real Visio cells, and ZIP dates must be valid.
   The document must end with a `DocumentSheet` ("TheDoc") after `StyleSheets`, or Visio
-  reports error 271 while LibreOffice opens it fine. Keep the package in NetworkDiagramStudio's form
-  (Visio opens those on the owner's machine): no docProps, minimal document.xml, absolute
-  geometry rows, page rels only for masters used. `tests/diagram-tests.cjs` checks these; LibreOffice also refuses invalid cell values such
+  reports error 271 while LibreOffice opens it fine. Keep the package in the form of NetworkDiagramStudio's
+  current writer (Visio opens those on the owner's machine): content types first, `visio/windows.xml`,
+  `docProps/custom.xml` RecalcDocument, LineWeight with `U="PT"` and a point formula, absolute
+  geometry rows, page rels only for masters used; outputs must pass its `check-visio-package.py`. `tests/diagram-tests.cjs` checks these; LibreOffice also refuses invalid cell values such
   as `FillForegnd="none"` (write a cell only when it has a real value).
 - Neighbor ports from monitoring exports can be wrong; `correctLinkPort()` in index.html
   swaps in the port that the far end's description names when link state agrees.

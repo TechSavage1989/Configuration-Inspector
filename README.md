@@ -334,7 +334,7 @@ See [UPDATING.md](docs/UPDATING.md) for installation, rollback, storage and trus
 | *"GitHub has temporarily limited update requests"* | Several copies on the same network share GitHub's request allowance. Automatic checks pause for the delay GitHub reports and then resume; **Help → Check for updates** can be retried later. |
 | The updated version does not start | The previous executable is restored automatically if the new one does not finish opening within 90 seconds. For manual recovery, see [Installation and recovery](docs/UPDATING.md#installation-and-recovery). |
 | Supplementary data does not appear on a configuration | The hostname in the export or prompt must match the configuration's hostname (the domain is ignored), or one of its interface addresses must match. Otherwise choose the configuration under **Applies to** on the **Supplementary data** page. |
-| Visio says the file cannot be opened (error 271) | Update to version 5.47.0 or later and download the drawing again: its Visio files use the same plain package form as NetworkDiagramStudio's. |
+| Visio says the file cannot be opened (error 271) | Update to version 5.48.0 or later and download the drawing again: its Visio files include the window settings and recalculation parts Visio expects. |
 | Hardware details are missing or out of date | Specification downloads use exact model matches and can be disabled in **Device information**; cached definitions work offline. Refresh them there, or see [device specifications](webview/DEVICE_SPECIFICATIONS.txt). |
 
 ## Development
