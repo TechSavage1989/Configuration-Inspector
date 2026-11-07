@@ -103,7 +103,13 @@ a decision or a test on the owner's own machine (for example opening an export i
 - Site links come from `siteMapModel()`: imported links, then `configLinks()` (described
   ports, default gateways) where no imported link joins the pair, WAN circuits (`wan:` keys,
   role `circuit`), and `siteEdits()` (hand-added devices and links, removed link ids from
-  `linkId`). Undo/redo (`pushUndo`, `swapEdit`) covers both diagram and site edits.
+  `linkId`). Undo/redo (`pushUndo`, `swapEdit`) covers both diagram and site edits. Imported neighbours on
+  logical interfaces (VLAN, VLANIF, IRB, BVI, loopback, tunnel: `LOGICAL`) are routing neighbours, not cables,
+  and are dropped; a switch port reported against a firewall's data port and its HA/management port keeps the
+  data port (owner's HA site).
+- "Device and below" (`scope()` in diagram.js) takes every device cabled to a device from a lower tier, not
+  only its tree children: a core cabled to both firewalls of an HA pair is below each (the tree files it under
+  one, so the other firewall's diagram was empty). `tests/diagram-tests.cjs` checks an HA pair.
 - Stencil matching never picks another generation of a series automatically (FG-120/121F for a
   FortiGate-120G has other ports; `generationDiffers` in stencils.js) and prefers front views
   over rear views.

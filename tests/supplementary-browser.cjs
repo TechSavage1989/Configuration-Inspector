@@ -332,6 +332,19 @@ const boxed=Number((await page.locator('.sp-count').innerText()).split(' ')[0]);
    await page.locator('[data-view="evidence"]').first().click();await page.waitForTimeout(300);await page.locator('[data-evidence-tab="neighbors"]').click();await page.waitForTimeout(300);
    const rows=await page.locator('.evidence-panel tbody tr').allInnerTexts(),row=rows.find(t=>t.includes('EXAMPLE-EDGE'))||'';
    ok(/^GigabitEthernet1\/0\/4 \(reported GigabitEthernet1\/0\/3\)/.test(row),'a neighbor on a down port is moved to the port the far end describes: '+row);}
+  {// Owner's site: monitoring exports also report neighbours on VLAN interfaces (routing neighbours, not cables)
+   // and a switch port against both a firewall's data port and its HA heartbeat port. Neither becomes a cable.
+   const r=(admin,oper,name,parent,connected)=>[admin,oper,name,'00:00:5e:00:53:7'+name.length,'Ethernet',parent,'10 Gbit/s',connected,'VLAN 10 (USERS)'];
+   const dv=(name,type,model,ip)=>['Up',name,type,model,'',ip,'','','','','',''];
+   await page.locator('#import-file').setInputFiles(file('example-logical.xlsx',xlsx([{name:'Devices',rows:[['DEVICES','','','','','','','','','','',''],['Status','Device Name','Type','Make & Model','MAC Address(es)','IP Address(es)','Network(s)','Connected To','Software Version','Serial Number','Firmware Version','Description'],dv('EXAMPLE-HA-FW','Firewall','Example Firewall 600','10.0.98.1'),dv('EXAMPLE-L3-CORE','Switch','Example Core 9500','10.0.98.2'),dv('EXAMPLE-L3-IDF','Switch','Example Access 48P','10.0.98.3')]},
+    {name:'Interfaces',rows:[['INTERFACES','','','','','','','',''],['Admin Status','Oper Status','Interface Name','MAC Address','Type','Parent Device','Negotiated Speed','Connected To','Configuration Details'],r('Up','Up','B11','EXAMPLE-L3-CORE','ha  on EXAMPLE-HA-FW, port2  on EXAMPLE-HA-FW'),r('Up','Up','VLAN10','EXAMPLE-L3-CORE','VLAN10  on EXAMPLE-L3-IDF'),r('Up','Up','A3','EXAMPLE-L3-CORE','1/50  on EXAMPLE-L3-IDF'),r('Up','Up','1/50','EXAMPLE-L3-IDF','A3  on EXAMPLE-L3-CORE, VLAN10  on EXAMPLE-L3-CORE')]}])));await page.waitForTimeout(1200);
+   await page.locator('.nav-scroll [data-view="diagram"]').first().click();await page.locator('.diagram-scroll > svg').first().waitFor({timeout:20000});
+   await page.evaluate(()=>{const b=document.createElement('button');b.setAttribute('data-site-links','');document.body.appendChild(b);b.click();b.remove();});await page.waitForTimeout(800);
+   const links=(await page.locator('.site-link-row').allInnerTexts()).map(t=>t.replace(/\s+/g,' ')).filter(t=>/EXAMPLE-(HA-FW|L3-)/.test(t));
+   ok(links.length&&!links.some(t=>/VLAN10/.test(t)),'neighbours on VLAN interfaces are not cables: '+links.join(' | '));
+   ok(links.some(t=>/B11 — EXAMPLE-HA-FW port2|EXAMPLE-HA-FW port2 — EXAMPLE-L3-CORE B11/.test(t))&&!links.some(t=>/EXAMPLE-HA-FW ha\b/.test(t)),'a port seen against a firewall\'s data and HA ports is cabled to the data port: '+links.join(' | '));
+   ok(links.some(t=>/A3/.test(t)&&/1\/50/.test(t)),'the real uplink between the two switches stays: '+links.join(' | '));
+   await page.keyboard.press('Escape');}
   // Compare configs does not accept supplementary data.
   await page.locator('[data-view="compare"]').first().click();await page.locator('#compare-left-file').setInputFiles(file('example-site.xlsx',demoSite()));await page.waitForTimeout(500);
   ok((await page.locator('#import-error').innerText()).includes('main workspace'),'compare explains where supplementary data goes');

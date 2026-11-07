@@ -972,7 +972,7 @@ body{font-size:14px}.brand-mark{background:linear-gradient(145deg,#287dc6,#15578
       <div id="page-heading"></div>
       <div id="workspace-tabs"></div><div id="workspace-notice"></div>
       <div id="content"></div>
-      <footer class="page-footer"><span id="version-label">Config Inspector 5.60.0</span></footer>
+      <footer class="page-footer"><span id="version-label">Config Inspector 5.60.1</span></footer>
     </main>
   </div>
   <input type="file" id="import-file" multiple accept=".exp,.txt,.json,.conf,.cfg,.xml,.tar,.set,.log,.backup,.rsc,.xlsx,.csv,.vssx,.vstx,.vsdx,.vss" hidden>
@@ -6516,7 +6516,9 @@ function pJ(L,pan){const d=E(),I={},R={},T={};
   rows.push([focus]);
   if(o.scope==='neighbors'){var ups=[],downs=[];(t.adj.get(focus)||[]).forEach(function(k){if(!ok(k)||k===parent)return;var n=t.byKey.get(k),f=t.byKey.get(focus);(n.y<f.y-1?ups:downs).push(k);});
    if(o.upstream!==false&&ups.length){if(rows.length>1)rows[0]=rows[0].concat(ups);else rows.unshift(ups);ups.forEach(function(k){context.add(k);});}if(downs.length){rows.push(downs.sort(function(a,b){return t.byKey.get(a).x-t.byKey.get(b).x;}));downs.forEach(function(k){context.add(k);});}return {rows:rows,tree:t,context:context};}
-  var level=[focus],d=0;while(level.length&&d<depthLimit){var next=[];level.forEach(function(k){(t.children.get(k)||[]).forEach(function(c){if(ok(c))next.push(c);});});if(next.length)rows.push(next);level=next;d++;}
+  // Below a device is every device cabled to it from a lower tier, not only those the tree files under it: a
+  // switch cabled to both firewalls of an HA pair is below each of them (owner's site).
+  var taken=new Set([focus].concat(Array.from(context))),level=[focus],d=0;while(level.length&&d<depthLimit){var next=[];level.forEach(function(k){var y=t.byKey.get(k).y,kids=(t.children.get(k)||[]).concat((t.adj.get(k)||[]).filter(function(c){var n=t.byKey.get(c);return n&&n.y>y+1;}).sort(function(a,b){return t.byKey.get(a).x-t.byKey.get(b).x;}));kids.forEach(function(c){if(ok(c)&&!taken.has(c)){taken.add(c);next.push(c);}});});if(next.length)rows.push(next);level=next;d++;}
   return {rows:rows,tree:t,context:context};
   }
  }
@@ -7734,7 +7736,7 @@ function pJ(L,pan){const d=E(),I={},R={},T={};
     return {compareText:compareText,compareMode:['records','text','fields'].includes(data.compareMode)?data.compareMode:'records',models:models.slice(0,data.count),model:data.selected<0?null:models[data.selected],comparison:data.comparison<0?null:models[data.comparison],view:typeof data.view==='string'?data.view:'overview',scope:typeof data.scope==='string'?data.scope:'',categoryTabs:data.categoryTabs&&typeof data.categoryTabs==='object'&&!Array.isArray(data.categoryTabs)?data.categoryTabs:{},showUnassigned:!!data.showUnassigned,showEmpty:!!data.showEmpty};
   }
   function create(options){
-    options=options||{};var bridge=options.bridge||root.chrome&&root.chrome.webview,native=!!(bridge&&typeof bridge.postMessage==='function'&&typeof bridge.addEventListener==='function'),state={current:'5.60.0',state:'idle',message:'',automatic:true,busy:false,ready:false,available:false},handlers={},restoring=false,installing=false;
+    options=options||{};var bridge=options.bridge||root.chrome&&root.chrome.webview,native=!!(bridge&&typeof bridge.postMessage==='function'&&typeof bridge.addEventListener==='function'),state={current:'5.60.1',state:'idle',message:'',automatic:true,busy:false,ready:false,available:false},handlers={},restoring=false,installing=false;
     var commands=['update-ui-ready','update-status','update-check','update-download','update-later','update-auto-on','update-auto-off','update-restored','update-restore-failed'];
     function request(command){if(!native)throw new Error('Built-in updates are available in the Windows desktop edition.');if(!commands.includes(command))throw new Error('Unknown update action.');bridge.postMessage(command);}
     if(native)bridge.addEventListener('message',async function(event){
@@ -9234,7 +9236,14 @@ function pJ(L,pan){const d=E(),I={},R={},T={};
   function siteMapModel(){
     var X=SE(),devices=new Map(),links=[];
     function dev(name){var key=X.deviceKey(name);if(!key)return null;if(!devices.has(key)){var info=evidenceDeviceInfo().get(key)||{},m=modelForDevice(name);devices.set(key,{key:key,name:info.name||name,type:info.type||'',model:info.model||(m?deviceIdentityFor(m):''),ips:info.ips||[],serial:info.serial||'',software:info.software||'',generic:X.genericDevice(name),open:m?workspace.indexOf(m):-1,hasPorts:false,vendorRole:m?modelRole(m):''});}return devices.get(key);}
-    evidenceSets.forEach(function(s){s.ev.links.forEach(function(l){var a=dev(l.a.device),b=dev(l.b.device);if(!a||!b)return;if(/\d/.test(l.a.port))a.hasPorts=true;if(/\d/.test(l.b.port))b.hasPorts=true;links.push({a:a.key,b:b.key,aPort:l.a.port,bPort:l.b.port,source:l.source});});});
+    // Monitoring tools also report neighbours on logical interfaces (a VLAN interface, loopback or tunnel):
+    // those are routing neighbours, not cables, and would draw ports that do not exist (owner's site).
+    var LOGICAL=/^(?:vlan|vlanif|irb|bvi|loopback|tunnel|null)[\s._-]*\d*(?:\s*\(.*\))?$/i;
+    evidenceSets.forEach(function(s){s.ev.links.forEach(function(l){var a=dev(l.a.device),b=dev(l.b.device);if(!a||!b)return;if(LOGICAL.test(String(l.a.port||'').trim())||LOGICAL.test(String(l.b.port||'').trim()))return;if(/\d/.test(l.a.port))a.hasPorts=true;if(/\d/.test(l.b.port))b.hasPorts=true;links.push({a:a.key,b:b.key,aPort:l.a.port,bPort:l.b.port,source:l.source});});});
+    // A switch port reported against two ports of one firewall (its data port and its HA heartbeat or
+    // management port, which share an address) is cabled to the data port.
+    (function(){var HA=/^(?:ha\d*|hasync|heartbeat|mgmt\d*)$/i,groups=new Map();links.forEach(function(l,i){[[l.a,l.aPort,l.b,l.bPort],[l.b,l.bPort,l.a,l.aPort]].forEach(function(e){var k=e[0]+'|'+X.interfaceKey(e[1]||'')+'>'+e[2];if(!e[1])return;(groups.get(k)||groups.set(k,[]).get(k)).push({i:i,far:String(e[3]||'').trim()});});});
+     var drop=new Set();groups.forEach(function(list){if(list.length<2)return;var data=list.filter(function(x){return !HA.test(x.far);});if(data.length&&data.length<list.length)list.forEach(function(x){if(HA.test(x.far))drop.add(x.i);});});if(drop.size)links=links.filter(function(l,i){return !drop.has(i);});})();
     workspace.forEach(function(m){dev(m.meta.name);});
     // Devices and links added by hand, and links the configurations imply where no imported
     // link joins the two devices; links removed by hand are left out.
@@ -10668,7 +10677,7 @@ function pJ(L,pan){const d=E(),I={},R={},T={};
     return '<div class="site-page">'+tabs+summary+panels[current]+'</div>';
   }
   // Kept current by scripts/version.py, which replaces the release string on each bump.
-  var APP_VERSION='5.60.0';
+  var APP_VERSION='5.60.1';
   // Client report: one section per open configuration. Port states use the same
   // classification as Interfaces at a glance, evaluated with each model active.
   function withModel(m,fn){var saved={model:state.model,usage:state.interfaceUsageCache,recordMap:state.recordMap};state.model=m;state.interfaceUsageCache=null;state.recordMap=new Map(m.records.map(function(r){return [r.id,r];}));try{return fn();}finally{state.model=saved.model;state.interfaceUsageCache=saved.usage;state.recordMap=saved.recordMap;}}
@@ -11321,7 +11330,7 @@ function pJ(L,pan){const d=E(),I={},R={},T={};
     }
   }
   function showHelp(){
-    openModal(modalHeader('About Config Inspector','Firewall and switch configuration explorer / version 5.60.0')+
+    openModal(modalHeader('About Config Inspector','Firewall and switch configuration explorer / version 5.60.1')+
       '<div class="modal-body"><div class="help-section"><h3>Open and explore</h3><p>Import SonicWall EXP, FortiGate FortiOS text, Palo Alto configuration XML, Sophos Firewall XML or export TAR, Aruba AOS or AOS-CX text, Cisco IOS or NX-OS text, Juniper Junos text or XML, Meraki API JSON, or a JSON snapshot exported by this application. The device type is detected automatically. You can also drop a file anywhere in the window. Select an interface or record for a plain-language explanation and key facts. Related objects show their IP addresses or service ports. Advanced details contains all original fields. Use Copy summary for readable facts and Back to return from a related item.</p></div>'+
       '<div class="help-section"><h3>Configuration sections</h3><p>Choose a root section in the sidebar, then select one of its indented subsections. Each subsection opens its own page. Routes, objects, members and other primary definitions appear before related settings. Security pages are grouped by function, including web, applications, files, intrusion prevention and SSL/TLS inspection. Certificate objects remain under Certificates. Empty subsections are hidden by default. Use View options to show empty sections, or Configuration sections and All original fields to inspect untranslated settings. Configuration context, search and table filters apply to the selected view.</p></div>'+
       '<div class="help-section"><h3>Choose access rule zones</h3><p>In Access Rules, choose From zone and To zone independently. All zones leaves that side unrestricted. Swap reverses the direction. Clear zone filters removes the pair while keeping the table filters. Search, configured state, and IP version filters combine with the pair, and CSV includes all matching rules. A matrix cell selects its zone pair. Interface and zone details offer outgoing and incoming rules.</p></div>'+
