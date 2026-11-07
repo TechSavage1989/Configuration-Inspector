@@ -1,5 +1,15 @@
 # Configuration Inspector development handoff
 
+## 5.52.0 — line hops as arcs, links spread out, more cable types
+
+- Hops: `l.arcs` / shape `arcs` map a point index to a bow (px, upward); `arcPoints`/`linePoints`
+  sample them for SVG, `shapeXML` writes `ArcTo` rows (`A` = `VBOW`*dir*bow, VBOW=-1 bows up in
+  Visio and LibreOffice). Crossings closer than a hop share one hop (`HOP`=6).
+- Spreading: `Router.commit` marks cells within `NEAR_R` (6) of each straight run in `near`; routing
+  adds `NEAR` (3) per nearby line. The A* estimate is weighted by `HW` (2), which keeps the
+  campus timing near 5.51.0's.
+- `LINK_CABLES` in index.html: copper grades, fiber by reach and grade, DAC/AOC variants, other.
+
 ## 5.51.0 — WAN circuits head the drawing
 
 - `Router.shun()` marks cells above a device's WAN circuits (soft cost 200 per cell) so lines

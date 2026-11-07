@@ -16,7 +16,7 @@
  };
  var ROLE_FILL={firewall:'#c0504d',router:'#e6a23c',switch:'#4f81bd',controller:'#6b62d9',ap:'#22b14c',endpoint:'#8a94a6',circuit:'#8e44ad'};
  var ROLE_LABEL={firewall:'Firewall',router:'Router',switch:'Switch',controller:'Controller',ap:'Access point',endpoint:'Device',circuit:'Provider circuit'};
- var AP_SCALE=1,G=9,BAND=72,BEND=40,CROSS=30,CROSS_STRICT=20000,TOP=126,EP_W=126,EP_H=54,EP_PITCH=153,MARGIN=36,HEAD=18,FOOT=18;
+ var NEAR=3,HW=2,NEAR_R=6,VBOW=-1,HOP=6,AP_SCALE=1,G=9,BAND=72,BEND=40,CROSS=30,CROSS_STRICT=20000,TOP=126,EP_W=126,EP_H=54,EP_PITCH=153,MARGIN=36,HEAD=18,FOOT=18;
  function speedValue(s){var m=String(s||'').match(/([\d.]+)\s*([GM])/i);if(!m)return 0;return Number(m[1])*(m[2].toUpperCase()==='G'?1000:1);}
  function linkType(l,aRole,bRole){if(aRole==='circuit'||bRole==='circuit')return 'wan';
   if(aRole==='ap'||bRole==='ap')return 'wap';
@@ -276,7 +276,7 @@
  Heap.prototype.push=function(key,val){var k=this.k,v=this.v,i=k.length;k.push(key);v.push(val);while(i>0){var p=(i-1)>>1;if(k[p]<=key)break;k[i]=k[p];v[i]=v[p];i=p;}k[i]=key;v[i]=val;};
  Heap.prototype.pop=function(){var k=this.k,v=this.v,top=v[0],lk=k.pop(),lv=v.pop(),n=k.length;if(n){var i=0;for(;;){var l=2*i+1;if(l>=n)break;var r=l+1,c=r<n&&k[r]<k[l]?r:l;if(k[c]>=lk)break;k[i]=k[c];v[i]=v[c];i=c;}k[i]=lk;v[i]=lv;}return top;};
  var DX=[1,0,-1,0],DY=[0,1,0,-1];
- function Router(w,h){this.C=Math.ceil(w/G)+1;this.R=Math.ceil(h/G)+1;var n=this.C*this.R;this.blocked=new Uint8Array(n);this.node=new Int32Array(n);this.term=new Int32Array(n);this.zone=new Int32Array(n);this.avoid=new Uint8Array(n);this.free={};this.hUse=new Int32Array(n);this.vUse=new Int32Array(n);this.g=new Float64Array(n*4);this.prev=new Int32Array(n*4);this.seen=new Int32Array(n*4);this.done=new Int32Array(n*4);this.gen=0;}
+ function Router(w,h){this.C=Math.ceil(w/G)+1;this.R=Math.ceil(h/G)+1;var n=this.C*this.R;this.blocked=new Uint8Array(n);this.node=new Int32Array(n);this.term=new Int32Array(n);this.zone=new Int32Array(n);this.avoid=new Uint8Array(n);this.near=new Uint16Array(n);this.nearBy=new Int32Array(n);this.free={};this.hUse=new Int32Array(n);this.vUse=new Int32Array(n);this.g=new Float64Array(n*4);this.prev=new Int32Array(n*4);this.seen=new Int32Array(n*4);this.done=new Int32Array(n*4);this.gen=0;}
  Router.prototype.at=function(x,y){var c=Math.round(x/G),r=Math.round(y/G);if(c<0||r<0||c>=this.C||r>=this.R)return -1;return r*this.C+c;};
  // Block every grid node inside the rectangle (edges included).
  Router.prototype.block=function(x,y,w,h){var c0=Math.max(0,Math.ceil(x/G)),c1=Math.min(this.C-1,Math.floor((x+w)/G)),r0=Math.max(0,Math.ceil(y/G)),r1=Math.min(this.R-1,Math.floor((y+h)/G));for(var r=r0;r<=r1;r++)for(var c=c0;c<=c1;c++)this.blocked[r*this.C+c]=1;};
@@ -285,7 +285,7 @@
  Router.prototype.reserve=function(x,y,w,h,owner){var c0=Math.max(0,Math.ceil(x/G)),c1=Math.min(this.C-1,Math.floor((x+w)/G)),r0=Math.max(0,Math.ceil(y/G)),r1=Math.min(this.R-1,Math.floor((y+h)/G));for(var r=r0;r<=r1;r++)for(var c=c0;c<=c1;c++)this.zone[r*this.C+c]=owner;};
  Router.prototype.route=function(net,s,sDir,t,tDir,relaxed,owner){
   var C=this.C,R=this.R,g=this.g,prev=this.prev,seen=this.seen,done=this.done,gen=++this.gen,heap=new Heap(),tc=t%C,tr=(t/C)|0;
-  function h(v){return Math.abs(v%C-tc)+Math.abs(((v/C)|0)-tr);}
+  function h(v){return HW*(Math.abs(v%C-tc)+Math.abs(((v/C)|0)-tr));}
   var st=s*4+sDir;g[st]=0;seen[st]=gen;prev[st]=-1;heap.push(h(s),st);var limit=C*R*4;
   while(heap.k.length&&limit-->0){var cur=heap.pop();if(done[cur]===gen)continue;done[cur]=gen;var v=cur>>2,d=cur&3,gc=g[cur];
    if(v===t){var path=[],x=cur;while(x>=0){var nv=x>>2;if(path[path.length-1]!==nv)path.push(nv);x=prev[x];}path.reverse();return path;}
@@ -295,15 +295,16 @@
     if(u!==t&&(this.blocked[u]||this.term[u]&&this.term[u]!==net))continue;
     var e=Math.min(u,v),usedBy=nd===0||nd===2?this.hUse[e]:this.vUse[e],cost=1;
     if(usedBy&&usedBy!==net){if(!relaxed)continue;cost+=80;}
-    if(occ&&turn)cost+=40;if(this.zone[u]&&this.zone[u]!==owner)cost+=4;if(turn)cost+=BEND;if(this.avoid[u])cost+=200;if(this.node[u]&&this.node[u]!==net)cost+=this.free[net]||this.free[this.node[u]]?CROSS:this.cross||CROSS;if(u===t&&nd!==tDir)cost+=BEND;
+    if(occ&&turn)cost+=40;if(this.zone[u]&&this.zone[u]!==owner)cost+=4;if(turn)cost+=BEND;if(this.avoid[u])cost+=200;if(this.near[u])cost+=NEAR*this.near[u];if(this.node[u]&&this.node[u]!==net)cost+=this.free[net]||this.free[this.node[u]]?CROSS:this.cross||CROSS;if(u===t&&nd!==tDir)cost+=BEND;
     var ns=u*4+nd,ng=gc+cost;if(seen[ns]!==gen||ng<g[ns]){seen[ns]=gen;g[ns]=ng;prev[ns]=cur;heap.push(ng+h(u),ns);}}}
   return null;
  };
  // Occupancy rebuilt from every committed path but one (for re-routing that one).
- Router.prototype.rebuild=function(paths,skip){this.node.fill(0);this.hUse.fill(0);this.vUse.fill(0);var self=this;paths.forEach(function(p){if(p.net!==skip&&p.path)self.commit(p.net,p.path);});};
+ Router.prototype.rebuild=function(paths,skip){this.node.fill(0);this.near.fill(0);this.nearBy.fill(0);this.hUse.fill(0);this.vUse.fill(0);var self=this;paths.forEach(function(p){if(p.net!==skip&&p.path)self.commit(p.net,p.path);});};
  // Crossings (cells of another net) and bends of a path, for comparing two routes.
  Router.prototype.score=function(net,path){var x=0,b=0,C=this.C;for(var i=1;i<path.length-1;i++){if(this.node[path[i]]&&this.node[path[i]]!==net&&!this.free[net]&&!this.free[this.node[path[i]]])x++;var d1=path[i]-path[i-1],d2=path[i+1]-path[i];if(d1!==d2)b++;}return {cross:x,bends:b};};
- Router.prototype.commit=function(net,path){for(var i=0;i<path.length;i++){var v=path[i];if(!this.node[v])this.node[v]=net;if(i){var u=path[i-1],e=Math.min(u,v);if(Math.abs(u-v)===1)this.hUse[e]=this.hUse[e]||net;else this.vUse[e]=this.vUse[e]||net;}}};
+ Router.prototype.commit=function(net,path){var C=this.C,R=this.R,RN=NEAR_R,s0=0;for(var j=1;j<=path.length;j++){if(j<path.length&&j>=2&&path[j]-path[j-1]===path[j-1]-path[j-2])continue;var e=path[j-1],c0=Math.max(0,Math.min(path[s0]%C,e%C)-RN),c1=Math.min(C-1,Math.max(path[s0]%C,e%C)+RN),r0=Math.max(0,Math.min((path[s0]/C)|0,(e/C)|0)-RN),r1=Math.min(R-1,Math.max((path[s0]/C)|0,(e/C)|0)+RN);
+  for(var rr=r0;rr<=r1;rr++)for(var cc=c0;cc<=c1;cc++){var w=rr*C+cc;if(this.nearBy[w]!==net){this.nearBy[w]=net;this.near[w]++;}}s0=j-1;}for(var i=0;i<path.length;i++){var v=path[i];if(!this.node[v])this.node[v]=net;if(i){var u=path[i-1],e=Math.min(u,v);if(Math.abs(u-v)===1)this.hUse[e]=this.hUse[e]||net;else this.vUse[e]=this.vUse[e]||net;}}};
  function compress(points){var out=[];points.forEach(function(p){if(out.length&&out[out.length-1][0]===p[0]&&out[out.length-1][1]===p[1])return;if(out.length>=2){var a=out[out.length-2],b=out[out.length-1];if((a[0]===b[0]&&b[0]===p[0])||(a[1]===b[1]&&b[1]===p[1])){out[out.length-1]=p;return;}}out.push(p);});return out;}
 
  // ---------- scope: which devices a diagram shows ----------
@@ -522,13 +523,15 @@
   // the same port points.
   lines.forEach(function(l){var c=l.conn;l.key=c.A.key+'|'+short(c.aPorts[0]||'')+'~'+(c.B?c.B.key+'|'+short(c.bPorts[0]||''):'ep:'+epKey(c.A,c.A.eps[c.ep]));var o=ed.lines&&ed.lines[l.key];
    if(o&&o.length>=2){var f=l.points[0],t=l.points[l.points.length-1];if(Math.abs(o[0][0]-f[0])<0.5&&Math.abs(o[0][1]-f[1])<0.5&&Math.abs(o[o.length-1][0]-t[0])<0.5&&Math.abs(o[o.length-1][1]-t[1])<0.5){l.points=o.map(function(p){return [p[0],p[1]];});l.edited=true;}}});
-  lines.forEach(function(l,i){var out=[l.points[0]];for(var k=1;k<l.points.length;k++){var a=l.points[k-1],b=l.points[k];if(a[1]===b[1]&&Math.abs(b[0]-a[0])>2*G){var y=a[1],dir=b[0]>a[0]?1:-1,xs=[];
+  lines.forEach(function(l,i){var out=[l.points[0]],arcs={};for(var k=1;k<l.points.length;k++){var a=l.points[k-1],b=l.points[k];if(a[1]===b[1]&&Math.abs(b[0]-a[0])>2*G){var y=a[1],dir=b[0]>a[0]?1:-1,xs=[];
     // Every crossing hops, Visio style: the horizontal stretch jumps over the vertical one,
-    // whichever line was drawn first, also between lines that share a bundle.
+    // whichever line was drawn first, also between lines that share a bundle. A hop is a true
+    // arc (an ArcTo row in Visio), and crossings closer than a hop's width share one hop.
     for(var j=0;j<lines.length;j++){if(j===i||lines[j].conn===l.conn)continue;var q=lines[j].points;for(var m=1;m<q.length;m++){var c=q[m-1],e=q[m];if(c[0]!==e[0])continue;var x=c[0];if((x-a[0])*dir>G&&(b[0]-x)*dir>G&&y>Math.min(c[1],e[1])&&y<Math.max(c[1],e[1])&&xs.indexOf(x)<0)xs.push(x);}}
-    xs.sort(function(p,q){return (p-q)*dir;}).forEach(function(x){for(var t=0;t<=6;t++){var ang=Math.PI*t/6;out.push([Math.round((x-dir*5*Math.cos(ang))*100)/100,Math.round((y-5*Math.sin(ang))*100)/100]);}});}out.push(b);}
-   l.drawn=out;});
-  lines.forEach(function(l){var ks=kindStyle(l.conn.type,view);page.line(l.drawn,{color:l.color,width:l.width,dash:l.conn.dash||ks.dash,lineKey:l.key,route:l.points,lkind:l.conn.type,ltitle:[ks.label,[ks.speed,ks.cable].filter(Boolean).join(', ')].filter(Boolean).join(': ')});});
+    xs.sort(function(p,q){return (p-q)*dir;});var hops=[];xs.forEach(function(x){var h=hops[hops.length-1];if(h&&(x-h[1])*dir<2*HOP+3)h[1]=x;else hops.push([x,x]);});
+    hops.forEach(function(h){out.push([h[0]-dir*HOP,y]);out.push([h[1]+dir*HOP,y]);arcs[out.length-1]=HOP;});}out.push(b);}
+   l.drawn=out;l.arcs=Object.keys(arcs).length?arcs:null;});
+  lines.forEach(function(l){var ks=kindStyle(l.conn.type,view);page.line(l.drawn,{arcs:l.arcs,color:l.color,width:l.width,dash:l.conn.dash||ks.dash,lineKey:l.key,route:l.points,lkind:l.conn.type,ltitle:[ks.label,[ks.speed,ks.cable].filter(Boolean).join(', ')].filter(Boolean).join(': ')});});
   conns.forEach(function(c){[c.ga,c.gb].forEach(function(g){if(g&&g.trunk&&Math.abs(g.sy-g.py)===2*G)page.rect(g.px-4,g.py-4,8,8,{fill:'#2d3748',stroke:'none',radius:4});});});
   // Port labels in the bands.
   conns.forEach(function(c){[c.ta,c.tb].forEach(function(t,i){if(!t||t.ep!=null||t.shared||!t.label)return;var g=i?c.gb:c.ga;if(g.flat)page.text(g.lx,g.top?g.dy-19:g.dy+g.dh+3,textW(t.label,12,true)+4,16,t.label,{size:12,bold:true,align:'left',color:'#1f2937'});else page.text(g.lx,g.ly,13,(g.band||BAND)-8,t.label,{size:12,bold:true,rotate:true,align:g.lalign,color:'#1f2937'});});});
@@ -581,11 +584,16 @@
   // Documentation pages are drawn on the sheet itself, margins included.
   if(p.doc&&p.w<=L.W+0.5&&p.h<=L.H+0.5)return {W:L.W,H:L.H,raw:1,scale:1,landscape:true,ox:0,oy:0};function f(o,land){return Math.min((Math.min(o.W,land?o.W:A)-2*LETTER_MARGIN)/p.w,(Math.min(o.H,land?A:o.H)-2*LETTER_MARGIN)/p.h);}
   var land=f(L,true)>=f(P,false),o=land?L:P,raw=f(o,land),k=Math.min(1,raw);return {W:o.W,H:o.H,raw:raw,scale:k,landscape:land,ox:(o.W-p.w*k)/2,oy:(o.H-p.h*k)/2};}
+ // A line hop: the circular arc from a to b (a horizontal chord) bowing `bow` px upward,
+ // sampled for SVG; Visio writes the same arc as one ArcTo row.
+ function arcPoints(a,b,bow){var L=Math.abs(b[0]-a[0]),rr=(L*L/4+bow*bow)/(2*bow),cx=(a[0]+b[0])/2,d=Math.max(0,rr-bow),cy=a[1]+d,ta=Math.atan2(-d,a[0]-cx),tb=Math.atan2(-d,b[0]-cx),out=[];
+  for(var t=1;t<=8;t++){var th=ta+(tb-ta)*t/8;out.push([Math.round((cx+rr*Math.cos(th))*100)/100,Math.round((cy+rr*Math.sin(th))*100)/100]);}out[out.length-1]=[b[0],b[1]];return out;}
+ function linePoints(s){if(!s.arcs)return s.points;var out=[s.points[0]];for(var i=1;i<s.points.length;i++){if(s.arcs[i])out=out.concat(arcPoints(s.points[i-1],s.points[i],s.arcs[i]));else out.push(s.points[i]);}return out;}
  // The page drawn on letter paper: every coordinate, size, line and font scaled.
  function onLetter(page){
   if(page.paper)return page;var f=fitLetter(page),k=f.scale,out=new Page(page.title);out.w=f.W;out.h=f.H;out.paper=f;
   page.shapes.forEach(function(x){var y=Object.assign({},x);
-   if(y.type==='line')y.points=x.points.map(function(p){return [Math.round((f.ox+p[0]*k)*100)/100,Math.round((f.oy+p[1]*k)*100)/100];});else{y.x=f.ox+x.x*k;y.y=f.oy+x.y*k;y.w=x.w*k;y.h=x.h*k;}
+   if(y.type==='line'){y.points=x.points.map(function(p){return [Math.round((f.ox+p[0]*k)*100)/100,Math.round((f.oy+p[1]*k)*100)/100];});if(x.arcs){y.arcs={};Object.keys(x.arcs).forEach(function(i){y.arcs[i]=x.arcs[i]*k;});}}else{y.x=f.ox+x.x*k;y.y=f.oy+x.y*k;y.w=x.w*k;y.h=x.h*k;}
    ['size','lineHeight','width','radius'].forEach(function(c){if(y[c])y[c]=x[c]*k;});out.shapes.push(y);});
   return out;
  }
@@ -719,7 +727,7 @@
  function shapeSVG(s){
   if(s.type==='rect')return '<rect x="'+s.x+'" y="'+s.y+'" width="'+s.w+'" height="'+s.h+'" rx="'+(s.radius||0)+'" fill="'+(s.fill||'none')+'" stroke="'+(s.stroke&&s.stroke!=='none'?s.stroke:'none')+'" stroke-width="'+(s.width||1)+'"'+(s.pkey?' data-port="'+esc(s.pkey)+'"':'')+'/>';
   if(s.type==='image')return s.art?'<svg x="'+s.x+'" y="'+s.y+'" width="'+s.w+'" height="'+s.h+'" viewBox="0 0 '+s.art.w+' '+s.art.h+'" preserveAspectRatio="none" overflow="hidden">'+s.art.body+'</svg>':'';
-  if(s.type==='line')return '<polyline'+(s.lkind?' data-kind="'+esc(s.lkind)+'"':'')+(s.lineKey?' data-line="'+esc(s.lineKey)+'" data-route="'+(s.route||[]).map(function(p){return p[0]+','+p[1];}).join(' ')+'"':'')+' points="'+s.points.map(function(p){return p[0]+','+p[1];}).join(' ')+'" fill="none" stroke="'+s.color+'" stroke-width="'+(s.width||2)+'"'+(s.dash?' stroke-dasharray="8 5"':'')+' stroke-linejoin="round" stroke-linecap="'+(s.dash?'butt':'round')+'"'+(s.ltitle?'><title>'+esc(s.ltitle)+'</title></polyline>':'/>');
+  if(s.type==='line')return '<polyline'+(s.lkind?' data-kind="'+esc(s.lkind)+'"':'')+(s.lineKey?' data-line="'+esc(s.lineKey)+'" data-route="'+(s.route||[]).map(function(p){return p[0]+','+p[1];}).join(' ')+'"':'')+' points="'+linePoints(s).map(function(p){return p[0]+','+p[1];}).join(' ')+'" fill="none" stroke="'+s.color+'" stroke-width="'+(s.width||2)+'"'+(s.dash?' stroke-dasharray="8 5"':'')+' stroke-linejoin="round" stroke-linecap="'+(s.dash?'butt':'round')+'"'+(s.ltitle?'><title>'+esc(s.ltitle)+'</title></polyline>':'/>');
   var t=textSVG(s);if(s.lkind)t=t.replace(/^<text /,'<text data-kind="'+esc(s.lkind)+'" ');return s.tkey?t.replace(/^<text /,'<text data-text="'+esc(s.tkey)+'" '):t;}
  // Where each port of a device sits on its stencil, as fractions of the artwork (for the
  // port point editor): every front port of the first member, by group and index.
@@ -805,9 +813,9 @@
  // One shape in a coordinate frame: page height H (inches), origin offset ox/oy.
  function shapeXML(s,ids,H,ox,oy,ctx){var id=ids.next++;
   if(s.type==='image'){var mm=ctx&&s.master&&ctx.masters.get(s.master);return mm?instanceXML(s,id,ids,H,ox,oy,mm):'';}
-  if(s.type==='line'){var xs=s.points.map(function(p){return p[0]/96-ox;}),ys=s.points.map(function(p){return H-p[1]/96-oy;}),minX=Math.min.apply(null,xs),maxX=Math.max.apply(null,xs),minY=Math.min.apply(null,ys),maxY=Math.max.apply(null,ys),w=Math.max(maxX-minX,0.01),h=Math.max(maxY-minY,0.01);
+  if(s.type==='line'){var all=linePoints(s),xs=all.map(function(p){return p[0]/96-ox;}),ys=all.map(function(p){return H-p[1]/96-oy;}),minX=Math.min.apply(null,xs),maxX=Math.max.apply(null,xs),minY=Math.min.apply(null,ys),maxY=Math.max.apply(null,ys),w=Math.max(maxX-minX,0.01),h=Math.max(maxY-minY,0.01);
    return '<Shape ID="'+id+'" Type="Shape" LineStyle="0" FillStyle="0" TextStyle="0">'+cell('PinX',n(minX+w/2))+cell('PinY',n(minY+h/2))+cell('Width',n(w))+cell('Height',n(h))+cell('LocPinX',n(w/2))+cell('LocPinY',n(h/2))+weightCell(s.width||2)+cell('LineColor',s.color||'#000000')+cell('LinePattern',s.dash?2:1)+cell('FillPattern',0)+cell('Rounding',n(3/96))+
-    '<Section N="Geometry" IX="0">'+cell('NoFill',1)+cell('NoLine',0)+s.points.map(function(p,i){return '<Row T="'+(i?'LineTo':'MoveTo')+'" IX="'+(i+1)+'">'+cell('X',n(p[0]/96-ox-minX))+cell('Y',n(H-p[1]/96-oy-minY))+'</Row>';}).join('')+'</Section></Shape>';}
+    '<Section N="Geometry" IX="0">'+cell('NoFill',1)+cell('NoLine',0)+s.points.map(function(p,i){var arc=i&&s.arcs&&s.arcs[i];return '<Row T="'+(arc?'ArcTo':i?'LineTo':'MoveTo')+'" IX="'+(i+1)+'">'+cell('X',n(p[0]/96-ox-minX))+cell('Y',n(H-p[1]/96-oy-minY))+(arc?cell('A',n(VBOW*(p[0]>s.points[i-1][0]?1:-1)*arc/96)):'')+'</Row>';}).join('')+'</Section></Shape>';}
   var isText=s.type==='text',cx=(s.x+s.w/2)/96-ox,cy=H-(s.y+s.h/2)/96-oy,w=Math.max((s.rotate?s.h:s.w)/96,0.01),h=Math.max((s.rotate?s.w:s.h)/96,0.01);
   return '<Shape ID="'+id+'" Type="Shape" LineStyle="0" FillStyle="0" TextStyle="0">'+cell('PinX',n(cx))+cell('PinY',n(cy))+cell('Width',n(w))+cell('Height',n(h))+cell('LocPinX',n(w/2))+cell('LocPinY',n(h/2))+cell('Angle',s.rotate?'1.5707963':0)+
    (isText?cell('LinePattern',0)+cell('FillPattern',0)+cell('VerticalAlign',s.rotate?1:0):(s.fill&&s.fill!=='none'?cell('FillForegnd',s.fill):'')+cell('FillPattern',s.fill&&s.fill!=='none'?1:0)+cell('LineColor',s.stroke&&s.stroke!=='none'?s.stroke:'#000000')+cell('LinePattern',s.stroke&&s.stroke!=='none'?1:0)+weightCell(s.width||1)+(s.radius?cell('Rounding',n(s.radius/96)):''))+
