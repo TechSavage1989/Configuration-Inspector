@@ -16,7 +16,7 @@
  };
  var ROLE_FILL={firewall:'#c0504d',router:'#e6a23c',switch:'#4f81bd',controller:'#6b62d9',ap:'#22b14c',endpoint:'#8a94a6',circuit:'#8e44ad'};
  var ROLE_LABEL={firewall:'Firewall',router:'Router',switch:'Switch',controller:'Controller',ap:'Access point',endpoint:'Device',circuit:'Provider circuit'};
- var G=9,BAND=72,BEND=40,CROSS=30,CROSS_STRICT=20000,TOP=126,EP_W=126,EP_H=54,EP_PITCH=153,MARGIN=36,HEAD=18,FOOT=18;
+ var AP_SCALE=1,G=9,BAND=72,BEND=40,CROSS=30,CROSS_STRICT=20000,TOP=126,EP_W=126,EP_H=54,EP_PITCH=153,MARGIN=36,HEAD=18,FOOT=18;
  function speedValue(s){var m=String(s||'').match(/([\d.]+)\s*([GM])/i);if(!m)return 0;return Number(m[1])*(m[2].toUpperCase()==='G'?1000:1);}
  function linkType(l,aRole,bRole){if(aRole==='circuit'||bRole==='circuit')return 'wan';
   if(aRole==='ap'||bRole==='ap')return 'wap';
@@ -42,7 +42,8 @@
  // A kind's look, with the colors and names changed by hand (view.linkStyles, kept per kind).
  // One style per link type (owner request): its legend entry and every link of the type share the
  // color, name, thickness and line pattern, so an edit to either changes both.
- function kindStyle(key,view){var k=KINDS[key]||LINK_TYPES[key]||LINK_TYPES.other,o=view&&view.linkStyles&&view.linkStyles[key]||{};return {label:o.label||k.label,color:o.color||k.color,dash:o.dash!=null?!!o.dash:k.dash,width:Number(o.width||k.width)||(isFiberKind(key)?2.5:2),media:k.media||key};}
+ function cableName(m){var c=LINK_MEDIA[m];if(!c||m==='custom')return '';var n=m==='wan'?'Copper handoff':m==='wap'?'Copper (access point)':m==='other'?'':c.name;return n?n.charAt(0).toUpperCase()+n.slice(1):'';}
+ function kindStyle(key,view){var k=KINDS[key]||LINK_TYPES[key]||LINK_TYPES.other,o=view&&view.linkStyles&&view.linkStyles[key]||{},speed=o.speed!=null?String(o.speed):k.speedText!=null?k.speedText:speedText(k.speed||0),cable=o.cable!=null?String(o.cable):k.cable!=null?k.cable:cableName(k.media||key),composed=(o.speed!=null||o.cable!=null)?[speed,cable].filter(Boolean).join(' '):'';return {speed:speed,cable:cable,label:o.label||composed||k.label,color:o.color||k.color,dash:o.dash!=null?!!o.dash:k.dash,width:Number(o.width||k.width)||(isFiberKind(key)?2.5:2),media:k.media||key};}
  function isFiberKind(key){return /^(?:sr|lr|fiber|dac)(?:-|$)/.test(key);}
  function slowLink(l){var s=Math.max(speedValue(l.aSpeed),speedValue(l.bSpeed));return s>0&&s<1000;}
  function short(p){var s=String(p||'').trim(),m=s.match(/\bport:?\s*(\d+)/i);if(m&&/unit|slot/i.test(s))return 'Port '+m[1];
@@ -339,7 +340,7 @@
  // input: {layout, links, vlans: Map, ports: Map key -> [port names]}
  // view: {title, rows (from scope), style 'plate' | 'box', aps, others, vlansFor, maxRow}
  function epKey(d,a){return a.node.group?'group:'+d.key:(a.node.key||a.node.name||'');}
- function render(input,view){EP_W=126;EP_PITCH=153;EP_H=view.tallAps?108:54;
+ function render(input,view){EP_W=126;EP_PITCH=153;EP_H=view.tallAps?108:54;AP_SCALE=1;
   var layout=input.layout,all=new Map(layout.all.map(function(n){return [n.key,n];})),shownByKey=new Map(layout.nodes.map(function(n){return [n.key,n];})),style=view.style==='box'?'box':'plate';
   var page=new Page(view.title||'Network diagram'),devices=new Map(),rowsOut=[],used=new Set();
   var maxRow=view.maxRow||(style==='box'?10:3);
@@ -367,7 +368,7 @@
    conns.push({A:A,B:B,aPorts:[l.aPort],bPorts:[l.bPort],type:type,dash:dash});});
   devices.forEach(function(dev){dev.eps.forEach(function(a,j){var l=(input.links||[]).find(function(x){return x.a===dev.key&&x.b===a.node.key&&short(x.aPort)===short(a.port)||x.b===dev.key&&x.a===a.node.key&&short(x.bPort)===short(a.port);})||{aPort:a.port};conns.push({A:dev,ep:j,aPorts:[a.port],bPorts:[],type:linkKind(l,dev.node.role,a.node.role,false,false),dash:slowLink(l)});});});
   // A link given its own type by hand (name and color): links sharing that name share one legend entry.
-  var lk=view.edits&&view.edits.lineKinds;if(lk)conns.forEach(function(c){var key=c.A.key+'|'+short(c.aPorts[0]||'')+'~'+(c.B?c.B.key+'|'+short(c.bPorts[0]||''):'ep:'+epKey(c.A,c.A.eps[c.ep])),o=lk[key];if(!o||!o.label)return;var k='custom:'+String(o.label).toLowerCase();KINDS[k]={label:o.label,color:o.color||'#8a94a6',dash:!!o.dash,width:Number(o.width)||0,media:'custom',speed:0};c.type=k;});
+  var lk=view.edits&&view.edits.lineKinds;if(lk)conns.forEach(function(c){var key=c.A.key+'|'+short(c.aPorts[0]||'')+'~'+(c.B?c.B.key+'|'+short(c.bPorts[0]||''):'ep:'+epKey(c.A,c.A.eps[c.ep])),o=lk[key];if(!o||!o.label)return;var k='custom:'+String(o.label).toLowerCase();KINDS[k]={label:o.label,color:o.color||'#8a94a6',dash:!!o.dash,width:Number(o.width)||0,media:'custom',speed:0,speedText:o.speed||'',cable:o.cable||''};c.type=k;});
   conns.forEach(function(c){used.add(c.type);});
   // Terminals on faceplates come from the port slot; boxes get a side per direction.
   var usedPorts=new Map();
@@ -393,6 +394,10 @@
   // WAN circuits sit above their device whatever the port row (owner request: the hierarchy runs
   // from the WAN down); a bottom-row port's link leaves downward and routes around to the circuit.
   conns.forEach(function(c){if(c.ep==null)return;var t=c.ta.shared||c.ta,a0=c.A.eps[c.ep],e={conn:c,a:a0,dx:t.slot.dx,side:a0.node.role==='circuit'?'top':c.ta.side};(e.side==='top'?c.A.top:c.A.bot).push(e);});
+  // Access points grow to use the room their switch leaves (owner request), up to twice the size,
+  // while every row still fits within its device's width and stays on the routing grid.
+  if(view.tallAps){var fit=2;devices.forEach(function(d){[d.top,d.bot].forEach(function(list){var n=list.length;if(!n)return;fit=Math.min(fit,((d.w-(n-1)*27)/n)/EP_W);});});
+   if(fit>1.05){var nw=Math.max(EP_W,Math.floor(EP_W*fit/18)*18);AP_SCALE=nw/EP_W;EP_W=nw;EP_PITCH=EP_W+27;EP_H=Math.ceil(108*AP_SCALE/9)*9;}}
   // Compact (owner request): access points and other endpoints stay within the left and right edges
   // of their switch, firewall or stack whenever they fit, each as near its port as its neighbors
   // allow; the gap between them shrinks (down to one grid step) before the row may run past the
@@ -445,10 +450,10 @@
     if(a.node.group){page.rect(x,y,EP_W,EP_H,{fill:'#86d9a4',stroke:'#2f9e5b',width:1});var pre=commonPrefix(a.ports);page.text(x+4,y+11,EP_W-8,40,clip(ranges(a.ports,pre),16)+'  |  '+a.ports.length+' APs\n'+clip(a.node.model||'',22),{size:9.5,lineHeight:16,firstBold:true,color:'#123524'});page.end();return;}
     // Wireless pages (room to spare): the access point's details stacked over its icon above the
     // switch and under it below the switch, the link landing on the icon (owner's reference).
-    var est=input.stencils&&input.stencils.get(a.node.key);if(view.tallAps&&a.node.role==='ap'){page.rect(x,y,EP_W,EP_H,{fill:'#ffffff',stroke:'none'});var top=e.side==='top',iy=top?y+EP_H-48:y,ty=top?y+2:y+54,lk=(input.links||[]).find(function(x){return x.a===dev.key&&x.b===a.node.key||x.b===dev.key&&x.a===a.node.key;})||{},mine=lk.a===dev.key,sp=speedText(Math.max(speedValue(lk.aSpeed),speedValue(lk.bSpeed))),far=short((mine?lk.bPort:lk.aPort)||'');
-     if(est&&est.art){var r2=est.art.w/est.art.h,ih2=44,iw2=ih2*r2;if(iw2>48){iw2=48;ih2=iw2/r2;}page.rect(x+EP_W/2-24,iy,48,48,{fill:'#ffffff',stroke:'#c9d3df',width:1,radius:4});page.image(x+EP_W/2-iw2/2,iy+24-ih2/2,iw2,ih2,{art:est.art,master:est.master});}
-     else{page.rect(x+EP_W/2-24,iy,48,48,{fill:'#f4f7fb',stroke:'#7a8ca8',width:1,radius:4});[8,13,18].forEach(function(h,k){page.rect(x+EP_W/2-9+k*7,iy+31-h,4,h,{fill:'#2f9e5b',stroke:'none'});});page.rect(x+EP_W/2-6,iy+38,12,2,{fill:'#9aa9c0',stroke:'none'});}
-     page.text(x,ty,EP_W,50,a.node.name+'\n'+[clip(short(portEdit(dev,a.port)),16),sp].filter(Boolean).join(' · ')+'\n'+[epIP(a.node)||a.node.model||'',far].filter(Boolean).join(' · '),{size:9,lineHeight:16,firstBold:true,color:'#1b3a4b'});page.end();return;}
+    var est=input.stencils&&input.stencils.get(a.node.key);if(view.tallAps&&a.node.role==='ap'){page.rect(x,y,EP_W,EP_H,{fill:'#ffffff',stroke:'none'});var S=AP_SCALE,IC=Math.round(48*S),top=e.side==='top',iy=top?y+EP_H-IC:y,ty=top?y+2:y+IC+6,lk=(input.links||[]).find(function(x){return x.a===dev.key&&x.b===a.node.key||x.b===dev.key&&x.a===a.node.key;})||{},mine=lk.a===dev.key,sp=speedText(Math.max(speedValue(lk.aSpeed),speedValue(lk.bSpeed))),far=short((mine?lk.bPort:lk.aPort)||'');
+     if(est&&est.art){var r2=est.art.w/est.art.h,ih2=IC-4,iw2=ih2*r2;if(iw2>IC){iw2=IC;ih2=iw2/r2;}page.rect(x+EP_W/2-IC/2,iy,IC,IC,{fill:'#ffffff',stroke:'#c9d3df',width:1,radius:4});page.image(x+EP_W/2-iw2/2,iy+IC/2-ih2/2,iw2,ih2,{art:est.art,master:est.master});}
+     else{page.rect(x+EP_W/2-IC/2,iy,IC,IC,{fill:'#f4f7fb',stroke:'#7a8ca8',width:1,radius:4});[8,13,18].forEach(function(h,k){page.rect(x+EP_W/2+(-9+k*7)*S,iy+(31-h)*S,4*S,h*S,{fill:'#2f9e5b',stroke:'none'});});page.rect(x+EP_W/2-6*S,iy+38*S,12*S,2*S,{fill:'#9aa9c0',stroke:'none'});}
+     page.text(x,ty,EP_W,Math.round(50*S),a.node.name+'\n'+[clip(short(portEdit(dev,a.port)),16),sp].filter(Boolean).join(' · ')+'\n'+[epIP(a.node)||a.node.model||'',far].filter(Boolean).join(' · '),{size:Math.min(13,9*S),lineHeight:Math.round(16*Math.min(13/9,S)),firstBold:true,color:'#1b3a4b'});page.end();return;}
     var plain=a.node.role!=='ap';page.rect(x,y,EP_W,EP_H,{fill:plain?'#e8eef5':'#eef8f0',stroke:plain?'#c9d3df':ROLE_FILL.ap,width:1,radius:plain?0:6});if(plain)page.rect(x,y,4,EP_H,{fill:'#1d3a5c',stroke:'none'});
     if(est&&est.art){var r=est.art.w/est.art.h,ih=44,iw=ih*r;if(iw>44){iw=44;ih=iw/r;}page.image(x+5+(44-iw)/2,y+5+(44-ih)/2,iw,ih,{art:est.art,master:est.master});page.text(x+52,y+5,EP_W-56,46,clip(short(portEdit(dev,a.port)),12)+'\n'+a.node.name+'\n'+clip(epIP(a.node)||a.node.model||'',Math.max(14,Math.floor((EP_W-56)/5))),{size:8.5,lineHeight:14,firstBold:true,align:'left'});}
     else if(plain)page.text(x+12,y+9,EP_W-16,40,a.node.name+'\n'+clip(short(portEdit(dev,a.port)),9)+'  |  '+clip(epIP(a.node)||a.node.model||ROLE_LABEL[a.node.role]||'',14),{size:9,lineHeight:16,firstBold:true,align:'left',color:'#1b3a4b'});
@@ -519,7 +524,7 @@
     for(var j=0;j<lines.length;j++){if(j===i||lines[j].conn===l.conn)continue;var q=lines[j].points;for(var m=1;m<q.length;m++){var c=q[m-1],e=q[m];if(c[0]!==e[0])continue;var x=c[0];if((x-a[0])*dir>G&&(b[0]-x)*dir>G&&y>Math.min(c[1],e[1])&&y<Math.max(c[1],e[1])&&xs.indexOf(x)<0)xs.push(x);}}
     xs.sort(function(p,q){return (p-q)*dir;}).forEach(function(x){for(var t=0;t<=6;t++){var ang=Math.PI*t/6;out.push([Math.round((x-dir*5*Math.cos(ang))*100)/100,Math.round((y-5*Math.sin(ang))*100)/100]);}});}out.push(b);}
    l.drawn=out;});
-  lines.forEach(function(l){page.line(l.drawn,{color:l.color,width:l.width,dash:l.conn.dash||kindStyle(l.conn.type,view).dash,lineKey:l.key,route:l.points,lkind:l.conn.type});});
+  lines.forEach(function(l){var ks=kindStyle(l.conn.type,view);page.line(l.drawn,{color:l.color,width:l.width,dash:l.conn.dash||ks.dash,lineKey:l.key,route:l.points,lkind:l.conn.type,ltitle:[ks.label,[ks.speed,ks.cable].filter(Boolean).join(', ')].filter(Boolean).join(': ')});});
   conns.forEach(function(c){[c.ga,c.gb].forEach(function(g){if(g&&g.trunk&&Math.abs(g.sy-g.py)===2*G)page.rect(g.px-4,g.py-4,8,8,{fill:'#2d3748',stroke:'none',radius:4});});});
   // Port labels in the bands.
   conns.forEach(function(c){[c.ta,c.tb].forEach(function(t,i){if(!t||t.ep!=null||t.shared||!t.label)return;var g=i?c.gb:c.ga;if(g.flat)page.text(g.lx,g.top?g.dy-19:g.dy+g.dh+3,textW(t.label,12,true)+4,16,t.label,{size:12,bold:true,align:'left',color:'#1f2937'});else page.text(g.lx,g.ly,13,(g.band||BAND)-8,t.label,{size:12,bold:true,rotate:true,align:g.lalign,color:'#1f2937'});});});
@@ -687,9 +692,12 @@
    groups.forEach(function(g){var pre=commonPrefix(g.ports);g.label=g.dev.name;g.sub=(g.roles.ap?'APs ':g.roles.uplink?'Uplink ':'')+'ports '+ranges(g.ports,pre);cols.push(g);});});
   if(!cols.length)return;var colDevs=cols.map(function(c){return c.dev;}).filter(function(d,i,a){return a.indexOf(d)===i;});if(colDevs.length>1)cols.forEach(function(c){c.label=shortName(c.dev.name,colDevs);});var ids=new Set();cols.forEach(function(c){if(c.native)ids.add(c.native);c.tagged.forEach(function(t){ids.add(t);});});var names=new Map();docs.devices.forEach(function(d){(d.vlans||[]).forEach(function(v){if(v.name&&!names.has(v.id))names.set(v.id,v.name);});});
   var list=Array.from(ids).sort(function(a,b){return Number(a)-Number(b);});
-  for(var c0=0;c0<cols.length;c0+=7){var part=cols.slice(c0,c0+7),flow=new Flow('Trunk VLANs','Native and tagged VLANs on trunk, wireless and uplink ports'+(cols.length>7?' ('+(c0/7+1)+' of '+Math.ceil(cols.length/7)+')':''),o,out),cw=(1-0.3)/part.length;
+  // As many port columns per page as fit at a readable width (owner request), and on each page only
+  // the VLANs its columns carry.
+  var per=Math.max(1,Math.floor((DOC_W-2*DM)*0.74/64)),pages=Math.ceil(cols.length/per);per=Math.ceil(cols.length/pages);
+  for(var c0=0;c0<cols.length;c0+=per){var part=cols.slice(c0,c0+per),flow=new Flow('Trunk VLANs','Native and tagged VLANs on trunk, wireless and uplink ports'+(pages>1?' ('+(c0/per+1)+' of '+pages+')':''),o,out),cw=(1-0.26)/part.length,rows=list.filter(function(id){return part.some(function(c){return c.native===id||c.tagged.indexOf(id)>=0;});});
    var p=flow.need(40);[['N','#1b3a4b','#ffffff','Native / untagged'],['T','#d6eef0','#1b3a4b','Tagged'],['-',null,'#9ca3af','Not carried']].forEach(function(k,i){var x=DM+i*190;if(k[1])p.rect(x,p.y,22,16,{fill:k[1],stroke:'none',radius:2});p.text(x,p.y+2,22,12,k[0],{size:9,bold:true,align:'center',color:k[2]});p.text(x+30,p.y+1,150,14,k[3],{size:10,align:'left'});});p.y+=30;
-   docTable(flow,[{label:'VLAN',w:0.08},{label:'Name',w:0.22}].concat(part.map(function(c){return {label:c.label+'\n'+c.sub,w:cw,align:'center'};})),list.map(function(id){return [{text:id,bold:true},names.get(id)||''].concat(part.map(function(c){return c.native===id?{text:'N',chip:'#1b3a4b',color:'#ffffff'}:c.tagged.indexOf(id)>=0?{text:'T',chip:'#d6eef0',color:'#1b3a4b'}:{text:'-',color:'#9ca3af'};}));}),{});}
+   docTable(flow,[{label:'VLAN',w:0.07},{label:'Name',w:0.19}].concat(part.map(function(c){return {label:c.label+'\n'+c.sub,w:cw,align:'center'};})),rows.map(function(id){return [{text:id,bold:true},names.get(id)||''].concat(part.map(function(c){return c.native===id?{text:'N',chip:'#1b3a4b',color:'#ffffff'}:c.tagged.indexOf(id)>=0?{text:'T',chip:'#d6eef0',color:'#1b3a4b'}:{text:'-',color:'#9ca3af'};}));}),{});}
  }
  function docPages(input,o){o=o||{};var docs=input.docs;if(!docs||!docs.devices||!docs.devices.length)return [];var out=[];
   var want=o.pages||{},skip=o.portMapSkip||new Set(),on=function(k){return want[k]!==false;};
@@ -707,7 +715,7 @@
  function shapeSVG(s){
   if(s.type==='rect')return '<rect x="'+s.x+'" y="'+s.y+'" width="'+s.w+'" height="'+s.h+'" rx="'+(s.radius||0)+'" fill="'+(s.fill||'none')+'" stroke="'+(s.stroke&&s.stroke!=='none'?s.stroke:'none')+'" stroke-width="'+(s.width||1)+'"'+(s.pkey?' data-port="'+esc(s.pkey)+'"':'')+'/>';
   if(s.type==='image')return s.art?'<svg x="'+s.x+'" y="'+s.y+'" width="'+s.w+'" height="'+s.h+'" viewBox="0 0 '+s.art.w+' '+s.art.h+'" preserveAspectRatio="none" overflow="hidden">'+s.art.body+'</svg>':'';
-  if(s.type==='line')return '<polyline'+(s.lkind?' data-kind="'+esc(s.lkind)+'"':'')+(s.lineKey?' data-line="'+esc(s.lineKey)+'" data-route="'+(s.route||[]).map(function(p){return p[0]+','+p[1];}).join(' ')+'"':'')+' points="'+s.points.map(function(p){return p[0]+','+p[1];}).join(' ')+'" fill="none" stroke="'+s.color+'" stroke-width="'+(s.width||2)+'"'+(s.dash?' stroke-dasharray="8 5"':'')+' stroke-linejoin="round" stroke-linecap="'+(s.dash?'butt':'round')+'"/>';
+  if(s.type==='line')return '<polyline'+(s.lkind?' data-kind="'+esc(s.lkind)+'"':'')+(s.lineKey?' data-line="'+esc(s.lineKey)+'" data-route="'+(s.route||[]).map(function(p){return p[0]+','+p[1];}).join(' ')+'"':'')+' points="'+s.points.map(function(p){return p[0]+','+p[1];}).join(' ')+'" fill="none" stroke="'+s.color+'" stroke-width="'+(s.width||2)+'"'+(s.dash?' stroke-dasharray="8 5"':'')+' stroke-linejoin="round" stroke-linecap="'+(s.dash?'butt':'round')+'"'+(s.ltitle?'><title>'+esc(s.ltitle)+'</title></polyline>':'/>');
   var t=textSVG(s);if(s.lkind)t=t.replace(/^<text /,'<text data-kind="'+esc(s.lkind)+'" ');return s.tkey?t.replace(/^<text /,'<text data-text="'+esc(s.tkey)+'" '):t;}
  // Where each port of a device sits on its stencil, as fractions of the artwork (for the
  // port point editor): every front port of the first member, by group and index.

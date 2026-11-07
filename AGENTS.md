@@ -145,6 +145,8 @@ existing release or its assets. Preserve the polished README layout.
   bottom-row port; `tests/diagram-tests.cjs` checks it with routing rules.
 - Access points and other endpoints stay within their device's left and right edges when they fit
   (owner request); shrink the row gap before letting a row run past, and center rows that cannot fit.
+- Diagram editor drags go through `dragPoint()` (Shift locks to one axis); link type speed and cable
+  type live in `kindStyle()` with the rest of the style, so legend and lines stay in step.
 - Label bands are per device (`d.bt`/`d.bb`, from `bandFor`); never use the `BAND` constant for
   plate geometry. A split diagram's first page must keep every device below the focus.
 - Neighbor port corrections (`correctLinkPort`) apply to the diagram and to `liveFor()` neighbors;
