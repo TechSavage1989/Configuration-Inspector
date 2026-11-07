@@ -390,7 +390,9 @@
   rows.push([focus]);
   if(o.scope==='neighbors'){var ups=[],downs=[];(t.adj.get(focus)||[]).forEach(function(k){if(!ok(k)||k===parent)return;var n=t.byKey.get(k),f=t.byKey.get(focus);(n.y<f.y-1?ups:downs).push(k);});
    if(o.upstream!==false&&ups.length){if(rows.length>1)rows[0]=rows[0].concat(ups);else rows.unshift(ups);ups.forEach(function(k){context.add(k);});}if(downs.length){rows.push(downs.sort(function(a,b){return t.byKey.get(a).x-t.byKey.get(b).x;}));downs.forEach(function(k){context.add(k);});}return {rows:rows,tree:t,context:context};}
-  var level=[focus],d=0;while(level.length&&d<depthLimit){var next=[];level.forEach(function(k){(t.children.get(k)||[]).forEach(function(c){if(ok(c))next.push(c);});});if(next.length)rows.push(next);level=next;d++;}
+  // Below a device is every device cabled to it from a lower tier, not only those the tree files under it: a
+  // switch cabled to both firewalls of an HA pair is below each of them (owner's site).
+  var taken=new Set([focus].concat(Array.from(context))),level=[focus],d=0;while(level.length&&d<depthLimit){var next=[];level.forEach(function(k){var y=t.byKey.get(k).y,kids=(t.children.get(k)||[]).concat((t.adj.get(k)||[]).filter(function(c){var n=t.byKey.get(c);return n&&n.y>y+1;}).sort(function(a,b){return t.byKey.get(a).x-t.byKey.get(b).x;}));kids.forEach(function(c){if(ok(c)&&!taken.has(c)){taken.add(c);next.push(c);}});});if(next.length)rows.push(next);level=next;d++;}
   return {rows:rows,tree:t,context:context};
   }
  }

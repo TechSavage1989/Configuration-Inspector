@@ -1,5 +1,12 @@
 # Configuration Inspector development handoff
 
+## 5.60.1 — HA firewalls and monitoring exports
+
+- `scope()` downstream levels take every lower-tier neighbour (`t.adj`), not only tree children (HA pairs).
+- `siteMapModel()` drops imported links on logical interfaces (`LOGICAL`) and prefers a firewall's data port over
+  its HA/management port when one switch port reports both.
+- Tests: HA pair in `diagram-tests.cjs`; logical and HA neighbours in `supplementary-browser.cjs`.
+
 ## 5.60.0 — compact stacks, no header loops, fewer bends
 
 - Stacks are one grid device (`hw.grid.stack`, members 9 px apart); `splitStacks`, `stackBoxes`, `dropTerms` and

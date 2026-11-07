@@ -219,5 +219,13 @@ function campus(){
   {const K=(l,a,b,fa)=>{const k=D.linkKind(l,a||'switch',b||'switch',fa,false);return D.kindStyle(k,{}).label;};
    ok(K({aPort:'1/1/49',bPort:'x3',aSpeed:'10G',aMedia:'SFP+ 10GBase-SR'})==='10 Gbps SR fiber'&&K({aPort:'1/1/51',bPort:'1/1/51',aMedia:'SFP-H10GB-CU1M'})==='10 Gbps SFP+ DAC'&&K({aPort:'Gi1/0/1',bPort:'Gi1/0/2',aSpeed:'1000'.replace('1000','1G')})==='1 Gbps copper'&&K({aPort:'port2'},'firewall','circuit')==='Local handoff'&&K({aPort:'1/1/41'},'switch','ap')==='AP copper'&&K({aPort:'1/1/50',aMedia:'10GBase-LR'})==='10 Gbps LR fiber','link kinds name the cable or fiber type and speed');
    const k=D.linkKind({aPort:'Gi1/0/1',bPort:'Gi1/0/2',aSpeed:'1G'},'switch','switch');ok(D.kindStyle(k,{linkStyles:{[k]:{color:'#123456',label:'Office copper'}}}).color==='#123456'&&D.kindStyle(k,{linkStyles:{[k]:{label:'Office copper'}}}).label==='Office copper','a link kind\'s color and name can be changed');}
+{// An HA firewall pair (owner's site): the core switch is cabled to both firewalls. "Device and below" from
+ // either firewall shows the core and everything under it, whichever firewall the layout files it under.
+ const dv=(name,type,model,ip)=>({key:E.deviceKey(name),name,type,model,ips:[ip],open:-1}),k=E.deviceKey;
+ const devs=[dv('EXAMPLE-FW-TOP','Firewall','FortiGate-200G','10.0.0.1'),dv('EXAMPLE-FW-BOTTOM','Firewall','FortiGate-200G','10.0.0.2'),dv('EXAMPLE-CORE','Switch','JL675A','10.0.0.3'),dv('EXAMPLE-IDF','Switch','JL675A','10.0.0.4'),dv('EXAMPLE-SERVER','Switch','JL675A','10.0.0.5')];
+ const links=[{a:k('EXAMPLE-FW-TOP'),b:k('EXAMPLE-CORE'),aPort:'port2',bPort:'1/1/1'},{a:k('EXAMPLE-FW-BOTTOM'),b:k('EXAMPLE-CORE'),aPort:'port2',bPort:'1/1/2'},{a:k('EXAMPLE-FW-BOTTOM'),b:k('EXAMPLE-SERVER'),aPort:'port3',bPort:'1/1/1'},{a:k('EXAMPLE-CORE'),b:k('EXAMPLE-IDF'),aPort:'1/1/49',bPort:'1/1/49'}];
+ const input={layout:M.layout(devs,links,{}),links,vlans:new Map(),ports:new Map(),title:'HA pair'};
+ for(const fw of ['EXAMPLE-FW-TOP','EXAMPLE-FW-BOTTOM']){const p=D.diagram(input,{scope:'downstream',focus:k(fw),style:'plate'}),keys=p.devices.map(d=>d.key);
+  ok(keys.includes(k('EXAMPLE-CORE'))&&keys.includes(k('EXAMPLE-IDF')),fw+' and below shows the core it is cabled to and the switch under it: '+keys.join(', '));}}
 console.log(checks+' network diagram checks passed');
 })().catch(e=>{console.error(e);process.exit(1);});
