@@ -1,5 +1,13 @@
 # Configuration Inspector development handoff
 
+## 5.56.1 — stacks of different sizes keep their columns
+
+- `render()` places each stack member at or right of the member above it (`above`), so a taller stack beside a
+  shorter one no longer wraps its extra members under the shorter stack. Checked in `tests/diagram-variety-tests.cjs`
+  ("Uneven stacks").
+- Spacing: a link that drops straight to the next row (`straight()`) takes no channel track, a channel crossed only by
+  such drops is one grid step, and a stack member side with only drops gets an 18 px label band (`dropTerms`).
+
 ## 5.56.0 — stacks drawn as stacks with their VSF links
 
 - `splitStacks(input,o)` runs at the start of `diagram()` (not for the box style): member devices

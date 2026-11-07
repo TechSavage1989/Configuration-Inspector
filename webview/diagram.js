@@ -455,10 +455,24 @@
   // (owner request), so stacked devices line up.
   var widths=rowsOut.map(function(row){return row.reduce(function(w,k,i){return w+devices.get(k).cellW+(i?G*10:0);},0);}),lead=Math.max.apply(null,rowsOut.map(function(row){return devices.get(row[0]).offset;}).concat([0]));
   var maxW=Math.max.apply(null,rowsOut.map(function(row,r){return lead-devices.get(row[0]).offset+widths[r];}).concat([400]));
-  var LEFT=MARGIN+LEGEND_W;rowsOut.forEach(function(row,r){var x=LEFT+snap(lead-devices.get(row[0]).offset);row.forEach(function(k){var d=devices.get(k);d.cellX=x;d.x=x+d.offset;x+=d.cellW+G*10;});});
+  // Stack members sit under the member above them (owner request: stacks read as one column),
+  // even when a later row holds only the members of a taller stack.
+  var LEFT=MARGIN+LEGEND_W,above=new Map();rowsOut.forEach(function(row,r){var x=LEFT+snap(lead-devices.get(row[0]).offset);row.forEach(function(k){var d=devices.get(k),up=d.node.stackOf&&above.get(d.node.stackOf);if(up)x=Math.max(x,up.cellX);d.cellX=x;d.x=x+d.offset;x+=d.cellW+G*10;if(d.node.stackOf)above.set(d.node.stackOf,d);});});
+  maxW=Math.max(maxW,Math.max.apply(null,Array.from(devices.values()).map(function(d){return d.cellX+d.cellW-LEFT;})));
   // Channel sizes from the routes that use them, then vertical placement.
   var chan=rowsOut.map(function(){return 3;});chan.push(3);
-  conns.forEach(function(c){if(c.ep!=null)return;[c.ta,c.tb].forEach(function(t){if(!t)return;var r=t.dev.row;chan[t.side==='top'?r:r+1]++;});var a=Math.min(c.A.row,c.B.row),b=Math.max(c.A.row,c.B.row);for(var r=a+1;r<=b;r++)chan[r]+=0.34;});chan=chan.map(Math.ceil);
+  // A link that drops straight down from one row to the next (such as a stack link between members)
+  // needs no track of its own in the channel between them (owner request: no wasted space).
+  function termX(t){return t.dev.x+(t.slot?(t.slot.ex!=null?t.slot.ex:t.slot.dx):t.dev.w/2);}
+  function straight(c){if(style!=='plate'||!c.B||!c.ta||!c.tb||c.ta.shared||c.tb.shared)return false;var up=c.A.row<c.B.row?c.ta:c.tb,dn=up===c.ta?c.tb:c.ta;return Math.abs(c.A.row-c.B.row)===1&&up.side==='bottom'&&dn.side==='top'&&Math.abs(termX(up)-termX(dn))<G/2;}
+  var busy=chan.map(function(){return false;}),drops=chan.map(function(){return false;});
+  conns.forEach(function(c){if(c.ep!=null)return;if(straight(c)){drops[Math.max(c.A.row,c.B.row)]=true;return;}[c.ta,c.tb].forEach(function(t){if(!t)return;var r=t.dev.row,i=t.side==='top'?r:r+1;chan[i]++;busy[i]=true;});var a=Math.min(c.A.row,c.B.row),b=Math.max(c.A.row,c.B.row);var inStack=c.B&&c.A.node.stackOf&&c.A.node.stackOf===c.B.node.stackOf;for(var r=a+1;r<=b;r++){chan[r]+=0.34;if(!inStack)busy[r]=true;}});
+  // A channel crossed only by straight drops keeps one grid step between the label bands.
+  chan=chan.map(function(v,i){return drops[i]&&!busy[i]?1:Math.ceil(v);});
+  // Stack members (owner request: no wasted space): a side whose only links are straight drops to
+  // the next member needs a label band one text line high, not the full band.
+  var dropTerms=new Set();conns.forEach(function(c){if(c.ep==null&&c.B&&c.A.node.stackOf&&c.A.node.stackOf===c.B.node.stackOf&&straight(c)){dropTerms.add(c.ta);dropTerms.add(c.tb);}});
+  devices.forEach(function(d){if(style!=='plate'||!d.node.stackOf)return;[['top','bt','ft','trunkTop'],['bottom','bb','fb','trunkBot']].forEach(function(f){var ts=d.terms.filter(function(t){return t.side===f[0];});if(ts.length&&d[f[2]]!==false&&!(f[0]==='top'?d.top:d.bot).length&&ts.every(function(t){return dropTerms.has(t)&&!t.shares;}))d[f[1]]=G*2;});});
   var cursor=TOP+G*Math.min(chan[0],30);
   // Trunks of shared ports need room outside the band too.
   conns.forEach(function(c){[c.ta,c.tb].forEach(function(t){if(t&&t.shared){var d=t.dev,key=t.side==='top'?'trunkTop':'trunkBot';d[key]=Math.max(d[key]||0,t.k);}});});

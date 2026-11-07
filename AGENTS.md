@@ -192,7 +192,9 @@ a decision or a test on the owner's own machine (for example opening an export i
   links and access points on the member that has their port, downstream edges on the last member, and
   stack links (`stack:true`, kind `stack-vsf`) from `hw.links` (VSF link 2 to the next member's link 1;
   three or more close a ring). Box style keeps one box. `diagramHardware` passes `links`/`technology`;
-  a click on a member focuses the stack (`#id` stripped).
+  a click on a member focuses the stack (`#id` stripped). Members sit under the member above them (`above` in render's row placement), so a taller stack
+  right of a shorter one keeps its column. Straight member-to-member drops (`straight()` in render) take no channel track, and a
+  member side with only such drops gets an 18 px label band; don't overlap bands instead (the router blocks them).
 - Paper sizes (owner request): `setPaper({key,orient})` in diagram.js sets the sheet (`PAPERS`), and
   `fitLetter`/`onLetter` fit every page to it (letter keeps the letter/A4 shared area and never scales up;
   larger sheets scale small drawings up to 2x via `paperInfo().maxScale`). `DOC_W`/`DOC_H` follow the
