@@ -1,5 +1,14 @@
 # Configuration Inspector development handoff
 
+## 5.55.0 — link editing like NetworkDiagramStudio, paper sizes
+
+- Link editing: `state.lineSel`, `drawLineHandles`, `routeBump`, `routeRemoveBend`, `snapTargets`,
+  `snapGuides`, `showBendPoints` (index.html); keys Delete/arrows/Escape; edit bar Link row.
+  NDS reference: its cable-edit.mjs, cable-controls.mjs and snapping.mjs (behaviour mirrored, not copied).
+- Paper: `PAPERS`, `setPaper`, `paperInfo`, `fitLetter`/`fitPaper` (diagram.js); `paperSetting`,
+  `applyPaper`, Document -> Paper selects, printable HTML `@page` sizes (index.html).
+- Tests: `tests/diagram-lines-browser.cjs`; paper unit checks in `tests/diagram-tests.cjs`.
+
 ## 5.54.3 — diagrams checked across many network designs
 
 - New tests: `tests/diagram-variety-tests.cjs` (eleven fictional designs x scopes x styles x stencils,

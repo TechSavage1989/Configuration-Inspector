@@ -612,15 +612,21 @@
   fitTexts(page);
   page.scope=o;page.style=style;page.maxRow=view.maxRow;page.letter=fitLetter(page);return page;
  }
- // Letter paper (11 x 8.5 in at 96 px per inch) with 0.35 in margins: the orientation
- // that needs less shrinking, the scale (never above 1) and the offsets that center it.
+ // Paper (owner request: any page size, landscape or portrait): each page is fitted to the chosen sheet
+ // with 0.35 in margins, in the orientation that needs less shrinking unless one is chosen. Letter
+ // keeps content within the area letter and A4 share (11 x 8.27 in) so its pages read on either.
+ // Small drawings grow on larger sheets (devices and text print bigger), up to twice their size.
  var LETTER_MARGIN=0.35*96;
- // Letter paper; content fits the area letter and A4 share (11 x 8.27 in), so a page reads
- // on either paper.
- function fitLetter(p){var L={W:11*96,H:8.5*96},P={W:8.5*96,H:11*96},A=8.27*96;
+ var PAPERS={letter:{name:'Letter',w:11,h:8.5},legal:{name:'Legal',w:14,h:8.5},tabloid:{name:'Tabloid (11 x 17)',w:17,h:11},'ansi-c':{name:'ANSI C (17 x 22)',w:22,h:17},'ansi-d':{name:'ANSI D (22 x 34)',w:34,h:22},a4:{name:'A4',w:11.69,h:8.27},a3:{name:'A3',w:16.54,h:11.69},a2:{name:'A2',w:23.39,h:16.54}};
+ var PAPER={key:'letter',orient:'auto'};
+ function setPaper(o){var key=o&&PAPERS[o.key]?o.key:'letter',orient=o&&/^(landscape|portrait)$/.test(o.orient)?o.orient:'auto';PAPER={key:key,orient:orient};var d=PAPERS[key],port=orient==='portrait';
+  DOC_W=Math.round((port?d.h:d.w)*96);DOC_H=Math.round((port?d.w:d.h)*96);DOC_BOTTOM=DOC_H-56;return paperInfo();}
+ function paperInfo(){var d=PAPERS[PAPER.key];return {key:PAPER.key,orient:PAPER.orient,name:d.name,w:d.w,h:d.h,maxScale:Math.max(1,Math.min(2,Math.min(d.w,d.h)/8.5))};}
+ function fitLetter(p){var d=PAPERS[PAPER.key],L={W:d.w*96,H:d.h*96},P={W:d.h*96,H:d.w*96},A=PAPER.key==='letter'?8.27*96:null,maxK=paperInfo().maxScale;
   // Documentation pages are drawn on the sheet itself, margins included.
-  if(p.doc&&p.w<=L.W+0.5&&p.h<=L.H+0.5)return {W:L.W,H:L.H,raw:1,scale:1,landscape:true,ox:0,oy:0};function f(o,land){return Math.min((Math.min(o.W,land?o.W:A)-2*LETTER_MARGIN)/p.w,(Math.min(o.H,land?A:o.H)-2*LETTER_MARGIN)/p.h);}
-  var land=f(L,true)>=f(P,false),o=land?L:P,raw=f(o,land),k=Math.min(1,raw);return {W:o.W,H:o.H,raw:raw,scale:k,landscape:land,ox:(o.W-p.w*k)/2,oy:(o.H-p.h*k)/2};}
+  if(p.doc&&p.w<=DOC_W+0.5&&p.h<=DOC_H+0.5)return {W:DOC_W,H:DOC_H,raw:1,scale:1,landscape:DOC_W>=DOC_H,ox:0,oy:0};
+  function f(o,land){var W=A?Math.min(o.W,land?o.W:A):o.W,H=A?Math.min(o.H,land?A:o.H):o.H;return Math.min((W-2*LETTER_MARGIN)/p.w,(H-2*LETTER_MARGIN)/p.h);}
+  var land=PAPER.orient==='landscape'?true:PAPER.orient==='portrait'?false:f(L,true)>=f(P,false),o=land?L:P,raw=f(o,land),k=Math.min(maxK,raw);return {W:o.W,H:o.H,raw:raw,scale:k,landscape:land,ox:(o.W-p.w*k)/2,oy:(o.H-p.h*k)/2,paper:d.name};}
  // A line hop: the circular arc from a to b (a horizontal chord) bowing `bow` px upward,
  // sampled for SVG; Visio writes the same arc as one ArcTo row.
  function arcPoints(a,b,bow){var L=Math.abs(b[0]-a[0]),rr=(L*L/4+bow*bow)/(2*bow),cx=(a[0]+b[0])/2,d=Math.max(0,rr-bow),cy=a[1]+d,ta=Math.atan2(-d,a[0]-cx),tb=Math.atan2(-d,b[0]-cx),out=[];
@@ -964,6 +970,6 @@
    page.rect(MARGIN,84,page.w-2*MARGIN,1,{fill:'#c9d3df',stroke:'none'});pages.push(page);}
   return pages;
  }
- root.SWDiagram={stencilAnchors:stencilAnchors,moduleFor:moduleFor,MODULES:MODULES,autoModule:autoModule,build:build,diagram:diagram,scope:scope,tree:tree,render:render,svg:svg,vsdx:vsdx,library:library,fitLetter:fitLetter,onLetter:onLetter,stencilPages:stencilPages,linkType:linkType,parsePort:parsePort,physicalPort:physicalPort,catalogFor:catalogFor,_Device:Device,stencilPorts:stencilPorts,kinds:KINDS,kindStyle:kindStyle,linkKind:linkKind,shortPort:short,docPages:docPages,number:number,CATALOG:CATALOG,LINK_TYPES:LINK_TYPES,GRID:G};
+ root.SWDiagram={setPaper:setPaper,paperInfo:paperInfo,PAPERS:PAPERS,fitPaper:fitLetter,stencilAnchors:stencilAnchors,moduleFor:moduleFor,MODULES:MODULES,autoModule:autoModule,build:build,diagram:diagram,scope:scope,tree:tree,render:render,svg:svg,vsdx:vsdx,library:library,fitLetter:fitLetter,onLetter:onLetter,stencilPages:stencilPages,linkType:linkType,parsePort:parsePort,physicalPort:physicalPort,catalogFor:catalogFor,_Device:Device,stencilPorts:stencilPorts,kinds:KINDS,kindStyle:kindStyle,linkKind:linkKind,shortPort:short,docPages:docPages,number:number,CATALOG:CATALOG,LINK_TYPES:LINK_TYPES,GRID:G};
  if(typeof module==='object'&&module.exports)module.exports=root.SWDiagram;
 })(typeof globalThis!=='undefined'?globalThis:this);

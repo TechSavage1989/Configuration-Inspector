@@ -94,6 +94,19 @@ function campus(){
   t=texts(draw({linkStyles:{[kind]:{module:'dac'}}}));ok(t.includes('SFP+ 10G DAC cable end')&&!t.includes('SR fiber optic'),'a module chosen for the link type replaces the automatic one');
   t=texts(draw({linkStyles:{[kind]:{module:'none'}}}));ok(!t.includes('PORT MODULES'),'No module leaves the cage empty');
   t=texts(draw({modules:false}));ok(!t.includes('PORT MODULES'),'Show > Port modules can turn them off');}
+ {// Owner request: any page size. Pages fit the chosen sheet (letter unchanged by default), larger sheets
+  // print drawings bigger (up to twice), and documentation pages fill the sheet.
+  const big=campus(),pg=D.diagram(big,{scope:'site',title:'Paper'}),letter=D.onLetter(pg);
+  ok(Math.abs(letter.w-11*96)<1&&Math.abs(letter.h-8.5*96)<1||Math.abs(letter.w-8.5*96)<1,'letter paper by default');
+  const info=D.setPaper({key:'a3'});const a3=D.onLetter(D.diagram(big,{scope:'site',title:'Paper'}));
+  ok(info.name==='A3'&&[a3.w,a3.h].map(v=>Math.round(v/96*100)/100).sort().join()==='11.69,16.54','A3 pages: '+a3.w/96+' x '+a3.h/96);
+  ok(a3.paper.scale>letter.paper.scale,'a drawing prints larger on A3 than on letter: '+a3.paper.scale.toFixed(2)+' / '+letter.paper.scale.toFixed(2));
+  D.setPaper({key:'ansi-d'});const tiny={w:300,h:200,shapes:[]};ok(Math.abs(D.fitPaper(tiny).scale-2)<1e-9,'a small drawing grows on a large sheet, at most twice');
+  D.setPaper({key:'tabloid',orient:'portrait'});const tp=D.fitPaper(pg);ok(!tp.landscape&&Math.abs(tp.W-11*96)<1&&Math.abs(tp.H-17*96)<1,'a chosen orientation is kept');
+  D.setPaper({key:'tabloid'});const docs={devices:[{key:'sw',name:'EXAMPLE-SW',role:'switch',model:'Example',ip:'10.0.0.2',hw:null,ports:Array.from({length:60},(_,i)=>({name:'Gi1/0/'+(i+1),admin:'Enabled',mode:'trunk',native:'1',tagged:['10','20'],ip:'',up:true,speed:'1 Gb/s',neighbor:null,description:''})),vlans:[{id:'10',name:'A',ip:''},{id:'20',name:'B',ip:''}],addresses:[],routes:[]}]};
+  const tab=D.docPages({docs},{title:'Paper'});D.setPaper({key:'letter'});const let1=D.docPages({docs},{title:'Paper'});
+  ok(tab.every(p=>Math.abs(p.w-17*96)<1&&Math.abs(p.h-11*96)<1)&&tab.length<=let1.length,'documentation pages fill a tabloid sheet and need no more pages than letter: '+tab.length+' / '+let1.length);
+  ok(Math.abs(D.onLetter(D.diagram(big,{scope:'site',title:'Paper'})).paper.scale-letter.paper.scale)<1e-9,'back on letter, pages are as before');}
  {// Owner request: right angles and as few bends as possible; an access point's link needs at most two.
   const bends=pts=>pts.filter((p,k)=>k&&k<pts.length-1&&!((pts[k-1][0]===p[0]&&p[0]===pts[k+1][0])||(pts[k-1][1]===p[1]&&p[1]===pts[k+1][1]))).length;
   const ep=core.lines.filter(l=>l.conn.ep!=null);ok(ep.length&&ep.every(l=>bends(l.points)<=2),'access point links take at most two bends: '+ep.map(l=>bends(l.points)).join(','));
