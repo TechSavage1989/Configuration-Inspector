@@ -22,6 +22,8 @@ const {chromium}=require('playwright'),{configuration}=require('./cisco-3650-tes
   }
   for(const width of [1600,1280,960]){
    await page.setViewportSize({width,height:900});
+   // Measure once every faceplate is laid out again after the resize (a slow runner once measured mid-render).
+   await page.waitForFunction(()=>{const f=[...document.querySelectorAll('.hardware-chassis')];return f.length&&f.every(x=>{const sc=x.querySelector('.hardware-face-scroll'),fc=x.querySelector('.hardware-face');return sc&&fc&&sc.clientWidth>0&&fc.getBoundingClientRect().width>0&&x.querySelector('.hardware-port-cell .interface-badge');});},null,{timeout:10000});
    const layout=await page.locator('.hardware-chassis').evaluateAll(frames=>frames.map(frame=>{
     const face=frame.querySelector('.hardware-face-scroll'),cells=[...frame.querySelectorAll('.hardware-port-cell')].map(e=>e.getBoundingClientRect());
     return {fits:face.scrollWidth<=face.clientWidth+1,overlap:cells.some((a,i)=>cells.slice(i+1).some(b=>a.left<b.right-1&&a.right>b.left+1&&a.top<b.bottom-1&&a.bottom>b.top+1)),labels:[...frame.querySelectorAll('.glance-port-name')].every(e=>e.getBoundingClientRect().right<=e.closest('.interface-badge').getBoundingClientRect().right+1)};
