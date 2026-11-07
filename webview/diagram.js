@@ -201,9 +201,14 @@
   else{idx=p.n+(g.zero?1:0)-1;idx=Math.max(0,idx)%Math.max(2,g.count+g.count%2);}
   return this.place(plate,g,idx,p.name);
  };
+ // Port anchors by port name (NetworkDiagramStudio hardware shapes): matched on the short port name,
+ // letter case and spaces ignored.
+ var anchorIndex=typeof WeakMap==='function'?new WeakMap():null;
+ function anchorKey(n){return short(n).toLowerCase().replace(/\s+/g,'');}
+ function anchorAt(map,name){if(!map||!name)return null;var idx=anchorIndex&&anchorIndex.get(map);if(!idx){idx={};Object.keys(map).forEach(function(k){idx[anchorKey(k)]=map[k];});if(anchorIndex)anchorIndex.set(map,idx);}return idx[anchorKey(name)]||null;}
  Device.prototype.place=function(plate,g,idx,portName){
   var p={name:portName},pp=portPos(g,idx),col=g.col+Math.floor(idx/(g.rows===1?1:2)),row=pp.row,key=plate.member+'|'+g.name+'|'+idx;
-  if(plate.stencil){var list=this.bankMap?this.bankMap[g.name]:this.map&&((g.role||g.name)==='main'?this.map.main:(g.role||g.name)==='up'?this.map.up:null),own=this.stencil&&this.stencil.points&&this.stencil.points[g.name+'|'+idx],pos=own?{fx:own[0],fy:own[1],row:own[1]>0.5?1:0}:!this.bankMap&&this.fitMap?this.fitMap[g.name+'|'+idx]:list&&list[idx],img=this.img,dx,py;
+  if(plate.stencil){var list=this.bankMap?this.bankMap[g.name]:this.map&&((g.role||g.name)==='main'?this.map.main:(g.role||g.name)==='up'?this.map.up:null),own=this.stencil&&this.stencil.points&&this.stencil.points[g.name+'|'+idx],an=!own&&this.stencil&&anchorAt(this.stencil.anchors,portName||g.names&&g.names[idx]),pos=own?{fx:own[0],fy:own[1],row:own[1]>0.5?1:0}:an?{fx:an[0],fy:an[1],row:an[1]>0.5?1:0}:!this.bankMap&&this.fitMap?this.fitMap[g.name+'|'+idx]:list&&list[idx],img=this.img,dx,py;
    // Port points placed by hand on this stencil (by port group and index, for every member) come first.
    if(pos){dx=plate.x+G+pos.fx*img.w;py=this.imgTop+pos.fy*img.h;row=pos.row;}
    // A known group the stencil has no ports for: where it sits on the drawn faceplate,
@@ -754,6 +759,11 @@
   pl.groups.forEach(function(g){if(g.rear)return;for(var i=0;i<g.count;i++){var name=g.names&&g.names[i]||'',s=dev.place(pl,g,i,name),label=g.labels?g.labels[i]:name?short(name):String((g.base||0)+(g.zero?i:i+1));
    out.push({k:g.name+'|'+i,label:label,name:name,fx:(s.ex-pl.x-G)/dev.img.w,fy:(s.py-dev.imgTop)/dev.img.h,exact:!!(dev.positions[s.key]&&dev.positions[s.key].exact)});}});
   return {items:out,ratio:dev.img.w/dev.img.h};}
+ // Port anchors for a hardware pack (NetworkDiagramStudio's form): each of the device's own port
+ // names with its point on the stencil as [x, y] fractions from the top left, where that point comes
+ // from a mapping (hand-placed, an anchor or the stencil's connection points), not an estimate.
+ function stencilAnchors(node,ports){var dev=new Device(node,ports||[],[],'plate');if(!dev.stencil||!dev.img)return {};var out={};
+  (ports||[]).filter(physicalPort).forEach(function(name){var s=dev.slot(name),pos=s&&dev.positions[s.key];if(!pos||!pos.exact||!s.plate)return;var fx=(pos.x-s.plate.x-G)/dev.img.w,fy=(pos.y-dev.imgTop)/dev.img.h;if(fx>=0&&fx<=1&&fy>=0&&fy<=1)out[name]=[Math.round(fx*1e6)/1e6,Math.round(fy*1e6)/1e6];});return out;}
  // Text always fits its box (owner request): a label longer or with more lines than its box
  // grows the box (and its accent bar) to the right, and up or down away from where its link
  // meets it, so links stay attached.
@@ -941,6 +951,6 @@
    page.rect(MARGIN,84,page.w-2*MARGIN,1,{fill:'#c9d3df',stroke:'none'});pages.push(page);}
   return pages;
  }
- root.SWDiagram={moduleFor:moduleFor,MODULES:MODULES,autoModule:autoModule,build:build,diagram:diagram,scope:scope,tree:tree,render:render,svg:svg,vsdx:vsdx,library:library,fitLetter:fitLetter,onLetter:onLetter,stencilPages:stencilPages,linkType:linkType,parsePort:parsePort,physicalPort:physicalPort,catalogFor:catalogFor,_Device:Device,stencilPorts:stencilPorts,kinds:KINDS,kindStyle:kindStyle,linkKind:linkKind,shortPort:short,docPages:docPages,number:number,CATALOG:CATALOG,LINK_TYPES:LINK_TYPES,GRID:G};
+ root.SWDiagram={stencilAnchors:stencilAnchors,moduleFor:moduleFor,MODULES:MODULES,autoModule:autoModule,build:build,diagram:diagram,scope:scope,tree:tree,render:render,svg:svg,vsdx:vsdx,library:library,fitLetter:fitLetter,onLetter:onLetter,stencilPages:stencilPages,linkType:linkType,parsePort:parsePort,physicalPort:physicalPort,catalogFor:catalogFor,_Device:Device,stencilPorts:stencilPorts,kinds:KINDS,kindStyle:kindStyle,linkKind:linkKind,shortPort:short,docPages:docPages,number:number,CATALOG:CATALOG,LINK_TYPES:LINK_TYPES,GRID:G};
  if(typeof module==='object'&&module.exports)module.exports=root.SWDiagram;
 })(typeof globalThis!=='undefined'?globalThis:this);

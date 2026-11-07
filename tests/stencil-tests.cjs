@@ -92,5 +92,14 @@ const {stencil,unzip,vss}=require('./stencil-writer.cjs');
  const of=unzip(Buffer.from(D.vsdx([ostyle],'Old stencil'))),mx=Object.keys(of).filter(n=>/^visio\/masters\/master\d+\.xml$/.test(n)).map(n=>of[n].toString()).join('');
  ok(ostyle.shapes.some(s=>s.type==='image'&&s.master===om)&&/<Section N="Connection"><Row T="Connection" IX="0"><Cell N="X"/.test(mx)&&/ForeignType="Bitmap" CompressionType="PNG"/.test(mx)&&Object.keys(of).some(n=>/^visio\/media\/stencil\d+_rId1\.png$/.test(n)),'Visio downloads carry a master built from the .vss shape');
  const bad=vss();bad[512*3+0x1a]=6;await T.read(new Uint8Array(bad),'ancient.vss').then(()=>ok(false,'a Visio 2002 stencil is refused'),e=>ok(e.legacy&&/2002 or earlier/.test(e.message),'a Visio 2002 stencil is reported: '+e.message));
+ {// NetworkDiagramStudio hardware shapes (NDS-hardware packs): a picture with port anchors by name.
+  const png=Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==','base64');
+  const nm=T.fromImage({id:'art-example-2',name:'EX-NDS24 example switch',width:2400,height:240,ext:'png',data:new Uint8Array(png),anchors:{'1/1/1':[0.2,0.3],'1/1/2':[0.2,0.7],'1/1/25':[0.9,0.3],bad:[1.5,0]},models:['EXAMPLE/EXNDS24'],file:'example pack'});
+  ok(nm.w===17.4&&Math.abs(nm.h-1.74)<1e-9&&nm.connections.length===3&&!nm.anchors.bad&&/ForeignType="Bitmap" CompressionType="PNG"/.test(nm.xml)&&T.artwork(nm)&&nm.pictures[0].ext==='png','an NDS shape becomes a picture master with a connection point on each anchor');
+  ok(T.score({name:'SW',model:'EX-NDS24',parts:[]},nm)>=100&&T.score({name:'SW',model:'EX-NDS48',parts:[]},nm)<100,'the models an NDS shape lists choose it for those devices');
+  const art=T.artwork(nm),node={key:'sw',name:'SW',role:'switch',model:'EX-NDS24',stencil:{art:art,master:nm,anchors:nm.anchors}},ports=['1/1/1','1/1/2','1/1/25','1/1/3'];
+  const a=D.stencilAnchors(node,ports);
+  ok(a['1/1/1']&&Math.abs(a['1/1/1'][0]-0.2)<1e-3&&Math.abs(a['1/1/1'][1]-0.3)<1e-3&&Math.abs(a['1/1/25'][0]-0.9)<1e-3&&Math.abs(a['1/1/2'][1]-0.7)<1e-3,'ports land on their anchors by name: '+JSON.stringify(a));
+  ok(!a['1/1/3'],'a port without an anchor is not written as one (its place is only an estimate)');}
  console.log(checks+' stencil checks passed');
 })().catch(e=>{console.error(e);process.exit(1);});
