@@ -1,5 +1,15 @@
 # Configuration Inspector development handoff
 
+## 5.54.3 — diagrams checked across many network designs
+
+- New tests: `tests/diagram-variety-tests.cjs` (eleven fictional designs x scopes x styles x stencils,
+  routing rules, WAN rules, hops, modules, site books, Visio packages, timing; `VARIETY_REPORT=1`
+  lists every failure instead of stopping) and `tests/diagram-vendors-browser.cjs` (every vendor
+  fixture through every page tab, Show option and download).
+- Fixes found by them: an RJ45 end with no reported media makes the link copper (`linkKind`
+  aCopper/bCopper), AOC media is its own kind with an AOC cable end, fiber/DAC links on ports the
+  hardware does not show as cages still get a module (drawn as a cage), long module names wrap.
+
 ## 5.54.2 — port modules on stencil devices
 
 - `drawPlate` (stencil branch) draws `dev.mods` modules in the cages in use, sized from the port

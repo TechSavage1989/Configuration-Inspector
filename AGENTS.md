@@ -174,6 +174,11 @@ a decision or a test on the owner's own machine (for example opening an export i
   (`ndsOptics`, `diagramModuleArt` -> `view.moduleArt`) replace the drawn module with their artwork.
 - The updater UI (`updateCardBody`, `updateWhatsNew`, `updateTransfer` in index.html) renders release
   notes through `updateNotesHTML` (escaped first; bullets, headings, bold, code only).
+- Diagrams must work with any network (owner request): `tests/diagram-variety-tests.cjs` draws eleven
+  fictional designs (stacks, HA pairs, many circuits, no firewall, wide and deep trees, rings, 25-100G,
+  unknown hardware and port names, NDS shapes) in every scope and style, and `diagram-vendors-browser.cjs`
+  runs every vendor fixture through every page tab and download. Add a design there when a new layout
+  problem turns up. Link kinds: an RJ45 end with no media is copper; AOC is its own kind (`aoc`).
 - Access points and other endpoints stay within their device's left and right edges when they fit
   (owner request); shrink the row gap before letting a row run past, and center rows that cannot fit.
 - Diagram editor drags go through `dragPoint()` (Shift locks to one axis); link type speed and cable
