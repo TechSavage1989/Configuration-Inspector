@@ -698,14 +698,18 @@
  // keeps content within the area letter and A4 share (11 x 8.27 in) so its pages read on either.
  // Small drawings grow on larger sheets (devices and text print bigger), up to twice their size.
  var LETTER_MARGIN=0.35*96;
- var PAPERS={letter:{name:'Letter',w:11,h:8.5},legal:{name:'Legal',w:14,h:8.5},tabloid:{name:'Tabloid (11 x 17)',w:17,h:11},'ansi-c':{name:'ANSI C (17 x 22)',w:22,h:17},'ansi-d':{name:'ANSI D (22 x 34)',w:34,h:22},a4:{name:'A4',w:11.69,h:8.27},a3:{name:'A3',w:16.54,h:11.69},a2:{name:'A2',w:23.39,h:16.54}};
+ var PAPERS={fit:{name:'Fit to drawing',w:11,h:8.5,fit:true},letter:{name:'Letter',w:11,h:8.5},legal:{name:'Legal',w:14,h:8.5},tabloid:{name:'Tabloid (11 x 17)',w:17,h:11},'ansi-c':{name:'ANSI C (17 x 22)',w:22,h:17},'ansi-d':{name:'ANSI D (22 x 34)',w:34,h:22},a4:{name:'A4',w:11.69,h:8.27},a3:{name:'A3',w:16.54,h:11.69},a2:{name:'A2',w:23.39,h:16.54}};
  var PAPER={key:'letter',orient:'auto'};
  function setPaper(o){var key=o&&PAPERS[o.key]?o.key:'letter',orient=o&&/^(landscape|portrait)$/.test(o.orient)?o.orient:'auto';PAPER={key:key,orient:orient};var d=PAPERS[key],port=orient==='portrait';
   DOC_W=Math.round((port?d.h:d.w)*96);DOC_H=Math.round((port?d.w:d.h)*96);DOC_BOTTOM=DOC_H-56;return paperInfo();}
- function paperInfo(){var d=PAPERS[PAPER.key];return {key:PAPER.key,orient:PAPER.orient,name:d.name,w:d.w,h:d.h,maxScale:Math.max(1,Math.min(2,Math.min(d.w,d.h)/8.5))};}
+ function paperInfo(){var d=PAPERS[PAPER.key];return {key:PAPER.key,orient:PAPER.orient,name:d.name,w:d.w,h:d.h,fit:!!d.fit,maxScale:d.fit?1:Math.max(1,Math.min(2,Math.min(d.w,d.h)/8.5))};}
  function fitLetter(p){var d=PAPERS[PAPER.key],L={W:d.w*96,H:d.h*96},P={W:d.h*96,H:d.w*96},A=PAPER.key==='letter'?8.27*96:null,maxK=paperInfo().maxScale;
   // Documentation pages are drawn on the sheet itself, margins included.
   if(p.doc&&p.w<=DOC_W+0.5&&p.h<=DOC_H+0.5)return {W:DOC_W,H:DOC_H,raw:1,scale:1,landscape:DOC_W>=DOC_H,ox:0,oy:0};
+  // Fit to drawing (owner request, as Visio does by default): the page is the drawing's own size at full
+  // scale, so any number of devices fits on one page. raw still rates arrangements against a 17 x 11 in
+  // sheet, so the most compact landscape arrangement is chosen.
+  if(d.fit){var M=LETTER_MARGIN;return {W:Math.round(p.w+2*M),H:Math.round(p.h+2*M),raw:Math.min((17*96-2*M)/p.w,(11*96-2*M)/p.h),scale:1,landscape:p.w>=p.h,ox:M,oy:M,paper:d.name,fit:true};}
   function f(o,land){var W=A?Math.min(o.W,land?o.W:A):o.W,H=A?Math.min(o.H,land?A:o.H):o.H;return Math.min((W-2*LETTER_MARGIN)/p.w,(H-2*LETTER_MARGIN)/p.h);}
   var land=PAPER.orient==='landscape'?true:PAPER.orient==='portrait'?false:f(L,true)>=f(P,false),o=land?L:P,raw=f(o,land),k=Math.min(maxK,raw);return {W:o.W,H:o.H,raw:raw,scale:k,landscape:land,ox:(o.W-p.w*k)/2,oy:(o.H-p.h*k)/2,paper:d.name};}
  // A line hop: the circular arc from a to b (a horizontal chord) bowing `bow` px upward,

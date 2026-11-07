@@ -1,5 +1,12 @@
 # Configuration Inspector development handoff
 
+## 5.59.0 — fit to drawing, devices list
+
+- `PAPERS.fit` (default in the app): page = drawing size, no continuation split; printable/SVG per-page sizes.
+- Devices popover: On / Not on this diagram, × and Add per row, Clear all; stack/chassis keys stripped of `#id`.
+- Tests: `diagram-lines-browser.cjs` (fit default, Visio page = fitted size, print size still selectable),
+  `supplementary-browser.cjs` (× removes, Clear all leaves the focus).
+
 ## 5.58.0 — chassis grids, tighter spacing, port map headings, trunk tables
 
 - Chassis with a known front panel (`SWHardware.chassis`): grid of slot cards on the diagram (split in

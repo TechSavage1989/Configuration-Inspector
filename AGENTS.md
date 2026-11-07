@@ -219,6 +219,13 @@ a decision or a test on the owner's own machine (for example opening an export i
   `chanCaps()` (each channel cut to the span its horizontal runs use plus one track each side), kept only
   when relaxed routes and hops do not increase; caps come from the drawing without edits. A device side
   with no port labels gets a `G*2` band (`bandFor`).
+- Fit to drawing (owner request, the app default as in Visio): `PAPERS.fit`; `fitLetter` returns the
+  drawing's own size at scale 1 (raw still rates layouts against 17 x 11 in), `splitDiagram` never splits,
+  doc pages stay letter-sized. index.html `applyPaper` defaults to `{key:'fit'}`; the library default
+  stays letter. Printable sections and SVG take each page's own size (`@page pN`).
+- Devices list: rows keep `.diagram-choose-row` and `data-diagram-device` (now on × / Add buttons with
+  `data-device-act`) so search, filters and bulk buttons work; `[data-diagram-clear]` clears all but the
+  focus. Page device keys of stack members and chassis cards end in `#id`; strip it when matching nodes.
 - Paper sizes (owner request): `setPaper({key,orient})` in diagram.js sets the sheet (`PAPERS`), and
   `fitLetter`/`onLetter` fit every page to it (letter keeps the letter/A4 shared area and never scales up;
   larger sheets scale small drawings up to 2x via `paperInfo().maxScale`). `DOC_W`/`DOC_H` follow the

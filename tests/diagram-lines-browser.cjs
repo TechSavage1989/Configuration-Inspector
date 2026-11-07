@@ -54,13 +54,17 @@ const file=(name,buffer,type)=>({name,mimeType:type||'text/plain',buffer:Buffer.
   await page.keyboard.press('Escape');await page.waitForTimeout(200);ok(await page.locator('.line-handles').count()===0,'Escape clears the link selection');
   await page.locator('[data-diagram-editmode]').first().click();await page.waitForTimeout(300);
   // Paper size: the chip, the Visio page size and the printable page follow it.
-  const chip=()=>page.locator('.diagram-paper').first().innerText();ok(/^Letter, /.test(await chip()),'letter paper by default: '+await chip());
+  const chip=()=>page.locator('.diagram-paper').first().innerText();ok(/^Fit to drawing, [\d.]+ × [\d.]+ in$/.test(await chip()),'the page fits the drawing by default (as Visio does): '+await chip());
+  // Fit to drawing: the Visio page is the drawing's own size, not a sheet.
+  {const [v0]=await Promise.all([page.waitForEvent('download'),page.locator('[data-diagram-export="vsdx"]').first().click()]),f0=unzip(fs.readFileSync(await v0.path())),w0=[...f0['visio/pages/pages.xml'].matchAll(/<Cell N="PageWidth" V="([\d.]+)"/g)].map(m=>+m[1]),m0=(await chip()).match(/([\d.]+) × ([\d.]+)/);
+   ok(w0.length&&Math.abs(w0[0]-Number(m0[1]))<0.06,'the Visio page is the fitted size: '+w0[0]+' in for '+m0[0]);}
   const docPop=async()=>{for(let t=0;t<3&&!await page.locator('[data-diagram-pop="document"][open]').count();t++){await page.locator('[data-diagram-pop="document"] summary').click();await page.waitForTimeout(200);}};await docPop();await page.locator('[data-diagram-pop="document"] #diagram-paper').selectOption('a3');await page.waitForTimeout(600);
   ok(/^A3, /.test(await chip()),'the paper chip follows the chosen size: '+await chip());
   const [v]=await Promise.all([page.waitForEvent('download'),page.locator('[data-diagram-export="vsdx"]').first().click()]),vf=unzip(fs.readFileSync(await v.path())),pw=[...vf['visio/pages/pages.xml'].matchAll(/<Cell N="PageWidth" V="([\d.]+)"/g)].map(m=>+m[1]);
   ok(pw.length&&pw.every(w=>Math.abs(w-16.54)<0.02||Math.abs(w-11.69)<0.02),'Visio pages are A3: '+pw.join(', '));
   await docPop();await page.locator('[data-diagram-pop="document"] #diagram-orient').selectOption('portrait');await page.waitForTimeout(600);ok(/^A3, portrait/.test(await chip()),'a chosen orientation is used: '+await chip());
-  await docPop();await page.locator('[data-diagram-pop="document"] #diagram-paper').selectOption('letter');await docPop();await page.locator('[data-diagram-pop="document"] #diagram-orient').selectOption('auto');await page.waitForTimeout(400);
+  await docPop();await page.locator('[data-diagram-pop="document"] #diagram-paper').selectOption('letter');await page.waitForTimeout(400);ok(/^Letter, /.test(await chip()),'a print size can still be chosen: '+await chip());
+  await docPop();await page.locator('[data-diagram-pop="document"] #diagram-paper').selectOption('fit');await docPop();await page.locator('[data-diagram-pop="document"] #diagram-orient').selectOption('auto');await page.waitForTimeout(400);
   ok(!errors.length,'no page errors: '+errors.join('; '));
   console.log(checks+' link editing and paper size browser checks passed');
  }finally{await browser.close();}
