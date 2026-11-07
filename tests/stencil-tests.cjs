@@ -105,5 +105,17 @@ const {stencil,unzip,vss}=require('./stencil-writer.cjs');
   const nl=[{a:'sw',b:'sw2',aPort:'1/1/25',bPort:'1/1/25',aSpeed:'10 Gb/s'}],pg=D.diagram({layout:M.layout([{key:'sw',name:'SW',type:'Switch',model:'EX-NDS24',ips:['10.0.0.9'],open:-1},{key:'sw2',name:'SW2',type:'Switch',model:'EX-NDS24',ips:['10.0.0.10'],open:-1}],nl,{}),links:nl,vlans:new Map(),ports:new Map([['sw',ports],['sw2',ports]]),stencils:new Map([['sw',node.stencil],['sw2',node.stencil]]),title:'NDS'},{scope:'downstream',focus:'sw',style:'plate'});
   const vf=unzip(Buffer.from(D.vsdx([pg],'NDS shapes'))),mx=vf['visio/masters/masters.xml'].toString(),ids=[...mx.matchAll(/<Master ID="([^"]*)"/g)].map(m=>m[1]),refs=[...vf['visio/pages/page1.xml'].toString().matchAll(/ Master="([^"]*)"/g)].map(m=>m[1]);
   ok(ids.length===1&&ids.every(i=>/^\d+$/.test(i))&&refs.length&&refs.every(r=>ids.includes(r))&&Object.keys(vf).some(n=>/^visio\/media\/.*\.png$/.test(n)),'an NDS shape is exported to Visio as a numbered master its instances use: '+ids.join(',')+' / '+refs.join(','));}
+ {// Owner request: port modules fill the cages in use on stencil devices too, with the pack's module
+  // shape (NDS optics) when one is chosen.
+  const png=Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==','base64');
+  const r=(a,b)=>Array.from({length:b-a+1},(_,i)=>String(a+i)),pf={title:'EX-MOD24',banks:[{label:'Uplinks',names:r(25,28),form:'SFP+',rows:2},{label:'1G',names:r(1,24),form:'RJ45',rows:2}]};
+  const anchors={};r(25,28).forEach((n,i)=>anchors[n]=[0.05+0.04*Math.floor(i/2),i%2?0.7:0.3]);r(1,24).forEach((n,i)=>anchors[n]=[0.2+0.03*Math.floor(i/2),i%2?0.7:0.3]);
+  const sm=T.fromImage({id:'art-mod-sw',name:'EX-MOD24',width:2400,height:240,ext:'png',data:new Uint8Array(png),anchors}),opt=T.fromImage({id:'art-sr',name:'SR optic',width:400,height:240,ext:'png',data:new Uint8Array(png)});
+  const st={art:T.artwork(sm),master:sm,anchors:sm.anchors},hw={members:[{id:'1',profile:pf}],portOf:n=>{const b=pf.banks.find(b=>b.names.includes(n));return b?{member:'1',bank:pf.banks.indexOf(b),index:b.names.indexOf(n)}:null;}};
+  const lk=[{a:'m1',b:'m2',aPort:'25',bPort:'25',aSpeed:'10 Gb/s',aMedia:'10GBase-SR'}],lay=M.layout([{key:'m1',name:'M1',type:'Switch',model:'EX-MOD24',ips:['10.0.0.21'],open:-1},{key:'m2',name:'M2',type:'Switch',model:'EX-MOD24',ips:['10.0.0.22'],open:-1}],lk,{});lay.all.forEach(n=>n.hw=hw);lay.nodes.forEach(n=>n.hw=hw);
+  const draw=v=>D.diagram({layout:lay,links:lk,vlans:new Map(),ports:new Map([['m1',r(1,28)],['m2',r(1,28)]]),stencils:new Map([['m1',st],['m2',st]]),title:'Modules'},Object.assign({scope:'downstream',focus:'m1',style:'plate'},v||{}));
+  let p=draw();const stImgs=p.shapes.filter(x=>x.type==='image'&&x.master===sm).length,mods=p.shapes.filter(x=>x.type==='rect'&&x.fill==='#d5dbe3').length;
+  ok(stImgs===2&&mods>=2,'stencil devices show the SR optic in each cage in use: '+stImgs+' stencils, '+mods+' modules');
+  p=draw({moduleArt:{sr:{art:T.artwork(opt),master:opt}}});ok(p.shapes.filter(x=>x.type==='image'&&x.master===opt).length>=3,'a module shape from the pack replaces the drawn module in the cages and the legend');}
  console.log(checks+' stencil checks passed');
 })().catch(e=>{console.error(e);process.exit(1);});

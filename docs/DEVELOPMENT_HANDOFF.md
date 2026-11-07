@@ -1,5 +1,12 @@
 # Configuration Inspector development handoff
 
+## 5.54.2 — port modules on stencil devices
+
+- `drawPlate` (stencil branch) draws `dev.mods` modules in the cages in use, sized from the port
+  pitch; `moduleFor(kind,view,form,role)` attaches NDS optics artwork (`view.moduleArt` from
+  `diagramModuleArt()`), which `drawModule` places as an image (exported as a Visio master).
+  The diagram cache key includes `modules` and the optics choice.
+
 ## 5.54.1 — Visio exports keep NetworkDiagramStudio shapes
 
 - `masterParts` renumbers every master's `ID` (it only replaced numeric ones, so an NDS shape's
