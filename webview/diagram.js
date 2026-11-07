@@ -286,7 +286,10 @@
   for(var k=0;k<60;k++){var side=fits();if(side){this.nameSide=side;return;}var last=this.plates[this.plates.length-1];last.w+=G;this.w+=G;}this.nameSide='top';};
  function drawHeader(page,dev){if(dev.noLabel)return;var node=dev.node,x0=dev.x,y=dev.y,name=clip(node.name,40),foot=footOf(dev),up=dev.nameSide!=='bottom',topY=y+1,botY=y+HEAD+dev.plateH+2;
   var a=freeSpan(dev,up?'top':'bottom',4,dev.w-4,textW(name,11,true)),aw=a[1]-a[0];page.text(x0+a[0],up?topY:botY,aw,15,clip(name,Math.max(4,Math.floor(aw/6.6))),{size:11,bold:true,align:'left',color:'#1b3a4b'});
-  dev.plates.forEach(function(pl,i){var t=dev.grid?(i?'':foot):pl.slot?(i?pl.model:[node.model||(dev.hw&&dev.hw.model)||'',pl.model].filter(Boolean).join('  ·  ')+((node.ips||[])[0]?'  |  '+node.ips[0]:'')):i?'Member '+pl.member:foot;if(!t)return;var side=up?'bottom':'top',b=freeSpan(dev,side,pl.x+4,pl.x+pl.w-4,textW(t,9.5)),bw=b[1]-b[0];page.text(x0+b[0],up?botY:topY+1,bw,14,clip(t,Math.max(4,Math.floor(bw/5.1))),{size:9.5,align:'left',color:'#4a5568'});});}
+  dev.plates.forEach(function(pl,i){var t=dev.grid?(i?'':foot):pl.slot?(i?pl.model:[node.model||(dev.hw&&dev.hw.model)||'',pl.model].filter(Boolean).join('  ·  ')+((node.ips||[])[0]?'  |  '+node.ips[0]:'')):i?'Member '+pl.member:foot;if(!t)return;var side=up?'bottom':'top',tw=textW(t,9.5),b=dev.grid?freeSpan(dev,side,4,dev.w-4,tw):freeSpan(dev,side,pl.x+4,pl.x+pl.w-4,tw),bw=b[1]-b[0];
+   // A stack's or chassis' model line with no room between its links goes beside the name instead of being cut short.
+   if(dev.grid&&bw<tw&&a[1]-a[0]>=Math.min(aw,textW(name,11,true))+12+tw){page.text(x0+a[0]+textW(name,11,true)+12,(up?topY:botY)+2,tw+4,14,t,{size:9.5,align:'left',color:'#4a5568'});return;}
+   page.text(x0+b[0],up?botY:topY+1,bw,14,clip(t,Math.max(4,Math.floor(bw/5.1))),{size:9.5,align:'left',color:'#4a5568'});});}
  // Port shapes in real proportions: an RJ45 jack (11.7 x 13.5 mm) with its latch notch on
  // the outer edge (top row up, bottom row down), an SFP cage (13.7 x 8.6 mm) and a QSFP cage
  // (18.4 x 8.5 mm), at the 18 px column pitch of a 14.5 mm port spacing.
@@ -489,9 +492,14 @@
    // So do the drawn role block and the member or module label.
    var blocks=[];d.plates.forEach(function(pl){var py=HEAD+(pl.y||0),lab=pl.card?String(pl.member)+(pl.model?'  \u00b7  '+pl.model:pl.empty?'  \u00b7  empty':''):'';if(lab)blocks.push({x0:pl.x+5,x1:pl.x+5+textW(lab,7.5,true),y0:py,y1:py+11});if(!pl.card)blocks.push({x0:pl.x+10,x1:pl.x+54,y0:py+10,y1:py+62});
     if(pl.empty)return;pl.groups.forEach(function(g){if(g.rear)return;for(var i=0;i<g.count;i++){var pp=portPos(g,i);marks.push({x:pl.x+pp.dx,y:py+(g.mid?36:pp.row?51:21)});}});});
-   ts.slice().sort(function(a,b){return span(a)-span(b);}).forEach(function(t){if(t.conn&&t.conn.internal)return;var x0=t.slot.dx,y0=t.slot.py,y1=t.side==='top'?top:bot,lo=Math.min(y0,y1),hi=Math.max(y0,y1);
-    var free=function(x){return !ts.some(function(o){return o!==t&&Math.abs(o.slot.dx-x)<8&&o.slot.py>lo-8&&o.slot.py<hi+8;})&&!marks.some(function(o){return (o.x!==x0||o.y!==y0)&&Math.abs(o.x-x)<8&&o.y>lo-8&&o.y<hi+8;})&&!blocks.some(function(b){var yv=y0+(t.side==='top'?-11:11);return x>b.x0-3&&x<b.x1+3&&b.y1>lo&&b.y0<hi||x!==x0&&yv>b.y0-2&&yv<b.y1+2&&Math.max(x,x0)>b.x0-3&&Math.min(x,x0)<b.x1+3;})&&!lanes.some(function(l){return Math.abs(l.x-x)<4&&l.hi>lo-12&&l.lo<hi+12||l.side===t.side&&Math.abs(l.x-x)<14;});},lane=x0;
-    LANE_STEPS.some(function(dx){if(free(x0+dx)){lane=x0+dx;return true;}return false;});t.slot.lane=lane;lanes.push({x:lane,lo:lo,hi:hi,side:t.side});});});
+   // No two leaders' sideways steps lie on one another (owner request: parallel lines never overlap exactly):
+   // a step that would is moved to another lane, or else to its own track between the port rows.
+   var vias=[];
+   ts.slice().sort(function(a,b){return span(a)-span(b);}).forEach(function(t){if(t.conn&&t.conn.internal)return;var x0=t.slot.dx,y0=t.slot.py,y1=t.side==='top'?top:bot,lo=Math.min(y0,y1),hi=Math.max(y0,y1),dir=t.side==='top'?-1:1,lead=11*dir;
+    var stepFree=function(x){var yv=y0+lead,a=Math.min(x,x0),b=Math.max(x,x0);return x===x0||!vias.some(function(v){return Math.abs(v.y-yv)<1&&Math.min(b,v.b)-Math.max(a,v.a)>0.5;})&&!lanes.some(function(l){return l.x>a+0.5&&l.x<b-0.5&&Math.abs(l.vy-yv)<1;});};
+    var free=function(x){return stepFree(x)&&!ts.some(function(o){return o!==t&&Math.abs(o.slot.dx-x)<8&&o.slot.py>lo-8&&o.slot.py<hi+8;})&&!marks.some(function(o){return (o.x!==x0||o.y!==y0)&&Math.abs(o.x-x)<8&&o.y>lo-8&&o.y<hi+8;})&&!blocks.some(function(b){var yv=y0+lead;return x>b.x0-3&&x<b.x1+3&&b.y1>lo&&b.y0<hi||x!==x0&&yv>b.y0-2&&yv<b.y1+2&&Math.max(x,x0)>b.x0-3&&Math.min(x,x0)<b.x1+3;})&&!lanes.some(function(l){return Math.abs(l.x-x)<4&&l.hi>lo-12&&l.lo<hi+12||l.side===t.side&&Math.abs(l.x-x)<14;});},lane=x0;
+    [11,15,19].some(function(m){lead=m*dir;return LANE_STEPS.some(function(dx){if(free(x0+dx)){lane=x0+dx;return true;}return false;});})||(lead=11*dir);
+    t.slot.lane=lane;t.slot.lead=lead;lanes.push({x:lane,lo:lo,hi:hi,side:t.side,vy:y0+lead});if(lane!==x0)vias.push({y:y0+lead,a:Math.min(lane,x0),b:Math.max(lane,x0)});});});
   // Names and model lines go between the leaders where they leave the device.
   devices.forEach(function(dev){dev.fit();});
   devices.forEach(function(d){if(style==='box'){d.bt=d.bb=BAND;return;}var a=bandFor(d,'top'),b=bandFor(d,'bottom');d.bt=a.h;d.bb=b.h;d.ft=a.flat;d.fb=b.flat;});
@@ -588,7 +596,7 @@
   // direction out of the stub, and the label box inside the band.
   function geo(t){if(t.shared){var b=geo(t.shared),out=b.dir===3?-1:1;return {px:b.sx,py:b.sy,sx:b.sx,sy:b.sy+out*2*G*t.k,dir:b.dir,trunk:b};}
    var d=t.dev;if(t.ep!=null){var e=d.top.concat(d.bot).find(function(x){return x.conn===t.conn;}),ex=d.x+e.rx+EP_W/2,ey=epY(d,e);return e.side==='top'?{px:ex,py:ey+EP_H,sx:ex,sy:ey+EP_H+G,dir:1}:{px:ex,py:ey,sx:ex,sy:ey-G,dir:3};}
-   var x=d.x+(style==='box'?t.dx:t.slot.lane!=null?t.slot.lane:t.slot.dx),top=t.side==='top',py=style==='box'?(top?d.y:d.y+d.h):t.slot.py!=null?d.y+t.slot.py:d.y+HEAD+(top?21:51),px=style==='box'?x:d.x+t.slot.dx,lead=top?-11:11,
+   var x=d.x+(style==='box'?t.dx:t.slot.lane!=null?t.slot.lane:t.slot.dx),top=t.side==='top',py=style==='box'?(top?d.y:d.y+d.h):t.slot.py!=null?d.y+t.slot.py:d.y+HEAD+(top?21:51),px=style==='box'?x:d.x+t.slot.dx,lead=t.slot&&t.slot.lead!=null?t.slot.lead:top?-11:11,
     via=style!=='box'&&t.slot.gy!=null?[[px,d.y+t.slot.gy],[x,d.y+t.slot.gy]]:px!==x?[[px,py+lead],[x,py+lead]]:null;
    return {px:px,py:py,via:via,sx:x,sy:top?d.y-d.bt:d.y+d.h+d.bb,dir:top?3:1,lx:x+3,ly:top?d.y-d.bt+4:d.y+d.h+4,lalign:top?'left':'right',flat:top?d.ft:d.fb,band:top?d.bt:d.bb,top:top,dy:d.y,dh:d.h};}
   conns.forEach(function(c){if(c.ep!=null)c.tb={dev:c.A,ep:c.ep,conn:c};});
