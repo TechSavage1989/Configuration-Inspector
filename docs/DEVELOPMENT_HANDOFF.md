@@ -1,5 +1,19 @@
 # Configuration Inspector development handoff
 
+## 5.65.0 — endpoint fans, compact WAN circuits, grouped port inventory
+
+- Endpoint fan pass (after `straightenEnd` in `render`): a device's links to its endpoint row become Z shapes with a
+  crossing-minimizing track order (pairwise matrix `W`, insertion search), kept only when `clash`/`bendsOf`/`clearRun`
+  allow. Endpoint rows shift up to four grid steps (DP over the row) off other links' port columns; straight boxes stay.
+- NDS chassis lanes are snapped against each terminal's own plate x (`laneRel`), fixing a slanted stretch.
+- WAN: `colW` lets a circuit row use the widest device's width; `EP_W` for plain boxes from `textW` and `epLines`;
+  bottom-row port circuits at the row ends (`e.end`, nested), `d.loopsL`/`d.loopsR` lanes free of `wanShun`.
+- Port inventory rows group identical consecutive ports; doc tabs group continuation pages (`docGroups`,
+  `stackPages`); port map member bars are as wide as the faces (`paste(..., left)`); chassis cards keep the slot letter.
+- Tests (variety): right angles on every line, AP links of one device never cross, no endpoint link end to end with
+  another, middle-member AP fan, multi-WAN single row with nested loops. Measured over the variety designs
+  (scratch script): bends 3018 → 2970, length 1102650 → 1090411, hops 648 → 632.
+
 ## 5.64.0 — port maps like the switchport builder, port inventory, fewer crossings
 
 - `portMapPages` rewritten: one sheet per device (`sheetPage`, `sectionBar`, `vlanColors`, `TRUNK_COLORS`,

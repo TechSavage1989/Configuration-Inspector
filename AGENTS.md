@@ -183,9 +183,14 @@ a decision or a test on the owner's own machine (for example opening an export i
   style (color, name, width, dash) is shared by legend and lines through `kindStyle`.
 - The diagram runs from the WAN down (owner request): circuits sit above their device even on a
   bottom-row port; `tests/diagram-tests.cjs` checks it with routing rules. Circuits that do not fit side by
-  side stack in rows within their device's width (NDS style: `e.row`, `d.topRows`, `epY` adds the row; one box
-  fewer per row than fit, for link room), and circuit links pay extra outside the device's column
-  (`router.wanShun`, cost for `router.free` nets) so they stay within the primary vertical stack. Only the links
+  side stack in rows (NDS style: `e.row`, `d.topRows`, `epY` adds the row; one box fewer per row than fit, for link
+  room); a circuit row may use the widest device's width (`colW`), so circuits sit in one row whenever that fits
+  (owner request: as little space as possible). Plain boxes are as wide as their text (`epLines` wraps a long name on
+  two lines; `EP_W` from `textW` of the name and "port | address" lines). A circuit on a bottom-row port goes to the
+  row end on its port's side (`e.end`, the port farther from the edge on the outer box, so the loops nest), and the
+  device keeps one lane per loop beside it (`d.loopsL`/`d.loopsR`, outside the `wanShun` area). Circuit links pay
+  extra outside the device's column (`router.wanShun`, cost for `router.free` nets) so they stay within the primary
+  vertical stack. Only the links
   of circuits stacked higher may pass a lower circuit (the tests' "nothing above a circuit" rule).
   No line passes above a circuit when any route avoids it (`router.shun`), and circuit links may
   cross other links (`router.free`) rather than loop around them.
@@ -327,7 +332,17 @@ a decision or a test on the owner's own machine (for example opening an export i
   `view.sides` (per `device|port>far` key) when a stack's or chassis' cheapest edge, judged from the drawn geometry
   (moves included), differs from the row-based one; `o.rowSides` turns it off for tests. The header strip is measured
   from the topmost drawn device, not row 0, so moved layouts keep the space above them usable.
-- Doc page tabs: pages whose titles differ only by " (n)" or " (continued)" show as small numbered tabs.
+- Doc page tabs: pages whose titles differ only by " (n)" or " (continued)" are one tab that scrolls through them
+  (`docGroups`/`stackPages` in index.html; "Visio page" exports `shown.stack`); wireless pages keep numbered tabs.
+- Port inventory rows group consecutive ports with identical settings ("1/1-49 (49)"); keep every cell single-line
+  (an unknown admin state shows only the link counts), or the pages multiply again.
+- Endpoint fans (owner request: no needless bends or crossings): after routing, a device's links to its row of
+  endpoints are rebuilt as Z shapes in the band between them (`fan` pass after `straightenEnd`); the track order is a
+  search over the pairwise cost `W` (line i nearer the device than line j), kept only when it adds no crossing, bend
+  or overlap (`clash`, `bendsOf`, `clearRun`). Endpoint rows then shift a few grid steps (a small DP over the row) so no
+  box's link lines up end to end with another link's port column; a box straight over its own port never moves.
+  `tests/diagram-variety-tests.cjs` checks right angles on every line (an NDS chassis lane must be `snap`ped against
+  its own plate's x, not the column's first plate) and AP fans on a middle stack member.
 - Keep one design language: side panels use `.side-panel-body` with `.device-info-row`
   label/value rows, details drawers use `.detail-summary`/`.detail-cell`, and lists in
   narrow panels are rows (`.site-link-row`), never multi-column tables.
