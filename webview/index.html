@@ -6907,6 +6907,14 @@ function pJ(L,pan){const d=E(),I={},R={},T={};
    if(!freeColumn(a,P1[1],P3[1])||overlaps(l,a,P1[1],a,P3[1])||overlaps(l,a,P3[1],P3[0],P3[1]))return false;
    var q=[P0,[a,P3[1]]].concat(p.slice(4));l.points=compress(rev?q.reverse():q);return true;}
   lines.forEach(function(l){if(l.internal)return;for(var i=0;i<3;i++){if(!straightenEnd(l,false)&&!straightenEnd(l,true))break;}});
+  // Neat channels (owner request: consistent spacing, nothing chaotic): the horizontal runs in each channel
+  // between rows move to evenly spaced tracks (two grid steps apart when there is room), centered in the
+  // channel and kept in the order the router gave them, so no crossing or overlap is added.
+  // A run on the channel's edge (a line turning where its port stub ends) moves too: only the port ends stay.
+  gaps.forEach(function(g){var inside=function(y){return y>=g.y0-0.5&&y<=g.y1+0.5;},lv=[];
+   lines.forEach(function(l){if(l.internal)return;for(var i=1;i<l.points.length-1;i++){var y=l.points[i][1];if(inside(y)&&lv.indexOf(y)<0)lv.push(y);}});if(!lv.length)return;
+   lv.sort(function(a,b){return a-b;});var s=Math.min(2*G,(g.y1-g.y0)/(lv.length+1)),start=(g.y0+g.y1)/2-s*(lv.length-1)/2,map=new Map();lv.forEach(function(y,i){map.set(y,Math.round((start+s*i)*2)/2);});
+   lines.forEach(function(l){if(l.internal)return;l.points=l.points.map(function(q,i){return i&&i<l.points.length-1&&inside(q[1])?[q[0],map.get(q[1])]:q;});});});
   // Where a line crosses one drawn before it, its horizontal run hops over in a small arc.
   // Hand-drawn routes from the editor replace the computed one while both ends still meet
   // the same port points.

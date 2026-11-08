@@ -5,6 +5,7 @@
 - `ndsChassisLayout` cuts each slot of an NDS-drawn chassis from `deviceFaceplate({model, modules})`; `d.grid.nds`,
   `bg`, `gutter`, `right`, `chassisWiden`; plates `crop`, `h`. Planner zones above/below (`sgn`), 2 px row
   tolerance, lanes snapped to the grid in absolute terms.
+- Neat channels: monotone remap of horizontal runs per `gaps` channel to even tracks (after straightening, before hops).
 - Circuit rows (`e.row`, `d.topRows`) and `router.wanShun`/`wanAvoid` (cost 40 for circuit nets outside the
   device column). Tests: stacked-circuit rule in diagram-tests and variety; NDS chassis pitch in the hardware
   browser test.

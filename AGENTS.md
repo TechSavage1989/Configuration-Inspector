@@ -271,6 +271,9 @@ a decision or a test on the owner's own machine (for example opening an export i
   and keeps the first that adds no relaxed route, hop, bend or length; caps come from the drawing without
   edits. A device side with no port labels gets a `G*2` band (`bandFor`). `NEAR_R` (3) keeps lines one or
   two tracks apart; a larger radius made lines bend to keep away from each other (owner: fewest bends).
+- Neat channels (owner request: consistent spacing): after routing, the horizontal runs in each channel between
+  device rows (`gaps`, edges included; only a line's port ends stay put) move to evenly spaced tracks, 18 px apart
+  when there is room, centered, in the router's order (a monotone remap, so no crossing or overlap is added).
 - No loops into the page header (owner request): the strip above the top row is `router.shun(...,2)`, paid
   only by lines whose stubs start below it (`router.hdrOk`). A crossing re-route is kept only when it is at
   most half as long again and adds at most two bends (`BEND` is 90).
