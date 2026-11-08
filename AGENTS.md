@@ -91,8 +91,16 @@ a decision or a test on the owner's own machine (for example opening an export i
   72 px tall, 60 px under a module card's title) and are written as plain rect/text shapes (Visio stays
   editable). Ports sit at NDS jacks (`slot.ex` exact, `slot.dx` on the grid); `artPoint` gives plate-relative
   points to the stack and chassis planners. Used ports get a link-colour ring or their module over the jack,
-  port maps a numbered role square (`drawArt`). The 5400R management module (no NDS profile) is drawn in NDS's
-  style by `managementArt`. Imported vendor stencils still win.
+  port maps a numbered role square (`drawArt`). Imported vendor stencils still win.
+- A chassis NDS draws whole (5400R zl2 J9850A/J9851A and J9821A/J9822A, 5400zl J8697A/J8698A) is cut from NDS's
+  own chassis panel (`ndsChassisLayout`): NDS sizes jacks to the whole chassis (`consistentSockets` uses the
+  panel width), so a module drawn on its own gets half-size jacks; never draw chassis modules standalone. Each
+  slot plate (`pl.crop`) gets the shapes inside its slot rectangle (NDS's slot geometry, module cards 72 px tall),
+  the chassis body/side bar/model text (`d.grid.bg`) are drawn around them, and lanes widen the gutter between
+  the module columns (left column) or the right edge (right column) via `chassisWiden`, never the modules.
+  Port maps number a module's ports 1..n (slot letter stripped). The planner puts a module's steps on the side
+  of its port row with more room (above the row on NDS modules) so they stay >= 6 px apart; rows compare with a
+  2 px tolerance (`rows()` are rounded).
 - Documentation pages (`docPages` in diagram.js: port map, wireless connections, VLANs and
   routing, trunk VLANs) are letter-sized (`p.doc`, drawn at full size by `fitLetter`) and built
   from `input.docs` (`diagramDocs` in index.html). Visio page names must be unique.
@@ -174,7 +182,11 @@ a decision or a test on the owner's own machine (for example opening an export i
   WAN circuits; access points, other devices and unconfigured switches only via Show. Link type
   style (color, name, width, dash) is shared by legend and lines through `kindStyle`.
 - The diagram runs from the WAN down (owner request): circuits sit above their device even on a
-  bottom-row port; `tests/diagram-tests.cjs` checks it with routing rules.
+  bottom-row port; `tests/diagram-tests.cjs` checks it with routing rules. Circuits that do not fit side by
+  side stack in rows within their device's width (NDS style: `e.row`, `d.topRows`, `epY` adds the row; one box
+  fewer per row than fit, for link room), and circuit links pay extra outside the device's column
+  (`router.wanShun`, cost for `router.free` nets) so they stay within the primary vertical stack. Only the links
+  of circuits stacked higher may pass a lower circuit (the tests' "nothing above a circuit" rule).
   No line passes above a circuit when any route avoids it (`router.shun`), and circuit links may
   cross other links (`router.free`) rather than loop around them.
 - Line hops are true arcs: a drawn line carries `arcs` ({point index: bow px}); SVG samples them
@@ -259,6 +271,9 @@ a decision or a test on the owner's own machine (for example opening an export i
   and keeps the first that adds no relaxed route, hop, bend or length; caps come from the drawing without
   edits. A device side with no port labels gets a `G*2` band (`bandFor`). `NEAR_R` (3) keeps lines one or
   two tracks apart; a larger radius made lines bend to keep away from each other (owner: fewest bends).
+- Neat channels (owner request: consistent spacing): after routing, the horizontal runs in each channel between
+  device rows (`gaps`, edges included; only a line's port ends stay put) move to evenly spaced tracks, 18 px apart
+  when there is room, centered, in the router's order (a monotone remap, so no crossing or overlap is added).
 - No loops into the page header (owner request): the strip above the top row is `router.shun(...,2)`, paid
   only by lines whose stubs start below it (`router.hdrOk`). A crossing re-route is kept only when it is at
   most half as long again and adds at most two bends (`BEND` is 90).

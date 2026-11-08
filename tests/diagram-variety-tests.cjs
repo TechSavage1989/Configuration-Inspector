@@ -85,7 +85,10 @@ function topOf(inp){const t=D.tree(inp.layout);return inp.layout.all.filter(n=>n
 function pageChecks(name,p){
  const r=routing(p);ok(r.length===0,name+': routing rules: '+r.slice(0,4).join('; '));
  const circ=(p.eps||[]).filter(e=>e.role==='circuit');
- if(circ.length){const over=p.lines.filter(l=>l.points.some((q,i)=>i&&circ.some(e=>{const s=l.points[i-1];return Math.min(q[1],s[1])<e.y&&Math.max(q[0],s[0])>e.x&&Math.min(q[0],s[0])<e.x+e.w;})));ok(over.length===0,name+': nothing above a WAN circuit: '+over.map(l=>l.conn.A.key).join(','));
+ // Circuits stacked in rows within their device's width (as in NetworkDiagramStudio): only the links of circuits
+ // stacked higher may pass a lower circuit on their way up.
+ const epOf=l=>{if(l.conn.ep==null)return null;const t=l.points[l.points.length-1];return circ.find(e=>Math.abs(t[1]-(e.y+e.h))<2&&t[0]>=e.x&&t[0]<=e.x+e.w)||null;};
+ if(circ.length){const over=p.lines.filter(l=>l.points.some((q,i)=>i&&circ.some(e=>{const s=l.points[i-1],own=epOf(l);if(own&&own.y<e.y-1)return false;return Math.min(q[1],s[1])<e.y&&Math.max(q[0],s[0])>e.x&&Math.min(q[0],s[0])<e.x+e.w;})));ok(over.length===0,name+': nothing above a WAN circuit: '+over.map(l=>l.conn.A.key).join(','));
   ok(circ.every(e=>{const d=p.devices.find(v=>v.key===e.dev);return !d||e.y+e.h<=d.y;}),name+': WAN circuits sit above their device');}
  ok(p.shapes.filter(s=>s.type==='line'&&s.arcs).every(s=>Object.keys(s.arcs).every(i=>{const a=s.points[i-1],b=s.points[i];return a&&b&&a[1]===b[1]&&s.arcs[i]>0;})),name+': hops are arcs over horizontal stretches');
  ok(p.shapes.every(s=>s.type!=='line'||s.points.every(q=>Number.isFinite(q[0])&&Number.isFinite(q[1])))&&p.shapes.every(s=>s.type==='line'||[s.x,s.y,s.w,s.h].every(Number.isFinite)),name+': every shape has finite geometry');}

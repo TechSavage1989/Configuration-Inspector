@@ -31,9 +31,10 @@ const SW=(name,ports,ip)=>['; JL253A Configuration Editor; Created on release #W
   // The 5406R zl2 grid (owner request: modules where they really are): MM1 | MM2, then A | B, C | D, E | F.
   const at=async()=>page.evaluate(()=>{const o={};for(const el of document.querySelectorAll('.diagram-scroll svg text')){const m=el.textContent.trim().match(/^(MM1|MM2|[A-F])\s+·/);if(m&&!o[m[1]]){const b=el.getBBox();o[m[1]]={x:Math.round(b.x),y:Math.round(b.y)};}}return o;});
   const g=await at(),row=(a,b)=>g[a]&&g[b]&&Math.abs(g[a].y-g[b].y)<2&&g[b].x>g[a].x+40,col=(a,b)=>g[a]&&g[b]&&Math.abs(g[a].x-g[b].x)<2&&g[b].y>g[a].y+40;
-  ok(row('MM1','MM2')&&row('A','B')&&row('C','D')&&row('E','F')&&col('MM1','A')&&col('A','C')&&col('C','E')&&col('B','D'),'the chassis is drawn as its slot grid, empty slots included: '+JSON.stringify(g));
-  // Edge to edge (owner request: real-world spacing): one module row (72 px) and a 9 px gap apart, at the drawing's scale.
-  ok(g.A&&g.C&&g.E&&Math.abs(g.C.y-g.A.y-81)<1.5&&Math.abs(g.E.y-g.C.y-81)<1.5,'module rows sit edge to edge: one module (72 px) and a 9 px gap apart: '+(g.C.y-g.A.y)+', '+(g.E.y-g.C.y));
+  ok(row('MM1','MM2')&&row('A','B')&&row('C','D')&&row('E','F')&&g.MM1&&g.A&&g.MM1.y<g.A.y-40&&Math.abs(g.MM1.x-g.A.x)<20&&col('A','C')&&col('C','E')&&col('B','D'),'the chassis is drawn as its slot grid, empty slots included: '+JSON.stringify(g));
+  // As built (owner request: the chassis as NetworkDiagramStudio draws it): module rows evenly spaced, one module
+  // (72 px) and a small gap apart, at the drawing's scale.
+  ok(g.A&&g.C&&g.E&&Math.abs((g.C.y-g.A.y)-(g.E.y-g.C.y))<1.5&&g.C.y-g.A.y>=72&&g.C.y-g.A.y<=82,'module rows sit edge to edge: one module (72 px) and a small gap apart: '+(g.C.y-g.A.y)+', '+(g.E.y-g.C.y));
   ok(t.includes('A1')&&t.includes('C1')&&t.includes('1/50')&&t.includes('2/50'),'both aggregated uplinks are drawn, each to a numbered uplink port on the stack');
   ok(['A3','A5','A6'].every(p=>t.includes(p)),'links from neighbouring ports of one module are all drawn: '+t.filter(x=>/^A\d$/.test(x)).join(','));
   ok(!t.includes('A2'),'a port naming another switch (…-IDF-SW01) is not taken for the stack uplink');
