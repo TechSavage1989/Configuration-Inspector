@@ -337,6 +337,14 @@ a decision or a test on the owner's own machine (for example opening an export i
   (`docGroups`/`stackPages` in index.html; "Visio page" exports `shown.stack`); wireless pages keep numbered tabs.
 - Port inventory rows group consecutive ports with identical settings ("1/1-49 (49)"); keep every cell single-line
   (an unknown admin state shows only the link counts), or the pages multiply again.
+- Side exits (owner request: no loops over or under a stack moved beside the device it joins): `view.sides` may give a
+  stack terminal 'left'/'right' (chosen with top/bottom by the shortest-path pass; chassis keep top/bottom). Such a
+  terminal has `t.exit`, keeps `t.side` = its row's direction, gets a gap track (`gy`) but no side lane, and `geo()`
+  starts its route beside the stack at the gap height heading out (`exitY`; the first routed run is moved from the
+  grid row onto `exitY`, `sideEntry` puts its label beside the stack).
+- Full-window layout (owner request): `main` has no max-width; the diagram view (`main.diagram-main`) hides the file
+  notice and source row, keeps one row of page tabs (scrolling sideways), a slim title bar and an edit bar whose arrange
+  and line bars sit inline, so the drawing gets most of the height.
 - Side entry (owner request): after routing, a stack link whose route passes beside the stack at its member's gap height
   leaves the gap straight out sideways (or with one turn to a horizontal run of its route) instead of using the side lane
   to the top or bottom edge; kept only when shorter with no added crossing or overlap; `g.sideEntry` moves the port

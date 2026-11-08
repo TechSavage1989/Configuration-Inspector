@@ -191,6 +191,8 @@ function visioChecks(name,pages){
    const p=D.diagram(i5,Object.assign({edits:{maxRow:q0.maxRow,moves:{[t5]:[Math.round((dc.x+dc.w+180-ds.x)/9)*9,Math.round((dc.y-200-ds.y)/9)*9]}}},o5)),ul=p.lines.filter(l=>l.conn.B&&l.conn.A!==l.conn.B);
    const bends=l=>l.points.filter((q,i)=>i&&i<l.points.length-1&&(Math.abs(l.points[i-1][1]-q[1])<0.01)!==(Math.abs(l.points[i+1][1]-q[1])<0.01)).length,by=k=>ul.find(l=>l.conn.bPorts[0]===k||l.conn.aPorts[0]===k);
    ok(by('6/50')&&bends(by('6/50'))===2&&by('7/50')&&bends(by('7/50'))===2,'links beside a stack enter their member from the side: '+ul.map(bends).join(','));
+   // Stack links leave sideways through their member's gap (owner request): none climbs over the two devices or drops under them.
+   {const dc=p.devices.find(d=>d.key===c5),ds=p.devices.find(d=>d.key===t5),top=Math.min(dc.y,ds.y)-60,bot=Math.max(dc.y+dc.h,ds.y+ds.h)+60;ok(ul.every(l=>l.points.every(q=>q[1]>=top&&q[1]<=bot)),'links beside a stack stay between the devices (no loop over or under): '+ul.map(l=>Math.round(Math.min(...l.points.map(q=>q[1])))+'..'+Math.round(Math.max(...l.points.map(q=>q[1])))).join(' '));}
    ok(routing(p).length===0&&faces(p).length===0,'side entries keep the routing rules: '+routing(p).concat(faces(p)).slice(0,3).join('; '));
    // Tidy links (owner request): several routing orders, the cleanest kept; never worse than the default drawing.
    const hops=pg=>pg.lines.reduce((n,l)=>n+(l.arcs?Object.keys(l.arcs).length:0),0),t=D.diagram(i5,Object.assign({tidy:true},o5));ok(hops(t)<=hops(q0)&&routing(t).length===0,'tidy links never adds a crossing: '+hops(t)+' <= '+hops(q0));}

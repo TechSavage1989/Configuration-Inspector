@@ -572,7 +572,10 @@
    var s=dev.slot(port||'');
    // A port's link point moved by hand (a stencil whose marks miss its ports).
    var pp=view.edits&&view.edits.portPos&&view.edits.portPos[dev.key+'|'+short(port||'')];if(pp&&style==='plate'){s=Object.assign({},s);var ex=(s.ex!=null?s.ex:s.dx)+pp[0];s.ex=ex;s.dx=snap(ex);s.py=(s.py!=null?s.py:HEAD+(s.row?51:21))+pp[1];if(dev.positions&&dev.positions[s.key])dev.positions[s.key]={x:ex,y:s.py,exact:true};}var far=c&&c.B&&(c.A===dev?c.B:c.A),fs=dev.grid&&far&&far!==dev?(far.row<dev.row?'top':far.row>dev.row?'bottom':null):null;if(dev.grid&&far&&far!==dev&&view.sides){var vs=view.sides[dev.key+'|'+short(port||'')+'>'+far.key];if(vs)fs=vs;}if(dev.grid&&c&&c.ep!=null&&dev.eps&&dev.eps[c.ep]&&(dev.eps[c.ep].node.role==='circuit'||dev.eps[c.ep].node.up))fs='top';else if(dev.grid&&c&&c.ep!=null&&dev.eps&&dev.eps[c.ep]&&dev.eps[c.ep].node.down)fs='bottom';
-   var t={dev:dev,slot:s,side:fs||s.side||(s.row?'bottom':'top'),label:clip(short(port),10),conn:c};(dev.portKeys=dev.portKeys||{})[s.key]=dev.portKeys[s.key]||dev.key+'|'+short(port||'');var prior=dev.terms.find(function(x){return x.slot.key===s.key;});if(prior){t.shared=prior;prior.shares=(prior.shares||0)+1;t.k=prior.shares;t.label='';}else{dev.terms.push(t);usedPorts.set(dev.key+'|'+s.key,kindStyle(c.type,view).color);if(view.modules!==false&&s.form!=='rj45'&&s.form!=='shared'){
+   // A stack link may leave sideways through its member's gap (owner request: no loop over or under a stack placed
+   // beside the device it joins); its port keeps the direction of its row.
+   var exitSd=(fs==='left'||fs==='right')&&dev.grid&&!dev.grid.chassis&&!s.unknown?fs:null;if(fs==='left'||fs==='right')fs=null;
+   var t={dev:dev,slot:s,side:exitSd?(s.row?'bottom':'top'):fs||s.side||(s.row?'bottom':'top'),label:clip(short(port),10),conn:c};if(exitSd)t.exit=exitSd;(dev.portKeys=dev.portKeys||{})[s.key]=dev.portKeys[s.key]||dev.key+'|'+short(port||'');var prior=dev.terms.find(function(x){return x.slot.key===s.key;});if(prior){t.shared=prior;prior.shares=(prior.shares||0)+1;t.k=prior.shares;t.label='';}else{dev.terms.push(t);usedPorts.set(dev.key+'|'+s.key,kindStyle(c.type,view).color);if(view.modules!==false&&s.form!=='rj45'&&s.form!=='shared'){
      // A port the hardware does not show as a cage (an add-in network module, or hardware without a
      // profile) still takes a module when its link is fiber, DAC or AOC: an optic or cable end is fitted.
      var cage=s.form==='sfp'||s.form==='qsfp',sp0=(KINDS[c.type]||{}).speed||speedValue(kindStyle(c.type,view).speed),md=moduleFor(c.type,view,cage?s.form:sp0>=40000?'qsfp':'sfp',dev.node.role);if(md&&!cage&&md.id==='copper')md=null;if(md&&!cage)md.form=sp0>=40000?'qsfp':'sfp';if(md){(dev.mods=dev.mods||new Map()).set(s.key,md);var mu=modulesUsed.get(md.label)||{mod:md,color:kindStyle(c.type,view).color,ports:[]};mu.ports.push(dev.node.name+' '+short(port||''));modulesUsed.set(md.label,mu);}}}return t;}
@@ -593,6 +596,7 @@
    function reg(sl){return sl.row?(sl.plate.row||0)+1:(sl.plate.row||0);}
    function dist(x,sd){return sd==='left'?x:d.w-x;}
    d.terms.forEach(function(t){if(!t.slot||!t.slot.plate||t.shared||t.conn&&t.conn.internal)return;var m=t.slot.plate.row||0,low=!!t.slot.row,up=t.side==='top';t.slot.lane=null;t.slot.gy=null;
+    if(t.exit){regs[reg(t.slot)].push({slot:t.slot,r:reg(t.slot),above:low,x:t.slot.dx,side:t.exit,exit:true});return;}
     if(!low&&up&&m===0||low&&!up&&m===n-1)return;var sd=t.slot.dx<mid?'left':'right',e={slot:t.slot,r:reg(t.slot),above:low,x:t.slot.dx,side:sd};regs[e.r].push(e);side[sd][up?'up':'down'].push(e);});
    var ext=function(sd){return side[sd].up.length+side[sd].down.length;};
    // Stack cables other than straight drops take the side with fewer links (no crossings), nearest the stack.
@@ -800,6 +804,8 @@
   // direction out of the stub, and the label box inside the band.
   function geo(t){if(t.shared){var b=geo(t.shared),out=b.dir===3?-1:1;return {px:b.sx,py:b.sy,sx:b.sx,sy:b.sy+out*2*G*t.k,dir:b.dir,trunk:b};}
    var d=t.dev;if(t.ep!=null){var e=d.top.concat(d.bot).find(function(x){return x.conn===t.conn;}),ex=d.x+e.rx+EP_W/2,ey=epY(d,e);return e.side==='top'?{px:ex,py:ey+EP_H,sx:ex,sy:ey+EP_H+G,dir:1}:{px:ex,py:ey,sx:ex,sy:ey-G,dir:3};}
+   if(t.exit&&style!=='box'&&t.slot.gy!=null){var lf=t.exit==='left',k0=d.s||1,ex=lf?d.x-(d.sideL||0)-G*2:d.x+d.w+(d.sideR||0)+G*2,gyy=d.y+t.slot.gy,pxx=d.x+t.slot.dx,pyy=t.slot.py!=null?d.y+t.slot.py:d.y+HEAD+(t.slot.row?51:21);
+    return {px:pxx,py:pyy,via:[[pxx,gyy]],sx:ex,sy:gyy,dir:lf?2:0,exitY:gyy,sideEntry:{x:lf?d.x:d.x+d.w,y:gyy,left:lf},lx:pxx+3,ly:gyy,top:t.side==='top',dy:d.y,dh:d.h,band:t.side==='top'?d.bt:d.bb};}
    var x=d.x+(style==='box'?t.dx:t.slot.lane!=null?t.slot.lane:t.slot.dx),top=t.side==='top',py=style==='box'?(top?d.y:d.y+d.h):t.slot.py!=null?d.y+t.slot.py:d.y+HEAD+(top?21:51),px=style==='box'?x:d.x+t.slot.dx,lead=top?-11:11,
     via=style!=='box'&&t.slot.gy!=null?[[px,d.y+t.slot.gy],[x,d.y+t.slot.gy]]:px!==x?[[px,py+lead],[x,py+lead]]:null;
    return {px:px,py:py,via:via,sx:x,sy:top?d.y-d.bt:d.y+d.h+d.bb,dir:top?3:1,lx:x+3,ly:top?d.y-d.bt+4:d.y+d.h+4,lalign:top?'left':'right',flat:top?d.ft:d.fb,band:top?d.bt:d.bb,top:top,dy:d.y,dh:d.h};}
@@ -855,6 +861,7 @@
   router.rebuild(all,0);
   order.forEach(function(c){var path=c.path,strict=c.strictPath;
    var pts;if(path){pts=path.map(function(v){return [(v%router.C)*G,((v/router.C)|0)*G];});}else pts=[[c.ga.sx,c.ga.sy],[c.ga.sx,c.gb.sy],[c.gb.sx,c.gb.sy]];
+   [[c.ga,false],[c.gb,true]].forEach(function(e){var g=e[0];if(!path||g.exitY==null||!pts.length)return;var q=e[1]?pts.slice().reverse():pts,y0=q[0][1];for(var k=0;k<q.length&&Math.abs(q[k][1]-y0)<0.01;k++)q[k]=[q[k][0],g.exitY];pts=e[1]?q.reverse():q;});
    var points=compress([[c.ga.px,c.ga.py]].concat(c.ga.via||[],pts,c.gb.via?c.gb.via.slice().reverse():[],[[c.gb.px,c.gb.py]]));
    // A stencil's port is rarely on the 9 px routing grid: the vertical stretch into it moves
    // onto the port itself, so the line meets the port's center.
@@ -1076,11 +1083,12 @@
   // or not: the run inside the device to that edge, then the distance between the two edges, plus a detour round a
   // device when the line would have to pass it. The drawing is laid out again when that changes an edge.
   if(style==='plate'&&!o.rowSides){var sides={},changed=false;page.lines.forEach(function(l){var c=l.conn;if(!c||c.internal||c.ep!=null||!c.B||c.A===c.B||!c.ta||!c.tb||c.ta.shared||c.tb.shared)return;if(!c.A.grid&&!c.B.grid)return;
-    var pa=l.points[0],pb=l.points[l.points.length-1],opts=function(d,t,p){return d.grid&&!(t.slot&&t.slot.unknown)?['top','bottom']:[t.side];},
-     edgeY=function(d,sd){return sd==='top'?d.y-d.bt:d.y+d.h+d.bb;},inner=function(d,sd,p){return d.grid?(sd==='top'?p[1]-d.y:d.y+d.h-p[1]):0;},
-     around=function(d,sd,o){var ox=o.x<d.x+d.w&&o.x+o.w>d.x,above=o.y+o.h<=d.y,below=o.y>=d.y+d.h;return ox&&(sd==='top'&&below||sd==='bottom'&&above)?2*d.h+o.h:0;},best=null;
-    opts(c.A,c.ta,pa).forEach(function(sa){opts(c.B,c.tb,pb).forEach(function(sb){var ya=edgeY(c.A,sa),yb=edgeY(c.B,sb),xa=pa[0],xb=pb[0],cost=inner(c.A,sa,pa)+inner(c.B,sb,pb)+Math.abs(ya-yb)+Math.abs(xa-xb)+around(c.A,sa,c.B)+around(c.B,sb,c.A)+(sa!==c.ta.side?1:0)+(sb!==c.tb.side?1:0);if(!best||cost<best.cost)best={cost:cost,sa:sa,sb:sb};});});
-    if(!best)return;[[c.A,c.aPorts[0],c.B,best.sa,c.ta],[c.B,c.bPorts[0],c.A,best.sb,c.tb]].forEach(function(e){if(!e[0].grid)return;sides[e[0].key+'|'+short(e[1]||'')+'>'+e[2].key]=e[3];if(e[3]!==e[4].side)changed=true;});});
+    // A stack (not a chassis) may also be left sideways through the gap at its member's height.
+    var pa=l.points[0],pb=l.points[l.points.length-1],stackOf=function(d,t){return d.grid&&!d.grid.chassis&&t.slot&&t.slot.plate;},opts=function(d,t,p){return d.grid&&!(t.slot&&t.slot.unknown)?(stackOf(d,t)?['top','bottom','left','right']:['top','bottom']):[t.side];},
+     edge=function(d,sd,p){return sd==='left'?[d.x-(d.sideL||0),p[1]]:sd==='right'?[d.x+d.w+(d.sideR||0),p[1]]:[p[0],sd==='top'?d.y-d.bt:d.y+d.h+d.bb];},inner=function(d,sd,p){return !d.grid?0:sd==='top'?p[1]-d.y:sd==='bottom'?d.y+d.h-p[1]:sd==='left'?p[0]-d.x:d.x+d.w-p[0];},
+     around=function(d,sd,o){var ox=o.x<d.x+d.w&&o.x+o.w>d.x,oy=o.y<d.y+d.h&&o.y+o.h>d.y,above=o.y+o.h<=d.y,below=o.y>=d.y+d.h,left=o.x+o.w<=d.x,right=o.x>=d.x+d.w;return ox&&(sd==='top'&&below||sd==='bottom'&&above)?2*d.h+o.h:oy&&(sd==='left'&&right||sd==='right'&&left)?2*d.w+o.w:(sd==='left'&&o.x>=d.x+d.w/2||sd==='right'&&o.x+o.w<=d.x+d.w/2)?d.w:0;},best=null,cur=function(t){return t.exit||t.side;};
+    opts(c.A,c.ta,pa).forEach(function(sa){opts(c.B,c.tb,pb).forEach(function(sb){var ea=edge(c.A,sa,pa),eb=edge(c.B,sb,pb),cost=inner(c.A,sa,pa)+inner(c.B,sb,pb)+Math.abs(ea[1]-eb[1])+Math.abs(ea[0]-eb[0])+around(c.A,sa,c.B)+around(c.B,sb,c.A)+(sa!==cur(c.ta)?1:0)+(sb!==cur(c.tb)?1:0);if(!best||cost<best.cost)best={cost:cost,sa:sa,sb:sb};});});
+    if(!best)return;[[c.A,c.aPorts[0],c.B,best.sa,c.ta],[c.B,c.bPorts[0],c.A,best.sb,c.tb]].forEach(function(e){if(!e[0].grid)return;sides[e[0].key+'|'+short(e[1]||'')+'>'+e[2].key]=e[3];if(e[3]!==cur(e[4]))changed=true;});});
    if(changed){view.sides=sides;page=render(input,view);}}
   // Tidy links (owner request: a tool that makes the links as efficient, clean, consistent and parallel as it can):
   // the drawing is routed in several orders and the cleanest wins (fewest relaxed routes, then crossings, bends and
