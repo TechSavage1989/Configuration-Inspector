@@ -610,10 +610,12 @@
    // In a gap, lines from the member above take the upper tracks and those from below the lower ones; of two
    // from above the one nearer the side stays higher, of two from below the one nearer the side lower.
    regs.forEach(function(list){list.sort(function(p,q){return (p.above?0:1)-(q.above?0:1)||(p.above?dist(p.x,p.side)-dist(q.x,q.side):dist(q.x,q.side)-dist(p.x,p.side));});});
-   var H=function(k){return k?up9(6*(k+1)):0},gap=G;for(var r2=1;r2<n;r2++)gap=Math.max(gap,H(regs[r2].length));var p0=H(regs[0].length),pn=H(regs[n].length),olds=new Map(),seen=new Set();
-   d.plates.forEach(function(pl){olds.set(pl,pl.y||0);pl.y=p0+(pl.row||0)*(72+gap);});d.grid.gap=gap;d.plateH=p0+n*72+(n-1)*gap+pn;d.h=HEAD+d.plateH+FOOT;
+   // Each gap is only as tall as its own lines need, at least one grid step (owner request: as small as possible
+   // while everything fits); gaps[r] is the gap above member row r.
+   var H=function(k){return k?up9(6*(k+1)):0},gaps=[0];for(var r2=1;r2<n;r2++)gaps.push(Math.max(G,H(regs[r2].length)));var p0=H(regs[0].length),pn=H(regs[n].length),olds=new Map(),seen=new Set(),rowY=[p0];for(var r3=1;r3<n;r3++)rowY.push(rowY[r3-1]+72+gaps[r3]);
+   d.plates.forEach(function(pl){olds.set(pl,pl.y||0);pl.y=rowY[pl.row||0];});d.grid.gaps=gaps;d.grid.gap=Math.max.apply(null,gaps.concat([G]));d.plateH=rowY[n-1]+72+pn;d.h=HEAD+d.plateH+FOOT;
    d.terms.forEach(function(t){var sl=t.slot;if(!sl||!sl.plate||seen.has(sl)||!olds.has(sl.plate))return;seen.add(sl);sl.py+=(sl.plate.y||0)-olds.get(sl.plate);});
-   regs.forEach(function(list,r){if(!list.length)return;var top=HEAD+(r===0?0:p0+r*72+(r-1)*gap),h=r===0?p0:r===n?pn:gap;list.forEach(function(e,i){e.slot.gy=Math.round((top+h*(i+1)/(list.length+1))*2)/2;});});
+   regs.forEach(function(list,r){if(!list.length)return;var top=HEAD+(r===0?0:rowY[r-1]+72),h=r===0?p0:r===n?pn:gaps[r];list.forEach(function(e,i){e.slot.gy=Math.round((top+h*(i+1)/(list.length+1))*2)/2;});});
    // Side lanes: stack cables innermost (4 px apart), then links two grid steps apart (room for their port labels), the one leaving from
    // lower down further out when going up (higher up when going down), so no lane crosses a gap's line.
    var out={left:0,right:0};['left','right'].forEach(function(sd){var inner=side[sd].ring?G*Math.ceil((4*side[sd].ring+4)/G):0,ups=side[sd].up.slice().sort(function(p,q){return p.slot.gy-q.slot.gy;}),downs=side[sd].down.slice().sort(function(p,q){return q.slot.gy-p.slot.gy;}),all=ups.concat(downs);
@@ -803,7 +805,7 @@
   // and along their side lane.
   var internalLines=[];conns.forEach(function(c){if(!c.internal)return;var d=c.A,a=c.ta.slot,b=c.tb.slot,pa=[d.x+(a.ex!=null?a.ex:a.dx),d.y+a.py],pb=[d.x+(b.ex!=null?b.ex:b.dx),d.y+b.py],pts;
    var k=d.s||1;if(c.ring&&a.gy!=null&&b.gy!=null){var lx=c.ring.side==='left'?d.x-(4+4*c.ring.k)*k:d.x+(d.u?d.u.w*k:d.w)+(4+4*c.ring.k)*k,ya=d.y+a.gy,yb=d.y+b.gy;pts=[pa,[pa[0],ya],[lx,ya],[lx,yb],[pb[0],yb],pb];}
-   else{var hi=(a.plate.row||0)<(b.plate.row||0)?a:b,mid=d.y+(HEAD+(hi.plate.y||0)+72+(d.grid&&d.grid.gap||G)/2)*k;pts=pa[0]===pb[0]?[pa,pb]:[pa,[pa[0],mid],[pb[0],mid],pb];}
+   else{var hi=(a.plate.row||0)<(b.plate.row||0)?a:b,mid=d.y+(HEAD+(hi.plate.y||0)+72+(d.grid&&(d.grid.gaps&&d.grid.gaps[(hi.plate.row||0)+1]||d.grid.gap)||G)/2)*k;pts=pa[0]===pb[0]?[pa,pb]:[pa,[pa[0],mid],[pb[0],mid],pb];}
    internalLines.push({points:pts,color:kindStyle(c.type,view).color,width:kindStyle(c.type,view).width,conn:c,routed:true,strict:true,groups:[],internal:true});});
   var zoneId=0;devices.forEach(function(d){d.zone=++zoneId;var l=d.cellX,w=d.cellW;var tb=d.epTopY+(d.topRows||1)*EP_H+((d.topRows||1)-1)*G*3+G;if(d.top.length)router.reserve(l,tb,w,d.y-d.bt-tb,d.zone);if(d.bot.length)router.reserve(l,d.y+d.h+d.bb,w,d.epBotY-G-(d.y+d.h+d.bb),d.zone);});
   devices.forEach(function(d){router.block(d.x-G,d.y-d.bt+G,d.w+2*G,d.h+d.bt+d.bb-2*G);d.top.forEach(function(e){router.block(d.x+e.rx-G,epY(d,e)-G,EP_W+2*G,EP_H+G);});d.bot.forEach(function(e){router.block(d.x+e.rx-G,epY(d,e),EP_W+2*G,EP_H+G);});if(d.others)router.block(d.x+d.w+G,d.y+18,EP_W+G,36);});
@@ -828,7 +830,10 @@
   conns.forEach(function(c){if(c.internal)return;c.ga=geo(c.ta);c.gb=geo(c.tb);if(Math.min(c.ga.sy,c.gb.sy)<=hdrY)router.hdrOk[c.net]=1;[c.ga,c.gb].forEach(function(g){var v=router.at(g.sx,g.sy);if(v>=0&&!router.term[v])router.term[v]=c.net;if(g.trunk){var m=router.at(g.sx,g.sy+(g.sy>g.py?-G:G));if(m>=0&&!router.term[m])router.term[m]=c.net;}});c.len=Math.abs(c.ga.sx-c.gb.sx)+Math.abs(c.ga.sy-c.gb.sy);
    c.groups=[portGroup(c.ta),portGroup(c.tb)].filter(Boolean);});
   function portGroup(t){var o=t&&(t.shared||t);return o&&o.slot&&o.shares?o.dev.key+'|'+o.slot.key:'';}
-  var lines=[],order=conns.filter(function(c){return !c.internal;}).sort(function(a,b){return (b.ep!=null)-(a.ep!=null)||a.len-b.len;});
+  // Routing order: endpoints first, shortest links first. Tidy links (owner request) also tries other orders and keeps
+  // the cleanest drawing (view.routeOrder: 1 longest first, 2 links between devices first, 3 left to right).
+  var ro=view.routeOrder||0,sx=function(c){return Math.min(c.ga.sx,c.gb.sx);},lines=[],order=conns.filter(function(c){return !c.internal;}).sort(function(a,b){
+   if(ro===1)return (b.ep!=null)-(a.ep!=null)||b.len-a.len;if(ro===2)return (a.ep!=null)-(b.ep!=null)||a.len-b.len;if(ro===3)return (b.ep!=null)-(a.ep!=null)||sx(a)-sx(b)||a.len-b.len;return (b.ep!=null)-(a.ep!=null)||a.len-b.len;});
   function routeConn(c){var s=router.at(c.ga.sx,c.ga.sy),t=router.at(c.gb.sx,c.gb.sy),tDir=(c.gb.dir+2)&3,owner=c.ep!=null?c.A.zone:0,strict=s>=0&&t>=0?router.route(c.net,s,c.ga.dir,t,tDir,false,owner):null;return {strict:strict,path:strict||(s>=0&&t>=0?router.route(c.net,s,c.ga.dir,t,tDir,true,owner):null)};}
   order.forEach(function(c){var r=routeConn(c);c.path=r.path;c.strictPath=r.strict;if(r.path)router.commit(c.net,r.path);});
   // Lines avoid crossing (owner request): each line routed first could not see the ones
@@ -901,6 +906,27 @@
    fan.forEach(function(f){var mid2=f.yt==null?[[f.xs,f.ys],[f.xe,f.ye]]:[[f.xs,f.ys],[f.xs,f.yt],[f.xe,f.yt],[f.xe,f.ye]];f.l.points=compress(f.pre.concat(mid2,f.post));});
    var ok=fan.every(function(f){return f.yt==null?clearRun(f.xs,f.ys,f.xs,f.ye):clearRun(f.xs,f.ys,f.xs,f.yt)&&clearRun(f.xs,f.yt,f.xe,f.yt)&&clearRun(f.xe,f.yt,f.xe,f.ye);}),after=ok&&clash(fan.map(function(f){return f.l;}),lines);
    if(!ok||after.over>before.over||after.cross>before.cross||bendsOf(fan.map(function(f){return f.l;}))>bendsBefore)fan.forEach(function(f){f.l.points=f.old;});});});
+  // Side entry (owner request: no loop under a stack only to climb back up its lane): a stack link whose route passes
+  // beside the stack at its member's gap leaves the gap straight out sideways and joins the route there, instead of
+  // running along the side lane to the stack's top or bottom edge. Kept when it is shorter and adds no crossing or
+  // overlap, and the new stretch runs through no device or endpoint.
+  function boxHit(x0,x1,y){var lo=Math.min(x0,x1)+0.5,hi=Math.max(x0,x1)-0.5,hit=false;devices.forEach(function(dv){if(hit)return;if(y>dv.y-dv.bt&&y<dv.y+dv.h+dv.bb&&hi>dv.x&&lo<dv.x+dv.w)hit=true;dv.top.concat(dv.bot).forEach(function(e){var ex=dv.x+e.rx,ey=epY(dv,e);if(y>=ey-1&&y<=ey+EP_H+1&&hi>ex&&lo<ex+EP_W)hit=true;});});return hit;}
+  function lenOf(q){var n=0;for(var i=1;i<q.length;i++)n+=Math.abs(q[i][0]-q[i-1][0])+Math.abs(q[i][1]-q[i-1][1]);return n;}
+  if(style==='plate')for(var sePass=0;sePass<2;sePass++)lines.forEach(function(l){var c=l.conn;if(l.internal||!l.routed||!c||!c.ga||!c.gb)return;
+   [[c.ta,c.ga,false],[c.tb,c.gb,true]].forEach(function(end){var t=end[0],g=end[1],rev=end[2];if(!t||t.ep!=null||t.shared||g.sideEntry)return;var d=t.dev,sl=t.slot;if(!d||!d.grid||d.grid.chassis||!sl||sl.gy==null||sl.lane==null)return;
+    var gy=d.y+sl.gy,lx=d.x+sl.lane,left=sl.lane<0,p=rev?l.points.slice().reverse():l.points.slice(),k=-1;for(var i=0;i<p.length;i++)if(Math.abs(p[i][1]-gy)<0.01){k=i;break;}
+    if(k<0||!p[k+1]||Math.abs(p[k+1][0]-lx)>0.5||Math.abs(p[k+1][1]-gy)>0.01)return;
+    // Candidates: a vertical stretch of the route beside the stack at the gap's height (straight across to it), or a
+    // horizontal stretch it can reach with one turn beside the stack (across, then up or down to it). The shortest wins.
+    var best=null,base=lenOf(p),old=l.points,before=null,outward=function(x){return left?x<=lx-G+0.5:x>=lx+G-0.5;};
+    var vHit=function(x,y0,y1){var lo=Math.min(y0,y1)+0.5,hi=Math.max(y0,y1)-0.5,hit=false;devices.forEach(function(dv){if(x>dv.x-0.5&&x<dv.x+dv.w+0.5&&hi>dv.y-dv.bt&&lo<dv.y+dv.h+dv.bb)hit=true;dv.top.concat(dv.bot).forEach(function(e){var ex=dv.x+e.rx,ey=epY(dv,e);if(x>ex-0.5&&x<ex+EP_W+0.5&&hi>ey&&lo<ey+EP_H)hit=true;});});return hit;};
+    var tryPath=function(q){q=compress(q);var n=lenOf(q);if(n>=base-0.5||best&&n>=best.n)return;l.points=rev?q.slice().reverse():q;if(!before){l.points=old;before=clash([l],lines);l.points=rev?q.slice().reverse():q;}var after=clash([l],lines);l.points=old;if(after.cross>before.cross||after.over>before.over)return;best={q:q,n:n};};
+    for(var j=k+2;j<p.length;j++){var a=p[j-1],b=p[j];
+     if(Math.abs(a[0]-b[0])<0.01){var X=a[0];if(outward(X)&&gy>=Math.min(a[1],b[1])-0.01&&gy<=Math.max(a[1],b[1])+0.01&&!boxHit(lx,X,gy))tryPath(p.slice(0,k+1).concat([[X,gy]],p.slice(j)));continue;}
+     if(Math.abs(a[1]-b[1])>0.01)continue;var Yh=a[1],x0=Math.min(a[0],b[0]),x1=Math.max(a[0],b[0]);if(left?b[0]>a[0]+0.01:b[0]<a[0]-0.01)continue;
+     var near=left?x1:x0,cands=[];for(var st=1;st<=8;st++)cands.push(left?lx-G*st:lx+G*st);if(outward(near))cands.push(near);
+     for(var ci=0;ci<cands.length;ci++){var X2=cands[ci];if(X2<x0-0.01||X2>x1+0.01)continue;if(boxHit(lx,X2,gy)||vHit(X2,gy,Yh))continue;tryPath(p.slice(0,k+1).concat([[X2,gy],[X2,Yh]],p.slice(j)));}}
+    if(best){l.points=rev?best.q.slice().reverse():best.q;g.sideEntry={x:left?d.x:d.x+d.w,y:gy,left:left};}});});
   // Neat channels (owner request: consistent spacing, nothing chaotic): the horizontal runs in each channel
   // between rows move to evenly spaced tracks (two grid steps apart when there is room), centered in the
   // channel and kept in the order the router gave them, so no crossing or overlap is added.
@@ -933,7 +959,13 @@
   lines.forEach(function(l){var ks=kindStyle(l.conn.type,view);page.line(l.drawn,{relaxed:!l.strict,arcs:l.arcs,color:l.color,width:l.width,dash:l.conn.dash||ks.dash,lineKey:l.key,route:l.points,lkind:l.conn.type,ltitle:[ks.label,[ks.speed,ks.cable].filter(Boolean).join(', ')].filter(Boolean).join(': ')});});
   conns.forEach(function(c){[c.ga,c.gb].forEach(function(g){if(g&&g.trunk&&Math.abs(g.sy-g.py)===2*G)page.rect(g.px-4,g.py-4,8,8,{fill:'#2d3748',stroke:'none',radius:4});});});
   // Port labels in the bands.
-  conns.forEach(function(c){[c.ta,c.tb].forEach(function(t,i){if(!t||t.ep!=null||t.shared||!t.label)return;var g=i?c.gb:c.ga;if(g.flat)page.text(g.lx,g.top?g.dy-19:g.dy+g.dh+3,textW(t.label,12,true)+4,16,t.label,{size:12,bold:true,align:'left',color:'#1f2937'});else page.text(g.lx,g.ly,13,(g.band||BAND)-8,t.label,{size:12,bold:true,rotate:true,align:g.lalign,color:'#1f2937'});});});
+  // A link moved by hand takes its port label with it (owner request): the label sits beside the stretch where the line
+  // now leaves the device's label band, or along the line when it leaves sideways within the band.
+  var lineOf=new Map();lines.forEach(function(l){if(!l.internal&&l.conn)lineOf.set(l.conn,l);});
+  function follow(c,i,g){var l=lineOf.get(c);if(!l||!l.edited||g.sideEntry)return g;var q=i?l.points.slice().reverse():l.points,y=g.sy;
+   for(var k=1;k<q.length;k++){var a=q[k-1],b=q[k];if(Math.abs(a[0]-b[0])<0.01&&y>=Math.min(a[1],b[1])-0.01&&y<=Math.max(a[1],b[1])+0.01)return Math.abs(a[0]-g.sx)<0.5?g:Object.assign({},g,{lx:a[0]+3});}
+   for(var k2=1;k2<q.length;k2++){var a2=q[k2-1],b2=q[k2];if(Math.abs(a2[1]-b2[1])<0.01&&Math.abs(a2[0]-b2[0])>0.5){var right=b2[0]>a2[0];return Object.assign({},g,{sideEntry:{x:a2[0],y:a2[1],left:!right}});}}return g;}
+  conns.forEach(function(c){[c.ta,c.tb].forEach(function(t,i){if(!t||t.ep!=null||t.shared||!t.label)return;var g=follow(c,i,i?c.gb:c.ga);if(g.sideEntry){var se=g.sideEntry,lw=textW(t.label,11,true)+4;page.text(se.left?se.x-lw-6:se.x+6,se.y-14,lw,13,t.label,{size:11,bold:true,align:'left',color:'#1f2937'});}else if(g.flat)page.text(g.lx,g.top?g.dy-19:g.dy+g.dh+3,textW(t.label,12,true)+4,16,t.label,{size:12,bold:true,align:'left',color:'#1f2937'});else page.text(g.lx,g.ly,13,(g.band||BAND)-8,t.label,{size:12,bold:true,rotate:true,align:g.lalign,color:'#1f2937'});});});
   // VLANs of the focus device to the right of everything routed.
   var vlans=view.vlansFor&&input.vlans&&input.vlans.get(view.vlansFor)||[];
   // VLANs to the right, or below in columns when that suits letter paper better.
@@ -1005,8 +1037,13 @@
   // three are drawn in full; the one that prints largest on the sheet wins (routes around
   // the edge can make an estimate optimistic).
   view.edits=o.edits||null;var page=null;
-  if(!view.maxRow){var cands=[],seen={};(style==='box'?[3,4,6,8,10,14]:[1,2,3,4,5,6]).forEach(function(c){var m=render(input,Object.assign({},view,{maxRow:c,measure:true})),f=fitLetter(m),k=Math.round(m.w)+'x'+Math.round(m.h);if(seen[k])return;seen[k]=true;cands.push({c:c,raw:f.raw});});
-   cands.sort(function(a,b){return b.raw-a.raw||a.c-b.c;});var best=null;cands.slice(0,3).forEach(function(cd){if(best&&cd.raw<best.est*0.75)return;var pg=render(input,Object.assign({},view,{maxRow:cd.c})),raw=fitLetter(pg).raw;if(!best||raw>best.raw*1.02)best={c:cd.c,raw:raw,est:cd.raw,page:pg};});view.maxRow=best.c;page=best.page;}
+  // With Fit to drawing (the default) the arrangement whose drawing fits the smallest square wins (owner request: the
+  // smallest square area that holds everything); on a fixed sheet, the one that prints largest.
+  // Drawn candidates also pay for their crossings, bends and link length (owner request: shortest links, fewest bends,
+  // no needless crossings), so a slightly larger square with cleaner links can win.
+  var rate=function(m){if(!paperInfo().fit)return fitLetter(m).raw;var c=Math.max(m.w,m.h,1);if(!m.measure&&m.lines)m.lines.forEach(function(l){if(l.internal)return;c+=40*(l.arcs?Object.keys(l.arcs).length:0);var q=l.points;for(var i=1;i<q.length;i++){c+=0.5*(Math.abs(q[i][0]-q[i-1][0])+Math.abs(q[i][1]-q[i-1][1]));if(i<q.length-1&&(Math.abs(q[i-1][1]-q[i][1])<0.01)!==(Math.abs(q[i][1]-q[i+1][1])<0.01))c+=40;}});return 1e6/c;};
+  if(!view.maxRow){var cands=[],seen={};(style==='box'?[3,4,6,8,10,14]:[1,2,3,4,5,6]).forEach(function(c){var m=render(input,Object.assign({},view,{maxRow:c,measure:true})),k=Math.round(m.w)+'x'+Math.round(m.h);if(seen[k])return;seen[k]=true;cands.push({c:c,raw:rate(m)});});
+   cands.sort(function(a,b){return b.raw-a.raw||a.c-b.c;});var best=null;cands.slice(0,3).forEach(function(cd){if(best&&cd.raw<best.est*0.75)return;var pg=render(input,Object.assign({},view,{maxRow:cd.c})),raw=rate(pg);if(!best||raw>best.raw*1.02)best={c:cd.c,raw:raw,est:cd.raw,page:pg};});view.maxRow=best.c;page=best.page;}
   else page=render(input,view);
   // Shortest paths (owner request: no line climbs over a device only to come back down): a stack's or chassis' links
   // leave by the edge (top or bottom) that makes the whole path shortest where the devices really are, moved by hand
@@ -1019,6 +1056,12 @@
     opts(c.A,c.ta,pa).forEach(function(sa){opts(c.B,c.tb,pb).forEach(function(sb){var ya=edgeY(c.A,sa),yb=edgeY(c.B,sb),xa=pa[0],xb=pb[0],cost=inner(c.A,sa,pa)+inner(c.B,sb,pb)+Math.abs(ya-yb)+Math.abs(xa-xb)+around(c.A,sa,c.B)+around(c.B,sb,c.A)+(sa!==c.ta.side?1:0)+(sb!==c.tb.side?1:0);if(!best||cost<best.cost)best={cost:cost,sa:sa,sb:sb};});});
     if(!best)return;[[c.A,c.aPorts[0],c.B,best.sa,c.ta],[c.B,c.bPorts[0],c.A,best.sb,c.tb]].forEach(function(e){if(!e[0].grid)return;sides[e[0].key+'|'+short(e[1]||'')+'>'+e[2].key]=e[3];if(e[3]!==e[4].side)changed=true;});});
    if(changed){view.sides=sides;page=render(input,view);}}
+  // Tidy links (owner request: a tool that makes the links as efficient, clean, consistent and parallel as it can):
+  // the drawing is routed in several orders and the cleanest wins (fewest relaxed routes, then crossings, bends and
+  // length). Hand-drawn routes are cleared by the button that turns it on.
+  if(style==='plate'&&(o.tidy||o.edits&&o.edits.tidy)){var score=function(pg){var r=0,h=0,b=0,n=0;pg.lines.forEach(function(l){if(!l.strict)r++;h+=l.arcs?Object.keys(l.arcs).length:0;var q=l.points;for(var i=1;i<q.length;i++){n+=Math.abs(q[i][0]-q[i-1][0])+Math.abs(q[i][1]-q[i-1][1]);if(i<q.length-1&&(Math.abs(q[i-1][1]-q[i][1])<0.01)!==(Math.abs(q[i][1]-q[i+1][1])<0.01))b++;}});return [r,h,b,n];},
+    better=function(x,y){for(var i=0;i<4;i++){if(x[i]<y[i]-(i===3?0.5:0))return true;if(x[i]>y[i]+(i===3?0.5:0))return false;}return false;},bestS=score(page),bestM=view.routeOrder||0;
+   [1,2,3].forEach(function(m){if(m===bestM)return;var pg=render(input,Object.assign({},view,{routeOrder:m})),sc=score(pg);if(better(sc,bestS)){bestS=sc;bestM=m;page=pg;}});view.routeOrder=bestM;page.tidyScore=bestS;}
   // Compaction (owner request: links close together but open space around them): each channel is cut to
   // the tracks its routes used plus one on each side, and kept only when routing stays as good (no more
   // relaxed routes or hops). The caps come from the drawing without hand edits, so editing never shifts it.
@@ -1232,12 +1275,17 @@
   var slow=[];devs.forEach(function(d){d.ports.forEach(function(p){if(p.neighbor&&p.neighbor.role==='ap'&&speedValue(p.speed)&&speedValue(p.speed)<1000)slow.push(d.name+' '+p.name+' ('+p.neighbor.name+', '+p.speed+')');});});
   if(slow.length)note(flow,'Access points linked below 1 Gbps: '+slow.join('; ')+'.',{box:'#fff6e0'});}
  function routingPages(docs,o,out){
-  var vlans=new Map(),ifaces=[],routes=[];docs.devices.forEach(function(d){(d.vlans||[]).forEach(function(v){var e=vlans.get(v.id)||{id:v.id,name:'',on:[],ips:[]};if(!e.name&&v.name)e.name=v.name;if(e.on.indexOf(d.name)<0)e.on.push(d.name);if(v.ip)e.ips.push(d.name+'  '+v.ip);vlans.set(v.id,e);});
-   (d.addresses||[]).forEach(function(a){ifaces.push([{text:d.name,bold:true},a.iface,a.ip,a.note||'']);});(d.routes||[]).forEach(function(r){routes.push([{text:d.name,bold:true},r.dest,r.gateway,r.iface||'',r.note||'']);});});
+  var vlans=new Map(),ifaces=[],routes=[],shownElse=0;docs.devices.forEach(function(d){(d.vlans||[]).forEach(function(v){var e=vlans.get(v.id)||{id:v.id,name:'',on:[],ips:[]};if(!e.name&&v.name)e.name=v.name;if(e.on.indexOf(d.name)<0)e.on.push(d.name);if(v.ip)e.ips.push(d.name+'  '+v.ip);vlans.set(v.id,e);});
+   // Each address is listed once (owner request: no data repeated between pages): VLAN interfaces in the VLANs table,
+   // routed ports in the port inventory (when it is on); this table keeps the rest (loopbacks, tunnels, management).
+   var vlanIps=(d.vlans||[]).filter(function(v){return v.ip;}).map(function(v){return String(v.ip).split('/')[0];}),inInv=(o.pages||{}).inventory!==false;
+   (d.addresses||[]).forEach(function(a){var ip=String(a.ip||'').split('/')[0];if(/^(?:vlan|vl|vlanif|irb|bvi|vlan-?interface)\s*[.\-]?\d+$/i.test(String(a.iface||'').trim())||ip&&vlanIps.indexOf(ip)>=0){shownElse++;return;}
+    if(inInv&&(d.ports||[]).some(function(p){return p.ip&&String(p.ip).split('/')[0]===ip&&(p.name===a.iface||short(p.name)===short(a.iface));})){shownElse++;return;}ifaces.push([{text:d.name,bold:true},a.iface,a.ip,a.note||'']);});(d.routes||[]).forEach(function(r){routes.push([{text:d.name,bold:true},r.dest,r.gateway,r.iface||'',r.note||'']);});});
   if(!vlans.size&&!ifaces.length&&!routes.length)return;
   var flow=new Flow('VLANs and routing','VLANs, routed interfaces and routes of '+docs.devices.map(function(d){return d.name;}).join(', '),o,out);
   if(vlans.size)docTable(flow,[{label:'VLAN',w:0.08},{label:'Name',w:0.2},{label:'Addresses (device and interface address)',w:0.4},{label:'Configured on',w:0.32}],Array.from(vlans.values()).sort(function(a,b){return Number(a.id)-Number(b.id);}).map(function(v){return [{text:v.id,bold:true},v.name,v.ips.join('\n'),v.on.join(', ')];}),{heading:'VLANs'});
-  if(ifaces.length)docTable(flow,[{label:'Device',w:0.22},{label:'Interface',w:0.2},{label:'IPv4 address',w:0.2},{label:'Role or description',w:0.38}],ifaces,{heading:'Routed interfaces'});
+  if(ifaces.length)docTable(flow,[{label:'Device',w:0.22},{label:'Interface',w:0.2},{label:'IPv4 address',w:0.2},{label:'Role or description',w:0.38}],ifaces,{heading:'Other routed interfaces'});
+  if(shownElse)note(flow,'VLAN interface addresses are in the VLANs table'+((o.pages||{}).inventory!==false?' and routed ports with their addresses in the port inventory':'')+'; they are not repeated here.',{});
   if(routes.length)docTable(flow,[{label:'Device',w:0.2},{label:'Destination',w:0.18},{label:'Gateway or next hop',w:0.3},{label:'Interface',w:0.14},{label:'Notes',w:0.18}],routes,{heading:'Routes and default gateways'});
   var seen=new Map(),dup=[];docs.devices.forEach(function(d){(d.addresses||[]).concat((d.vlans||[]).filter(function(v){return v.ip;}).map(function(v){return {iface:'VLAN '+v.id,ip:v.ip};})).forEach(function(a){var ip=String(a.ip).split('/')[0];if(!ip)return;var prev=seen.get(ip);if(prev&&prev.d!==d.name)dup.push(ip+' on '+prev.d+' '+prev.i+' and '+d.name+' '+a.iface);else if(!prev)seen.set(ip,{d:d.name,i:a.iface});});});
   if(dup.length)note(flow,'Repeated addresses: '+dup.join('; ')+'. Confirm whether the interfaces share a Layer 2 segment.',{box:'#fff6e0'});}

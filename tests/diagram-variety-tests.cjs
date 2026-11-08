@@ -161,7 +161,7 @@ function visioChecks(name,pages){
   const on=(dev,pt)=>dev&&dev.members.find(m=>pt[0]>=m.x-1&&pt[0]<=m.x+m.w+1&&pt[1]>=m.y-1&&pt[1]<=m.y+m.h+1);
   for(const scope of ['downstream','site']){const p=D.diagram(inp,{scope,focus:core,style:'plate',aps:true,title:'Stacks'}),d1=p.devices.find(d=>d.key===st1),d2=p.devices.find(d=>d.key===st2),m1=d1&&d1.members||[],m2=d2&&d2.members||[];
    const gapsOf=ms=>ms.slice(1).map((m,i)=>Math.round(m.y-(ms[i].y+ms[i].h)));
-   ok(m1.length===5&&m2.length===2&&m1.every((m,i)=>!i||Math.abs(m.x-m1[0].x)<1&&m.y>m1[i-1].y+m1[i-1].h)&&new Set(gapsOf(m1)).size===1,scope+': each stack member is drawn beneath the one before, evenly spaced: '+m1.map(d=>Math.round(d.x)+','+Math.round(d.y)).join(' '));
+   ok(m1.length===5&&m2.length===2&&m1.every((m,i)=>!i||Math.abs(m.x-m1[0].x)<1&&m.y>m1[i-1].y+m1[i-1].h)&&gapsOf(m1).every(g=>g>=9)&&Math.min(...gapsOf(m1))<Math.max(...gapsOf(m1)),scope+': each stack member is drawn beneath the one before, each gap only as tall as its lines need: '+m1.map(d=>Math.round(d.x)+','+Math.round(d.y)).join(' '));
    ok(faces(p).length===0,scope+': no line runs across a stack member, each port entered from its own side: '+faces(p).slice(0,3).join('; '));
    ok(!p.devices.some(d=>/#/.test(d.key)),scope+': a stack stays one device');
    const sl=p.lines.filter(l=>/^stack/.test(l.conn.type));ok(sl.length===5+2,scope+': VSF links join the members, as a ring: '+sl.length);
@@ -181,6 +181,16 @@ function visioChecks(name,pages){
    const top=l=>l.points[1][1]<l.points[0][1],cross=(a,b)=>{let n=0;for(let i=1;i<a.points.length;i++)for(let j=1;j<b.points.length;j++){const h=[a.points[i-1],a.points[i]],v=[b.points[j-1],b.points[j]];[[h,v],[v,h]].forEach(([H,V])=>{if(H[0][1]!==H[1][1]||V[0][0]!==V[1][0])return;const x=V[0][0],y=H[0][1];if(x>Math.min(H[0][0],H[1][0])+0.5&&x<Math.max(H[0][0],H[1][0])-0.5&&y>Math.min(V[0][1],V[1][1])+0.5&&y<Math.max(V[0][1],V[1][1])-0.5)n++;});}return n;};
    let x=0;wl.forEach((a,i)=>wl.slice(i+1).forEach(b=>{x+=cross(a,b);}));
    ok(wl.length===4&&wl.every(l=>bends(l)<=(top(l)?2:4))&&x===0,'WAN circuit links: two bends from top-row ports, nested loops from bottom-row ports, no crossings: '+wl.map(bends).join(',')+' / '+x);}
+  // Side entry (owner request): a stack placed beside its core, its links from the core's bottom-row ports: each link
+  // leaves its member's gap straight out sideways to the route instead of looping under the stack and up its lane.
+  {const s5=site('Side entry'),c5=s5.dev('EX-MDF','Switch','JL675A','JL675A'),t5=s5.dev('EX-2FL-STACK','Switch','JL558A');[['1/1/4','5/50'],['1/1/6','6/50'],['1/1/8','7/50']].forEach(([a,b])=>s5.link(c5,t5,a,b,'10 Gb/s','10GBase-SR'));
+   const i5=input(s5);[i5.layout.all,i5.layout.nodes].forEach(l=>l.forEach(n=>{if(n.key===t5)n.hw=stackHw('JL558A',8);}));const o5={scope:'downstream',focus:c5,style:'plate',title:'Side'},q0=D.diagram(i5,o5),dc=q0.devices.find(d=>d.key===c5),ds=q0.devices.find(d=>d.key===t5);
+   const p=D.diagram(i5,Object.assign({edits:{maxRow:q0.maxRow,moves:{[t5]:[Math.round((dc.x+dc.w+180-ds.x)/9)*9,Math.round((dc.y-200-ds.y)/9)*9]}}},o5)),ul=p.lines.filter(l=>l.conn.B&&l.conn.A!==l.conn.B);
+   const bends=l=>l.points.filter((q,i)=>i&&i<l.points.length-1&&(Math.abs(l.points[i-1][1]-q[1])<0.01)!==(Math.abs(l.points[i+1][1]-q[1])<0.01)).length,by=k=>ul.find(l=>l.conn.bPorts[0]===k||l.conn.aPorts[0]===k);
+   ok(by('6/50')&&bends(by('6/50'))===2&&by('7/50')&&bends(by('7/50'))===2,'links beside a stack enter their member from the side: '+ul.map(bends).join(','));
+   ok(routing(p).length===0&&faces(p).length===0,'side entries keep the routing rules: '+routing(p).concat(faces(p)).slice(0,3).join('; '));
+   // Tidy links (owner request): several routing orders, the cleanest kept; never worse than the default drawing.
+   const hops=pg=>pg.lines.reduce((n,l)=>n+(l.arcs?Object.keys(l.arcs).length:0),0),t=D.diagram(i5,Object.assign({tidy:true},o5));ok(hops(t)<=hops(q0)&&routing(t).length===0,'tidy links never adds a crossing: '+hops(t)+' <= '+hops(q0));}
   // Access points on a middle member (owner's wireless pages): their links leave by the stack's side lane and fan out
   // to the row of access points as Z shapes, crossing none of the others and with no sideways jogs.
   {const sw=stackHw('JL558A',4),s3=site('Middle member APs'),t3=s3.dev('EX-AP-STACK','Switch','JL558A');for(let i=1;i<=12;i++)s3.link(t3,s3.dev('EX-AP-'+i,'Access Point','AP-515'),'3/'+i,'eth0','1 Gb/s');
