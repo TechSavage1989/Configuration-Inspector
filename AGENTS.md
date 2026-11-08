@@ -300,6 +300,17 @@ a decision or a test on the owner's own machine (for example opening an export i
   a side label column; keep port `py` offsets including `HEAD`.
 - Messages (`toast`) are a popover in the top layer so they show over dialogs; don't move
   `#toast` back into normal flow.
+- Device sizes (owner request, like NDS's device scale): edits `scale[key]` and `scaleAll`. `render()` scales a
+  device after its planners and `fit()` (`d.s`; unscaled values in `d.u` and each slot's `u`) and draws it unscaled
+  through `unscaled()`, then `scaleShapes()`. Code that reads device-relative geometry after that step gets scaled
+  values; drawing code gets unscaled ones. Linked ports stay at least a grid step apart (the size is clamped).
+- Pages by hand (owner request): edits `pages[key]=n` (2, 3, ... with no gaps) and `pageRows[n]`; `diagram()` with
+  `o.page` keeps that page's devices, and every link between pages ends at an off-page reference on both pages
+  (role `offpage`: an endpoint on faceplates, an `off:<key>` box with `ref:true` on box pages). Those pages follow
+  the main page in tabs and downloads and are edited with the same edits (each device is on one page).
+- Editor selection (owner request): Shift/Ctrl-click adds on press and removes on release without a move, so a
+  Shift-drag still moves the selection; Shift locks to the axis the first few pixels chose (`d.axis`). A click that
+  selects must refresh the edit bar (`renderContentBar`).
 - Keep one design language: side panels use `.side-panel-body` with `.device-info-row`
   label/value rows, details drawers use `.detail-summary`/`.detail-cell`, and lists in
   narrow panels are rows (`.site-link-row`), never multi-column tables.

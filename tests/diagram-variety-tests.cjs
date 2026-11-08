@@ -171,6 +171,20 @@ function visioChecks(name,pages){
    ok(gaps.length===6&&gaps.every(g=>g===gaps[0]&&g>=9&&g<=36),scope+': stack members are evenly spaced, no further apart than their lines need (owner request): '+gaps.join(', '));
    ok(faces(p).length===0,scope+': no line runs across a member of an uneven stack: '+faces(p).slice(0,3).join('; '));
    const r=routing(p);ok(r.length===0,scope+': uneven stacks follow the routing rules: '+r.slice(0,4).join('; '));}}
+ // Sizes and pages by hand (owner requests) keep the routing rules: every device smaller or larger, the top device
+ // larger alone, and the devices under the top device on a page of their own with off-page references both ways.
+ D.setPaper({key:'fit'});
+ designs.forEach(s=>{const inp=input(s),t=D.tree(inp.layout),top=inp.layout.nodes.filter(n=>n.role!=='circuit').sort((a,b)=>a.y-b.y)[0];if(!top)return;const base={scope:'downstream',focus:top.key,style:'plate',aps:true,others:true};
+  [['every device at 70%',{scaleAll:0.7}],['every device at 140%',{scaleAll:1.4}],['the top device at 150%',{scale:{[top.key]:1.5}}]].forEach(([tag,ed])=>{const p=D.diagram(inp,Object.assign({},base,{edits:ed})),r=routing(p),f=faces(p);
+   ok(r.length===0&&f.length===0,s.name+', '+tag+': the routing rules hold: '+r.concat(f).slice(0,3).join('; '));
+   const want=ed.scaleAll||1.5,d=p.devices.find(x=>x.key===top.key);ok(d&&d.scale>=Math.min(want,1)-0.001&&(want<1||d.scale>=want-0.001),s.name+', '+tag+': the size applies: '+(d&&d.scale));});
+  const kids=t.children.get(top.key)||[];if(!kids.length)return;const pages={};kids.forEach(k=>pages[k]=2);
+  const p1=D.diagram(inp,Object.assign({},base,{edits:{pages}})),p2=D.diagram(inp,Object.assign({},base,{edits:{pages},page:2})),refs=(p,n)=>p.shapes.filter(x=>x.type==='text'&&new RegExp('See page '+n).test(x.text)).length;
+  ok(!p1.devices.some(d=>pages[d.key])&&p2.devices.length&&p2.devices.every(d=>pages[d.key]===2),s.name+': each page has its own devices');
+  ok(refs(p1,2)>=1&&refs(p2,1)>=1&&refs(p1,2)===refs(p2,1),s.name+': links between the pages end at off-page references on both: '+refs(p1,2)+' / '+refs(p2,1));
+  [p1,p2].forEach((p,i)=>{const r=routing(p);ok(r.length===0,s.name+', page '+(i+1)+': the routing rules hold: '+r.slice(0,3).join('; '));});
+  ok(/^Page 2: /.test(p2.title),s.name+': page 2 is titled by its devices: '+p2.title);
+  const pb=D.diagram(inp,Object.assign({},base,{style:'box',edits:{pages}}));ok(pb.devices.filter(d=>d.ref).length>=1&&pb.shapes.some(x=>x.type==='text'&&/See page 2/.test(x.text)),s.name+': box pages carry reference boxes');});
  ok(slowest<8000,'every drawing finishes quickly: slowest '+slowest+' ms ('+slowName+')');
  if(fails.length){console.log(fails.length+' FAILED');const seen=new Map();fails.forEach(f=>{const key=f.replace(/: .*/s,'').replace(/^.*?(routing rules|nothing above|WAN circuits sit|hops are|finite|SVG|port modules|Port modules|site book|Visio|line weights|numbered|uniquely|drawn with|anchors|drawing failed|quickly).*/,'$1');seen.set(f.slice(0,160),1);});[...seen.keys()].slice(0,60).forEach(x=>console.log(' - '+x));}
  console.log(checks+' network design variety checks passed (slowest drawing '+slowest+' ms)');

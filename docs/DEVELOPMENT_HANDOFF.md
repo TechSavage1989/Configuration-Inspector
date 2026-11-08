@@ -1,5 +1,20 @@
 # Configuration Inspector development handoff
 
+## 5.63.0 — arranging tools: size, place beside, pages, Shift axis lock
+
+- Sizes: edits `scale[key]` and `scaleAll`. `render()` scales each device after the stack and chassis planners and
+  `fit()` (`d.s`, unscaled `d.u`, slot `u`), clamped so linked ports stay >= one grid step apart; drawing goes
+  through `unscaled()` and `scaleShapes()`; `page.devices[].scale` is the effective size, `box` the footprint
+  (bands, side lanes, endpoints) and `links` the far devices. Channel caps are measured with sizes applied.
+- Pages: edits `pages[key]=n` (n >= 2, kept contiguous by `moveToPage`) and `pageRows[n]`. `diagram(input,{page:n})`
+  keeps that page's devices; links between pages become off-page references (`view.offpage` endpoints with role
+  `offpage` on faceplates; `off:<key>` reference boxes with `ref:true` on box pages). `assignedPages()` puts them
+  right after the main page; `editPageOf`/`editableTab` include them.
+- Editor: Shift/Ctrl-click adds and (on release without moving) removes; `dragPoint` locks to `d.axis`, set by the
+  first few pixels; links picked within `pickTol` (12 screen px) and lit (`line-hover`) before the click; the
+  arrange row (`diagramArrangeBar`: Size, Place beside with `state.placeMode`, Move to page) and a device
+  right-click menu. Test: `tests/diagram-arrange-browser.cjs`.
+
 ## 5.62.0 — NDS chassis panel, stacked WAN circuits
 
 - `ndsChassisLayout` cuts each slot of an NDS-drawn chassis from `deviceFaceplate({model, modules})`; `d.grid.nds`,
