@@ -70,12 +70,16 @@ function campus(){
   const devs=[dv('EXAMPLE-FW','Firewall','FortiGate-120G','10.0.0.1'),dv('EXAMPLE-MDF1','Switch','JL675A','10.0.0.2'),dv('EXAMPLE-MDF2','Switch','JL675A','10.0.0.3'),dv('ISP-A circuit','Circuit','','192.0.2.1'),dv('ISP-B circuit','Circuit','','192.0.2.9')];
   const links=[{a:k('EXAMPLE-FW'),b:k('ISP-A circuit'),aPort:'port1',bPort:'',aSpeed:'1 Gb/s'},{a:k('EXAMPLE-FW'),b:k('ISP-B circuit'),aPort:'port2',bPort:'',aSpeed:'1 Gb/s'},{a:k('EXAMPLE-FW'),b:k('EXAMPLE-MDF1'),aPort:'x3',bPort:'1/1/49',aSpeed:'10 Gb/s',aMedia:'10GBase-SR'},{a:k('EXAMPLE-MDF1'),b:k('EXAMPLE-MDF2'),aPort:'1/1/51',bPort:'1/1/51',aSpeed:'10 Gb/s'}];
   const p=D.diagram({layout:M.layout(devs,links,{}),links,vlans:new Map(),ports:new Map(),title:'WAN'},{scope:'downstream',focus:k('EXAMPLE-FW')}),circ=p.eps.filter(e=>e.role==='circuit');
-  const over=p.lines.filter(l=>l.points.some((q,i)=>i&&circ.some(e=>{const r=l.points[i-1];return Math.min(q[1],r[1])<e.y&&Math.max(q[0],r[0])>e.x&&Math.min(q[0],r[0])<e.x+e.w;})));
-  ok(circ.length===2&&over.length===0,'no line passes above a WAN circuit: '+over.map(l=>l.conn.A.key+'|'+l.conn.aPorts[0]).join(', '));
+  // Circuits stacked in rows above a narrow firewall (as in NetworkDiagramStudio): only the links of circuits
+  // stacked higher may pass a lower circuit on their way up.
+  const epOf=l=>{if(l.conn.ep==null)return null;const t=l.points[l.points.length-1];return circ.find(e=>Math.abs(t[1]-(e.y+e.h))<2&&t[0]>=e.x&&t[0]<=e.x+e.w)||null;};
+  const over=p.lines.filter(l=>l.points.some((q,i)=>i&&circ.some(e=>{const r=l.points[i-1],own=epOf(l);if(own&&own.y<e.y)return false;return Math.min(q[1],r[1])<e.y&&Math.max(q[0],r[0])>e.x&&Math.min(q[0],r[0])<e.x+e.w;})));
+  ok(circ.length===2&&over.length===0,'no line passes above a WAN circuit (except links of circuits stacked above it): '+over.map(l=>l.conn.A.key+'|'+l.conn.aPorts[0]).join(', '));
   ok(routing(p).length===0,'and the WAN page follows the routing rules: '+routing(p).slice(0,4).join('; '));
   // Owner request: links spread out rather than bunch on one side; the uplink takes the side the handoff leaves free.
   const fw=p.devices.find(d=>d.key===k('EXAMPLE-FW')),ln=port=>p.lines.find(l=>l.conn.A.key===k('EXAMPLE-FW')&&l.conn.aPorts[0]===port),xs=l=>l.points.map(q=>q[0]);
-  ok(Math.max(...xs(ln('port2')))>fw.x+fw.w&&Math.min(...xs(ln('x3')))<fw.x,'the uplink and the handoff run down opposite sides of the firewall');
+  const right=l=>Math.max(...xs(l))>fw.x+fw.w,left=l=>Math.min(...xs(l))<fw.x;
+  ok(right(ln('port2'))&&left(ln('x3'))||left(ln('port2'))&&right(ln('x3')),'the uplink and the handoff run down opposite sides of the firewall');
   // Owner request: crossings hop Visio style, as a true arc that the Visio export keeps (ArcTo bowing upward).
   const hop=p.shapes.find(x=>x.type==='line'&&x.arcs);ok(hop&&Object.values(hop.arcs).every(b=>b>0),'a crossing line hops over the other');
   const svgHop=D.svg(p);ok(/<polyline[^>]*points="[^"]*"/.test(svgHop),'the hop is drawn on the page');
