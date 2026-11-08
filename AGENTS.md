@@ -344,6 +344,13 @@ a decision or a test on the owner's own machine (for example opening an export i
 - Layout choice with Fit to drawing: the smallest square (`max(w,h)`) plus 40 per hop, 40 per bend and 0.5 per px of
   link (`rate` in `diagram()`); fixed sheets keep the largest print. Tidy links (`o.tidy`/`edits.tidy`, the edit
   bar's button) routes in `view.routeOrder` 0-3 and keeps the cleanest drawing.
+- No pointless jogs: a cleanup pass after the side entry removes a short step (<= 4 grid steps) between two runs going
+  the same way, either orientation and every style, when that adds no crossing or overlap and the two changed
+  stretches pass no device (`vClear`, `boxHit`); jogs that avoid a crossing stay. Chassis leader steps on one module
+  never share a height (`byPl` pass), whatever edge their links leave by; zones join rows within 2 px.
+- Unknown ports end on a dashed "?" jack drawn at the edge point. Port map sheets put Trunks / LAGs and Port
+  descriptions under the VLAN key when they do not fit under the ports (`GX`/`GW`/`GP`); faceplates shrink for them
+  only when neither place has room. Member bars are 13 px with 3 px between members.
 - VLANs and routing lists each address once: VLAN interfaces in the VLANs table, routed ports in the port inventory
   (when it is on), the rest under "Other routed interfaces".
 - Endpoint fans (owner request: no needless bends or crossings): after routing, a device's links to its row of
