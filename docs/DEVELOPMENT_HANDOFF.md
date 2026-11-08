@@ -1,5 +1,11 @@
 # Configuration Inspector development handoff
 
+## 5.68.0 — full-window layout, compact diagram chrome, sideways stack exits
+
+- `main` max-width removed (also `.map-region`, `.welcome`, zone web). `main.diagram-main` compacts the diagram view.
+- Stack terminals can exit 'left'/'right' (`t.exit`, `geo().exitY`); `diagram()`'s shortest-path pass weighs them.
+- Tests: beside-stack links stay between the devices (variety).
+
 ## 5.67.0 — chassis step heights, jog cleanup, unknown-port jacks, one-sheet port maps
 
 - Chassis leader zones cluster rows within 2 px; a per-module pass (`byPl`) keeps every step at its own height.
