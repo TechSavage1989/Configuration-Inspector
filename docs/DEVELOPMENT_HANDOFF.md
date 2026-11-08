@@ -2,8 +2,8 @@
 
 ## 5.64.0 — port maps like the switchport builder, port inventory, fewer crossings
 
-- `portMapPages` rewritten: one sheet per device (`sheetPage`, `sectionBar`, `portSquare`, `vlanColors`,
-  `TRUNK_COLORS`, `ROUTED_FILL`), plain faceplate geometry via `node.noArt`; `inventoryPages` (page choice
+- `portMapPages` rewritten: one sheet per device (`sheetPage`, `sectionBar`, `vlanColors`, `TRUNK_COLORS`,
+  `ROUTED_FILL`) drawn with the app's faceplates (`drawPlate`) and VLAN marks on the jacks (`vlanMark`, `fills.vlan`); `inventoryPages` (page choice
   `inventory`) with `docTable` options `light`, `onRow` and `swatch` cells; `Flow.make`/`Flow.bottom`.
   `diagramDocs` adds `voice`, `firmware` and `os`.
 - Unknown ports: `termPlate` gives an empty port its own edge point (`slot.unknown`, "port ?"); `siteMapModel` fills an

@@ -311,11 +311,12 @@ a decision or a test on the owner's own machine (for example opening an export i
 - Editor selection (owner request): Shift/Ctrl-click adds on press and removes on release without a move, so a
   Shift-drag still moves the selection; Shift locks to the axis the first few pixels chose (`d.axis`). A click that
   selects must refresh the edit bar (`renderContentBar`).
-- Port maps (owner request: like the owner's switchport diagram builder): `portMapPages` draws one sheet per device
-  from the plain faceplate geometry (`noArt` on the node skips NDS art and the NDS chassis), ports by `portPos`
-  (which already includes the group's x), filled by native VLAN (`vlanColors`, one colour per VLAN on every sheet),
-  tagged dots, voice diamond, trunk outline (`TRUNK_COLORS`), black stack ports (`hw.links`). The port table lives on
-  separate `inventoryPages` (page choice `inventory`). Sheets use `sheetPage`; `Flow.make` builds custom pages.
+- Port maps (owner request: the sheet layout of the owner's switchport diagram builder, but the app's own
+  faceplates, never the builder's squares): `portMapPages` draws one sheet per device with `drawPlate` (NDS panels,
+  NDS chassis, stencils, classic plates) and `fills` entries `{vlan:true,...}` that `vlanMark` draws on each jack:
+  native VLAN fill (`vlanColors`, one colour per VLAN on every sheet), tagged dots, voice diamond, trunk outline
+  (`TRUNK_COLORS`), black stack ports (`hw.links`). The port table lives on separate `inventoryPages` (page choice
+  `inventory`). Sheets use `sheetPage`; `Flow.make` builds custom pages; `portPos` already includes the group's x.
 - Ports the data does not name: a link with an empty port ends on its own point on the device edge (`slot.unknown`,
   label "port ?"), never on `dev.slot('')`. `siteMapModel` first fills an empty far port from the far device's
   interface alias that the near port's description names (one match only, not already used).

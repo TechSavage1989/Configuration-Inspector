@@ -64,8 +64,8 @@ When supplementary data is open, the search also finds devices, live interfaces,
 <b>A core chassis and everything below it, drawn with the front panels shared with NetworkDiagramStudio</b><br>
 <img src="docs/images/network-diagram.png" alt="Network diagram of a 5406R zl2 core chassis with its management module and module cards, links in a staircase to lanes at the right of each module and down to a stack of Aruba 2930F switches and an access switch, the connection types in a column at the left" width="900">
 
-<b>Documentation pages after the diagram: a port map sheet per device, ports coloured by VLAN</b><br>
-<img src="docs/images/network-diagram-pages.png" alt="Port map sheet of the core chassis: a dark header with the name, model and firmware, module slots two across with ports coloured by native VLAN and outlined by trunk, the VLAN key at the right, then trunks and port descriptions" width="900">
+<b>Documentation pages after the diagram: a port map sheet per device, its front panel marked by VLAN</b><br>
+<img src="docs/images/network-diagram-pages.png" alt="Port map sheet of the core chassis: a dark header with the name, model and firmware, the chassis front panel with each port marked in its native VLAN colour and outlined by its trunk, and the VLAN key at the right" width="900">
 
 ### Site overview
 
@@ -219,8 +219,8 @@ Values in these tables (MAC and IP addresses, ports, device names) can be copied
     - Edits are kept on this computer for each view of the site and go into every download. The zoom and scrolled position stay where they are after each change. Devices that start rows line up on one left edge by default.
   - **Pages:** tabs under the toolbar show the documentation pages that follow the diagram, built from the open configurations and supplementary data. Each is a letter page:
     - **Port map**: one sheet per device, laid out like a switchport diagram builder. A dark header names the device, its model, operating system, firmware and number of interfaces, and the **VLAN key** runs down the right.
-      - Each stack member or module slot has a slim bar ("Member 1 | JL558A | 48 RJ-45 + 4 SFP+", "Slot A | J9993A | 8 SFP+"); a chassis shows its slots two across, as in the rack.
-      - Each port is a square in the colour of its native VLAN, with a dot per tagged VLAN, a diamond for the voice VLAN, an outline in its trunk's colour, black for a stack (VSF) port, and its number below. Routed ports have their own colour, and administratively disabled ports are dashed.
+      - The device is drawn with the app's own faceplate, the same drawing as on the diagram (NetworkDiagramStudio's front panels, a chassis whole with its module cards, or an imported stencil); each stack member sits under a slim bar ("Member 1 | JL558A | 48 RJ-45 + 4 SFP+").
+      - Each port is marked on its jack: filled in its native VLAN's colour, with a dot per tagged VLAN, a diamond for the voice VLAN, an outline in its trunk's colour and black for a stack (VSF) port; its number sits above a top-row port and below a bottom-row one. Routed ports have their own colour, and administratively disabled ports are dashed.
       - Below the ports: **Trunks / LAGs** with their ports, then **Port descriptions** grouped by description, and a legend with "Sheet n / N". A VLAN has the same colour on every sheet.
     - **Port inventory**: separate pages after the port maps, a table of every port of each device (port, description, mode, native VLAN with its colour, tagged VLANs, trunk, voice VLAN, admin state and link state), headed with the ports each page lists ("Ports 1-26 of 260").
     - **Wireless connections**: each switch drawn with its access points wired to their own ports: a row above the switch for top-row ports and a row below for bottom-row ports, each access point's name, port and speed, and address stacked over or under its icon, then every access point with its switch port, model, address, speed and link state; links below 1 Gbps are listed.
