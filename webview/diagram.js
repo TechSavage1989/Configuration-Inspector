@@ -232,14 +232,14 @@
    // Shared NDS front panel at its real proportions: full height on a switch or stack member, below the
    // slot title on a chassis module card.
    var names=[];groups.forEach(function(g){(g.names||[]).forEach(function(n){names.push(n);});});var art=null;
-   if(!pl.empty)[mem.model,hw.members.length===1?(hw.model||self.node.model):'',mem.profile.models&&mem.profile.models[0]].some(function(m){art=m?ndsArt(m,names):null;return !!art;});
+   if(!pl.empty&&!self.node.noArt)[mem.model,hw.members.length===1?(hw.model||self.node.model):'',mem.profile.models&&mem.profile.models[0]].some(function(m){art=m?ndsArt(m,names):null;return !!art;});
    if(art){pl.nds=art;pl.artY=card?12:0;pl.artH=card?60:72;pl.artW=Math.round(pl.artH*art.ratio*100)/100;pl.artX=card?4:0;pl.artRows=artRows(pl);if(pl.artRows)pl.w=w=up9(pl.artW+(card?8:0));else{delete pl.nds;delete pl.artRows;}}
    self.plates.push(pl);x+=w+(hw.chassis?9:27);});
   this.w=x-(hw.chassis?9:27);this.plateH=72;this.h=HEAD+72+FOOT;
   // A chassis with a known front panel is built as it is in the rack (owner request): its module cards in
   // the slot grid 9 px apart inside the chassis frame, all one width, ports centred on each card.
   // A stack is the same with one column: its members 9 px apart, one under the next, no chassis frame.
-  if(hw.grid&&hw.chassis&&ndsChassisLayout(this,hw))return;
+  if(hw.grid&&hw.chassis&&!this.node.noArt&&ndsChassisLayout(this,hw))return;
   if(hw.grid){var P=hw.chassis?9:0,cw=up9(Math.max.apply(null,this.plates.map(function(p){return p.w;}).concat([hw.chassis?270:0]))),rows=hw.grid.rows,cols=hw.grid.cols;
    this.plates.forEach(function(pl){var gs=pl.groups,last=gs[gs.length-1],used=gs.length?last.x+groupWidth(last)-gs[0].x:0,shift=card&&gs.length?snap((cw-used)/2)-gs[0].x:0;gs.forEach(function(g){g.x+=shift;});if(pl.nds&&card)pl.artX=snap((cw-pl.artW)/2);pl.w=cw;pl.x=P+pl.col*(cw+G);pl.y=P+pl.row*(72+G);});
    this.grid={rows:rows,cols:cols,cw:cw,pad:P,chassis:!!hw.chassis};this.w=2*P+cols*cw+(cols-1)*G;this.plateH=2*P+rows*72+(rows-1)*G;this.h=HEAD+this.plateH+FOOT;}
@@ -317,7 +317,7 @@
    // Port roles on a stencil (port map pages, as in the reference drawing): a numbered square
    // over each port in the role color, sized to the port pitch; outlined only when down.
    if(fills){var all=[];fills.forEach(function(fl,key){var p=dev.positions[key];if(p)all.push({p:p,fl:fl});});
-    all.forEach(function(a){var dx=1e9,dy=1e9;all.forEach(function(b){if(b===a)return;var ex=Math.abs(b.p.x-a.p.x),ey=Math.abs(b.p.y-a.p.y);if(ey<4&&ex>2)dx=Math.min(dx,ex);if(ex<4&&ey>2)dy=Math.min(dy,ey);});
+    all.forEach(function(a){var dx=1e9,dy=1e9;all.forEach(function(b){if(b===a)return;var ex=Math.abs(b.p.x-a.p.x),ey=Math.abs(b.p.y-a.p.y);if(ey<4&&ex>2)dx=Math.min(dx,ex);if(ex<4&&ey>2)dy=Math.min(dy,ey);});if(a.fl.vlan){var vw=Math.max(9,Math.min(22,dx<1e9?dx*0.85:14));vlanMark(page,x0+a.p.x,y+a.p.y,vw,Math.max(9,Math.min(vw*0.95,dy<1e9?dy*0.6:vw*0.95)),a.fl,a.p.y>dev.imgTop+dev.img.h/2?1:0);return;}dx=1e9;dy=1e9;all.forEach(function(b){if(b===a)return;var ex=Math.abs(b.p.x-a.p.x),ey=Math.abs(b.p.y-a.p.y);if(ey<4&&ex>2)dx=Math.min(dx,ex);if(ex<4&&ey>2)dy=Math.min(dy,ey);});
      var w=Math.max(9,Math.min(24,dx<1e9?dx*0.8:14)),hh=Math.max(9,Math.min(w*0.95,dy<1e9?dy*0.7:w*0.95)),fl=a.fl,down=!fl.up;
      page.rect(x0+a.p.x-w/2,y+a.p.y-hh/2,w,hh,{fill:down?'#ffffff':fl.fill,stroke:down?(fl.fill==='#f4f5f7'?'#b6bfcc':fl.fill):'#3d4a5c',width:down?1.5:0.75});
      if(fl.label)page.text(x0+a.p.x-w/2,y+a.p.y-hh/2+(hh-Math.min(9,hh*0.62))/2-1,w,hh,fl.label,{size:Math.min(9,hh*0.62,w/(Math.max(2,fl.label.length)*0.62)),bold:true,color:'#1f2937'});});}
@@ -335,7 +335,7 @@
    if(pl.card&&dev.grid){var cl=String(pl.member)+(pl.model?'  \u00b7  '+pl.model:pl.empty?'  \u00b7  empty':'');page.text(x+5,y+2,pl.w-10,10,cl,{size:7.5,bold:true,align:'left',color:'#1b3a4b'});}
    else if(pl.card){page.rect(x+5,y+28,26,16,{fill:'#ffffff',stroke:'#3d5a80',width:0.75,radius:8});page.text(x+5,y+30,26,12,String(pl.member),{size:String(pl.member).length>2?7:8.5,bold:true,align:'center',color:'#1b3a4b'});}
    pl.groups.forEach(function(g){for(var i=0;i<g.count;i++){var pp=portPos(g,i),row=pp.row,cx=x+pp.dx,cy=y+(g.mid?36:row?51:21),key=pl.member+'|'+g.name+'|'+i,u=used&&used.get(key),label=g.labels?g.labels[i]:g.name==='other'?'':String((g.base||0)+(g.zero?i:i+1));
-    var fl=fills&&fills.get(key),md=u&&!fl&&dev.mods&&dev.mods.get(key);drawPort(page,g.form||(g.fiber?'sfp':'rj45'),cx,cy,row,u,fl,md);
+    var fl=fills&&fills.get(key),md=u&&!fl&&dev.mods&&dev.mods.get(key);if(fl&&fl.vlan){var ff=g.form||(g.fiber?'sfp':'rj45');vlanMark(page,cx,cy,ff==='qsfp'?21:ff==='sfp'?15:14,ff==='qsfp'||ff==='sfp'?11:13,fl,g.mid?1:row);continue;}drawPort(page,g.form||(g.fiber?'sfp':'rj45'),cx,cy,row,u,fl,md);
     if(label&&!md)page.text(cx-9,cy-4.5,18,9,label,{size:label.length>2?5:6.5,bold:!!(fl&&fl.up),color:(g.form==='sfp'||g.form==='qsfp'||!g.form&&g.fiber)&&!u&&!fl?'#ffffff':'#1f2937'});}});
   });
   drawHeader(page,dev);
@@ -356,7 +356,7 @@
   if(pl.card&&dev.grid){var cl=String(pl.member)+(pl.model?'  \u00b7  '+pl.model:pl.empty?'  \u00b7  empty':'');page.text(x+5,y+2,pl.w-10,10,cl,{size:7.5,bold:true,align:'left',color:'#1b3a4b'});}
   var pts=[];pl.groups.forEach(function(g){(g.names||[]).forEach(function(nm,i){var ap=artPoint(pl,g,i);if(ap)pts.push({key:pl.member+'|'+g.name+'|'+i,ap:ap});});});
   pts.forEach(function(o){var u=used&&used.get(o.key),fl=fills&&fills.get(o.key);if(!u&&!fl)return;var r=pl.nds.rects[o.ap.key],sw=r?r.w*aw:12,sh=r?r.h*ah:10,cx=x+o.ap.x,cy=y+o.ap.y,pk=dev.portKeys&&dev.portKeys[o.key];
-   if(fl){var dx=1e9;pts.forEach(function(q){if(q!==o&&Math.abs(q.ap.y-o.ap.y)<4)dx=Math.min(dx,Math.abs(q.ap.x-o.ap.x));});var w=Math.max(9,Math.min(24,dx<1e9?dx*0.82:sw+4,sw+6)),hh=Math.max(9,Math.min(w*0.95,sh+4)),down=!fl.up;
+   if(fl){var dx=1e9;pts.forEach(function(q){if(q!==o&&Math.abs(q.ap.y-o.ap.y)<4)dx=Math.min(dx,Math.abs(q.ap.x-o.ap.x));});var w=Math.max(9,Math.min(24,dx<1e9?dx*0.82:sw+4,sw+6)),hh=Math.max(9,Math.min(w*0.95,sh+4)),down=!fl.up;if(fl.vlan){vlanMark(page,cx,cy,w,hh,Object.assign({},fl,{labelColor:lum<120?'#eef2f6':'#1f2937',label:pl.crop?String(fl.label).replace(/^[A-Z]{1,3}(?=\d)/,''):fl.label}),o.ap.row||(pts.every(function(q){return Math.abs(q.ap.y-o.ap.y)<4;})?1:0));return;}
     page.rect(cx-w/2,cy-hh/2,w,hh,{fill:down?'#ffffff':fl.fill,stroke:down?(fl.fill==='#f4f5f7'?'#b6bfcc':fl.fill):'#3d4a5c',width:down?1.5:0.75});
     // A chassis module's ports are numbered within the module, as on the module (A3 is 3 on module A).
     var lb=fl.label&&pl.crop?String(fl.label).replace(/^[A-Z]{1,3}(?=\d)/,''):fl.label;
@@ -547,15 +547,24 @@
   conns.forEach(function(c,i){c.net=i+1;
    if(style==='plate'){c.ta=termPlate(c.A,c.aPorts[0],c);if(c.B)c.tb=termPlate(c.B,c.bPorts[0],c);}
    else{var sideA=c.A.row<c.B.row?'bottom':c.A.row>c.B.row?'top':'bottom',sideB=c.B.row<c.A.row?'bottom':c.B.row>c.A.row?'top':'bottom';c.ta={dev:c.A,side:sideA,label:portList(c.aPorts),conn:c};c.tb={dev:c.B,side:sideB,label:portList(c.bPorts),conn:c};c.A.terms.push(c.ta);c.B.terms.push(c.tb);}});
+  // Points for ports the data does not name: on the device's edge, from its right end leftwards, clear of the
+  // ports in use on that edge.
+  devices.forEach(function(d){var us=d.terms.filter(function(t){return t.slot&&t.slot.unknown;});if(!us.length)return;['top','bottom'].forEach(function(sd){var mine=us.filter(function(t){return t.side===sd;}),busy=d.terms.filter(function(t){return t.side===sd&&t.slot&&!t.slot.unknown;}).map(function(t){return t.slot.dx;}),x=snap(d.w-G*2);
+    mine.forEach(function(t){while(x>G&&busy.some(function(b){return Math.abs(b-x)<G*2;}))x-=G;t.slot.dx=x;t.slot.py=sd==='top'?HEAD+(d.plates&&d.plates[0]&&d.plates[0].y||0):HEAD+(d.plateH||72);busy.push(x);x-=G*2;});});});
   // Stack cables stay with the stack (owner request: no loops around the page): between neighbouring
   // members (the lower port of one, the upper port of the next) straight across the 9 px gap, any
   // other (a ring's closing cable, crossed link ports) out through the gaps and down a lane hugging the
   // stack's side. Drawn directly, without a route, a stub or a label.
   conns.forEach(function(c){if(c.B!==c.A||!c.A.grid||!c.ta||!c.tb||!c.ta.slot||!c.tb.slot||!c.ta.slot.plate||!c.tb.slot.plate)return;c.internal=true;c.ta.label='';c.tb.label='';});
   function portList(list){var s=list.filter(Boolean).map(short);return s.length?clip(s[0],10)+(s.length>1?' +'+(s.length-1):''):'';}
-  function termPlate(dev,port,c){var po=view.edits&&view.edits.ports&&view.edits.ports[dev.key+'|'+short(port||'')];if(po){port=po;}var s=dev.slot(port||'');
+  function termPlate(dev,port,c){var po=view.edits&&view.edits.ports&&view.edits.ports[dev.key+'|'+short(port||'')];if(po){port=po;}
+   // A port the data does not name (owner's site: a neighbour reported without its port) has no place on the
+   // faceplate: each such link gets its own point on the device's edge (placed below, once every port is known),
+   // labelled "port ?", rather than sharing a made-up port.
+   if(!String(port||'').trim()&&!dev.stencil){var fr=c&&c.B&&(c.A===dev?c.B:c.A),up=!fr||fr===dev||fr.row<=dev.row,u={key:'?'+(dev.unk=(dev.unk||0)+1),unknown:true,row:up?0:1,side:up?'top':'bottom',dx:0,form:'rj45',number:'',name:''},tu={dev:dev,slot:u,side:u.side,label:'port ?',conn:c};dev.terms.push(tu);return tu;}
+   var s=dev.slot(port||'');
    // A port's link point moved by hand (a stencil whose marks miss its ports).
-   var pp=view.edits&&view.edits.portPos&&view.edits.portPos[dev.key+'|'+short(port||'')];if(pp&&style==='plate'){s=Object.assign({},s);var ex=(s.ex!=null?s.ex:s.dx)+pp[0];s.ex=ex;s.dx=snap(ex);s.py=(s.py!=null?s.py:HEAD+(s.row?51:21))+pp[1];if(dev.positions&&dev.positions[s.key])dev.positions[s.key]={x:ex,y:s.py,exact:true};}var far=c&&c.B&&(c.A===dev?c.B:c.A),fs=dev.grid&&far&&far!==dev?(far.row<dev.row?'top':far.row>dev.row?'bottom':null):null;if(dev.grid&&c&&c.ep!=null&&dev.eps&&dev.eps[c.ep]&&(dev.eps[c.ep].node.role==='circuit'||dev.eps[c.ep].node.up))fs='top';else if(dev.grid&&c&&c.ep!=null&&dev.eps&&dev.eps[c.ep]&&dev.eps[c.ep].node.down)fs='bottom';
+   var pp=view.edits&&view.edits.portPos&&view.edits.portPos[dev.key+'|'+short(port||'')];if(pp&&style==='plate'){s=Object.assign({},s);var ex=(s.ex!=null?s.ex:s.dx)+pp[0];s.ex=ex;s.dx=snap(ex);s.py=(s.py!=null?s.py:HEAD+(s.row?51:21))+pp[1];if(dev.positions&&dev.positions[s.key])dev.positions[s.key]={x:ex,y:s.py,exact:true};}var far=c&&c.B&&(c.A===dev?c.B:c.A),fs=dev.grid&&far&&far!==dev?(far.row<dev.row?'top':far.row>dev.row?'bottom':null):null;if(dev.grid&&far&&far!==dev&&view.sides){var vs=view.sides[dev.key+'|'+short(port||'')+'>'+far.key];if(vs)fs=vs;}if(dev.grid&&c&&c.ep!=null&&dev.eps&&dev.eps[c.ep]&&(dev.eps[c.ep].node.role==='circuit'||dev.eps[c.ep].node.up))fs='top';else if(dev.grid&&c&&c.ep!=null&&dev.eps&&dev.eps[c.ep]&&dev.eps[c.ep].node.down)fs='bottom';
    var t={dev:dev,slot:s,side:fs||s.side||(s.row?'bottom':'top'),label:clip(short(port),10),conn:c};(dev.portKeys=dev.portKeys||{})[s.key]=dev.portKeys[s.key]||dev.key+'|'+short(port||'');var prior=dev.terms.find(function(x){return x.slot.key===s.key;});if(prior){t.shared=prior;prior.shares=(prior.shares||0)+1;t.k=prior.shares;t.label='';}else{dev.terms.push(t);usedPorts.set(dev.key+'|'+s.key,kindStyle(c.type,view).color);if(view.modules!==false&&s.form!=='rj45'&&s.form!=='shared'){
      // A port the hardware does not show as a cage (an add-in network module, or hardware without a
      // profile) still takes a module when its link is fiber, DAC or AOC: an optic or cable end is fitted.
@@ -580,10 +589,17 @@
     if(!low&&up&&m===0||low&&!up&&m===n-1)return;var sd=t.slot.dx<mid?'left':'right',e={slot:t.slot,r:reg(t.slot),above:low,x:t.slot.dx,side:sd};regs[e.r].push(e);side[sd][up?'up':'down'].push(e);});
    var ext=function(sd){return side[sd].up.length+side[sd].down.length;};
    // Stack cables other than straight drops take the side with fewer links (no crossings), nearest the stack.
-   conns.forEach(function(c){if(!c.internal||c.A!==d)return;var a=c.ta.slot,b=c.tb.slot,ra=a.plate.row||0,rb=b.plate.row||0,hi=ra<rb?a:b,lo=hi===a?b:a;
+   var rings=[];conns.forEach(function(c){if(!c.internal||c.A!==d)return;var a=c.ta.slot,b=c.tb.slot,ra=a.plate.row||0,rb=b.plate.row||0,hi=ra<rb?a:b,lo=hi===a?b:a;
     if(Math.abs(ra-rb)===1&&hi.row===1&&lo.row===0&&(a.plate.col||0)===(b.plate.col||0)){c.drop=true;return;}
-    var sd=ext('left')<ext('right')?'left':ext('right')<ext('left')?'right':(a.dx+b.dx)/2<mid?'left':'right';c.ring={side:sd,k:side[sd].ring++};
-    [a,b].forEach(function(sl){regs[reg(sl)].push({slot:sl,r:reg(sl),above:!!sl.row,x:sl.dx,side:sd});});});
+    var g=[reg(a),reg(b)].sort(function(p,q){return p-q;});rings.push({c:c,a:a,b:b,g0:g[0],g1:g[1],pref:ext('left')<ext('right')?'left':ext('right')<ext('left')?'right':(a.dx+b.dx)/2<mid?'left':'right'});});
+   // Ring cables (owner request: no needless crossings) take the sides that cross the fewest lines: two ring cables
+   // on one side cross unless their spans are apart or one lies inside the other, and a ring cable's lane crosses
+   // every link that leaves the stack on that side between its ends. Ties keep the side with fewer links.
+   if(rings.length){var clash=function(p,q){if(p.g1<q.g0||q.g1<p.g0)return 0;if(p.g0<q.g0&&q.g1<p.g1||q.g0<p.g0&&p.g1<q.g1)return 0;return 1;},across=function(p,sd){return side[sd].up.concat(side[sd].down).filter(function(e){return e.r>=p.g0&&e.r<=p.g1;}).length;};
+    var nr=rings.length,best=null,tries=nr<=10?Math.pow(2,nr):0;for(var mk=0;mk<tries;mk++){var cost=0;for(var ri=0;ri<nr;ri++){var si=(mk>>ri)&1?'right':'left';cost+=across(rings[ri],si)+(si!==rings[ri].pref?0.001:0);for(var rj=ri+1;rj<nr;rj++)if(((mk>>rj)&1)===((mk>>ri)&1))cost+=clash(rings[ri],rings[rj]);}if(!best||cost<best.cost)best={cost:cost,m:mk};}
+    rings.forEach(function(r,i){r.side=best?((best.m>>i)&1?'right':'left'):r.pref;});
+    // On each side the shorter span takes the lane nearer the stack, so a span inside another stays inside it.
+    ['left','right'].forEach(function(sd){rings.filter(function(r){return r.side===sd;}).sort(function(p,q){return (p.g1-p.g0)-(q.g1-q.g0);}).forEach(function(r){r.c.ring={side:sd,k:side[sd].ring++};[r.a,r.b].forEach(function(sl){regs[reg(sl)].push({slot:sl,r:reg(sl),above:!!sl.row,x:sl.dx,side:sd});});});});}
    // In a gap, lines from the member above take the upper tracks and those from below the lower ones; of two
    // from above the one nearer the side stays higher, of two from below the one nearer the side lower.
    regs.forEach(function(list){list.sort(function(p,q){return (p.above?0:1)-(q.above?0:1)||(p.above?dist(p.x,p.side)-dist(q.x,q.side):dist(q.x,q.side)-dist(p.x,p.side));});});
@@ -769,7 +785,9 @@
   // Lines stay out of the strip above the top row (owner request: no loops up into the page header) unless
   // no other route exists.
   // A line whose own stub starts up there (a top-row port's link) still uses the strip freely.
-  var hdrY=(function(){var ds=Array.from(devices.values()),r0=Math.min.apply(null,ds.map(function(d){return d.row;})),row0=ds.filter(function(d){return d.row===r0;}),top=Math.min.apply(null,row0.map(function(d){return d.y+HEAD;})),ep=Math.min.apply(null,row0.map(function(d){return d.epTopY;}));
+  // The strip is measured from the devices highest on the page (moved by hand or not), so moving the top row down does
+  // not turn the open space above the devices into a no-go area.
+  var hdrY=(function(){var ds=Array.from(devices.values()),row0=ds,top=Math.min.apply(null,row0.map(function(d){return d.y+HEAD;})),ep=Math.min.apply(null,row0.map(function(d){return d.epTopY;}));
    if(ep-G*3>0)router.shun(0,0,RW,ep-G*3);if(top>G)router.shun(0,0,RW,top-G,2);return top-G;})();
   // A port reported with several neighbors becomes a trunk out of its stub with one
   // branch per neighbor, two grid steps apart.
@@ -816,7 +834,15 @@
   // A run on the channel's edge (a line turning where its port stub ends) moves too: only the port ends stay.
   gaps.forEach(function(g){var inside=function(y){return y>=g.y0-0.5&&y<=g.y1+0.5;},lv=[];
    lines.forEach(function(l){if(l.internal)return;for(var i=1;i<l.points.length-1;i++){var y=l.points[i][1];if(inside(y)&&lv.indexOf(y)<0)lv.push(y);}});if(!lv.length)return;
-   lv.sort(function(a,b){return a-b;});var s=Math.min(2*G,(g.y1-g.y0)/(lv.length+1)),start=(g.y0+g.y1)/2-s*(lv.length-1)/2,map=new Map();lv.forEach(function(y,i){map.set(y,Math.round((start+s*i)*2)/2);});
+   lv.sort(function(a,b){return a-b;});var s=Math.min(2*G,(g.y1-g.y0)/(lv.length+1)),start=(g.y0+g.y1)/2-s*(lv.length-1)/2,map=new Map(),mapOf=function(ord){var m=new Map();ord.forEach(function(y,i){m.set(y,Math.round((start+s*i)*2)/2);});return m;};
+   // Lines should not cross when they need not (owner request): the tracks keep the router's order unless swapping
+   // two neighbouring tracks removes crossings in the channel without making any lines lie on one another.
+   var ord=lv.slice(),score=function(m){var segs=[];lines.forEach(function(l,li){if(l.internal)return;var p=l.points.map(function(q,i){return i&&i<l.points.length-1&&inside(q[1])?[q[0],m.get(q[1])]:q;});for(var i=1;i<p.length;i++){var a=p[i-1],b=p[i];if(Math.max(a[1],b[1])<g.y0-1||Math.min(a[1],b[1])>g.y1+1)continue;segs.push({l:l,a:a,b:b,h:Math.abs(a[1]-b[1])<0.01});}});
+     var cross=0,over=0,ov=function(p,q,r,t){return Math.min(Math.max(p,q),Math.max(r,t))-Math.max(Math.min(p,q),Math.min(r,t));};for(var i=0;i<segs.length;i++)for(var j=i+1;j<segs.length;j++){var s1=segs[i],s2=segs[j];if(s1.l===s2.l||s1.l.conn===s2.l.conn||s1.l.groups.some(function(x){return s2.l.groups.indexOf(x)>=0;}))continue;
+      if(s1.h!==s2.h){var hh=s1.h?s1:s2,vv=s1.h?s2:s1,x=vv.a[0],y=hh.a[1];if(x>Math.min(hh.a[0],hh.b[0])+0.5&&x<Math.max(hh.a[0],hh.b[0])-0.5&&y>Math.min(vv.a[1],vv.b[1])+0.5&&y<Math.max(vv.a[1],vv.b[1])-0.5)cross++;}
+      else if(s1.h?Math.abs(s1.a[1]-s2.a[1])<0.5&&ov(s1.a[0],s1.b[0],s2.a[0],s2.b[0])>0.5:Math.abs(s1.a[0]-s2.a[0])<0.5&&ov(s1.a[1],s1.b[1],s2.a[1],s2.b[1])>0.5)over++;}return {cross:cross,over:over};};
+   if(ord.length>1&&ord.length<=24){var best=score(mapOf(ord));for(var pass=0;pass<ord.length&&best.cross;pass++){var better=false;for(var k=0;k+1<ord.length;k++){var t0=ord[k];ord[k]=ord[k+1];ord[k+1]=t0;var sc=score(mapOf(ord));if(sc.cross<best.cross&&sc.over<=best.over){best=sc;better=true;}else{ord[k+1]=ord[k];ord[k]=t0;}}if(!better)break;}}
+   map=mapOf(ord);
    lines.forEach(function(l){if(l.internal)return;l.points=l.points.map(function(q,i){return i&&i<l.points.length-1&&inside(q[1])?[q[0],map.get(q[1])]:q;});});});
   // Where a line crosses one drawn before it, its horizontal run hops over in a small arc.
   // Hand-drawn routes from the editor replace the computed one while both ends still meet
@@ -831,7 +857,7 @@
     xs.sort(function(p,q){return (p-q)*dir;});var hops=[];xs.forEach(function(x){var h=hops[hops.length-1];if(h&&(x-h[1])*dir<2*HOP+3)h[1]=x;else hops.push([x,x]);});
     hops.forEach(function(h){out.push([h[0]-dir*HOP,y]);out.push([h[1]+dir*HOP,y]);arcs[out.length-1]=HOP;});}out.push(b);}
    l.drawn=out;l.arcs=Object.keys(arcs).length?arcs:null;});
-  lines.forEach(function(l){var ks=kindStyle(l.conn.type,view);page.line(l.drawn,{arcs:l.arcs,color:l.color,width:l.width,dash:l.conn.dash||ks.dash,lineKey:l.key,route:l.points,lkind:l.conn.type,ltitle:[ks.label,[ks.speed,ks.cable].filter(Boolean).join(', ')].filter(Boolean).join(': ')});});
+  lines.forEach(function(l){var ks=kindStyle(l.conn.type,view);page.line(l.drawn,{relaxed:!l.strict,arcs:l.arcs,color:l.color,width:l.width,dash:l.conn.dash||ks.dash,lineKey:l.key,route:l.points,lkind:l.conn.type,ltitle:[ks.label,[ks.speed,ks.cable].filter(Boolean).join(', ')].filter(Boolean).join(': ')});});
   conns.forEach(function(c){[c.ga,c.gb].forEach(function(g){if(g&&g.trunk&&Math.abs(g.sy-g.py)===2*G)page.rect(g.px-4,g.py-4,8,8,{fill:'#2d3748',stroke:'none',radius:4});});});
   // Port labels in the bands.
   conns.forEach(function(c){[c.ta,c.tb].forEach(function(t,i){if(!t||t.ep!=null||t.shared||!t.label)return;var g=i?c.gb:c.ga;if(g.flat)page.text(g.lx,g.top?g.dy-19:g.dy+g.dh+3,textW(t.label,12,true)+4,16,t.label,{size:12,bold:true,align:'left',color:'#1f2937'});else page.text(g.lx,g.ly,13,(g.band||BAND)-8,t.label,{size:12,bold:true,rotate:true,align:g.lalign,color:'#1f2937'});});});
@@ -909,6 +935,17 @@
   if(!view.maxRow){var cands=[],seen={};(style==='box'?[3,4,6,8,10,14]:[1,2,3,4,5,6]).forEach(function(c){var m=render(input,Object.assign({},view,{maxRow:c,measure:true})),f=fitLetter(m),k=Math.round(m.w)+'x'+Math.round(m.h);if(seen[k])return;seen[k]=true;cands.push({c:c,raw:f.raw});});
    cands.sort(function(a,b){return b.raw-a.raw||a.c-b.c;});var best=null;cands.slice(0,3).forEach(function(cd){if(best&&cd.raw<best.est*0.75)return;var pg=render(input,Object.assign({},view,{maxRow:cd.c})),raw=fitLetter(pg).raw;if(!best||raw>best.raw*1.02)best={c:cd.c,raw:raw,est:cd.raw,page:pg};});view.maxRow=best.c;page=best.page;}
   else page=render(input,view);
+  // Shortest paths (owner request: no line climbs over a device only to come back down): a stack's or chassis' links
+  // leave by the edge (top or bottom) that makes the whole path shortest where the devices really are, moved by hand
+  // or not: the run inside the device to that edge, then the distance between the two edges, plus a detour round a
+  // device when the line would have to pass it. The drawing is laid out again when that changes an edge.
+  if(style==='plate'&&!o.rowSides){var sides={},changed=false;page.lines.forEach(function(l){var c=l.conn;if(!c||c.internal||c.ep!=null||!c.B||c.A===c.B||!c.ta||!c.tb||c.ta.shared||c.tb.shared)return;if(!c.A.grid&&!c.B.grid)return;
+    var pa=l.points[0],pb=l.points[l.points.length-1],opts=function(d,t,p){return d.grid&&!(t.slot&&t.slot.unknown)?['top','bottom']:[t.side];},
+     edgeY=function(d,sd){return sd==='top'?d.y-d.bt:d.y+d.h+d.bb;},inner=function(d,sd,p){return d.grid?(sd==='top'?p[1]-d.y:d.y+d.h-p[1]):0;},
+     around=function(d,sd,o){var ox=o.x<d.x+d.w&&o.x+o.w>d.x,above=o.y+o.h<=d.y,below=o.y>=d.y+d.h;return ox&&(sd==='top'&&below||sd==='bottom'&&above)?2*d.h+o.h:0;},best=null;
+    opts(c.A,c.ta,pa).forEach(function(sa){opts(c.B,c.tb,pb).forEach(function(sb){var ya=edgeY(c.A,sa),yb=edgeY(c.B,sb),xa=pa[0],xb=pb[0],cost=inner(c.A,sa,pa)+inner(c.B,sb,pb)+Math.abs(ya-yb)+Math.abs(xa-xb)+around(c.A,sa,c.B)+around(c.B,sb,c.A)+(sa!==c.ta.side?1:0)+(sb!==c.tb.side?1:0);if(!best||cost<best.cost)best={cost:cost,sa:sa,sb:sb};});});
+    if(!best)return;[[c.A,c.aPorts[0],c.B,best.sa,c.ta],[c.B,c.bPorts[0],c.A,best.sb,c.tb]].forEach(function(e){if(!e[0].grid)return;sides[e[0].key+'|'+short(e[1]||'')+'>'+e[2].key]=e[3];if(e[3]!==e[4].side)changed=true;});});
+   if(changed){view.sides=sides;page=render(input,view);}}
   // Compaction (owner request: links close together but open space around them): each channel is cut to
   // the tracks its routes used plus one on each side, and kept only when routing stays as good (no more
   // relaxed routes or hops). The caps come from the drawing without hand edits, so editing never shifts it.
@@ -988,18 +1025,19 @@
   p.rect(DM,94,DOC_W-2*DM,1,{fill:'#c9d3df',stroke:'none'});p.y=110;return p;}
  // Pages that continue when their content runs past the bottom margin.
  function Flow(title,sub,o,out){this.title=title;this.sub=sub;this.o=o;this.out=out;this.page=null;this.n=0;}
- Flow.prototype.need=function(h){if(!this.page||this.page.y+h>DOC_BOTTOM){this.page=docPage(this.title+(this.n?' (continued)':''),this.sub,this.o);this.n++;this.out.push(this.page);if(this.onPage)this.onPage(this.page);}return this.page;};
+ Flow.prototype.need=function(h){if(!this.page||this.page.y+h>(this.bottom||DOC_BOTTOM)){this.page=this.make?this.make(this.n):docPage(this.title+(this.n?' (continued)':''),this.sub,this.o);this.n++;this.out.push(this.page);if(this.onPage)this.onPage(this.page);}return this.page;};
  function cellText(v){return v==null?'':typeof v==='object'?String(v.text==null?'':v.text):String(v);}
  function rowHeight(r,widths){var n=1;r.forEach(function(v,i){var t=cellText(v),per=Math.max(8,Math.floor((widths[i]-14)/5.4));t.split('\n').forEach(function(line,j){n=Math.max(n,(j?n:0)+0);});var lines=t.split('\n').reduce(function(c,line){return c+Math.max(1,Math.ceil(line.length/per));},0);n=Math.max(n,lines);});return 10+13*n;}
  function wrap(t,width){var per=Math.max(8,Math.floor((width-14)/5.4));return cellText(t).split('\n').map(function(line){var out=[],cur='';line.split(/(?<=[,;] )|(?= \| )| |(?<=-)(?=[^\s-]{3,})/).forEach(function(w){if((cur+w).length>per&&cur){out.push(cur.trim());cur=w;}else cur+=(cur&&!/[,;] $/.test(cur)&&!/-$/.test(cur)?' ':'')+w;});out.push(cur.trim());return out.join('\n');}).join('\n');}
  // A table that continues on the next page; header repeated.
  function docTable(flow,cols,rows,o){o=o||{};var w=DOC_W-2*DM,widths=cols.map(function(c){return c.w*w;}),labels=cols.map(function(c,i){return wrap(c.label,widths[i]+4);}),hh=14+12*Math.max.apply(null,labels.map(function(l){return l.split('\n').length;}));
-  function head(p){p.rect(DM,p.y,w,hh,{fill:'#1b3a4b',stroke:'none'});var cx=DM;cols.forEach(function(c,i){p.text(cx+5,p.y+7,widths[i]-8,hh-8,labels[i],{size:9.5,bold:true,align:c.align||'left',color:'#ffffff',lineHeight:12});cx+=widths[i];});p.y+=hh;}
+  function head(p){p.rect(DM,p.y,w,hh,{fill:o.light?'#e3ecf5':'#1b3a4b',stroke:o.light?'#c4d3e3':'none',width:0.75});var cx=DM;cols.forEach(function(c,i){p.text(cx+5,p.y+7,widths[i]-8,hh-8,labels[i],{size:9.5,bold:true,align:c.align||'left',color:o.light?'#1b3a4b':'#ffffff',lineHeight:12});cx+=widths[i];});p.y+=hh;}
   var p=flow.need(hh+30);if(o.heading){p.text(DM,p.y,w,20,o.heading,{size:14,bold:true,align:'left',color:'#1b3a4b'});p.y+=26;}head(p);
   rows.forEach(function(r,ri){var h=rowHeight(r,widths);if(flow.page.y+h>DOC_BOTTOM){p=flow.need(DOC_H);head(p);}p=flow.page;
-   if(ri%2)p.rect(DM,p.y,w,h,{fill:'#f1f4f8',stroke:'none'});var cx=DM;
+   if(ri%2)p.rect(DM,p.y,w,h,{fill:'#f1f4f8',stroke:'none'});if(o.onRow)o.onRow(p,ri);var cx=DM;
    r.forEach(function(v,i){var cell=v&&typeof v==='object'?v:{text:v},t=cellText(cell),al=cols[i].align||'left';
-    if(cell.chip&&t){var cw=22,x0=al==='center'?cx+widths[i]/2-cw/2:cx+7;p.rect(x0,p.y+(h-16)/2,cw,16,{fill:cell.chip,stroke:'none',radius:2});p.text(x0,p.y+(h-16)/2+2,cw,12,t,{size:9,bold:true,align:'center',color:cell.color||'#1f2937'});}
+    if(cell.swatch){p.rect(cx+7,p.y+(h-10)/2,10,10,{fill:cell.swatch,stroke:'#7a8ca8',width:0.75,radius:2});if(t)p.text(cx+21,p.y+5,widths[i]-24,h-6,t,{size:cell.size||10,align:'left',color:cell.color||'#1f2937',lineHeight:13});}
+    else if(cell.chip&&t){var cw=22,x0=al==='center'?cx+widths[i]/2-cw/2:cx+7;p.rect(x0,p.y+(h-16)/2,cw,16,{fill:cell.chip,stroke:'none',radius:2});p.text(x0,p.y+(h-16)/2+2,cw,12,t,{size:9,bold:true,align:'center',color:cell.color||'#1f2937'});}
     else if(t)p.text(cx+7,p.y+5,widths[i]-10,h-6,al==='left'?wrap(t,widths[i]):t,{size:cell.size||10,bold:!!cell.bold,align:al,color:cell.color||'#1f2937',lineHeight:13});
     if(cell.bar)p.rect(cx,p.y,3,h,{fill:cell.bar,stroke:'none'});cx+=widths[i];});p.y+=h;});
   flow.page.rect(DM,flow.page.y,w,1,{fill:'#c9d3df',stroke:'none'});flow.page.y+=o.after==null?20:o.after;}
@@ -1015,47 +1053,90 @@
  function portRole(p){if(/disabled|down by admin|shutdown/i.test(p.admin||''))return 'disabled';var nr=p.neighbor&&p.neighbor.role;if(nr==='ap')return 'ap';if(nr&&/switch|firewall|router|controller/.test(nr)||p.lag)return 'uplink';if(p.ip)return 'routed';if(p.mode==='trunk'||p.tagged&&p.tagged.length)return p.native&&p.native!=='1'&&!(p.tagged.length>6)?'wired':'trunk';if(p.native&&p.native!=='1')return 'wired';return p.native?'access':'unused';}
  function portDetail(p,role){if(role==='disabled')return 'Administratively disabled';if(role==='routed')return [p.ip,p.description].filter(Boolean).join(', ');var bits=[];if(role==='uplink'&&p.neighbor)bits.push('To '+p.neighbor.name);if(p.native)bits.push((p.tagged&&p.tagged.length?'Native VLAN ':'VLAN ')+p.native);if(p.tagged&&p.tagged.length)bits.push('tagged '+(p.tagged.length===1?'VLAN ':'')+vlanList(p.tagged));if(p.lag)bits.push(p.lag);if(!bits.length&&p.description)bits.push(p.description);return bits.join(', ')||(role==='unused'?'No VLAN or address configured':'No VLAN configured');}
  function upCount(d){var known=d.ports.filter(function(p){return p.up!=null;});return known.length?known.filter(function(p){return p.up;}).length+' of '+d.ports.length+' ports up':'';}
+ // Port maps (owner request: like the owner's switchport diagram builder, the map apart from the port inventory):
+ // one sheet per device under a dark header, its members or module slots under slim bars, each port a square in the
+ // colour of its native VLAN with a dot per tagged VLAN, a diamond for the voice VLAN, an outline in its trunk's
+ // colour and black for stack (VSF) ports; the VLAN key to the right, then trunks and port descriptions. Colours
+ // follow the VLAN, the same on every sheet.
+ var VLAN_PALETTE=['#cdb8ef','#e8705f','#b8e986','#7cc6a4','#f6c6b6','#d8d0a6','#f39ab8','#b78a5f','#c86bd6','#78dbe8','#9fb7e8','#f2d06b','#a3d39c','#e6a0c4','#8fd3c1','#f0a35e','#b5b9f0','#d6e68a','#c9a27e','#86b6f6','#e0b0ff','#9bd0b7'];
+ var ROUTED_FILL='#f2c38b';
+ var TRUNK_COLORS=['#2b6cb0','#2f855a','#d53f8c','#2c7a7b','#975a16','#c05621','#6b46c1','#c53030','#3182ce','#38a169','#805ad5','#dd6b20','#319795','#b83280','#4a5568','#b7791f'];
+ function vlanColors(docs){var ids=new Set();docs.devices.forEach(function(d){d.ports.forEach(function(p){if(p.native)ids.add(String(p.native));(p.tagged||[]).forEach(function(t){ids.add(String(t));});if(p.voice)ids.add(String(p.voice));});(d.vlans||[]).forEach(function(v){ids.add(String(v.id));});});
+  var map=new Map(),k=0;Array.from(ids).filter(function(x){return /^\d+$/.test(x);}).sort(function(a,b){return a-b;}).forEach(function(id){map.set(id,id==='1'?'#9ca3af':VLAN_PALETTE[k++%VLAN_PALETTE.length]);});return map;}
+ function vlanNames(docs){var m=new Map();docs.devices.forEach(function(d){(d.vlans||[]).forEach(function(v){if(v.name&&!m.has(String(v.id)))m.set(String(v.id),v.name);});});return m;}
+ // A sheet with the builder's dark header block (kicker, name, then model and details on the right).
+ function sheetPage(title,o,head){var p=new Page(title);p.doc=true;p.lines=[];p.devices=[];var w=head.w||DOC_W-2*DM;
+  p.rect(DM,16,w,58,{fill:'#14283d',stroke:'none',radius:5});if(head.kicker)p.text(DM+16,24,w*0.45,12,head.kicker,{size:9,bold:true,align:'left',color:'#c7d4e2'});
+  p.text(DM+16,head.kicker?38:22,head.kicker?w*0.5-24:w-32,26,head.name,{size:head.kicker?19:20,bold:true,align:'left',color:'#ffffff'});
+  if(head.model)p.text(DM+w*0.52,26,w*0.46,16,head.model,{size:12,bold:true,align:'left',color:'#ffffff'});if(head.sub)p.text(DM+w*0.52,head.model?47:42,w*0.46,14,head.sub,{size:9.5,align:'left',color:'#c7d4e2'});
+  p.y=84;return p;}
+ function sectionBar(p,x,y,w,label){p.rect(x,y,w,15,{fill:'#e3ecf5',stroke:'#c4d3e3',width:0.75,radius:3});p.text(x+6,y+2,w-12,12,label,{size:9.5,bold:true,align:'left',color:'#1b3a4b'});}
+ function portTag(n){var s=portNumber(n);return /^[A-Z]{1,2}\d+$/.test(s)?s.replace(/^[A-Z]{1,2}/,''):s;}
+ function osName(d){return String(d.os||'').replace(/^HPE \/ Aruba\s+/i,'').replace(/^Fortinet\s+/i,'');}
+ // VLAN marks on a port of the app's faceplate (owner request): the jack filled in its native VLAN's colour, a dot per
+ // tagged VLAN along its top, a diamond for the voice VLAN, its trunk's colour as the outline, black for a stack
+ // port, dashed when disabled, and its number.
+ function vlanMark(page,cx,cy,w,h,fl,row){var x=cx-w/2,y=cy-h/2,dark=fl.stack;page.rect(x,y,w,h,{fill:dark?'#111827':fl.fill,stroke:fl.lag||(fl.off?'#9aa9bd':'#3d4a5c'),width:fl.lag?Math.max(1.2,Math.min(2,w*0.12)):0.6,dash:!!(fl.off&&!fl.lag),radius:1.2});
+  // Dots across the top of the jack (two rows when there are many), the voice diamond below them.
+  if(!dark&&fl.tags&&fl.tags.length){var r=Math.max(0.8,Math.min(1.8,w*0.1)),step=r*2.3,per=Math.max(1,Math.floor((w-1)/step)),tags=fl.tags.slice(0,per*2);tags.forEach(function(c,i){var rw=Math.floor(i/per),n=Math.min(per,tags.length-rw*per),x0=cx-(n*step)/2+step/2;page.rect(x0+(i%per)*step-r,y+1+rw*step,2*r,2*r,{fill:c,stroke:'#4a5568',width:0.2,radius:r});});}
+  if(!dark&&fl.voice)page.text(x,y+h*0.45,w,h*0.5,'\u25c6',{size:Math.min(7,h*0.48),align:'center',color:fl.voice});
+  // The number outside the jack (owner request: room inside for the marks): above a top-row port, below a bottom-row one.
+  if(fl.label){var lb=String(fl.label),sz=Math.min(7,Math.max(4.5,w/(Math.max(2,lb.length)*0.6)));page.text(x-3,row?y+h+0.5:y-sz-1.5,w+6,sz+1,lb,{size:sz,bold:true,align:'center',color:fl.labelColor||'#1f2937'});}}
  function portMapPages(docs,o,out){
   var devs=docs.devices.filter(function(d){return d.ports.length&&/switch|router|firewall|controller/.test(d.role);});if(!devs.length)return;
-  // Firewalls and routers each on a page of their own; switches two to a page.
-  var groups=[];devs.filter(function(d){return /firewall|router/.test(d.role);}).forEach(function(d){groups.push([d]);});var sw=devs.filter(function(d){return !/firewall|router/.test(d.role);});for(var gi=0;gi<sw.length;gi+=2)groups.push(sw.slice(gi,gi+2));
-  for(var start=0;start<groups.length;start++){var group=groups[start],flow=new Flow('Port map',group.map(function(d){return d.name;}).join(' and ')+': front panels, configured port roles and observed link state',o,out),used={},rowsByKey=new Map();
-   // The port role legend heads every page of the port map (owner request), not only the last.
-   group.forEach(function(d){d.ports.forEach(function(p){used[portRole(p)]=true;});});
-   flow.onPage=function(p){var lx=DM;p.text(lx,p.y,90,16,'PORT ROLES',{size:9.5,bold:true,align:'left',color:'#1d5b79'});lx+=96;
-    Object.keys(PORT_ROLES).filter(function(r){return used[r];}).forEach(function(r){var lw=40+PORT_ROLES[r].label.length*5.6;if(lx+lw>DOC_W-DM){lx=DM+96;p.y+=20;}p.rect(lx,p.y,26,14,{fill:PORT_ROLES[r].fill,stroke:'#7a8ca8',width:0.75});p.text(lx+32,p.y,170,16,PORT_ROLES[r].label,{size:10,align:'left'});lx+=lw;});p.y+=22;
-    p.text(DM,p.y,DOC_W-2*DM,14,'Filled: link up (or no link state imported). Outlined: link down.',{size:9,align:'left',color:'#4a5568'});p.y+=24;};
-   group.forEach(function(d){var st=o.stencils&&o.stencils.get(d.key),dev=new Device({key:d.key,name:d.name,model:d.model,role:d.role,hw:d.hw,ips:d.ip?[d.ip]:[],stencil:st},d.ports.map(function(p){return p.name;}),[],'plate'),fills=new Map();
-    d.ports.forEach(function(p){var role=portRole(p),slot=d.hw&&dev.hw&&!dev.hw.portOf(p.name)?null:dev.slot(p.name);used[role]=true;if(slot&&slot.key)fills.set(slot.key,{fill:PORT_ROLES[role].fill,up:p.up!==false,stroke:'#3d4a5c',label:portNumber(p.name)});
-     var detail=portDetail(p,role),k=role+'|'+detail;if(!rowsByKey.has(k))rowsByKey.set(k,{role:role,detail:detail,ports:{}});(rowsByKey.get(k).ports[d.key]=rowsByKey.get(k).ports[d.key]||[]).push(p.name);});
-    // Heading: the name, then right beside it the model (owner request: next to the switch, not at the
-    // far edge), then the link count and address.
-    function heading(pg,title,model,extra){pg.text(DM,pg.y,560,20,title,{size:15,bold:true,align:'left',color:'#1b3a4b'});var x=DM+textW(title,15,true)*1.15+16,rest=[model].concat(extra||[]).filter(Boolean).join('   |   ');if(rest)pg.text(x,pg.y+4,DOC_W-DM-x,16,rest,{size:10.5,bold:false,align:'left',color:'#4a5568'});}
-    var grid=dev.hw&&dev.hw.chassis&&dev.hw.grid,pls=dev.plates;
-    // A member's or module's ports, as on its label: "48 RJ-45 + 4 SFP+".
-    function summary(i){var mem=dev.hw&&dev.hw.members&&dev.hw.members.filter(function(m){return m.profile;})[i],counts={},order=[];if(!mem)return '';mem.profile.banks.forEach(function(b){if(b.mirror)return;var f=String(b.displayForm||b.form).replace(/^RJ45$/,'RJ-45').replace(/^Shared RJ45 \/ (SFP\+?)$/,'RJ-45 / $1');if(!(f in counts)){counts[f]=0;order.push(f);}counts[f]+=b.names.length;});return order.sort(function(a,b){return counts[b]-counts[a];}).map(function(f){return counts[f]+' '+f;}).join(' + ');}
-    // A chassis as it is built (owner request): the whole device with its module grid, scaled down only
-    // when it is taller than the page.
-    if(grid&&dev.grid&&!dev.stencil){var pg=flow.need(26+Math.min(dev.plateH,420)+24);heading(pg,d.name,[d.model,grid.title].filter(Boolean).join(' '),[upCount(d),d.ip]);pg.y+=26;
-     var k=Math.min(1,(DOC_BOTTOM-pg.y-12)/dev.plateH,(DOC_W-2*DM)/dev.w),tmp=new Page(''),one=Object.create(dev);one.noLabel=true;one.x=0;one.y=-HEAD;drawPlate(tmp,one,null,fills);
-     tmp.shapes.forEach(function(sh){var t=Object.assign({},sh);if(t.type==='line')t.points=sh.points.map(function(q){return [DM+q[0]*k,pg.y+q[1]*k];});else{t.x=DM+sh.x*k;t.y=pg.y+sh.y*k;t.w=sh.w*k;t.h=sh.h*k;}['size','lineHeight','width','radius'].forEach(function(c){if(t[c])t[c]=sh[c]*k;});pg.shapes.push(t);});pg.grow(DM+dev.w*k,pg.y+dev.plateH*k);
-     pg.y+=dev.plateH*k+20;return;}
-    // A stack (owner request: compact, like a switchport map): one heading, then each member right below
-    // the last under a slim bar with its member number, model and ports.
-    var chassis=dev.hw&&dev.hw.chassis;
-    if(pls.length>1&&!chassis&&!dev.stencil){var models=pls.map(function(pl){return pl.model;}).filter(function(m,i,a){return m&&a.indexOf(m)===i;}).join(' / ')||d.model,pg=flow.need(26+14+72+8);heading(pg,d.name,models,[upCount(d),d.ip]);pg.y+=26;
-     pls.forEach(function(pl,i){var before=flow.page;pg=flow.need(14+72+8);if(pg!==before){heading(pg,d.name+' (continued)',models,[]);pg.y+=26;}
-      pg.rect(DM,pg.y,pl.w,14,{fill:'#1b3a4b',stroke:'none',radius:3});pg.text(DM+6,pg.y+2,pl.w-12,11,['Member '+pl.member,pl.model||d.model,summary(i)].filter(Boolean).join('  |  '),{size:8.5,bold:true,align:'left',color:'#ffffff'});pg.y+=15;
-      var keep=pl.x,ky=pl.y;pl.x=0;pl.y=0;var one=Object.create(dev);one.noLabel=true;one.plates=[pl];one.x=DM;one.y=pg.y-HEAD;one.w=pl.w;one.grid=null;one.plateH=72;drawPlate(pg,one,null,fills);pl.x=keep;pl.y=ky;pg.y+=72+8;});
-     pg.y+=10;return;}
-    pls.forEach(function(pl,pi){var ph=dev.h+40,pg=flow.need(ph+14),own=pls.length>1?(chassis?'  ·  slot '+pl.member:'  ·  member '+pl.member):'';
-     // Each stack member or module names its own model (members of one stack can differ).
-     heading(pg,d.name+own,pls.length>1?pl.model||d.model:d.model,!pi?[upCount(d),d.ip]:[]);
-     var keep=pl.x,ky=pl.y;pl.x=0;pl.y=0;var one=Object.create(dev);one.noLabel=true;one.plates=[pl];one.x=DM;one.y=pg.y+26-HEAD;one.w=pl.w;one.grid=null;drawPlate(pg,one,null,fills);pl.x=keep;pl.y=ky;pg.y+=26+72+18;});});
-   (function(){var pre=commonPrefix([].concat.apply([],group.map(function(d){return d.ports.map(function(x){return x.name;});})));if(pre)note(flow,'Port numbers use the prefix '+pre+'.');})();
-   var pre=commonPrefix([].concat.apply([],group.map(function(d){return d.ports.map(function(x){return x.name;});}))),order=Object.keys(PORT_ROLES);
-   var rows=Array.from(rowsByKey.values()).sort(function(a,b){return order.indexOf(a.role)-order.indexOf(b.role);}).map(function(r){return [{text:PORT_ROLES[r.role].label,bold:true,bar:PORT_ROLES[r.role].fill}].concat(group.map(function(d){return r.ports[d.key]?ranges(r.ports[d.key],pre):'';}),[r.detail]);});
-   var cw=group.length===1?[0.24,0.28,0.48]:[0.22,0.2,0.2,0.38];docTable(flow,[{label:'Port assignment',w:cw[0]}].concat(group.map(function(d,i){return {label:d.name+' ports',w:cw[i+1]};}),[{label:'VLANs and link details',w:cw[cw.length-1]}]),rows);}
+  var colors=vlanColors(docs),names=vlanNames(docs),KEYW=196,MAINW=DOC_W-2*DM-KEYW-14,LEG=DOC_H-78;
+  devs.forEach(function(d,di){var st=o.stencils&&o.stencils.get(d.key),dev=new Device({key:d.key,name:d.name,model:d.model,role:d.role,hw:d.hw,ips:d.ip?[d.ip]:[],stencil:st},d.ports.map(function(p){return p.name;}),[],'plate');
+   var stackPorts=new Set();(d.hw&&d.hw.links||[]).forEach(function(l){if(l.port)stackPorts.add(String(l.port).toLowerCase());});
+   var lags=[],lagOf={};d.ports.forEach(function(p){var k=String(p.lag||'').replace(/^LAG\s+/i,'');if(!k)return;if(!(k in lagOf)){lagOf[k]=TRUNK_COLORS[lags.length%TRUNK_COLORS.length];lags.push({name:k,ports:[]});}lags.find(function(x){return x.name===k;}).ports.push(p.name);});
+   // The app's own faceplates (owner request: the drawings of the diagram, NetworkDiagramStudio's panels, chassis
+   // and imported stencils), each port in use marked with its VLANs on the jack itself.
+   var fills=new Map();d.ports.forEach(function(p){var sl=null;try{sl=d.hw&&dev.hw&&!dev.hw.portOf(p.name)?null:dev.slot(p.name);}catch(e){sl=null;}if(!sl||!sl.key||fills.has(sl.key))return;var lk=String(p.lag||'').replace(/^LAG\s+/i,'');
+    fills.set(sl.key,{vlan:true,up:true,fill:p.native&&colors.get(String(p.native))||(p.ip?ROUTED_FILL:'#ffffff'),tags:(p.tagged||[]).filter(function(t){return String(t)!==String(p.voice||'')&&String(t)!==String(p.native||'');}).map(function(t){return colors.get(String(t))||'#cbd5e1';}),voice:p.voice&&colors.get(String(p.voice))||null,lag:lk?lagOf[lk]:null,stack:stackPorts.has(String(p.name).toLowerCase()),off:/disabled|shutdown|down by admin/i.test(p.admin||''),label:portTag(p.name)});});
+   function counts(pl){var mem=dev.hw&&dev.hw.members&&dev.hw.members.find(function(m){return String(m.id)===String(pl.member);}),c={},order=[];if(mem&&mem.profile)mem.profile.banks.forEach(function(b){if(b.mirror)return;var f=String(b.displayForm||b.form).replace(/^RJ45$/,'RJ-45').replace(/^Shared RJ45 \/ (SFP\+?)$/,'RJ-45 / $1');if(!(f in c)){c[f]=0;order.push(f);}c[f]+=b.names.length;});return order.sort(function(a,b){return c[b]-c[a];}).map(function(f){return c[f]+' '+f;}).join(' + ');}
+   var chassis=!!(dev.hw&&dev.hw.chassis),grid=dev.grid,pls=dev.plates,models=chassis?String(d.model||dev.hw.model||'').split('  |  ')[0]:Array.from(new Set(pls.map(function(pl){return pl.model;}).filter(Boolean))).join(' / ')||d.model,sub=[osName(d),d.firmware,d.ports.length+' interfaces'].filter(Boolean).join('  |  ');
+   var pg=sheetPage('Port map: '+d.name,o,{kicker:'NETWORK PORT MAP',name:d.name,model:[models,chassis&&dev.hw.grid&&dev.hw.grid.title&&String(models).indexOf(dev.hw.grid.title)<0?dev.hw.grid.title:''].filter(Boolean).join(' '),sub:sub,w:MAINW});out.push(pg);pg.y=86;
+   // A drawing made at its own size, then scaled into the sheet (at most kmax, and within the room given).
+   function paste(draw,w,h,maxH,kmax){var tmp=new Page(''),k=Math.min(kmax,MAINW/w,maxH/h),x0=DM+(MAINW-w*k)/2,y0=pg.y;draw(tmp);tmp.shapes.forEach(function(sh){var t=Object.assign({},sh);if(t.type==='line')t.points=sh.points.map(function(q){return [x0+q[0]*k,y0+q[1]*k];});else{t.x=x0+sh.x*k;t.y=y0+sh.y*k;t.w=sh.w*k;t.h=sh.h*k;}['size','lineHeight','width','radius'].forEach(function(c){if(t[c])t[c]=sh[c]*k;});pg.shapes.push(t);});pg.grow(x0+w*k,y0+h*k);return k;}
+   var avail=LEG-pg.y-120;
+   if(pls.length>1&&!chassis&&!dev.stencil){
+    // A stack: each member under a slim bar with its number, model and ports, as compact as the sheet needs.
+    var mw=Math.max.apply(null,pls.map(function(pl){return pl.w;})),k=Math.min(1.35,MAINW/mw);while(k>0.35&&pls.length*(16+72*k+6)>avail+80)k-=0.02;
+    pls.forEach(function(pl){pg.rect(DM,pg.y,MAINW,15,{fill:'#14283d',stroke:'none',radius:3});pg.text(DM+6,pg.y+2,MAINW-12,12,['Member '+pl.member,pl.model||d.model,counts(pl)].filter(Boolean).join('  |  '),{size:8.5,bold:true,align:'left',color:'#ffffff'});pg.y+=17;
+     var keep=pl.x,ky=pl.y;pl.x=0;pl.y=0;var one=Object.create(dev);one.noLabel=true;one.plates=[pl];one.x=0;one.y=-HEAD;one.w=pl.w;one.grid=null;one.plateH=72;paste(function(t){drawPlate(t,one,null,fills);},pl.w,72,72*k,k);pl.x=keep;pl.y=ky;pg.y+=72*k+6;});}
+   else{
+    // A chassis whole, as built, or a switch or firewall: the device's own drawing, as large as fits.
+    var one=Object.create(dev);one.noLabel=true;one.x=0;one.y=-HEAD;var kk=paste(function(t){drawPlate(t,one,null,fills);},dev.w,dev.plateH,Math.max(120,avail),chassis?1.25:1.4);pg.y+=dev.plateH*kk+10;
+    if(chassis&&grid)pg.text(DM,pg.y-6,MAINW,12,pls.filter(function(pl){return !pl.empty&&/^[A-Z]$/i.test(String(pl.member));}).map(function(pl){return 'Slot '+pl.member+': '+[pl.model,counts(pl)].filter(Boolean).join(' ');}).join('   \u00b7   '),{size:8.5,align:'left',color:'#4a5568'}),pg.y+=12;}
+   pg.y+=4;
+   // The VLAN key down the right (the VLANs this device carries), "No native VLAN" last.
+   var kx0=DOC_W-DM-KEYW,ky=16,used=new Set();d.ports.forEach(function(p){if(p.native)used.add(String(p.native));(p.tagged||[]).forEach(function(t){used.add(String(t));});if(p.voice)used.add(String(p.voice));});(d.vlans||[]).forEach(function(v){used.add(String(v.id));});
+   var keys=Array.from(used).filter(function(x){return /^\d+$/.test(x);}).sort(function(a,b){return a-b;}),voices=new Set(d.ports.map(function(p){return String(p.voice||'');}).filter(Boolean)),kh=Math.max(10,Math.min(16,(LEG-40-ky)/Math.max(1,keys.length+1)));
+   sectionBar(pg,kx0,ky,KEYW,'VLAN key');ky+=22;keys.forEach(function(id){var c=colors.get(id)||'#cbd5e1',nm=(names.get(id)||'')+(voices.has(id)?' (voice)':'');pg.rect(kx0+2,ky+1,9,9,{fill:c,stroke:'#5b6b82',width:0.6,radius:1});pg.rect(kx0+15,ky+3,5,5,{fill:c,stroke:'#4a5568',width:0.35,radius:2.5});
+    var t=wrap(id+'  '+nm,KEYW-10),lines=t.split('\n').length;pg.text(kx0+26,ky,KEYW-28,lines*11+2,t,{size:Math.min(9,kh*0.62),align:'left',color:'#1f2937',lineHeight:11});ky+=Math.max(kh,lines*11+3);});
+   if(d.ports.some(function(p){return p.ip&&!p.native;})){pg.rect(kx0+2,ky+1,9,9,{fill:ROUTED_FILL,stroke:'#5b6b82',width:0.6,radius:1});pg.text(kx0+26,ky,KEYW-28,12,'Routed (IP address)',{size:9,align:'left',color:'#1f2937'});ky+=kh;}
+   pg.rect(kx0+2,ky+1,9,9,{fill:'#ffffff',stroke:'#5b6b82',width:0.6,radius:1});pg.text(kx0+26,ky,KEYW-28,12,'No native VLAN',{size:9,align:'left',color:'#1f2937'});
+   // Trunks and port descriptions under the ports, continued on a second sheet when there is no room.
+   var flow={page:pg,n:1,bottom:LEG-8};function room(h){if(flow.page.y+h<=flow.bottom)return flow.page;var np=sheetPage('Port map: '+d.name+' (continued)',o,{kicker:'NETWORK PORT MAP',name:d.name+' (continued)',model:models,sub:sub,w:MAINW});out.push(np);np.y=84;flow.page=np;footer(np);return np;}
+   function grid3(items,draw,lineH){var per=3,colW=MAINW/per;for(var i=0;i<items.length;i+=per){var hh=Math.max.apply(null,items.slice(i,i+per).map(function(it){return lineH(it,colW);})),p=room(hh+2);items.slice(i,i+per).forEach(function(it,j){draw(p,it,DM+j*colW,p.y,colW);});p.y+=hh+2;}}
+   if(lags.length){var p1=room(40);sectionBar(p1,DM,p1.y,MAINW,'Trunks / LAGs');p1.y+=20;var pre=commonPrefix(d.ports.map(function(x){return x.name;}));
+    grid3(lags,function(p,l,x,y,w){p.rect(x+2,y+2,22,10,{fill:'#ffffff',stroke:lagOf[l.name],width:2,radius:2});p.text(x+30,y,w-34,26,wrap(l.name+': '+ranges(l.ports,pre),w-20),{size:8.5,align:'left',color:'#1f2937',lineHeight:11});},function(l,w){return Math.max(14,wrap(l.name+': '+ranges(l.ports,commonPrefix(d.ports.map(function(x){return x.name;}))),w-20).split('\n').length*11+3);});flow.page.y+=6;}
+   var descs=[],byDesc={};d.ports.forEach(function(p){var t=String(p.description||'').trim();if(!t)return;if(!(t in byDesc)){byDesc[t]=[];descs.push(t);}byDesc[t].push(p.name);});
+   if(descs.length){var p2=room(40);sectionBar(p2,DM,p2.y,MAINW,'Port descriptions');p2.y+=20;var pre2=commonPrefix(d.ports.map(function(x){return x.name;}));
+    grid3(descs.map(function(t){return {t:t,s:ranges(byDesc[t],pre2)+': '+t};}),function(p,it,x,y,w){p.text(x,y,w-8,30,wrap(it.s,w+6),{size:8.5,align:'left',color:'#1f2937',lineHeight:11});},function(it,w){return wrap(it.s,w+6).split('\n').length*11+2;});}
+   function footer(p){var lx=DM;[['sq','#cdb8ef','Native VLAN'],['dot','#cdb8ef','Tagged VLAN'],['dia','#e8705f','Voice VLAN'],['lag','#2b6cb0','LAG / trunk'],['sq','#111827','Stack / VSF']].forEach(function(k){if(k[0]==='sq')p.rect(lx,LEG+3,10,10,{fill:k[1],stroke:'#5b6b82',width:0.6,radius:1});else if(k[0]==='dot')p.rect(lx+2,LEG+5,6,6,{fill:k[1],stroke:'#4a5568',width:0.35,radius:3});else if(k[0]==='dia')p.text(lx,LEG+1,10,12,'◆',{size:9,align:'center',color:k[1]});else p.rect(lx,LEG+3,12,10,{fill:'#ffffff',stroke:k[1],width:2,radius:1});p.text(lx+16,LEG+2,120,12,k[2],{size:9,align:'left',color:'#1f2937'});lx+=28+k[2].length*5.4;});
+    p.text(DM,LEG+18,DOC_W-2*DM,12,'Confirm live link, LLDP/CDP, and MAC address table before moving production cables.  |  Sheet '+(di+1)+' / '+devs.length,{size:8.5,align:'left',color:'#4a5568'});}
+   footer(pg);});
+ }
+ // Port inventory (owner request: apart from the port map, as in the owner's switchport diagram builder): every port
+ // of a device in a table, a sheet header naming the ports each page lists.
+ function inventoryPages(docs,o,out){var colors=vlanColors(docs);
+  docs.devices.filter(function(d){return d.ports.length&&/switch|router|firewall|controller/.test(d.role);}).forEach(function(d){var pages=[],first={},last={},sub=[osName(d),d.firmware].filter(Boolean).join('  |  '),n=d.ports.length;
+   var flow=new Flow('Port inventory: '+d.name,'',o,out);flow.make=function(){var p=sheetPage('Port inventory: '+d.name+(pages.length?' ('+(pages.length+1)+')':''),o,{name:d.name+'  /  Port inventory',sub:''});pages.push(p);return p;};flow.bottom=DOC_BOTTOM-18;
+   var rows=d.ports.slice().sort(function(a,b){return String(a.name).localeCompare(String(b.name),undefined,{numeric:true});}).map(function(p){var tagged=(p.tagged||[]).filter(function(t){return String(t)!==String(p.native||'');}),mode=p.ip?'Routed':tagged.length||p.mode==='trunk'?'Tagged/mixed':p.native||p.mode==='access'?'Untagged':'';
+    var adm=String(p.admin||'').trim();adm=/^(?:not specified)?$/i.test(adm)?'Unknown':adm;if(p.up!=null)adm+=' · link '+(p.up?'up':'down');
+    return [{text:p.name,bold:true,color:'#1b3a4b'},p.description||'',mode,p.native?{text:String(p.native),swatch:colors.get(String(p.native))||'#cbd5e1'}:{text:p.ip?'':'None',swatch:p.ip?null:'#ffffff'},tagged.join(', '),String(p.lag||'').replace(/^LAG\s+/i,''),p.voice||'',adm];});
+   docTable(flow,[{label:'Port',w:0.1},{label:'Description',w:0.2},{label:'Mode',w:0.1},{label:'Native',w:0.09},{label:'Tagged VLANs',w:0.23},{label:'LAG / TRK',w:0.09},{label:'Voice',w:0.07},{label:'Admin state',w:0.12}],rows,{light:true,onRow:function(p,i){var k=pages.indexOf(p);if(!(k in first))first[k]=i;last[k]=i;}});
+   pages.forEach(function(p,k){if(!(k in first))return;p.text(DM+16,52,DOC_W-2*DM-32,14,[sub,'Ports '+(first[k]+1)+'-'+(last[k]+1)+' of '+n].filter(Boolean).join('  |  '),{size:9.5,align:'left',color:'#c7d4e2'});p.text(DM,DOC_BOTTOM-4,DOC_W-2*DM,12,'Confirm live link, LLDP/CDP, and MAC address table before moving production cables.',{size:8.5,align:'left',color:'#4a5568'});});});
  }
  function wirelessPages(docs,o,out,input){
   var devs=docs.devices.filter(function(d){return d.ports.some(function(p){return p.neighbor&&p.neighbor.role==='ap';});});if(!devs.length)return;
@@ -1099,7 +1180,7 @@
  }
  function docPages(input,o){o=o||{};var docs=input.docs;if(!docs||!docs.devices||!docs.devices.length)return [];var out=[];
   var want=o.pages||{},skip=o.portMapSkip||new Set(),on=function(k){return want[k]!==false;};
-  if(on('portmap'))portMapPages({devices:docs.devices.filter(function(d){return !skip.has(d.key);})},Object.assign({},o,{stencils:o.styleDrawn?null:input.stencils}),out);if(on('wireless'))wirelessPages(docs,o,out,input);if(on('routing'))routingPages(docs,o,out);if(on('trunks'))trunkPages(docs,o,out);
+  if(on('portmap'))portMapPages({devices:docs.devices.filter(function(d){return !skip.has(d.key);})},Object.assign({},o,{stencils:o.styleDrawn?null:input.stencils}),out);if(on('inventory'))inventoryPages({devices:docs.devices.filter(function(d){return !skip.has(d.key);})},o,out);if(on('wireless'))wirelessPages(docs,o,out,input);if(on('routing'))routingPages(docs,o,out);if(on('trunks'))trunkPages(docs,o,out);
   out.forEach(function(p){if(p.doc){p.w=Math.max(DOC_W,p.w);p.h=Math.max(DOC_H,p.h);}});number(out,{offset:o.offset==null?1:o.offset,total:out.length+(o.offset==null?1:o.offset),footer:o.author?'Prepared by '+o.author+(o.date?'  |  '+o.date:''):(o.date||'')});out.forEach(function(p){p.letter=fitLetter(p);});return out;}
  // Page numbers and the footer across a set of pages.
  function number(pages,o){o=o||{};var n=o.total||pages.length,off=o.offset||0;pages.forEach(function(p,j){if(p.numbered)return;p.numbered=true;var i=j+off,w=p.w,h=p.h;p.rect(DM,h-44,w-2*DM,1,{fill:'#c9d3df',stroke:'none'});if(o.footer)p.text(DM,h-36,w/2,14,o.footer,{size:9,align:'left',color:'#4a5568'});p.text(w-DM-120,h-36,120,14,(i+1<10?'0':'')+(i+1)+' / '+(n<10?'0':'')+n,{size:9,bold:true,align:'right',color:'#1d5b79'});p.w=w;p.h=h;});return pages;}
@@ -1113,7 +1194,7 @@
  function shapeSVG(s){
   if(s.type==='rect')return '<rect x="'+s.x+'" y="'+s.y+'" width="'+s.w+'" height="'+s.h+'" rx="'+(s.radius||0)+'" fill="'+(s.fill||'none')+'" stroke="'+(s.stroke&&s.stroke!=='none'?s.stroke:'none')+'" stroke-width="'+(s.width||1)+'"'+(s.dash?' stroke-dasharray="6 4"':'')+(s.pkey?' data-port="'+esc(s.pkey)+'"':'')+'/>';
   if(s.type==='image')return s.art?'<svg x="'+s.x+'" y="'+s.y+'" width="'+s.w+'" height="'+s.h+'" viewBox="0 0 '+s.art.w+' '+s.art.h+'" preserveAspectRatio="none" overflow="hidden">'+s.art.body+'</svg>':'';
-  if(s.type==='line')return '<polyline'+(s.lkind?' data-kind="'+esc(s.lkind)+'"':'')+(s.lineKey?' data-line="'+esc(s.lineKey)+'" data-route="'+(s.route||[]).map(function(p){return p[0]+','+p[1];}).join(' ')+'"':'')+' points="'+linePoints(s).map(function(p){return p[0]+','+p[1];}).join(' ')+'" fill="none" stroke="'+s.color+'" stroke-width="'+(s.width||2)+'"'+(s.dash?' stroke-dasharray="8 5"':'')+' stroke-linejoin="round" stroke-linecap="'+(s.dash?'butt':'round')+'"'+(s.ltitle?'><title>'+esc(s.ltitle)+'</title></polyline>':'/>');
+  if(s.type==='line')return '<polyline'+(s.lkind?' data-kind="'+esc(s.lkind)+'"':'')+(s.relaxed?' data-relaxed="1"':'')+(s.lineKey?' data-line="'+esc(s.lineKey)+'" data-route="'+(s.route||[]).map(function(p){return p[0]+','+p[1];}).join(' ')+'"':'')+' points="'+linePoints(s).map(function(p){return p[0]+','+p[1];}).join(' ')+'" fill="none" stroke="'+s.color+'" stroke-width="'+(s.width||2)+'"'+(s.dash?' stroke-dasharray="8 5"':'')+' stroke-linejoin="round" stroke-linecap="'+(s.dash?'butt':'round')+'"'+(s.ltitle?'><title>'+esc(s.ltitle)+'</title></polyline>':'/>');
   var t=textSVG(s);if(s.lkind)t=t.replace(/^<text /,'<text data-kind="'+esc(s.lkind)+'" ');return s.tkey?t.replace(/^<text /,'<text data-text="'+esc(s.tkey)+'" '):t;}
  // Where each port of a device sits on its stencil, as fractions of the artwork (for the
  // port point editor): every front port of the first member, by group and index.

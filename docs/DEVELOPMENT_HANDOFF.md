@@ -1,5 +1,19 @@
 # Configuration Inspector development handoff
 
+## 5.64.0 — port maps like the switchport builder, port inventory, fewer crossings
+
+- `portMapPages` rewritten: one sheet per device (`sheetPage`, `sectionBar`, `vlanColors`, `TRUNK_COLORS`,
+  `ROUTED_FILL`) drawn with the app's faceplates (`drawPlate`) and VLAN marks on the jacks (`vlanMark`, `fills.vlan`); `inventoryPages` (page choice
+  `inventory`) with `docTable` options `light`, `onRow` and `swatch` cells; `Flow.make`/`Flow.bottom`.
+  `diagramDocs` adds `voice`, `firmware` and `os`.
+- Unknown ports: `termPlate` gives an empty port its own edge point (`slot.unknown`, "port ?"); `siteMapModel` fills an
+  empty far port from the alias the near port's description names.
+- Stack ring cables pick sides together (fewest crossings); channel tracks swap neighbours when that removes
+  crossings without overlaps; relaxed routes carry `data-relaxed` in SVG.
+- Shortest paths: `view.sides` from the drawn geometry (`o.rowSides` disables), header strip from the topmost device.
+- Tests: docs pages in diagram-tests (sheets and inventory), unknown ports, swapped VSF links in variety, beside test
+  (variety), alias inference in supplementary-browser.
+
 ## 5.63.0 — arranging tools: size, place beside, pages, Shift axis lock
 
 - Sizes: edits `scale[key]` and `scaleAll`. `render()` scales each device after the stack and chassis planners and

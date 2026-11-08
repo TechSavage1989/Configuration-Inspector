@@ -205,6 +205,14 @@ function campus(){
   const fw={key:'fg',name:'FG',role:'firewall',model:'FortiGate-120G',hw:{members:[{id:'1',profile:fg}],portOf:n=>{const b=fg.banks.find(b=>b.names.includes(n));return b?{member:'1',bank:fg.banks.indexOf(b),index:b.names.indexOf(n)}:null;}}};
   const f=new (D._Device)(fw,[],[],'plate'),x3=f.slot('x3'),port1=f.slot('port1'),ha=f.slot('ha');ok(ha.dx<port1.dx&&port1.dx<x3.dx&&x3.number==='X3'&&ha.number==='HA'&&f.plates[0].groups.find(g=>g.names.includes('x3')).form==='sfp','FortiGate 120G: HA/MGMT, ports, SFP and X1-X4 in order, SFP+ drawn as cages');
   const svg=D.svg({w:900,h:200,title:'t',shapes:[],lines:[],devices:[]});ok(typeof svg==='string','svg');}
+ // A neighbour reported without its port (owner's site): each such link ends on its own point on the device's edge,
+ // labelled "port ?", never on a made-up port shared with another link.
+ {const fg=require('./harness.cjs').boot().ctx.SWHardware.profile('FortiGate-120G'),portOf=n=>{const b=fg.banks.find(b=>b.names.includes(n));return b?{member:'1',bank:fg.banks.indexOf(b),index:b.names.indexOf(n)}:null;};
+  const L=M.layout([{key:'fw',name:'FW',type:'Firewall',model:'FortiGate-120G'},{key:'sw',name:'SW',type:'Switch',model:'Example switch'}],[{a:'sw',b:'fw',aPort:'12',bPort:''},{a:'sw',b:'fw',aPort:'24',bPort:''}],{});
+  [L.all,L.nodes].forEach(list=>list.forEach(n=>{if(n.key==='fw')n.hw={members:[{id:'1',profile:fg}],portOf};}));
+  const p=D.diagram({layout:L,links:[{a:'sw',b:'fw',aPort:'12',bPort:''},{a:'sw',b:'fw',aPort:'24',bPort:''}],vlans:new Map(),ports:new Map()},{scope:'site',style:'plate',title:'Unknown ports'}),fwd=p.devices.find(d=>d.key==='fw'),ends=p.lines.map(l=>{const q=l.conn.A.key==='fw'?l.points[0]:l.points[l.points.length-1];return q;});
+  ok(p.lines.length===2&&ends[0][0]!==ends[1][0]&&ends.every(q=>Math.abs(q[1]-(fwd.y+18))<1||Math.abs(q[1]-(fwd.y+18+72))<1),'links to an unknown port end apart on the device edge: '+JSON.stringify(ends));
+  ok(p.shapes.filter(s=>s.type==='text'&&s.text==='port ?').length===2,'each is labelled "port ?"');}
  // Documentation pages: port map, wireless connections, VLANs and routing, trunk VLANs.
  {const HW=require('./harness.cjs').boot().ctx.SWHardware,cx=HW.profile('JL675A');
   const portOf=n=>{const m=/(\d+)$/.exec(n),b=m&&cx.banks.find(b=>b.names.includes(m[1]));return b?{member:'1',bank:cx.banks.indexOf(b),index:b.names.indexOf(m[1])}:null;};
@@ -214,10 +222,14 @@ function campus(){
   const docs={devices:[{key:'fw',name:'EXAMPLE-FW',role:'firewall',model:'Example firewall',ip:'10.0.0.1',hw:null,ports:[{name:'port1',admin:'Enabled',mode:'',native:'',tagged:[],ip:'192.0.2.2/24',up:true,speed:'',neighbor:null,description:'WAN'}],vlans:[{id:'10',name:'Data',ip:'10.0.10.1/24'}],addresses:[{iface:'port1',ip:'192.0.2.2/24',note:'WAN'},{iface:'vlan10',ip:'10.0.10.1/24',note:''}],routes:[{dest:'0.0.0.0/0',gateway:'192.0.2.1',iface:'port1',note:''}]},
    {key:'sw',name:'EXAMPLE-CORE',role:'switch',model:'Aruba 6100',ip:'10.0.10.2',hw:{members:[{id:'1',profile:cx}],portOf},ports,vlans:[{id:'10',name:'Data',ip:'10.0.10.1/24'},{id:'20',name:'Voice',ip:''},{id:'30',name:'Guest',ip:''}],addresses:[{iface:'vlan10',ip:'10.0.10.1/24',note:''}],routes:[]}]};
   const pages=D.docPages({docs},{title:'Example Site',company:'EXAMPLE ORG',author:'Example Engineer',date:'2026-01-01',offset:1}),titles=pages.map(p=>p.title),txt=p=>p.shapes.filter(s=>s.type==='text').map(s=>s.text).join('\n');
-  ok(['Port map','Wireless connections','VLANs and routing','Trunk VLANs'].every(t=>titles.includes(t)),'documentation pages: '+titles.join(', '));
-  const pms=pages.filter(p=>p.title==='Port map');ok(pms.length===2&&txt(pms[0]).includes('EXAMPLE-FW')&&!txt(pms[0]).includes('EXAMPLE-CORE')&&txt(pms[1]).includes('EXAMPLE-CORE'),'the firewall has a port map page of its own');
-  const pm=pms[1];ok(/1-40/.test(txt(pm))&&/41-48/.test(txt(pm))&&/Wireless access points/.test(txt(pm))&&/Disabled/.test(txt(pm))&&/To EXAMPLE-FW/.test(txt(pm)),'the port map groups ports by role with ranges and VLAN details');
-  ok(pm.shapes.some(s=>s.type==='rect'&&s.fill==='#7fd1a6'),'access point ports are coloured on the faceplate');
+  ok(['Port map: EXAMPLE-FW','Port map: EXAMPLE-CORE','Port inventory: EXAMPLE-CORE','Wireless connections','VLANs and routing','Trunk VLANs'].every(t=>titles.includes(t)),'documentation pages: '+titles.join(', '));
+  // Port maps like the owner's switchport diagram builder: a sheet per device, the inventory on pages of its own.
+  const pms=pages.filter(p=>/^Port map: /.test(p.title));ok(pms.length===2&&txt(pms[0]).includes('EXAMPLE-FW')&&!txt(pms[0]).includes('EXAMPLE-CORE')&&txt(pms[1]).includes('EXAMPLE-CORE'),'each device has a port map sheet of its own');
+  const pm=pms[1],pt=txt(pm);ok(/NETWORK PORT MAP/.test(pt)&&/VLAN key/.test(pt)&&/10\s+Data/.test(pt)&&/20\s+Voice/.test(pt)&&/No native VLAN/.test(pt)&&/Sheet 2 \/ 2/.test(pt),'the sheet has its header, VLAN key and sheet number');
+  const v10=pm.shapes.filter(s=>s.type==='rect'&&s.fill==='#cdb8ef').length,dots=pm.shapes.filter(s=>s.type==='rect'&&s.radius>1&&s.w<7&&s.w===s.h).length;ok(v10>=40&&dots>=16,'ports are filled in their native VLAN colour, with a dot per tagged VLAN: '+v10+' / '+dots);
+  ok(pm.shapes.some(s=>s.type==='rect'&&s.dash),'an administratively disabled port is outlined dashed');
+  ok(!/Port assignment|PORT ROLES/.test(pt),'the port map no longer carries the port table');
+  const inv=pages.filter(p=>/^Port inventory: EXAMPLE-CORE/.test(p.title)),it=inv.map(txt).join('\n');ok(inv.length>=1&&/Port inventory/.test(it)&&/Tagged VLANs/.test(it)&&/Admin state/.test(it)&&/Ports 1-\d+ of 52/.test(it)&&/1\/1\/52/.test(it)&&/Disabled/.test(it),'the port inventory lists every port on its own pages');
   const wl=pages.find(p=>p.title==='Wireless connections');ok(/EXAMPLE-AP43/.test(txt(wl))&&/below 1 Gbps/.test(txt(wl)),'wireless page lists the access points and slow links');
   const vr=pages.find(p=>p.title==='VLANs and routing');ok(/0\.0\.0\.0\/0/.test(txt(vr))&&/Repeated addresses: 10\.0\.10\.1/.test(txt(vr)),'routes and repeated addresses');
   const tv=pages.find(p=>p.title==='Trunk VLANs');ok(tv.shapes.some(s=>s.type==='text'&&s.text==='N')&&tv.shapes.some(s=>s.type==='text'&&s.text==='T'),'trunk VLAN matrix');

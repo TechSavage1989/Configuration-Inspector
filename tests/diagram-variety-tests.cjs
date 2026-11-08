@@ -158,6 +158,24 @@ function visioChecks(name,pages){
    ok(p.shapes.some(x=>x.type==='text'&&/VSF stack \u00b7 5 members/.test(x.text))&&p.shapes.some(x=>x.type==='text'&&x.text==='Member 5'),scope+': the stack and each member are named');
    const txt=p.shapes.filter(x=>x.type==='text').map(x=>x.text).join('\n');ok(/VSF stack link/.test(txt),scope+': the legend names the VSF stack link');
    const r=routing(p);ok(r.length===0,scope+': stacks follow the routing rules: '+r.slice(0,4).join('; '));}
+  // A member whose VSF links are the other way round (owner's site: member 5 link 1 is 5/52): its ring cables go on
+  // opposite sides so they do not cross, and the stack keeps the height of all its members.
+  {const sw=stackHw('JL558A',5);sw.links=sw.links.map(l=>l.member==='5'?Object.assign({},l,{port:l.link==='1'?'5/52':'5/51'}):l);const s2=site('Swapped VSF'),c2=s2.dev('EX-MDF','Switch','JL675A','JL675A'),t2=s2.dev('EX-1FL-STACK','Switch','JL558A');
+   s2.link(c2,t2,'1/1/3','1/50','10 Gb/s','10GBase-SR');s2.link(c2,t2,'1/1/27','2/50','10 Gb/s','10GBase-SR');s2.link(c2,t2,'1/1/45','3/50','10 Gb/s','10GBase-SR');const i2=input(s2);[i2.layout.all,i2.layout.nodes].forEach(l=>l.forEach(n=>{if(n.key===t2)n.hw=sw;}));
+   const p=D.diagram(i2,{scope:'downstream',focus:c2,style:'plate',title:'Swapped'}),rl=p.lines.filter(l=>/^stack/.test(l.conn.type)&&l.conn.ring),d=p.devices.find(x=>x.key===t2);
+   const cross=(a,b)=>{let n=0;for(let i=1;i<a.points.length;i++)for(let j=1;j<b.points.length;j++){const h=[a.points[i-1],a.points[i]],v=[b.points[j-1],b.points[j]];[[h,v],[v,h]].forEach(([H,V])=>{if(H[0][1]!==H[1][1]||V[0][0]!==V[1][0])return;const x=V[0][0],y=H[0][1];if(x>Math.min(H[0][0],H[1][0])&&x<Math.max(H[0][0],H[1][0])&&y>Math.min(V[0][1],V[1][1])&&y<Math.max(V[0][1],V[1][1]))n++;});}return n;};
+   ok(rl.length===2&&cross(rl[0],rl[1])===0&&rl[0].conn.ring.side!==rl[1].conn.ring.side,'swapped VSF links: the two ring cables take opposite sides and do not cross');
+   ok(d&&d.members.length===5&&d.members.every(m=>m.y+m.h<=d.y+d.h+1),'the stack is as tall as its five members');
+   ok(routing(p).length===0&&faces(p).length===0,'and every line keeps the routing rules: '+routing(p).concat(faces(p)).slice(0,3).join('; '));}
+  // Placed beside the core by hand (owner request: the shortest path within the rules, no climbing over a device only to
+  // come back down): the stack's and core's links leave by the edges that make the paths shortest.
+  {const s3=site('Beside'),c3=s3.dev('EX-MDF','Switch','JL675A','JL675A'),t3=s3.dev('EX-1FL-STACK','Switch','JL558A');s3.link(c3,t3,'1/1/3','1/50','10 Gb/s','10GBase-SR');s3.link(c3,t3,'1/1/27','2/50','10 Gb/s','10GBase-SR');s3.link(c3,t3,'1/1/45','3/50','10 Gb/s','10GBase-SR');
+   const i3=input(s3);[i3.layout.all,i3.layout.nodes].forEach(l=>l.forEach(n=>{if(n.key===t3)n.hw=stackHw('JL558A',3);}));const o3={scope:'downstream',focus:c3,style:'plate',title:'Beside'},p0=D.diagram(i3,o3),dc=p0.devices.find(d=>d.key===c3),ds=p0.devices.find(d=>d.key===t3);
+   const edits={maxRow:p0.maxRow,moves:{[t3]:[Math.round((dc.x+dc.w+180-ds.x)/9)*9,Math.round((dc.y-ds.y)/9)*9]}},len=p=>p.lines.filter(l=>l.conn.B&&l.conn.A!==l.conn.B).reduce((n,l)=>n+l.points.slice(1).reduce((m,q,i)=>m+Math.abs(q[0]-l.points[i][0])+Math.abs(q[1]-l.points[i][1]),0),0);
+   const pa=D.diagram(i3,Object.assign({edits},o3)),pb=D.diagram(i3,Object.assign({edits,rowSides:true},o3));
+   ok(len(pa)<len(pb)*0.9,'a stack placed beside its core takes shorter paths: '+Math.round(len(pa))+' < '+Math.round(len(pb)));
+   ok(routing(pa).length===0&&faces(pa).length===0,'and keeps the routing rules: '+routing(pa).concat(faces(pa)).slice(0,3).join('; '));
+   ok(Math.round(len(D.diagram(i3,o3)))===Math.round(len(D.diagram(i3,Object.assign({rowSides:true},o3)))),'devices in their rows keep the same paths');}
   const title=D.diagram(inp,{scope:'downstream',focus:st1,style:'plate',title:'Stacks'}).title;ok(title==='EX-1FL-STACK and below','a stack drawn from itself is titled with its name: '+title);
   visioChecks('Example stacks',[D.onLetter(D.diagram(inp,{scope:'downstream',focus:core,style:'plate',title:'Stacks'}))]);
   ok(D.diagram(inp,{scope:'site',style:'box',title:'Stacks'}).devices.some(d=>d.key===st1),'box style keeps a stack as one box');
