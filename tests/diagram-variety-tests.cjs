@@ -82,6 +82,7 @@ const designs=[];
 // ---------- checks ----------
 const views=[{style:'auto'},{style:'plate'},{style:'box'},{style:'auto',aps:true,others:true,unconfigured:true,upstream:true},{style:'plate',modules:false}];
 function topOf(inp){const t=D.tree(inp.layout);return inp.layout.all.filter(n=>n.role!=='circuit'&&!t.parent?.get?.(n.key)).map(n=>n.key);}
+const G2=18;
 function pageChecks(name,p){
  const r=routing(p);ok(r.length===0,name+': routing rules: '+r.slice(0,4).join('; '));
  const circ=(p.eps||[]).filter(e=>e.role==='circuit');
@@ -91,6 +92,18 @@ function pageChecks(name,p){
  if(circ.length){const over=p.lines.filter(l=>l.points.some((q,i)=>i&&circ.some(e=>{const s=l.points[i-1],own=epOf(l);if(own&&own.y<e.y-1)return false;return Math.min(q[1],s[1])<e.y&&Math.max(q[0],s[0])>e.x&&Math.min(q[0],s[0])<e.x+e.w;})));ok(over.length===0,name+': nothing above a WAN circuit: '+over.map(l=>l.conn.A.key).join(','));
   ok(circ.every(e=>{const d=p.devices.find(v=>v.key===e.dev);return !d||e.y+e.h<=d.y;}),name+': WAN circuits sit above their device');}
  ok(p.shapes.filter(s=>s.type==='line'&&s.arcs).every(s=>Object.keys(s.arcs).every(i=>{const a=s.points[i-1],b=s.points[i];return a&&b&&a[1]===b[1]&&s.arcs[i]>0;})),name+': hops are arcs over horizontal stretches');
+ // Right angles only: every stretch of every line is horizontal or vertical (a lane off the routing grid once drew a
+ // slanted stretch into a chassis).
+ const slant=p.lines.filter(l=>l.points.some((q,i)=>i&&Math.abs(q[0]-l.points[i-1][0])>0.01&&Math.abs(q[1]-l.points[i-1][1])>0.01));ok(slant.length===0,name+': right angles only: '+slant.map(l=>l.key||l.conn.A.key).slice(0,3).join(','));
+ // Access point links of one device never cross each other (owner request: no needless crossings or bends): they run
+ // as Z shapes on tracks ordered to avoid it.
+ const apLines=p.lines.filter(l=>l.conn&&l.conn.ep!=null&&(l.conn.A.eps[l.conn.ep]||{}).node&&l.conn.A.eps[l.conn.ep].node.role==='ap'),apCross=[];
+ apLines.forEach((l1,i)=>apLines.slice(i+1).forEach(l2=>{if(l1.conn.A!==l2.conn.A)return;for(let a=1;a<l1.points.length;a++)for(let b=1;b<l2.points.length;b++){const s=[l1.points[a-1],l1.points[a]],t=[l2.points[b-1],l2.points[b]],h=s[0][1]===s[1][1]?s:t[0][1]===t[1][1]?t:null,v=h===s?t:s;if(!h||v[0][0]!==v[1][0])continue;const x=v[0][0],y=h[0][1];if(x>Math.min(h[0][0],h[1][0])+0.5&&x<Math.max(h[0][0],h[1][0])-0.5&&y>Math.min(v[0][1],v[1][1])+0.5&&y<Math.max(v[0][1],v[1][1])-0.5)apCross.push(l1.conn.A.key);}}));
+ ok(apCross.length===0,name+': access point links of one device do not cross: '+apCross.slice(0,3).join(','));
+ // An endpoint's link never continues another device's link end to end in the same column (they read as one line).
+ const endCols=[];p.lines.forEach(l=>{if(!l.conn||l.conn.ep==null)return;const n=l.points.length,a=l.points[n-2],b=l.points[n-1];if(a&&a[0]===b[0])endCols.push({l,x:b[0],y0:Math.min(a[1],b[1]),y1:Math.max(a[1],b[1])});});
+ const chained=endCols.filter(e=>p.lines.some(o=>o!==e.l&&o.conn!==e.l.conn&&o.conn&&o.conn.ep==null&&!(o.groups||[]).some(g=>(e.l.groups||[]).includes(g))&&o.points.some((q,i)=>{if(!i)return false;const r=o.points[i-1];if(Math.abs(q[0]-r[0])>0.01||Math.abs(q[0]-e.x)>=G2)return false;const y0=Math.min(q[1],r[1]),y1=Math.max(q[1],r[1]);return y0>=e.y1&&y0-e.y1<27||y1<=e.y0&&e.y0-y1<27;})));
+ ok(chained.length===0,name+': no endpoint link lines up end to end with another link: '+chained.map(e=>e.l.conn.A.key).slice(0,3).join(','));
  ok(p.shapes.every(s=>s.type!=='line'||s.points.every(q=>Number.isFinite(q[0])&&Number.isFinite(q[1])))&&p.shapes.every(s=>s.type==='line'||[s.x,s.y,s.w,s.h].every(Number.isFinite)),name+': every shape has finite geometry');}
 function visioChecks(name,pages){
  const f=unzip(Buffer.from(D.vsdx(pages,name))),xml=Object.keys(f).filter(n=>/\.xml$/.test(n)).map(n=>f[n]).join('');
@@ -158,6 +171,26 @@ function visioChecks(name,pages){
    ok(p.shapes.some(x=>x.type==='text'&&/VSF stack \u00b7 5 members/.test(x.text))&&p.shapes.some(x=>x.type==='text'&&x.text==='Member 5'),scope+': the stack and each member are named');
    const txt=p.shapes.filter(x=>x.type==='text').map(x=>x.text).join('\n');ok(/VSF stack link/.test(txt),scope+': the legend names the VSF stack link');
    const r=routing(p);ok(r.length===0,scope+': stacks follow the routing rules: '+r.slice(0,4).join('; '));}
+  // WAN circuits take as little room as they can (owner request): side by side in one row when the drawing's widest
+  // device leaves room, boxes as wide as their text, each link with no more than the two bends it needs.
+  {const s4=designs.find(x=>x.name==='Example multi-WAN site'),i4=input(s4),fw4=s4.devices.find(d=>d.name==='MW-FW').key,p=D.diagram(i4,{scope:'downstream',focus:fw4,style:'plate',title:'WAN'}),cs=(p.eps||[]).filter(e=>e.role==='circuit');
+   const bends=l=>l.points.filter((q,i)=>i&&i<l.points.length-1&&(Math.abs(l.points[i-1][1]-q[1])<0.01)!==(Math.abs(l.points[i+1][1]-q[1])<0.01)).length,wl=p.lines.filter(l=>l.conn.ep!=null);
+   ok(cs.length===4&&new Set(cs.map(e=>Math.round(e.y))).size===1,'four WAN circuits sit in one row: '+cs.map(e=>Math.round(e.y)).join(','));
+   // A top-row port's link goes straight up and over (two bends); a bottom-row port's loops around the firewall to a box at
+   // the end of the row (four), the loops nested so no WAN link crosses another.
+   const top=l=>l.points[1][1]<l.points[0][1],cross=(a,b)=>{let n=0;for(let i=1;i<a.points.length;i++)for(let j=1;j<b.points.length;j++){const h=[a.points[i-1],a.points[i]],v=[b.points[j-1],b.points[j]];[[h,v],[v,h]].forEach(([H,V])=>{if(H[0][1]!==H[1][1]||V[0][0]!==V[1][0])return;const x=V[0][0],y=H[0][1];if(x>Math.min(H[0][0],H[1][0])+0.5&&x<Math.max(H[0][0],H[1][0])-0.5&&y>Math.min(V[0][1],V[1][1])+0.5&&y<Math.max(V[0][1],V[1][1])-0.5)n++;});}return n;};
+   let x=0;wl.forEach((a,i)=>wl.slice(i+1).forEach(b=>{x+=cross(a,b);}));
+   ok(wl.length===4&&wl.every(l=>bends(l)<=(top(l)?2:4))&&x===0,'WAN circuit links: two bends from top-row ports, nested loops from bottom-row ports, no crossings: '+wl.map(bends).join(',')+' / '+x);}
+  // Access points on a middle member (owner's wireless pages): their links leave by the stack's side lane and fan out
+  // to the row of access points as Z shapes, crossing none of the others and with no sideways jogs.
+  {const sw=stackHw('JL558A',4),s3=site('Middle member APs'),t3=s3.dev('EX-AP-STACK','Switch','JL558A');for(let i=1;i<=12;i++)s3.link(t3,s3.dev('EX-AP-'+i,'Access Point','AP-515'),'3/'+i,'eth0','1 Gb/s');
+   const i3=input(s3);[i3.layout.all,i3.layout.nodes].forEach(l=>l.forEach(n=>{if(n.key===t3)n.hw=sw;}));
+   const p=D.diagram(i3,{scope:'downstream',focus:t3,depth:0,style:'auto',upstream:false,aps:true,tallAps:true,others:false,title:'Wireless'}),al=p.lines.filter(l=>l.conn.ep!=null);
+   const cross=(a,b)=>{let n=0;for(let i=1;i<a.points.length;i++)for(let j=1;j<b.points.length;j++){const h=[a.points[i-1],a.points[i]],v=[b.points[j-1],b.points[j]];[[h,v],[v,h]].forEach(([H,V])=>{if(H[0][1]!==H[1][1]||V[0][0]!==V[1][0])return;const x=V[0][0],y=H[0][1];if(x>Math.min(H[0][0],H[1][0])+0.5&&x<Math.max(H[0][0],H[1][0])-0.5&&y>Math.min(V[0][1],V[1][1])+0.5&&y<Math.max(V[0][1],V[1][1])-0.5)n++;});}return n;};
+   const bends=l=>l.points.filter((q,i)=>i&&i<l.points.length-1&&(Math.abs(l.points[i-1][1]-q[1])<0.01)!==(Math.abs(l.points[i+1][1]-q[1])<0.01)).length;
+   let x=0;al.forEach((a,i)=>al.slice(i+1).forEach(b=>{x+=cross(a,b);}));
+   ok(al.length===12&&x===0,'access points on a middle member: their links do not cross ('+x+' crossings)');
+   ok(al.every(l=>bends(l)<=4),'access points on a middle member: no link bends more than the side lane needs: '+al.map(bends).join(','));}
   // A member whose VSF links are the other way round (owner's site: member 5 link 1 is 5/52): its ring cables go on
   // opposite sides so they do not cross, and the stack keeps the height of all its members.
   {const sw=stackHw('JL558A',5);sw.links=sw.links.map(l=>l.member==='5'?Object.assign({},l,{port:l.link==='1'?'5/52':'5/51'}):l);const s2=site('Swapped VSF'),c2=s2.dev('EX-MDF','Switch','JL675A','JL675A'),t2=s2.dev('EX-1FL-STACK','Switch','JL558A');
