@@ -102,6 +102,9 @@ function pageChecks(name,p){
  ok(apCross.length===0,name+': access point links of one device do not cross: '+apCross.slice(0,3).join(','));
  // An endpoint's link never continues another device's link end to end in the same column (they read as one line).
  const endCols=[];p.lines.forEach(l=>{if(!l.conn||l.conn.ep==null)return;const n=l.points.length,a=l.points[n-2],b=l.points[n-1];if(a&&a[0]===b[0])endCols.push({l,x:b[0],y0:Math.min(a[1],b[1]),y1:Math.max(a[1],b[1])});});
+ // No pointless jogs: a short step between two runs going the same way (they read as a line dipping and coming back).
+ const jogs=p.lines.filter(l=>!l.internal&&l.edited!==true&&l.points.some((b,k)=>{const q=l.points;if(k<1||k+2>=q.length)return false;const a=q[k-1],c=q[k+1],d=q[k+2];return Math.abs(a[1]-b[1])<0.01&&Math.abs(b[0]-c[0])<0.01&&Math.abs(c[1]-d[1])<0.01&&Math.abs(b[1]-c[1])>0.5&&Math.abs(b[1]-c[1])<=36&&(b[0]-a[0])*(d[0]-c[0])>0&&k>=2&&k+3<=q.length-1&&Math.abs(q[k-2][0]-a[0])<0.01;}));
+ if(process.env.JOG_REPORT&&jogs.length)console.log('JOG',name,jogs.map(l=>JSON.stringify(l.points.map(q=>q.map(Math.round)))).join(' '));
  const chained=endCols.filter(e=>p.lines.some(o=>o!==e.l&&o.conn!==e.l.conn&&o.conn&&o.conn.ep==null&&!(o.groups||[]).some(g=>(e.l.groups||[]).includes(g))&&o.points.some((q,i)=>{if(!i)return false;const r=o.points[i-1];if(Math.abs(q[0]-r[0])>0.01||Math.abs(q[0]-e.x)>=G2)return false;const y0=Math.min(q[1],r[1]),y1=Math.max(q[1],r[1]);return y0>=e.y1&&y0-e.y1<27||y1<=e.y0&&e.y0-y1<27;})));
  ok(chained.length===0,name+': no endpoint link lines up end to end with another link: '+chained.map(e=>e.l.conn.A.key).slice(0,3).join(','));
  ok(p.shapes.every(s=>s.type!=='line'||s.points.every(q=>Number.isFinite(q[0])&&Number.isFinite(q[1])))&&p.shapes.every(s=>s.type==='line'||[s.x,s.y,s.w,s.h].every(Number.isFinite)),name+': every shape has finite geometry');}

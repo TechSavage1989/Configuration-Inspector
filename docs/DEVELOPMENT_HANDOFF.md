@@ -1,5 +1,14 @@
 # Configuration Inspector development handoff
 
+## 5.67.0 — chassis step heights, jog cleanup, unknown-port jacks, one-sheet port maps
+
+- Chassis leader zones cluster rows within 2 px; a per-module pass (`byPl`) keeps every step at its own height.
+- Jog cleanup (both orientations, all styles) after side entry; only the changed stretches are checked for devices.
+- Unknown ports draw a dashed "?" jack. Port map lists move under the VLAN key (`GX`/`GW`/`GP`) when the main column
+  is full; member bars 13 px, 3 px gaps.
+- Tests: "?" jack (diagram-tests); `JOG_REPORT=1` prints remaining jogs in the variety tests (the box-style ones avoid
+  crossings).
+
 ## 5.66.0 — smallest-square layouts, tight stacks, side entry, Tidy links
 
 - `diagram()` row-width choice under Fit to drawing: `rate` = smallest `max(w,h)` plus 40 per hop, 40 per bend and

@@ -212,7 +212,8 @@ function campus(){
   [L.all,L.nodes].forEach(list=>list.forEach(n=>{if(n.key==='fw')n.hw={members:[{id:'1',profile:fg}],portOf};}));
   const p=D.diagram({layout:L,links:[{a:'sw',b:'fw',aPort:'12',bPort:''},{a:'sw',b:'fw',aPort:'24',bPort:''}],vlans:new Map(),ports:new Map()},{scope:'site',style:'plate',title:'Unknown ports'}),fwd=p.devices.find(d=>d.key==='fw'),ends=p.lines.map(l=>{const q=l.conn.A.key==='fw'?l.points[0]:l.points[l.points.length-1];return q;});
   ok(p.lines.length===2&&ends[0][0]!==ends[1][0]&&ends.every(q=>Math.abs(q[1]-(fwd.y+18))<1||Math.abs(q[1]-(fwd.y+18+72))<1),'links to an unknown port end apart on the device edge: '+JSON.stringify(ends));
-  ok(p.shapes.filter(s=>s.type==='text'&&s.text==='port ?').length===2,'each is labelled "port ?"');}
+  ok(p.shapes.filter(s=>s.type==='text'&&s.text==='port ?').length===2,'each is labelled "port ?"');
+  ok(p.shapes.filter(s=>s.type==='text'&&s.text==='?').length===2,'and ends on a dashed "?" jack, not on nothing');}
  // A link moved by hand takes its port label along (owner request): the label sits beside the stretch where the line now
  // leaves the device's label band.
  {const inp=campus(),o={scope:'site',title:'Labels',style:'plate'},p0=D.diagram(inp,o),l=p0.lines.find(x=>!x.internal&&x.conn.B&&x.points.length>=3&&Math.abs(x.points[0][0]-x.points[1][0])<0.01&&x.points[1][1]>x.points[0][1]+20);

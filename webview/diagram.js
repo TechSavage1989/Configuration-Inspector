@@ -637,9 +637,16 @@
     // The step goes on whichever side of its port row has more room (above the row on modules whose ports sit
     // low), so neighbouring steps stay clearly apart (owner request: no lines bunched together).
     var ph=pl.h||72,below=ry.filter(function(y){return y>py+2;}),above=ry.filter(function(y){return y<py-2;}),bz=[py+11,below.length?below[0]-11:ph-4],az=[py-11,above.length?above[above.length-1]+11:(pl.card?14:4)],useAbove=az[0]-az[1]>bz[1]-bz[0],z=useAbove?az:bz;
-    (cols[c]=cols[c]||[]).push({t:t,pl:pl,down:down,sgn:useAbove?-1:1,z0:z[0],z1:z[1],zone:pl.member+'|'+py+'|'+down});});
-   Object.keys(cols).forEach(function(c){var list=cols[c],zones={};list.forEach(function(e){(zones[e.zone]=zones[e.zone]||[]).push(e);});
+    (cols[c]=cols[c]||[]).push({t:t,pl:pl,down:down,sgn:useAbove?-1:1,z0:z[0],z1:z[1],zone:pl.member+'|'+py+'|'+down,py:py});});
+   // Ports of one module whose rows differ by a pixel or two share a zone (their steps are staircased together;
+   // separate zones started at the same height and drew overlapping steps).
+   Object.keys(cols).forEach(function(c){var list=cols[c],zones={};list.slice().sort(function(a,b){return a.py-b.py;}).forEach(function(e){var key=e.pl.member+'|'+e.down+'|'+e.sgn,hit=Object.keys(zones).find(function(z){return z.indexOf(key+'|')===0&&zones[z].some(function(f){return Math.abs(f.py-e.py)<=2;});});e.zone=hit||key+'|'+e.py;(zones[e.zone]=zones[e.zone]||[]).push(e);});
     Object.keys(zones).forEach(function(z){var es=zones[z].sort(function(a,b){return b.t.slot.dx-a.t.slot.dx;}),k=es.length,span=Math.abs(es[0].z1-es[0].z0),step=k>1?Math.min(9,span/(k-1)):0,sign=es[0].sgn;es.forEach(function(e,i){e.y=e.z0+sign*step*i;e.gy=HEAD+(e.pl.y||0)+e.y;});});
+    // Steps on one module run side by side towards the lanes, so two of them never share a height (owner request: no
+    // lines lying on one another), also when one link leaves by the top edge and the other by the bottom.
+    var byPl=new Map();list.forEach(function(e){if(!byPl.has(e.pl))byPl.set(e.pl,[]);byPl.get(e.pl).push(e);});
+    byPl.forEach(function(es){var placed=[];es.slice().sort(function(a,b){return Math.abs(a.y-a.z0)-Math.abs(b.y-b.z0);}).forEach(function(e){var lo=Math.min(e.z0,e.z1),hi=Math.max(e.z0,e.z1),clash=function(y){return placed.some(function(f){return Math.abs(f.y-y)<5;});};
+      if(clash(e.y)){var y0=e.y,found=null;for(var k=1;k<12&&found==null;k++){[y0+e.sgn*5*k,y0-e.sgn*5*k].forEach(function(y){if(found==null&&y>=lo-0.01&&y<=hi+0.01&&!clash(y))found=y;});}if(found!=null){e.y=found;e.gy=HEAD+(e.pl.y||0)+e.y;}}placed.push(e);});});
     // Edge distance: from the step to the edge its link leaves by.
     list.forEach(function(e){e.dist=e.down?d.plateH-(e.pl.y||0)-e.y:(e.pl.y||0)+e.y;});
     list.sort(function(a,b){return (a.down?0:1)-(b.down?0:1)||a.dist-b.dist;});
@@ -943,6 +950,21 @@
    if(ord.length>1&&ord.length<=24){var best=score(mapOf(ord));for(var pass=0;pass<ord.length&&best.cross;pass++){var better=false;for(var k=0;k+1<ord.length;k++){var t0=ord[k];ord[k]=ord[k+1];ord[k+1]=t0;var sc=score(mapOf(ord));if(sc.cross<best.cross&&sc.over<=best.over){best=sc;better=true;}else{ord[k+1]=ord[k];ord[k]=t0;}}if(!better)break;}}
    map=mapOf(ord);
    lines.forEach(function(l){if(l.internal)return;l.points=l.points.map(function(q,i){return i&&i<l.points.length-1&&inside(q[1])?[q[0],map.get(q[1])]:q;});});});
+  // No pointless jogs (owner request: a line does not dip and come back): a short step between two runs going the same
+  // way is removed by moving one run onto the other's level, when that adds no crossing or overlap and passes no device.
+  function vClear(x,y0,y1){var lo=Math.min(y0,y1)+0.5,hi=Math.max(y0,y1)-0.5,hit=false;devices.forEach(function(dv){if(x>dv.x-0.5&&x<dv.x+dv.w+0.5&&hi>dv.y-dv.bt&&lo<dv.y+dv.h+dv.bb)hit=true;dv.top.concat(dv.bot).forEach(function(e){var ex=dv.x+e.rx,ey=epY(dv,e);if(x>ex-0.5&&x<ex+EP_W+0.5&&hi>ey&&lo<ey+EP_H)hit=true;});});return !hit;}
+  // Both ways round: a short step up or down between two horizontal runs, or sideways between two vertical runs.
+  var flip=function(q){return q.map(function(v){return [v[1],v[0]];});};
+  lines.forEach(function(l){if(l.internal)return;for(var guard=0;guard<12;guard++){var done=false;[false,true].forEach(function(tr){if(done)return;var p=tr?flip(l.points):l.points;
+   for(var k=1;k+2<p.length&&!done;k++){var a=p[k-1],b=p[k],c=p[k+1],d2=p[k+2];if(Math.abs(a[1]-b[1])>0.01||Math.abs(b[0]-c[0])>0.01||Math.abs(c[1]-d2[1])>0.01)continue;
+    var dy=Math.abs(b[1]-c[1]);if(dy<0.5||dy>4*G||(b[0]-a[0])*(d2[0]-c[0])<=0)continue;var tries=[];
+    // Move the first run down (or up) to the second's level: the stretch before it must be vertical and not a port end.
+    // Only the two stretches that change are checked (the rest of the line, inside a chassis lane say, stays as it was).
+    if(k-1>=1&&Math.abs(p[k-2][0]-a[0])<0.01)tries.push({q:p.slice(0,k-1).concat([[a[0],c[1]]],p.slice(k+2)),chk:[[p[k-2],[a[0],c[1]]],[[a[0],c[1]],d2]]});
+    if(k+3<=p.length-2&&Math.abs(p[k+3][0]-d2[0])<0.01)tries.push({q:p.slice(0,k).concat([[d2[0],b[1]]],p.slice(k+3)),chk:[[a,[d2[0],b[1]]],[[d2[0],b[1]],p[k+3]]]});
+    for(var ti=0;ti<tries.length&&!done;ti++){var q=compress(tries[ti].q),okq=tries[ti].chk.every(function(sg){var u=tr?[sg[0][1],sg[0][0]]:sg[0],v=tr?[sg[1][1],sg[1][0]]:sg[1];return Math.abs(u[0]-v[0])<0.01?vClear(u[0],u[1],v[1]):!boxHit(u[0],v[0],u[1]);});
+     if(!okq)continue;var old=l.points,before=clash([l],lines);l.points=tr?flip(q):q;var after=clash([l],lines);if(after.cross>before.cross||after.over>before.over){l.points=old;continue;}done=true;}}
+   });if(!done)break;}});
   // Where a line crosses one drawn before it, its horizontal run hops over in a small arc.
   // Hand-drawn routes from the editor replace the computed one while both ends still meet
   // the same port points.
@@ -965,6 +987,10 @@
   function follow(c,i,g){var l=lineOf.get(c);if(!l||!l.edited||g.sideEntry)return g;var q=i?l.points.slice().reverse():l.points,y=g.sy;
    for(var k=1;k<q.length;k++){var a=q[k-1],b=q[k];if(Math.abs(a[0]-b[0])<0.01&&y>=Math.min(a[1],b[1])-0.01&&y<=Math.max(a[1],b[1])+0.01)return Math.abs(a[0]-g.sx)<0.5?g:Object.assign({},g,{lx:a[0]+3});}
    for(var k2=1;k2<q.length;k2++){var a2=q[k2-1],b2=q[k2];if(Math.abs(a2[1]-b2[1])<0.01&&Math.abs(a2[0]-b2[0])>0.5){var right=b2[0]>a2[0];return Object.assign({},g,{sideEntry:{x:a2[0],y:a2[1],left:!right}});}}return g;}
+  // A link whose port the data does not name ends on a dashed "?" jack on the device's edge (owner request: no link
+  // that seems to go to nothing).
+  conns.forEach(function(c){[c.ta,c.tb].forEach(function(t,i){if(!t||!t.slot||!t.slot.unknown||t.ep!=null)return;var g=i?c.gb:c.ga,d=t.dev,top=t.side==='top',x=g.px-8,y=top?g.py:g.py-13;
+   page.rect(x,y,16,13,{fill:'#ffffff',stroke:'#4a5568',width:1,dash:true,radius:2});page.text(x,y+1,16,11,'?',{size:9,bold:true,align:'center',color:'#1f2937'});});});
   conns.forEach(function(c){[c.ta,c.tb].forEach(function(t,i){if(!t||t.ep!=null||t.shared||!t.label)return;var g=follow(c,i,i?c.gb:c.ga);if(g.sideEntry){var se=g.sideEntry,lw=textW(t.label,11,true)+4;page.text(se.left?se.x-lw-6:se.x+6,se.y-14,lw,13,t.label,{size:11,bold:true,align:'left',color:'#1f2937'});}else if(g.flat)page.text(g.lx,g.top?g.dy-19:g.dy+g.dh+3,textW(t.label,12,true)+4,16,t.label,{size:12,bold:true,align:'left',color:'#1f2937'});else page.text(g.lx,g.ly,13,(g.band||BAND)-8,t.label,{size:12,bold:true,rotate:true,align:g.lalign,color:'#1f2937'});});});
   // VLANs of the focus device to the right of everything routed.
   var vlans=view.vlansFor&&input.vlans&&input.vlans.get(view.vlansFor)||[];
@@ -1216,16 +1242,23 @@
     // A chassis card keeps only its slot letter (the numbers above its first ports sit where the model was; the caption
     // under the chassis names every slot's module).
     if(mt)t.text=mt[1];if(t.type==='line')t.points=sh.points.map(function(q){return [x0+q[0]*k,y0+q[1]*k];});else{t.x=x0+sh.x*k;t.y=y0+sh.y*k;t.w=sh.w*k;t.h=sh.h*k;}['size','lineHeight','width','radius'].forEach(function(c){if(t[c])t[c]=sh[c]*k;});pg.shapes.push(t);});pg.grow(x0+w*k,y0+h*k);return k;}
-   var avail=LEG-pg.y-120;
+   // The trunk and description lists stay on the same sheet when the faceplates can shrink a little for them (owner
+   // request: as much on one page as fits, no second sheet for a few lines).
+   var preX=commonPrefix(d.ports.map(function(x){return x.name;})),colX=MAINW/3,dsc={},dl=[];d.ports.forEach(function(p){var t=String(p.description||'').trim();if(!t)return;if(!dsc[t]){dsc[t]=[];dl.push(t);}dsc[t].push(p.name);});
+   var rowsH=function(items,h){var t=0;for(var i=0;i<items.length;i+=3)t+=Math.max.apply(null,items.slice(i,i+3).map(h))+2;return t;},
+    extra=(lags.length?20+6+rowsH(lags,function(l){return Math.max(14,wrap(l.name+': '+ranges(l.ports,preX),colX-20).split('\n').length*11+3);}):0)+(dl.length?20+rowsH(dl,function(t){return wrap(ranges(dsc[t],preX)+': '+t,colX+6).split('\n').length*11+2;}):0),avail=LEG-pg.y-120;
    if(pls.length>1&&!chassis&&!dev.stencil){
     // A stack: each member under a slim bar with its number, model and ports, as compact as the sheet needs.
-    var mw=Math.max.apply(null,pls.map(function(pl){return pl.w;})),k=Math.min(1.35,MAINW/mw);while(k>0.35&&pls.length*(16+72*k+6)>avail+80)k-=0.02;
+    var mw=Math.max.apply(null,pls.map(function(pl){return pl.w;})),k0=Math.min(1.35,MAINW/mw),fitK=function(av){var kk=k0;while(kk>0.35&&pls.length*(14+72*kk+3)>av+80)kk-=0.02;return kk;},k=fitK(avail),y0=pg.y,kx=k,nV=0,vs={};d.ports.forEach(function(p){[p.native].concat(p.tagged||[],[p.voice]).forEach(function(v){if(v&&/^\d+$/.test(String(v))&&!vs[v]){vs[v]=1;nV++;}});});(d.vlans||[]).forEach(function(v){if(!vs[v.id]){vs[v.id]=1;nV++;}});
+    var sideFits=38+(nV+2)*16+26+(lags.length?26+lags.reduce(function(t,l){return t+Math.max(14,wrap(l.name+': '+ranges(l.ports,preX),KEYW-20).split('\n').length*11+3)+2;},0):0)+(dl.length?20+dl.reduce(function(t,x){return t+wrap(ranges(dsc[x],preX)+': '+x,KEYW+6).split('\n').length*11+4;},0):0)<=LEG-8;
+    // Larger switches first (owner request): the lists go beside them under the VLAN key when they fit there.
+    if(!sideFits)while(kx>0.55&&y0+pls.length*(17+72*kx)+4+extra>LEG-8)kx-=0.02;if(y0+pls.length*(17+72*kx)+4+extra<=LEG-8&&kx>=k*0.7)k=Math.min(k,kx);
     // Each bar is exactly as wide as its member's faceplate and lines up with it (owner request).
-    pls.forEach(function(pl){var bw=pl.w*Math.min(k,MAINW/pl.w);pg.rect(DM,pg.y,bw,15,{fill:'#14283d',stroke:'none',radius:3});pg.text(DM+6,pg.y+2,bw-12,12,['Member '+pl.member,pl.model||d.model,counts(pl)].filter(Boolean).join('  |  '),{size:8.5,bold:true,align:'left',color:'#ffffff'});pg.y+=17;
-     var keep=pl.x,ky=pl.y;pl.x=0;pl.y=0;var one=Object.create(dev);one.noLabel=true;one.plates=[pl];one.x=0;one.y=-HEAD;one.w=pl.w;one.grid=null;one.plateH=72;paste(function(t){drawPlate(t,one,null,fills);},pl.w,72,72*k,k,true);pl.x=keep;pl.y=ky;pg.y+=72*k+6;});}
+    pls.forEach(function(pl){var bw=pl.w*Math.min(k,MAINW/pl.w);pg.rect(DM,pg.y,bw,13,{fill:'#14283d',stroke:'none',radius:3});pg.text(DM+6,pg.y+1.5,bw-12,11,['Member '+pl.member,pl.model||d.model,counts(pl)].filter(Boolean).join('  |  '),{size:8,bold:true,align:'left',color:'#ffffff'});pg.y+=14;
+     var keep=pl.x,ky=pl.y;pl.x=0;pl.y=0;var one=Object.create(dev);one.noLabel=true;one.plates=[pl];one.x=0;one.y=-HEAD;one.w=pl.w;one.grid=null;one.plateH=72;paste(function(t){drawPlate(t,one,null,fills);},pl.w,72,72*k,k,true);pl.x=keep;pl.y=ky;pg.y+=72*k+3;});}
    else{
     // A chassis whole, as built, or a switch or firewall: the device's own drawing, as large as fits.
-    var one=Object.create(dev);one.noLabel=true;one.x=0;one.y=-HEAD;var kk=paste(function(t){drawPlate(t,one,null,fills);},dev.w,dev.plateH,Math.max(120,avail),chassis?1.25:1.4);pg.y+=dev.plateH*kk+10;
+    var one=Object.create(dev);one.noLabel=true;one.x=0;one.y=-HEAD;var kk=paste(function(t){drawPlate(t,one,null,fills);},dev.w,dev.plateH,avail-extra>=160?avail-extra:Math.max(120,avail),chassis?1.25:1.4);pg.y+=dev.plateH*kk+10;
     if(chassis&&grid)pg.text(DM,pg.y-6,MAINW,12,pls.filter(function(pl){return !pl.empty&&/^[A-Z]$/i.test(String(pl.member));}).map(function(pl){return 'Slot '+pl.member+': '+[pl.model,counts(pl)].filter(Boolean).join(' ');}).join('   \u00b7   '),{size:8.5,align:'left',color:'#4a5568'}),pg.y+=12;}
    pg.y+=4;
    // The VLAN key down the right (the VLANs this device carries), "No native VLAN" last.
@@ -1237,11 +1270,16 @@
    pg.rect(kx0+2,ky+1,9,9,{fill:'#ffffff',stroke:'#5b6b82',width:0.6,radius:1});pg.text(kx0+26,ky,KEYW-28,12,'No native VLAN',{size:9,align:'left',color:'#1f2937'});
    // Trunks and port descriptions under the ports, continued on a second sheet when there is no room.
    var flow={page:pg,n:1,bottom:LEG-8};function room(h){if(flow.page.y+h<=flow.bottom)return flow.page;var np=sheetPage('Port map: '+d.name+' (continued)',o,{kicker:'NETWORK PORT MAP',name:d.name+' (continued)',model:models,sub:sub,w:MAINW});out.push(np);np.y=84;flow.page=np;footer(np);return np;}
-   function grid3(items,draw,lineH){var per=3,colW=MAINW/per;for(var i=0;i<items.length;i+=per){var hh=Math.max.apply(null,items.slice(i,i+per).map(function(it){return lineH(it,colW);})),p=room(hh+2);items.slice(i,i+per).forEach(function(it,j){draw(p,it,DM+j*colW,p.y,colW);});p.y+=hh+2;}}
-   if(lags.length){var p1=room(40);sectionBar(p1,DM,p1.y,MAINW,'Trunks / LAGs');p1.y+=20;var pre=commonPrefix(d.ports.map(function(x){return x.name;}));
+   // When the lists do not fit under the ports but do fit in the column under the VLAN key, they go there (owner
+   // request: details fill the free space before a second sheet is used).
+   var GX=DM,GW=MAINW,GP=3,sideRows=function(items,h){var t=0;items.forEach(function(it){t+=h(it)+2;});return t;},
+    sideH=(lags.length?26+sideRows(lags,function(l){return Math.max(14,wrap(l.name+': '+ranges(l.ports,preX),KEYW-20).split('\n').length*11+3);}):0)+(dl.length?20+sideRows(dl,function(t){return wrap(ranges(dsc[t],preX)+': '+t,KEYW+6).split('\n').length*11+2;}):0),mainY=pg.y;
+   if(pg.y+extra>LEG-8&&ky+26+sideH<=LEG-8){GX=kx0;GW=KEYW;GP=1;pg.y=ky+26;}
+   function grid3(items,draw,lineH){var per=GP,colW=GW/per;for(var i=0;i<items.length;i+=per){var hh=Math.max.apply(null,items.slice(i,i+per).map(function(it){return lineH(it,colW);})),p=room(hh+2);items.slice(i,i+per).forEach(function(it,j){draw(p,it,GX+j*colW,p.y,colW);});p.y+=hh+2;}}
+   if(lags.length){var p1=room(40);sectionBar(p1,GX,p1.y,GW,'Trunks / LAGs');p1.y+=20;var pre=commonPrefix(d.ports.map(function(x){return x.name;}));
     grid3(lags,function(p,l,x,y,w){p.rect(x+2,y+2,22,10,{fill:'#ffffff',stroke:lagOf[l.name],width:2,radius:2});p.text(x+30,y,w-34,26,wrap(l.name+': '+ranges(l.ports,pre),w-20),{size:8.5,align:'left',color:'#1f2937',lineHeight:11});},function(l,w){return Math.max(14,wrap(l.name+': '+ranges(l.ports,commonPrefix(d.ports.map(function(x){return x.name;}))),w-20).split('\n').length*11+3);});flow.page.y+=6;}
    var descs=[],byDesc={};d.ports.forEach(function(p){var t=String(p.description||'').trim();if(!t)return;if(!(t in byDesc)){byDesc[t]=[];descs.push(t);}byDesc[t].push(p.name);});
-   if(descs.length){var p2=room(40);sectionBar(p2,DM,p2.y,MAINW,'Port descriptions');p2.y+=20;var pre2=commonPrefix(d.ports.map(function(x){return x.name;}));
+   if(descs.length){var p2=room(40);sectionBar(p2,GX,p2.y,GW,'Port descriptions');p2.y+=20;var pre2=commonPrefix(d.ports.map(function(x){return x.name;}));
     grid3(descs.map(function(t){return {t:t,s:ranges(byDesc[t],pre2)+': '+t};}),function(p,it,x,y,w){p.text(x,y,w-8,30,wrap(it.s,w+6),{size:8.5,align:'left',color:'#1f2937',lineHeight:11});},function(it,w){return wrap(it.s,w+6).split('\n').length*11+2;});}
    function footer(p){var lx=DM;[['sq','#cdb8ef','Native VLAN'],['dot','#cdb8ef','Tagged VLAN'],['dia','#e8705f','Voice VLAN'],['lag','#2b6cb0','LAG / trunk'],['sq','#111827','Stack / VSF']].forEach(function(k){if(k[0]==='sq')p.rect(lx,LEG+3,10,10,{fill:k[1],stroke:'#5b6b82',width:0.6,radius:1});else if(k[0]==='dot')p.rect(lx+2,LEG+5,6,6,{fill:k[1],stroke:'#4a5568',width:0.35,radius:3});else if(k[0]==='dia')p.text(lx,LEG+1,10,12,'◆',{size:9,align:'center',color:k[1]});else p.rect(lx,LEG+3,12,10,{fill:'#ffffff',stroke:k[1],width:2,radius:1});p.text(lx+16,LEG+2,120,12,k[2],{size:9,align:'left',color:'#1f2937'});lx+=28+k[2].length*5.4;});
     p.text(DM,LEG+18,DOC_W-2*DM,12,'Confirm live link, LLDP/CDP, and MAC address table before moving production cables.  |  Sheet '+(di+1)+' / '+devs.length,{size:8.5,align:'left',color:'#4a5568'});}
