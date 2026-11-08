@@ -30,6 +30,11 @@ a decision or a test on the owner's own machine (for example opening an export i
 
 ## Gotchas
 
+- The Network diagram is TURNED OFF in releases (owner decision, 5.69.0: not working as intended yet). Keep its code
+  and tests whole: `DIAGRAM_ON` in index.html hides the sidebar item and sends the `diagram` view to the Site map;
+  `?labs=diagram` (or "diagram" in localStorage `config-inspector-labs`) turns it on, and the diagram browser tests
+  load the page that way. Its user documentation lives in `docs/network-diagram.md`, not the README, until it is
+  turned back on (v5.68.0 is the last release with it on). The diagram gotchas below still apply to that code.
 - CLI dialects with Cisco-like interface names (Arista EOS, Huawei VRP) must be
   detected in `detectSwitchCLI` before the Cisco pattern, or they are labeled
   Cisco. A new vendor id must also be added to every vendor list in

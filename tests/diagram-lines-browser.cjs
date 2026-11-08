@@ -12,7 +12,7 @@ const file=(name,buffer,type)=>({name,mimeType:type||'text/plain',buffer:Buffer.
  try{
   const page=await browser.newPage({viewport:{width:1440,height:900},acceptDownloads:true}),errors=[];page.on('pageerror',e=>errors.push(e.message));
   await page.addInitScript(()=>{window.DIAGRAM_SHOW_ALL=true;});
-  await page.goto('file://'+path.resolve('webview/index.html'));
+  await page.goto('file://'+path.resolve('webview/index.html')+'?labs=diagram');
   await page.locator('#import-file').setInputFiles(file('example-site.xlsx',demoSite(),'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'));await page.locator('.site-map').waitFor({timeout:15000});
   await page.locator('.nav-scroll [data-view="diagram"]').first().click();await page.locator('.diagram-scroll > svg').waitFor();
   await page.locator('[data-diagram-editmode]').first().click();await page.waitForTimeout(400);

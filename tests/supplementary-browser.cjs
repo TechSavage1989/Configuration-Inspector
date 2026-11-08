@@ -15,7 +15,7 @@ const file=(name,buffer,type)=>({name,mimeType:type||'text/plain',buffer:Buffer.
   const page=await browser.newPage({viewport:{width:1440,height:900}}),errors=[];page.on('pageerror',e=>errors.push(e.message));
   // These checks were written for the full view (every device type shown); the default view is checked separately.
   await page.addInitScript(()=>{window.DIAGRAM_SHOW_ALL=true;});
-  await page.goto('file://'+path.resolve('webview/index.html'));
+  await page.goto('file://'+path.resolve('webview/index.html')+'?labs=diagram');
   // Supplementary data alone builds a site map.
   await page.locator('#import-file').setInputFiles(file('example-site.xlsx',demoSite(),'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'));
   await page.locator('.site-map').waitFor({timeout:15000});

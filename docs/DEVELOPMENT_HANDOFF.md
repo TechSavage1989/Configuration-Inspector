@@ -1,5 +1,12 @@
 # Configuration Inspector development handoff
 
+## 5.69.0 — Network diagram turned off
+
+- `DIAGRAM_ON` in index.html (off unless `?labs=diagram` or localStorage `config-inspector-labs` contains `diagram`):
+  no sidebar item, `view('diagram')` and a stored `diagram` view fall back to the Site map. All diagram code and tests
+  stay; the diagram browser tests open `index.html?labs=diagram`; `navigation-browser.cjs` checks it is hidden.
+- README diagram sections moved to `docs/network-diagram.md` (with how to turn it back on).
+
 ## 5.68.0 — full-window layout, compact diagram chrome, sideways stack exits
 
 - `main` max-width removed (also `.map-region`, `.welcome`, zone web). `main.diagram-main` compacts the diagram view.

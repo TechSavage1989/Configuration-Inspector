@@ -21,7 +21,7 @@ const SW=(name,ports,ip)=>['; JL253A Configuration Editor; Created on release #W
  const browser=await playwright.chromium.launch({headless:true,args:['--no-sandbox'],...(process.env.CI_CHROME_PATH?{executablePath:process.env.CI_CHROME_PATH}:{})});
  try{
   const page=await browser.newPage({viewport:{width:1440,height:900}}),errors=[];page.on('pageerror',e=>errors.push(e.message));
-  await page.goto('file://'+path.resolve('webview/index.html'));
+  await page.goto('file://'+path.resolve('webview/index.html')+'?labs=diagram');
   await page.locator('#import-file').setInputFiles([file('ex-core.conf',MDF),file('ex-idf-stack.conf',IDF),file('ex-idf-sw02.conf',SW('EX-IDF-SW02',['25','26'],'192.0.2.13')),file('ex-idf-sw03.conf',SW('EX-IDF-SW03',['25'],'192.0.2.14')),file('ex-idf-sw04.conf',SW('EX-IDF-SW04',['25','26'],'192.0.2.15')),file('ex-idf-sw05.conf',SW('EX-IDF-SW05',['25','26'],'192.0.2.16')),file('ex-idf-sw06.conf',SW('EX-IDF-SW06',['25'],'192.0.2.17'))]);await page.waitForTimeout(1500);
   await page.locator('.nav-scroll [data-view="diagram"]').first().click();await page.locator('.diagram-scroll > svg').first().waitFor({timeout:20000});
   await page.locator('#diagram-focus').selectOption({label:'EX-CORE'});await page.waitForTimeout(1500);
