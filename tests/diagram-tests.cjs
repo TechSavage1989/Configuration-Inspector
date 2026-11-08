@@ -213,13 +213,19 @@ function campus(){
   const p=D.diagram({layout:L,links:[{a:'sw',b:'fw',aPort:'12',bPort:''},{a:'sw',b:'fw',aPort:'24',bPort:''}],vlans:new Map(),ports:new Map()},{scope:'site',style:'plate',title:'Unknown ports'}),fwd=p.devices.find(d=>d.key==='fw'),ends=p.lines.map(l=>{const q=l.conn.A.key==='fw'?l.points[0]:l.points[l.points.length-1];return q;});
   ok(p.lines.length===2&&ends[0][0]!==ends[1][0]&&ends.every(q=>Math.abs(q[1]-(fwd.y+18))<1||Math.abs(q[1]-(fwd.y+18+72))<1),'links to an unknown port end apart on the device edge: '+JSON.stringify(ends));
   ok(p.shapes.filter(s=>s.type==='text'&&s.text==='port ?').length===2,'each is labelled "port ?"');}
+ // A link moved by hand takes its port label along (owner request): the label sits beside the stretch where the line now
+ // leaves the device's label band.
+ {const inp=campus(),o={scope:'site',title:'Labels',style:'plate'},p0=D.diagram(inp,o),l=p0.lines.find(x=>!x.internal&&x.conn.B&&x.points.length>=3&&Math.abs(x.points[0][0]-x.points[1][0])<0.01&&x.points[1][1]>x.points[0][1]+20);
+  const P=l.points,np=[P[0],[P[0][0],P[0][1]+4],[P[0][0]+36,P[0][1]+4],[P[0][0]+36,P[1][1]]].concat(P[1][0]===P[0][0]+36?P.slice(2):[[P[1][0],P[1][1]]].concat(P.slice(2)));
+  const p1=D.diagram(inp,Object.assign({edits:{maxRow:p0.maxRow,lines:{[l.key]:np}}},o)),lab=s=>s.type==='text'&&s.rotate&&Math.abs(s.x-(P[0][0]+36+3))<1;
+  ok(p1.lines.find(x=>x.key===l.key).edited&&p1.shapes.some(lab)&&!p0.shapes.some(lab),'a hand-moved link takes its port label along');}
  // Documentation pages: port map, wireless connections, VLANs and routing, trunk VLANs.
  {const HW=require('./harness.cjs').boot().ctx.SWHardware,cx=HW.profile('JL675A');
   const portOf=n=>{const m=/(\d+)$/.exec(n),b=m&&cx.banks.find(b=>b.names.includes(m[1]));return b?{member:'1',bank:cx.banks.indexOf(b),index:b.names.indexOf(m[1])}:null;};
   const ports=[];for(let i=1;i<=52;i++){const p={name:'1/1/'+i,admin:'Enabled',mode:'access',native:'10',tagged:[],ip:'',lag:'',up:i<20,speed:'1 Gb/s',neighbor:null,description:''};
    if(i>=41&&i<=48){p.mode='trunk';p.tagged=['20','30'];p.neighbor={name:'EXAMPLE-AP'+i,role:'ap',model:'Example AP',ip:'10.0.10.'+i};p.up=true;p.speed=i===43?'100 Mb/s':'1 Gb/s';}
    if(i===49){p.mode='trunk';p.native='1';p.tagged=['10','20','30'];p.neighbor={name:'EXAMPLE-FW',role:'firewall',model:'',ip:'10.0.0.1'};}if(i===52)p.admin='Disabled';ports.push(p);}
-  const docs={devices:[{key:'fw',name:'EXAMPLE-FW',role:'firewall',model:'Example firewall',ip:'10.0.0.1',hw:null,ports:[{name:'port1',admin:'Enabled',mode:'',native:'',tagged:[],ip:'192.0.2.2/24',up:true,speed:'',neighbor:null,description:'WAN'}],vlans:[{id:'10',name:'Data',ip:'10.0.10.1/24'}],addresses:[{iface:'port1',ip:'192.0.2.2/24',note:'WAN'},{iface:'vlan10',ip:'10.0.10.1/24',note:''}],routes:[{dest:'0.0.0.0/0',gateway:'192.0.2.1',iface:'port1',note:''}]},
+  const docs={devices:[{key:'fw',name:'EXAMPLE-FW',role:'firewall',model:'Example firewall',ip:'10.0.0.1',hw:null,ports:[{name:'port1',admin:'Enabled',mode:'',native:'',tagged:[],ip:'192.0.2.2/24',up:true,speed:'',neighbor:null,description:'WAN'}],vlans:[{id:'10',name:'Data',ip:'10.0.10.1/24'}],addresses:[{iface:'port1',ip:'192.0.2.2/24',note:'WAN'},{iface:'vlan10',ip:'10.0.10.1/24',note:''},{iface:'loopback0',ip:'10.255.0.1/32',note:'Router ID'}],routes:[{dest:'0.0.0.0/0',gateway:'192.0.2.1',iface:'port1',note:''}]},
    {key:'sw',name:'EXAMPLE-CORE',role:'switch',model:'Aruba 6100',ip:'10.0.10.2',hw:{members:[{id:'1',profile:cx}],portOf},ports,vlans:[{id:'10',name:'Data',ip:'10.0.10.1/24'},{id:'20',name:'Voice',ip:''},{id:'30',name:'Guest',ip:''}],addresses:[{iface:'vlan10',ip:'10.0.10.1/24',note:''}],routes:[]}]};
   const pages=D.docPages({docs},{title:'Example Site',company:'EXAMPLE ORG',author:'Example Engineer',date:'2026-01-01',offset:1}),titles=pages.map(p=>p.title),txt=p=>p.shapes.filter(s=>s.type==='text').map(s=>s.text).join('\n');
   ok(['Port map: EXAMPLE-FW','Port map: EXAMPLE-CORE','Port inventory: EXAMPLE-CORE','Wireless connections','VLANs and routing','Trunk VLANs'].every(t=>titles.includes(t)),'documentation pages: '+titles.join(', '));
@@ -232,6 +238,8 @@ function campus(){
   const inv=pages.filter(p=>/^Port inventory: EXAMPLE-CORE/.test(p.title)),it=inv.map(txt).join('\n');ok(inv.length>=1&&/Port inventory/.test(it)&&/Tagged VLANs/.test(it)&&/Admin state/.test(it)&&/Ports 1-\d+ of 52/.test(it)&&/1\/1\/52/.test(it)&&/Disabled/.test(it),'the port inventory lists every port on its own pages');
   const wl=pages.find(p=>p.title==='Wireless connections');ok(/EXAMPLE-AP43/.test(txt(wl))&&/below 1 Gbps/.test(txt(wl)),'wireless page lists the access points and slow links');
   const vr=pages.find(p=>p.title==='VLANs and routing');ok(/0\.0\.0\.0\/0/.test(txt(vr))&&/Repeated addresses: 10\.0\.10\.1/.test(txt(vr)),'routes and repeated addresses');
+  // Each address once (owner request): VLAN interfaces in the VLANs table, routed ports in the port inventory, the rest here.
+  {const t=vr.shapes.filter(s=>s.type==='text').map(s=>s.text);ok(t.includes('loopback0')&&!t.includes('vlan10')&&!t.includes('192.0.2.2/24')&&/not repeated here/.test(txt(vr)),'VLANs and routing lists each address once: '+t.filter(x=>/^(?:port1|vlan10|loopback0)$/.test(x)).join(','));}
   const tv=pages.find(p=>p.title==='Trunk VLANs');ok(tv.shapes.some(s=>s.type==='text'&&s.text==='N')&&tv.shapes.some(s=>s.type==='text'&&s.text==='T'),'trunk VLAN matrix');
   ok(pages.every((p,i)=>txt(p).includes((i+2<10?'0':'')+(i+2)+' / '+(pages.length+1<10?'0':'')+(pages.length+1)))&&pages.every(p=>p.letter.landscape&&p.letter.scale===1),'numbered after the diagram, on letter paper at full size');
   const files=unzip(Buffer.from(D.vsdx(pages,'Docs'))),names=(files['visio/pages/pages.xml'].toString().match(/ NameU="[^"]*"/g)||[]);ok(new Set(names).size===names.length&&names.length===pages.length,'every Visio page has its own name: '+names.join(' '));

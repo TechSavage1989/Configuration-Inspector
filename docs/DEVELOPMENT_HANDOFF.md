@@ -1,5 +1,18 @@
 # Configuration Inspector development handoff
 
+## 5.66.0 — smallest-square layouts, tight stacks, side entry, Tidy links
+
+- `diagram()` row-width choice under Fit to drawing: `rate` = smallest `max(w,h)` plus 40 per hop, 40 per bend and
+  0.5 per px of link (fixed sheets unchanged). Variety designs vs 5.65.0: square side −10%, area −10%, hops 632 → 412,
+  bends +2%, length +7%.
+- Stack gaps per gap (`d.grid.gaps`, `rowY` in the stack planner).
+- Side entry pass (after the endpoint fan): `g.sideEntry`, labels beside the stack; `follow()` moves labels of
+  hand-edited lines.
+- Tidy links: `view.routeOrder` 0-3 tried when `o.tidy`/`edits.tidy`; edit-bar button `data-diagram-tidy` clears
+  `edits.lines`.
+- `routingPages` drops VLAN interface addresses and routed ports shown elsewhere ("Other routed interfaces").
+- Tests: side entry, tidy, uneven stack gaps (variety); label follow, routing de-duplication (diagram-tests).
+
 ## 5.65.0 — endpoint fans, compact WAN circuits, grouped port inventory
 
 - Endpoint fan pass (after `straightenEnd` in `render`): a device's links to its endpoint row become Z shapes with a

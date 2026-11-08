@@ -228,8 +228,9 @@ a decision or a test on the owner's own machine (for example opening an export i
   a bottom-row port downward into the gap on that side, runs along the gap (tracks 6 px apart) to the side of
   the stack, then along a side lane (two grid steps apart, room for port labels) to the stack's edge
   (`t.slot.gy`, `t.slot.lane`, `geo().via`). Only member 1's top-row and the last member's bottom-row links
-  go straight out. Every gap of a stack is as tall as its busiest gap needs (members evenly spaced, at least
-  9 px; `d.grid.gap`, pads above the first and below the last member when needed), and `d.sideL`/`d.sideR`
+  go straight out. Each gap of a stack is only as tall as its own lines need (at least 9 px;
+  `d.grid.gaps[r]`, owner request: as small as possible; pads above the first and below the last member when
+  needed), and `d.sideL`/`d.sideR`
   widen the stack's cell for its lanes. Track and lane order (from-above lines on upper tracks, lower origins
   on outer lanes going up) keeps the lines from crossing each other; `faces()` in
   `tests/diagram-variety-tests.cjs` checks it. Stack links (`stack:true`, kind `stack-vsf`, from `hw.links`:
@@ -336,6 +337,15 @@ a decision or a test on the owner's own machine (for example opening an export i
   (`docGroups`/`stackPages` in index.html; "Visio page" exports `shown.stack`); wireless pages keep numbered tabs.
 - Port inventory rows group consecutive ports with identical settings ("1/1-49 (49)"); keep every cell single-line
   (an unknown admin state shows only the link counts), or the pages multiply again.
+- Side entry (owner request): after routing, a stack link whose route passes beside the stack at its member's gap height
+  leaves the gap straight out sideways (or with one turn to a horizontal run of its route) instead of using the side lane
+  to the top or bottom edge; kept only when shorter with no added crossing or overlap; `g.sideEntry` moves the port
+  label beside the stack. Hand-moved links take their labels along (`follow` in the label pass).
+- Layout choice with Fit to drawing: the smallest square (`max(w,h)`) plus 40 per hop, 40 per bend and 0.5 per px of
+  link (`rate` in `diagram()`); fixed sheets keep the largest print. Tidy links (`o.tidy`/`edits.tidy`, the edit
+  bar's button) routes in `view.routeOrder` 0-3 and keeps the cleanest drawing.
+- VLANs and routing lists each address once: VLAN interfaces in the VLANs table, routed ports in the port inventory
+  (when it is on), the rest under "Other routed interfaces".
 - Endpoint fans (owner request: no needless bends or crossings): after routing, a device's links to its row of
   endpoints are rebuilt as Z shapes in the band between them (`fan` pass after `straightenEnd`); the track order is a
   search over the pairwise cost `W` (line i nearer the device than line j), kept only when it adds no crossing, bend
