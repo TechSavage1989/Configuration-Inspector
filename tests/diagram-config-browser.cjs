@@ -18,7 +18,7 @@ const file=(name,text)=>({name,mimeType:'text/plain',buffer:Buffer.from(text)});
   const page=await browser.newPage({viewport:{width:1440,height:900}}),errors=[];page.on('pageerror',e=>errors.push(e.message));
   // These checks were written for the full view (every device type shown); the default view is checked separately.
   await page.addInitScript(()=>{window.DIAGRAM_SHOW_ALL=true;});
-  await page.goto('file://'+path.resolve('webview/index.html'));
+  await page.goto('file://'+path.resolve('webview/index.html')+'?labs=diagram');
   await page.locator('#import-file').setInputFiles([file('example-core.conf',core),file('example-edge.conf',edge)]);await page.waitForTimeout(1500);
   ok(await page.locator('.nav-scroll [data-view="diagram"]').count()===1,'the network diagram is offered with configurations alone');
   await page.locator('.nav-scroll [data-view="diagram"]').click();await page.locator('.diagram-scroll > svg').waitFor();

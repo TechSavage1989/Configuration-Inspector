@@ -17,6 +17,8 @@ const cfg='version 16.12\nhostname MAP-SW1\nspanning-tree mode rapid-pvst\nvlan 
   ok(groups[0]==='workspace'&&groups.includes('network')&&groups[groups.length-1]==='source-export','sidebar sections: '+groups.join(','));
   ok(await page.locator('[data-nav-group="workspace"] [data-view="compare"]').count()===1,'Compare configs sits with the workspace items');
   ok(await page.locator('.inspector-nav-sections').count()===0,'the duplicate section list is gone from the sidebar');
+  // The Network diagram is turned off in releases (owner request): no sidebar item, while the Site map stays.
+  ok(await page.locator('.nav-scroll [data-view="diagram"]').count()===0&&await page.locator('.nav-scroll [data-view="sitemap"]').count()===1,'the Network diagram is turned off; the Site map stays');
   ok(await page.locator('[data-nav-toggle="workspace"]').count()===0,'the workspace section is always open');
   ok((await page.locator('[data-view="interfaces"]').first().getAttribute('title'))!=null,'items describe their page on hover');
   // Collapse a section and keep it across reloads.

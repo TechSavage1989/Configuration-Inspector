@@ -7,7 +7,7 @@ let checks=0;function ok(v,m){checks++;assert.ok(v,m);}
  const browser=await chromium.launch({headless:true,args:['--no-sandbox'],...(process.env.CI_CHROME_PATH?{executablePath:process.env.CI_CHROME_PATH}:{})});
  try{
   const page=await browser.newPage({viewport:{width:1400,height:900}}),errors=[];page.on('pageerror',e=>errors.push(e.message));
-  await page.goto('file://'+path.resolve('webview/index.html'));
+  await page.goto('file://'+path.resolve('webview/index.html')+'?labs=diagram');
   await page.locator('#import-file').setInputFiles({name:'example-3650.conf',mimeType:'text/plain',buffer:Buffer.from(configuration())});
   await page.locator('#modal').waitFor({state:'hidden'});await page.locator('.hardware-chassis[data-hardware-member="1"]').waitFor();
   ok(await page.locator('input[list]').count()===0,'no box uses the native suggestion popup');

@@ -10,7 +10,7 @@ const file=(name,buffer,type)=>({name,mimeType:type||'text/plain',buffer:Buffer.
  const browser=await playwright.chromium.launch({headless:true,args:['--no-sandbox'],...(process.env.CI_CHROME_PATH?{executablePath:process.env.CI_CHROME_PATH}:{})});
  try{
   const page=await browser.newPage({viewport:{width:1440,height:900}}),errors=[];page.on('pageerror',e=>errors.push(e.message));
-  await page.goto('file://'+path.resolve('webview/index.html'));
+  await page.goto('file://'+path.resolve('webview/index.html')+'?labs=diagram');
   await page.locator('#import-file').setInputFiles(file('example-site.xlsx',demoSite(),'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'));
   await page.locator('.site-map').waitFor({timeout:15000});
   await page.locator('#import-file').setInputFiles([file('access1.txt',cisco('EXAMPLE-ACCESS1',['GigabitEthernet1/0/1','TenGigabitEthernet1/1/1'],'10.0.99.11')),file('core.txt',cisco('EXAMPLE-CORE',['TenGigabitEthernet1/0/1','TenGigabitEthernet1/0/11','TenGigabitEthernet1/0/12','TenGigabitEthernet1/0/13'],'10.0.99.2'))]);
