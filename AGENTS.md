@@ -311,6 +311,22 @@ a decision or a test on the owner's own machine (for example opening an export i
 - Editor selection (owner request): Shift/Ctrl-click adds on press and removes on release without a move, so a
   Shift-drag still moves the selection; Shift locks to the axis the first few pixels chose (`d.axis`). A click that
   selects must refresh the edit bar (`renderContentBar`).
+- Port maps (owner request: like the owner's switchport diagram builder): `portMapPages` draws one sheet per device
+  from the plain faceplate geometry (`noArt` on the node skips NDS art and the NDS chassis), ports by `portPos`
+  (which already includes the group's x), filled by native VLAN (`vlanColors`, one colour per VLAN on every sheet),
+  tagged dots, voice diamond, trunk outline (`TRUNK_COLORS`), black stack ports (`hw.links`). The port table lives on
+  separate `inventoryPages` (page choice `inventory`). Sheets use `sheetPage`; `Flow.make` builds custom pages.
+- Ports the data does not name: a link with an empty port ends on its own point on the device edge (`slot.unknown`,
+  label "port ?"), never on `dev.slot('')`. `siteMapModel` first fills an empty far port from the far device's
+  interface alias that the near port's description names (one match only, not already used).
+- Stack ring cables (internal, not straight drops) choose their sides together (`rings`, every assignment for up to
+  10 cables) by the fewest crossings with each other and with side links; on a side the shorter span takes the inner
+  lane. Watch `var` names in the stack planner: it shares one function scope (`n` is the member count).
+- Shortest paths (owner request: no climbing over a device only to come back down): `diagram()` re-renders with
+  `view.sides` (per `device|port>far` key) when a stack's or chassis' cheapest edge, judged from the drawn geometry
+  (moves included), differs from the row-based one; `o.rowSides` turns it off for tests. The header strip is measured
+  from the topmost drawn device, not row 0, so moved layouts keep the space above them usable.
+- Doc page tabs: pages whose titles differ only by " (n)" or " (continued)" show as small numbered tabs.
 - Keep one design language: side panels use `.side-panel-body` with `.device-info-row`
   label/value rows, details drawers use `.detail-summary`/`.detail-cell`, and lists in
   narrow panels are rows (`.site-link-row`), never multi-column tables.

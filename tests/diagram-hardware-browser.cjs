@@ -56,8 +56,8 @@ const SW=(name,ports,ip)=>['; JL253A Configuration Editor; Created on release #W
   const mg=await page.evaluate(()=>{const ys=[...document.querySelectorAll('.diagram-scroll svg text')].filter(t=>/^Member \d+(?:\s|$)/.test(t.textContent.trim())).map(t=>Math.round(t.getBBox().y*10)/10).sort((a,b)=>a-b);return ys.slice(1).map((y,i)=>Math.round((y-ys[i])*10)/10);});
   ok(mg.length===2&&Math.abs(mg[0]-mg[1])<0.6,'stack members are evenly spaced: '+mg.join(', '));
   // Port map pages: the legend heads every page, and each member and module names its model.
-  const tabs=await page.locator('[data-diagram-tab]').allInnerTexts(),maps=tabs.map((x,i)=>[x,i]).filter(([x])=>/^Port map/.test(x));ok(maps.length>=2,'the port map runs over several pages: '+maps.length);
-  const heads=[];for(const [,i] of maps){await page.locator('[data-diagram-tab="'+i+'"]').click();await page.waitForTimeout(300);const pt=await texts();ok(pt.includes('PORT ROLES'),'port map page '+(i)+' has the port role legend');heads.push(...pt.filter(x=>/·\s+(member|slot)\s|^Member \d/.test(x)||/^JL\d{3}A|^J9\d{3}A/.test(x)));}
+  const tabs=await page.locator('[data-diagram-tab]').allInnerTexts(),maps=tabs.map((x,i)=>[x,i]).filter(([x])=>/^Port map/.test(x));ok(maps.length>=2,'each device has its own port map sheet: '+maps.length);
+  const heads=[];for(const [,i] of maps){await page.locator('[data-diagram-tab="'+i+'"]').click();await page.waitForTimeout(300);const pt=await texts();ok(pt.includes('VLAN key')&&pt.includes('NETWORK PORT MAP'),'port map sheet '+(i)+' has its header and VLAN key');heads.push(...pt.filter(x=>/·\s+(member|slot)\s|^Member \d/.test(x)||/^JL\d{3}A|^J9\d{3}A/.test(x)));}
   ok(heads.includes('J9850A 5406R zl2')||heads.some(x=>/J9850A 5406R zl2/.test(x)),'the port map heads the chassis with its model beside the name');
   ok(heads.some(x=>/Member 3\s+\|\s+JL256A\s+\|\s+48 RJ-45 \+ 4 SFP\+/.test(x)),'port map headings name each module slot and stack member with its own model: '+heads.slice(0,8).join(' / '));
   ok(!errors.length,'no page errors: '+errors.join('; '));
