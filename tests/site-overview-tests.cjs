@@ -97,4 +97,11 @@ ok(!r.subnets.some(x=>x.network==='10.0.20.0/24'),'a subnet on one device is not
 eq(r.mentions.map(m=>[m.device,m.interface,m.mentions]),[[0,'GigabitEthernet1/0/1',1],[1,'GigabitEthernet1/0/48',0]],'descriptions naming another device, case-insensitive whole names only');
 const one=Site.build([core]);eq(one.duplicates,[],'one device has no cross-device duplicates');eq(one.mentions,[],'and no mentions');ok(one.settings.every(x=>x.status==='same'),'a single device is consistent with itself');
 eq(Site.build([]).devices,[],'empty workspace');
+// Checks across links: both ends of a cable compared (native VLAN, tagged VLANs, link aggregation, spanning-tree root).
+{const A=C.parse('hostname EX-CORE\nspanning-tree vlan 1-100 priority 8192\ninterface GigabitEthernet1/0/1\n switchport mode trunk\n switchport trunk native vlan 5\n switchport trunk allowed vlan 10,20,30\n channel-group 1 mode active\ninterface GigabitEthernet1/0/2\n switchport mode trunk\n channel-group 1 mode active\ninterface Port-channel1\n switchport mode trunk\n',{filename:'a.conf'});
+ const B=C.parse('hostname EX-ACC\nspanning-tree vlan 1-100 priority 4096\ninterface GigabitEthernet1/0/48\n switchport mode trunk\n switchport trunk native vlan 1\n switchport trunk allowed vlan 10,20\n',{filename:'b.conf'});
+ const r=Site.linkChecks([A,B],[{a:0,b:1,aPort:'Gi1/0/1',bPort:'GigabitEthernet1/0/48'}]),kinds=r.findings.map(f=>f.kind);
+ eq(kinds,['native','trunk','lag'],'link checks: native VLAN, trunk VLANs and aggregation mismatches');ok(r.checked===1&&/VLAN 30 only on EX-CORE/.test(r.findings[1].detail)&&/Port-channel1/.test(r.findings[2].detail),'link checks name the device and port of each end');
+ const same=Site.linkChecks([B,B],[{a:0,b:1,aPort:'Gi1/0/48',bPort:'Gi1/0/48'}]);ok(same.findings.length===1&&same.findings[0].kind==='stp'&&/share the lowest priority/.test(same.findings[0].detail),'matching ends raise nothing; a shared root priority is reported');
+ ok(Site.linkChecks([A,B],[]).findings.length===0&&Site.linkChecks([A,B],[{a:0,b:1,aPort:'Gi9/9/9',bPort:'x'}]).checked===0,'unknown ports are not compared');}
 console.log(checks+' site overview checks passed');

@@ -35,6 +35,10 @@ a decision or a test on the owner's own machine (for example opening an export i
   `?labs=diagram` (or "diagram" in localStorage `config-inspector-labs`) turns it on, and the diagram browser tests
   load the page that way. Its user documentation lives in `docs/network-diagram.md`, not the README, until it is
   turned back on (v5.68.0 is the last release with it on). The diagram gotchas below still apply to that code.
+- Site overview link checks (`SWSiteOverview.linkChecks(models, links, {key, isSwitch})` in site_overview.js) compare
+  both ends of each link from `siteMapModel()` whose devices are both open: native VLAN, tagged VLANs (an end that
+  allows all is skipped), trunk/LAG on one end, LAG member counts, and the spanning-tree root by configured priority
+  (AOS-Switch steps 0-15 are multiplied by 4096). A member port inherits its aggregate's VLANs when it lists none.
 - CLI dialects with Cisco-like interface names (Arista EOS, Huawei VRP) must be
   detected in `detectSwitchCLI` before the Cisco pattern, or they are labeled
   Cisco. A new vendor id must also be added to every vendor list in

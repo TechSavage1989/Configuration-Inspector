@@ -985,7 +985,7 @@ body{font-size:14px}.brand-mark{background:linear-gradient(145deg,#287dc6,#15578
       <div id="page-heading"></div>
       <div id="workspace-tabs"></div><div id="workspace-notice"></div>
       <div id="content"></div>
-      <footer class="page-footer"><span id="version-label">Config Inspector 5.69.0</span></footer>
+      <footer class="page-footer"><span id="version-label">Config Inspector 5.70.0</span></footer>
     </main>
   </div>
   <input type="file" id="import-file" multiple accept=".exp,.txt,.json,.conf,.cfg,.xml,.tar,.set,.log,.backup,.rsc,.xlsx,.csv,.vssx,.vstx,.vsdx,.vss" hidden>
@@ -5708,7 +5708,41 @@ function pJ(L,pan){const d=E(),I={},R={},T={};
   models.forEach(function(m,i){interfacesOf(m).forEach(function(r){var d=text(r.summary.comment);if(!d)return;devices.forEach(function(other){if(other.index===i||other.name.length<3)return;var escaped=other.name.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');if(new RegExp('(?:^|[^A-Za-z0-9_-])'+escaped+'(?:$|[^A-Za-z0-9_-])','i').test(d))mentions.push({device:i,interface:text(r.name),mentions:other.index,description:d});});});});
   return {devices:devices,settings:settings,vlans:vlans,duplicates:duplicates,subnets:subnets,mentions:mentions};
  }
- return {build:build,SETTINGS:SETTINGS.map(function(s){return {key:s.key,label:s.label};})};
+ // Checks across devices that need to know which ports are cabled together (links: [{a, b, aPort, bPort}], a and b
+ // being indexes into models). Each finding names both ends, so it can be fixed on the right device.
+ function vlanList(v){return uniq(text(v).split(/[,\s]+/).filter(function(x){return /^\d+$/.test(x);}));}
+ function portKey(n){return text(n).toLowerCase().replace(/\s+/g,'').replace(/^(?:gigabitethernet|gi)(?=\d)/,'gi').replace(/^(?:tengigabitethernet|te)(?=\d)/,'te').replace(/^(?:fastethernet|fa)(?=\d)/,'fa').replace(/^(?:port-channel|po)(?=\d)/,'po').replace(/^(?:ethernet|eth)(?=\d)/,'eth');}
+ function linkChecks(models,links,options){options=options||{};var key=options.key||portKey,findings=[],seen={};
+  var maps=models.map(function(m){var by=new Map();interfacesOf(m).forEach(function(r){by.set(key(r.name),r);});return by;});
+  function port(i,name){var r=maps[i]&&maps[i].get(key(name));if(!r)return null;var s=r.summary||{},agg=text(s.aggregate),lag=agg?maps[i].get(key(agg)):null,ls=lag&&lag.summary||{};
+   var tagged=vlanList(s.taggedVLANs),native=vlanList(s.nativeVLAN)[0]||vlanList(s.untaggedVLANs)[0]||'';if(!tagged.length&&lag)tagged=vlanList(ls.taggedVLANs);if(!native&&lag)native=vlanList(ls.nativeVLAN)[0]||vlanList(ls.untaggedVLANs)[0]||'';
+   var mode=text(s.portMode||ls.portMode),trunk=/trunk|tagged/i.test(mode)||tagged.length>0;tagged=tagged.filter(function(v){return v!==native;});
+   return {name:text(r.name),native:native,tagged:tagged,trunk:trunk,all:/trunk/i.test(mode)&&!tagged.length,lag:agg,members:lag?text(ls.members).split(/[,\s]+/).filter(Boolean).length:0};}
+  function name(i){return text(models[i].meta&&models[i].meta.name)||('Device '+(i+1));}
+  function add(f){var k=f.kind+'|'+f.id;if(seen[k])return;seen[k]=1;findings.push(f);}
+  (links||[]).forEach(function(l){if(l.a==null||l.b==null||l.a===l.b||!models[l.a]||!models[l.b])return;var A=port(l.a,l.aPort),B=port(l.b,l.bPort);if(!A||!B)return;
+   var ends=[{device:l.a,name:name(l.a),port:A.name},{device:l.b,name:name(l.b),port:B.name}],id=[l.a+':'+key(A.name),l.b+':'+key(B.name)].sort().join('~'),where=name(l.a)+' '+A.name+' and '+name(l.b)+' '+B.name;
+   // Native (untagged) VLAN: frames sent untagged by one end land in another VLAN on the other.
+   if((A.trunk||B.trunk)&&A.native&&B.native&&A.native!==B.native)add({kind:'native',severity:'warning',id:id,ends:ends,title:'Native VLAN differs',detail:where+' use untagged VLAN '+A.native+' and '+B.native+'. Untagged traffic changes VLAN across this link.'});
+   // Tagged VLANs carried by one end only (an end that allows every VLAN is not compared).
+   if(A.trunk&&B.trunk&&!A.all&&!B.all){var ca=A.tagged.concat(A.native?[A.native]:[]),cb=B.tagged.concat(B.native?[B.native]:[]),onlyA=A.tagged.filter(function(v){return cb.indexOf(v)<0;}),onlyB=B.tagged.filter(function(v){return ca.indexOf(v)<0;});
+    if(onlyA.length||onlyB.length)add({kind:'trunk',severity:'warning',id:id,ends:ends,onlyA:onlyA,onlyB:onlyB,title:'Trunk VLANs differ',detail:[onlyA.length?'VLAN '+onlyA.join(', ')+' only on '+name(l.a)+' '+A.name:'',onlyB.length?'VLAN '+onlyB.join(', ')+' only on '+name(l.b)+' '+B.name:''].filter(Boolean).join('; ')+'. Those VLANs do not pass this link.'});}
+   if(A.trunk!==B.trunk&&!(A.all||B.all)&&(A.tagged.length||B.tagged.length))add({kind:'mode',severity:'warning',id:id,ends:ends,title:'Trunk on one end only',detail:where+': one end carries tagged VLANs and the other is an untagged (access) port.'});
+   // Link aggregation: both ends in a LAG, with the same number of member ports.
+   if(A.lag||B.lag){var lid=[l.a+':'+key(A.lag||A.name),l.b+':'+key(B.lag||B.name)].sort().join('~');
+    if(!A.lag||!B.lag)add({kind:'lag',severity:'warning',id:lid,ends:ends,title:'Link aggregation on one end only',detail:(A.lag?name(l.a)+' '+A.name+' is in '+A.lag:name(l.b)+' '+B.name+' is in '+B.lag)+', but the port at the other end is not in an aggregation.'});
+    else if(A.members&&B.members&&A.members!==B.members)add({kind:'lag',severity:'warning',id:lid,ends:ends,title:'Link aggregation sizes differ',detail:name(l.a)+' '+A.lag+' has '+A.members+' member port'+(A.members===1?'':'s')+' and '+name(l.b)+' '+B.lag+' has '+B.members+'.'});}});
+  // Spanning tree: which switch wins the root election by configured priority (lowest wins; an unset priority is the
+  // default 32768, and a tie is decided by MAC address, which a configuration does not show).
+  var switches=[];models.forEach(function(m,i){if(options.isSwitch&&!options.isSwitch(m,i))return;var pr=null;(m.entries||[]).forEach(function(e){var v=text(e.value);if(!/spanning-tree/i.test(v))return;var x=/\bpriority\s+(\d+)/i.exec(v);if(!x||/\bport-priority\b|interface/i.test(v))return;var n=Number(x[1]);if(n<=15)n*=4096;if(pr==null||n<pr)pr=n;});
+   var degree=(links||[]).filter(function(l){return l.a===i||l.b===i;}).length;switches.push({device:i,name:name(i),priority:pr,effective:pr==null?32768:pr,links:degree});});
+  if(switches.length>1){var low=Math.min.apply(null,switches.map(function(x){return x.effective;})),roots=switches.filter(function(x){return x.effective===low;}),busiest=switches.slice().sort(function(p,q){return q.links-p.links;})[0];
+   if(switches.every(function(x){return x.priority==null;}))add({kind:'stp',severity:'info',id:'none',ends:[],title:'No spanning-tree priority is set',detail:'None of the '+switches.length+' switches sets a bridge priority, so the root bridge is whichever has the lowest MAC address. Set a low priority on the core switch.'});
+   else if(roots.length>1)add({kind:'stp',severity:'warning',id:'tie',ends:roots.map(function(x){return {device:x.device,name:x.name,port:''};}),title:'Spanning-tree root priority is shared',detail:roots.map(function(x){return x.name;}).join(', ')+' share the lowest priority ('+low+'); the lowest MAC address among them becomes root.'});
+   else if(busiest.links>roots[0].links&&busiest.device!==roots[0].device)add({kind:'stp',severity:'info',id:'place',ends:[{device:roots[0].device,name:roots[0].name,port:''}],title:'Spanning-tree root may be in an unexpected place',detail:roots[0].name+' has the lowest priority ('+low+') and becomes root, but '+busiest.name+' has more links to other open devices ('+busiest.links+' against '+roots[0].links+').'});}
+  var order={native:0,trunk:1,mode:2,lag:3,stp:4};findings.sort(function(p,q){return order[p.kind]-order[q.kind]||natural(p.id,q.id);});
+  return {findings:findings,switches:switches,checked:(links||[]).filter(function(l){return l.a!=null&&l.b!=null&&l.a!==l.b&&port(l.a,l.aPort)&&port(l.b,l.bPort);}).length};}
+ return {build:build,linkChecks:linkChecks,SETTINGS:SETTINGS.map(function(s){return {key:s.key,label:s.label};})};
 });
 
 </script>
@@ -8690,7 +8724,7 @@ root.NDSFaceplates=api;if(typeof module==='object'&&module.exports)module.export
     return {compareText:compareText,compareMode:['records','text','fields'].includes(data.compareMode)?data.compareMode:'records',models:models.slice(0,data.count),model:data.selected<0?null:models[data.selected],comparison:data.comparison<0?null:models[data.comparison],view:typeof data.view==='string'?data.view:'overview',scope:typeof data.scope==='string'?data.scope:'',categoryTabs:data.categoryTabs&&typeof data.categoryTabs==='object'&&!Array.isArray(data.categoryTabs)?data.categoryTabs:{},showUnassigned:!!data.showUnassigned,showEmpty:!!data.showEmpty};
   }
   function create(options){
-    options=options||{};var bridge=options.bridge||root.chrome&&root.chrome.webview,native=!!(bridge&&typeof bridge.postMessage==='function'&&typeof bridge.addEventListener==='function'),state={current:'5.69.0',state:'idle',message:'',automatic:true,busy:false,ready:false,available:false},handlers={},restoring=false,installing=false;
+    options=options||{};var bridge=options.bridge||root.chrome&&root.chrome.webview,native=!!(bridge&&typeof bridge.postMessage==='function'&&typeof bridge.addEventListener==='function'),state={current:'5.70.0',state:'idle',message:'',automatic:true,busy:false,ready:false,available:false},handlers={},restoring=false,installing=false;
     var commands=['update-ui-ready','update-status','update-check','update-download','update-later','update-auto-on','update-auto-off','update-restored','update-restore-failed'];
     function request(command){if(!native)throw new Error('Built-in updates are available in the Windows desktop edition.');if(!commands.includes(command))throw new Error('Unknown update action.');bridge.postMessage(command);}
     if(native)bridge.addEventListener('message',async function(event){
@@ -10083,9 +10117,9 @@ root.NDSFaceplates=api;if(typeof module==='object'&&module.exports)module.export
   function removeEvidence(id){evidenceSets=evidenceSets.filter(function(s){return s.id!==id;});evidenceSeq++;liveCache=new Map();if(!evidenceSets.length&&(state.view==='evidence'||state.view==='sitemap'))state.view='overview';render();}
   // A site can be drawn from configurations alone; links come from imported neighbor data,
   // from what the configurations say about each other, or are added by hand.
-  // The Network diagram is turned off in releases (owner request, 5.69.0: not working as intended yet). Its code stays here
+  // The Network diagram is turned off in releases (owner request, 5.70.0: not working as intended yet). Its code stays here
   // whole and keeps its tests; ?labs=diagram in the page address (or "diagram" in localStorage config-inspector-labs)
-  // turns it on for development and the browser tests. Release 5.69.0 is the last release with it on.
+  // turns it on for development and the browser tests. Release 5.70.0 is the last release with it on.
   var DIAGRAM_ON=(function(){try{return /(?:^|[?&])labs=[^&]*diagram/.test(location.search)||/diagram/.test(localStorage.getItem('config-inspector-labs')||'');}catch(e){return false;}})();
   function siteMapAvailable(){return evidenceSets.some(function(s){return s.ev.links.length;})||workspace.length>0||siteEdits().devices.length>0;}
   function siteEditKey(){return diagramTitle();}
@@ -11736,22 +11770,30 @@ root.NDSFaceplates=api;if(typeof module==='object'&&module.exports)module.export
     var settingRows=site.settings.map(function(x){var majority=x.groups[0]&&x.groups[0].value,st=statusLabel[x.status]||['blue',x.status];return '<tr data-site-setting="'+h(x.key)+'" data-site-status="'+h(x.status)+'"><th scope="row">'+h(x.label)+'</th><td>'+chip(st[0],st[1])+'</td>'+x.values.map(function(v){var odd=x.status==='differs'&&v.value&&v.value!==majority;return '<td class="'+(odd?'site-odd':v.value?'':'site-missing')+'">'+(v.value?h(v.value):'Not in export')+'</td>';}).join('')+'</tr>';});
     var vlanRows=site.vlans.map(function(v){var st=v.status==='name-differs'?chip('amber','Names differ'):v.status==='single'?chip('blue','On one device'):chip('green','Consistent');var common=(function(){var c=new Map();v.entries.forEach(function(e){if(e.name)c.set(e.name,(c.get(e.name)||0)+1);});return Array.from(c).sort(function(a,b){return b[1]-a[1];})[0];})();var cells=site.devices.map(function(d){var e=v.entries.find(function(x){return x.device===d.index;});return '<td'+(e&&v.status==='name-differs'&&e.name&&common&&e.name!==common[0]?' class="site-odd"':e?'':' class="site-missing"')+'>'+(e?h((e.name||'(no name)')+(e.ports?' · '+sitePlural(e.ports,'port'):'')+(e.address?' · '+e.address:'')):'—')+'</td>';}).join('');return '<tr data-site-vlan="'+h(v.id)+'" data-site-status="'+h(v.status)+'"><th scope="row">VLAN '+h(v.id)+'</th><td>'+st+'</td>'+cells+'</tr>';});
     function entries(list){return list.map(function(e){return device(e.device)+' / '+h(e.interface)+(e.ip?' ('+h(e.ip)+')':'');}).join('<br>');}
+    // Checks across the links between open devices (owner request): both ends of each cable compared.
+    var linkCount=0,linkPanel=(function(){if(!window.SWSiteOverview.linkChecks)return '';var map,X=SE();try{map=siteMapModel();}catch(e){return '';}var open=new Map();map.devices.forEach(function(d){if(d.open>=0)open.set(d.key,d.open);});
+      var lk=map.links.filter(function(l){return open.has(l.a)&&open.has(l.b)&&l.aPort&&l.bPort;}).map(function(l){return {a:open.get(l.a),b:open.get(l.b),aPort:l.aPort,bPort:l.bPort};});
+      var res=window.SWSiteOverview.linkChecks(workspace,lk,{key:function(n){return X.interfaceKey(n);},isSwitch:function(m){return modelRole(m)==='switch';}}),warn=res.findings.filter(function(f){return f.severity==='warning';}).length;linkCount=res.findings.length;
+      var rows=res.findings.map(function(f){return '<tr data-site-link-finding="'+h(f.kind)+'"><th scope="row">'+chip(f.severity==='warning'?'amber':'blue',f.title)+'</th><td>'+(f.ends.length?f.ends.map(function(e){return h(e.name)+(e.port?' / '+h(e.port):'');}).join('<br>'):'All switches')+'</td><td>'+h(f.detail)+'</td></tr>';});
+      return '<section class="panel site-panel" data-site-links="'+res.checked+'"><div class="panel-head"><h2 class="panel-title">Checks across links</h2><span class="badge-row">'+chip(warn?'amber':'green',warn?sitePlural(warn,'mismatch','mismatches'):'No mismatches')+chip('blue',sitePlural(res.checked,'link')+' checked')+'</span></div><p class="section-explainer">'+icon('info')+'Compares both ends of every link between open configurations: untagged (native) VLAN, tagged VLANs, link aggregation and the spanning-tree root. Links come from imported neighbor data, or from port descriptions that name the other device.</p>'+
+        (res.checked||rows.length?(rows.length?tableWrap(['Finding','Where','Details'],rows,'Checks across links'):'<p class="empty-mini">Both ends of every checked link agree.</p>'):'<p class="empty-mini">No link between two open configurations is known yet. Import neighbor data (LLDP / CDP output or a monitoring export), or describe uplink ports with the other device\'s name.</p>')+'</section>';})();
     var panels=[
       '<section class="panel site-panel"><div class="panel-head"><h2 class="panel-title">Settings consistency</h2></div><p class="section-explainer">'+icon('info')+'Compares the same management settings on every device. Highlighted values differ from the most common value. "Not in export" means the setting is absent from that file, not that it is disabled.</p>'+(settingRows.length?tableWrap(['Setting','Status'].concat(names),settingRows,'Settings by device'):'<p class="empty-mini">None of the compared settings are present in these exports.</p>')+'</section>',
       '<section class="panel site-panel"><div class="panel-head"><h2 class="panel-title">VLANs across devices</h2></div>'+(vlanRows.length?tableWrap(['VLAN','Status'].concat(names),vlanRows,'VLANs by device'):'<p class="empty-mini">No VLANs are defined in these exports.</p>')+'</section>',
       '<section class="panel site-panel"><div class="panel-head"><h2 class="panel-title">Duplicate IP addresses</h2></div>'+(site.duplicates.length?'<p class="section-explainer">'+icon('alert')+'The same address is configured on interfaces of different devices. Confirm any intended virtual or redundancy address.</p>'+tableWrap(['Address','Configured on'],site.duplicates.map(function(d){return '<tr data-site-duplicate="'+h(d.address)+'"><th scope="row">'+h(d.address)+'</th><td>'+entries(d.entries)+'</td></tr>';}),'Duplicate addresses'):'<p class="empty-mini">No address is configured on more than one device.</p>')+'</section>',
       '<section class="panel site-panel"><div class="panel-head"><h2 class="panel-title">Shared subnets</h2></div><p class="section-explainer">'+icon('info')+'Interfaces on different devices in the same subnet. This shows addressing, not a confirmed cable.</p>'+(site.subnets.length?tableWrap(['Subnet','Interfaces'],site.subnets.map(function(n){return '<tr data-site-subnet="'+h(n.network)+'"><th scope="row">'+h(n.network)+'</th><td>'+entries(n.entries)+'</td></tr>';}),'Shared subnets'):'<p class="empty-mini">No subnet is shared between devices.</p>')+'</section>',
-      '<section class="panel site-panel"><div class="panel-head"><h2 class="panel-title">Descriptions naming another device</h2></div><p class="section-explainer">'+icon('info')+'Running configurations do not include live neighbor (CDP/LLDP) tables. These interface descriptions mention another open device by name.</p>'+(site.mentions.length?tableWrap(['Device / interface','Mentions','Description'],site.mentions.map(function(m){return '<tr data-site-mention="'+m.device+'-'+m.mentions+'"><th scope="row">'+device(m.device)+' / '+h(m.interface)+'</th><td>'+device(m.mentions)+'</td><td>'+h(m.description)+'</td></tr>';}),'Descriptions naming devices'):'<p class="empty-mini">No interface description names another open device.</p>')+'</section>'
+      '<section class="panel site-panel"><div class="panel-head"><h2 class="panel-title">Descriptions naming another device</h2></div><p class="section-explainer">'+icon('info')+'Running configurations do not include live neighbor (CDP/LLDP) tables. These interface descriptions mention another open device by name.</p>'+(site.mentions.length?tableWrap(['Device / interface','Mentions','Description'],site.mentions.map(function(m){return '<tr data-site-mention="'+m.device+'-'+m.mentions+'"><th scope="row">'+device(m.device)+' / '+h(m.interface)+'</th><td>'+device(m.mentions)+'</td><td>'+h(m.description)+'</td></tr>';}),'Descriptions naming devices'):'<p class="empty-mini">No interface description names another open device.</p>')+'</section>',
+      linkPanel
     ];
     // One section at a time behind a tab row, like Supplementary data, so the page
     // scrolls as one with pinned headers instead of several scroll areas.
-    var sections=[['settings','Settings',site.settings.length],['vlans','VLANs',site.vlans.length],['duplicates','Duplicate addresses',site.duplicates.length],['subnets','Shared subnets',site.subnets.length],['mentions','Device mentions',site.mentions.length]];
+    var sections=[['settings','Settings',site.settings.length],['vlans','VLANs',site.vlans.length],['duplicates','Duplicate addresses',site.duplicates.length],['subnets','Shared subnets',site.subnets.length],['mentions','Device mentions',site.mentions.length],['links','Link checks',linkCount]];
     var current=sections.findIndex(function(x){return x[0]===state.siteTab;});if(current<0)current=0;
     var tabs='<div class="compare-mode-toolbar evidence-tabs site-tabs" role="group" aria-label="Site overview sections">'+sections.map(function(x,i){return '<button class="button'+(i===current?' primary':'')+'" data-site-tab="'+x[0]+'" aria-pressed="'+(i===current)+'">'+h(x[1])+' <span class="tab-count">'+x[2].toLocaleString()+'</span></button>';}).join('')+'</div>';
     return '<div class="site-page">'+tabs+summary+panels[current]+'</div>';
   }
   // Kept current by scripts/version.py, which replaces the release string on each bump.
-  var APP_VERSION='5.69.0';
+  var APP_VERSION='5.70.0';
   // Client report: one section per open configuration. Port states use the same
   // classification as Interfaces at a glance, evaluated with each model active.
   function withModel(m,fn){var saved={model:state.model,usage:state.interfaceUsageCache,recordMap:state.recordMap};state.model=m;state.interfaceUsageCache=null;state.recordMap=new Map(m.records.map(function(r){return [r.id,r];}));try{return fn();}finally{state.model=saved.model;state.interfaceUsageCache=saved.usage;state.recordMap=saved.recordMap;}}
@@ -12404,7 +12446,7 @@ root.NDSFaceplates=api;if(typeof module==='object'&&module.exports)module.export
     }
   }
   function showHelp(){
-    openModal(modalHeader('About Config Inspector','Firewall and switch configuration explorer / version 5.69.0')+
+    openModal(modalHeader('About Config Inspector','Firewall and switch configuration explorer / version 5.70.0')+
       '<div class="modal-body"><div class="help-section"><h3>Open and explore</h3><p>Import SonicWall EXP, FortiGate FortiOS text, Palo Alto configuration XML, Sophos Firewall XML or export TAR, Aruba AOS or AOS-CX text, Cisco IOS or NX-OS text, Juniper Junos text or XML, Meraki API JSON, or a JSON snapshot exported by this application. The device type is detected automatically. You can also drop a file anywhere in the window. Select an interface or record for a plain-language explanation and key facts. Related objects show their IP addresses or service ports. Advanced details contains all original fields. Use Copy summary for readable facts and Back to return from a related item.</p></div>'+
       '<div class="help-section"><h3>Configuration sections</h3><p>Choose a root section in the sidebar, then select one of its indented subsections. Each subsection opens its own page. Routes, objects, members and other primary definitions appear before related settings. Security pages are grouped by function, including web, applications, files, intrusion prevention and SSL/TLS inspection. Certificate objects remain under Certificates. Empty subsections are hidden by default. Use View options to show empty sections, or Configuration sections and All original fields to inspect untranslated settings. Configuration context, search and table filters apply to the selected view.</p></div>'+
       '<div class="help-section"><h3>Choose access rule zones</h3><p>In Access Rules, choose From zone and To zone independently. All zones leaves that side unrestricted. Swap reverses the direction. Clear zone filters removes the pair while keeping the table filters. Search, configured state, and IP version filters combine with the pair, and CSV includes all matching rules. A matrix cell selects its zone pair. Interface and zone details offer outgoing and incoming rules.</p></div>'+

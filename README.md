@@ -22,7 +22,7 @@
 
 - **Find useful settings:** browse recognized configuration sections and follow related objects without losing access to original source.
 - **Understand interfaces and topology:** inspect physical layouts, VLANs, interface groups and device information where the export provides enough detail.
-- **See a whole site:** open several configurations and compare their NTP, DNS, syslog, SNMP, local users and spanning-tree settings, VLAN names, shared subnets and duplicate IP addresses on one page.
+- **See a whole site:** open several configurations and compare their NTP, DNS, syslog, SNMP, local users and spanning-tree settings, VLAN names, shared subnets and duplicate IP addresses on one page, and check both ends of each link for mismatched native VLANs, trunk VLANs and link aggregation.
 - **Add live network data:** open Auvik site or device reports (.xlsx or .csv) and show command output (routes, interface status, LLDP / CDP neighbors, MAC and ARP tables). The app draws a **site map** of firewalls and switches with the ports that connect them, and adds link state, neighbors and the devices seen on each port to the matching configuration.
 - **Compare snapshots:** inspect matched objects and their properties side by side, or compare configuration text/files with aligned lines and synchronized scrolling. Copy a plain-language **change summary** for a ticket or change record.
 - **Review findings and export:** inspect configuration review results, including unused objects, undefined or unused VLANs, access ports in VLAN 1 and trunks that carry every VLAN, and create reports for further analysis. A printable **client report** summarizes every open configuration: devices, port usage, VLANs, IP addresses and findings.
@@ -156,12 +156,18 @@ changes. Large searches yield to the UI and superseded work is canceled.
 
 ## Site overview
 
-Open two or more configurations from the same site (**Add files**) and choose **Site overview** in the sidebar. A row of tabs at the top (**Settings**, **VLANs**, **Duplicate addresses**, **Shared subnets**, **Device mentions**, each with its count) shows one section at a time; the page scrolls as one and the tabs and column headings stay at the top. It compares only what the exports contain:
+Open two or more configurations from the same site (**Add files**) and choose **Site overview** in the sidebar. A row of tabs at the top (**Settings**, **VLANs**, **Duplicate addresses**, **Shared subnets**, **Device mentions**, **Link checks**, each with its count) shows one section at a time; the page scrolls as one and the tabs and column headings stay at the top. It compares only what the exports contain:
 
 - **Settings consistency:** NTP and DNS servers, DNS domain, syslog and SNMP destinations, SNMP location, local user accounts, time zone and spanning-tree mode. Values that differ from the most common one are highlighted; "Not in export" means the setting is absent from that file.
 - **VLANs across devices:** where each VLAN exists, its name and port count on each device, and VLANs whose names differ.
 - **Duplicate IP addresses** configured on more than one device, and **shared subnets** that interfaces on different devices belong to.
 - **Descriptions naming another device**, such as `Uplink to CORE-SW1`. Running configurations do not include live CDP/LLDP neighbor tables, so the page does not claim physical links. Add neighbor data (below) to see the real links on the **Site map**.
+- **Link checks:** both ends of every link between two open configurations are compared, and each finding names the device and port at each end:
+  - **Native VLAN differs:** the two ends send untagged traffic in different VLANs.
+  - **Trunk VLANs differ:** a VLAN is tagged on one end only, so it does not pass the link (an end that allows every VLAN is not compared).
+  - **Trunk on one end only**, **link aggregation on one end only**, and aggregations with a different number of member ports on each side.
+  - **Spanning-tree root:** no switch sets a bridge priority, several share the lowest one, or the switch that wins has fewer links than another.
+  - Links come from imported neighbor data when there is any, otherwise from port descriptions that name the other device.
 
 ## Supplementary data and the site map
 

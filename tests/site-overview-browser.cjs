@@ -5,8 +5,8 @@ let checks=0;function ok(v,m){checks++;assert.ok(v,m);}
 const base=(host,o)=>'version 16.12\nhostname '+host+'\nntp server '+(o.ntp||'192.0.2.123')+'\nip name-server 192.0.2.53\n'+(o.log===false?'':'logging host 192.0.2.5\n')+'username admin privilege 15 secret TEST_SECRET_ONLY\n'+(o.extraUser?'username contractor privilege 1 secret TEST_SECRET_ONLY\n':'')+
  'spanning-tree mode '+(o.stp||'rapid-pvst')+'\nvlan 10\n name '+(o.vlan10||'USERS')+'\nvlan 99\n name MANAGEMENT\n'+o.body;
 const files=[
- ['core-sw1.conf',base('CORE-SW1',{body:'interface GigabitEthernet1/0/1\n description Uplink to ACCESS-SW2 Gi1/0/48\n switchport mode trunk\ninterface Vlan99\n ip address 10.0.99.1 255.255.255.0\n'})],
- ['access-sw2.conf',base('ACCESS-SW2',{body:'interface GigabitEthernet1/0/48\n description Uplink to CORE-SW1 Gi1/0/1\n switchport mode trunk\ninterface Vlan99\n ip address 10.0.99.12 255.255.255.0\n'})],
+ ['core-sw1.conf',base('CORE-SW1',{body:'interface GigabitEthernet1/0/1\n description Uplink to ACCESS-SW2 Gi1/0/48\n switchport mode trunk\n switchport trunk native vlan 99\n switchport trunk allowed vlan 10,99\ninterface Vlan99\n ip address 10.0.99.1 255.255.255.0\n'})],
+ ['access-sw2.conf',base('ACCESS-SW2',{body:'interface GigabitEthernet1/0/48\n description Uplink to CORE-SW1 Gi1/0/1\n switchport mode trunk\n switchport trunk native vlan 10\n switchport trunk allowed vlan 10,99\ninterface Vlan99\n ip address 10.0.99.12 255.255.255.0\n'})],
  ['access-sw3.conf',base('ACCESS-SW3',{ntp:'192.0.2.124',log:false,extraUser:true,stp:'pvst',vlan10:'STAFF',body:'interface GigabitEthernet1/0/48\n description Uplink to CORE-SW1 Gi1/0/2\n switchport mode trunk\ninterface Vlan99\n ip address 10.0.99.12 255.255.255.0\n'})]
 ].map(([name,text])=>({name,mimeType:'text/plain',buffer:Buffer.from(text)}));
 (async()=>{
@@ -21,7 +21,12 @@ const files=[
   const chips=await page.locator('.site-summary .chip').allInnerTexts();
   ok(chips.join('|')==='3 devices|3 settings differ|1 duplicate address|1 VLAN name differs|1 shared subnet','summary chips: '+chips.join('|'));
   const tabs=await page.locator('[data-site-tab]').allInnerTexts();
-  ok(tabs.map(t=>t.replace(/\s+/g,' ')).join('|')==='Settings 5|VLANs 2|Duplicate addresses 1|Shared subnets 1|Device mentions 3','one tab per section with counts: '+tabs.join('|'));
+  ok(tabs.map(t=>t.replace(/\s+/g,' ')).join('|')==='Settings 5|VLANs 2|Duplicate addresses 1|Shared subnets 1|Device mentions 3|Link checks 2','one tab per section with counts: '+tabs.join('|'));
+  // Checks across links (owner request): both ends of a described uplink compared, and the spanning-tree root.
+  await page.locator('[data-site-tab="links"]').click();await page.waitForTimeout(300);
+  const lf=await page.locator('[data-site-link-finding]').evaluateAll(r=>r.map(x=>x.getAttribute('data-site-link-finding')+': '+x.innerText.replace(/\s+/g,' ')));
+  ok(lf.length===2&&/^native: Native VLAN differs CORE-SW1 \/ GigabitEthernet1\/0\/1 ACCESS-SW2 \/ GigabitEthernet1\/0\/48 .*untagged VLAN 99 and 10/.test(lf[0])&&/^stp: No spanning-tree priority is set/.test(lf[1]),'link checks name both ends: '+lf.join(' || '));
+  await page.locator('[data-site-tab="settings"]').click();await page.waitForTimeout(300);
   ok(await page.locator('.site-panel').count()===1&&await page.locator('[data-site-tab="settings"][aria-pressed="true"]').count()===1,'settings open first, one section at a time');
   const status=key=>page.locator('[data-site-setting="'+key+'"]').getAttribute('data-site-status');
   ok(await status('ntp')==='differs'&&await status('dns')==='same'&&await status('syslog')==='partial'&&await status('users')==='differs'&&await status('stp')==='differs','setting statuses');
