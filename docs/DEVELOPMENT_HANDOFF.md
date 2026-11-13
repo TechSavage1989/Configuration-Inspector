@@ -1,5 +1,12 @@
 # Configuration Inspector development handoff
 
+## 5.70.0 — link checks on the Site overview
+
+- `linkChecks` in site_overview.js; new **Link checks** tab in `sitePage` (index.html). Tests: site-overview-tests
+  (native, trunk, LAG, shared root priority, unknown ports) and site-overview-browser (tab, findings naming both ends).
+- Roadmap agreed with the owner (tasks in the session): troubleshooting tools, planning tools, own rules and EOL notes,
+  report options and Excel export, workspace file, splitting index.html into modules, Visio checklist.
+
 ## 5.69.0 — Network diagram turned off
 
 - `DIAGRAM_ON` in index.html (off unless `?labs=diagram` or localStorage `config-inspector-labs` contains `diagram`):
