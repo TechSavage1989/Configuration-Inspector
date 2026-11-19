@@ -1,5 +1,17 @@
 # Configuration Inspector development handoff
 
+## 5.71.0 — Site map port tags and right-angled links
+
+- `webview/site_map.js` `layout()` now routes the links: each edge carries `tabs` (port tag on each device edge) and
+  `route` (right-angled points), with one level per horizontal run in each gap between rows; rows move apart as needed.
+  `siteMapPage()` in index.html draws them (`roundPath`, `.port-tab`); the floating port text and ×N count are gone.
+- `siteMapModel()` treats named VLAN interfaces and virtual-typed interfaces as logical, joins two VLAN-interface
+  reports into one cable when the pair has no physical link, and keeps one cable per port when a port is reported
+  against several ports of one device. The (turned off) diagram shares this model.
+- New `tests/site-map-links-browser.cjs` (in `npm run test:browser`). `docs/images/site-map.png` recaptured.
+- Reviewed NetworkDiagramStudio's diagram engine (preview.70) against `webview/diagram.js` for the owner; the Network
+  diagram stays off. See the release conversation notes: NDS's engine is DOM-free and runs on the same inputs.
+
 ## 5.70.0 — link checks on the Site overview
 
 - `linkChecks` in site_overview.js; new **Link checks** tab in `sitePage` (index.html). Tests: site-overview-tests

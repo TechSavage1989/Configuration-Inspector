@@ -850,8 +850,8 @@ td .copy-value-icon{margin-left:4px}
 .site-edge.multi path{stroke-width:3}
 .site-edge.selected path{stroke:var(--accent);opacity:1;stroke-width:2.4}
 .site-edge.dim{opacity:.2}
-.port-label,.link-count{font-size:10px;fill:var(--muted)}
-.link-count{font-weight:700}
+.port-tab rect{fill:var(--paper);stroke:var(--muted);stroke-width:1.1}.port-tab text{font-size:11px;font-weight:650;fill:var(--ink);font-variant-numeric:tabular-nums}
+.site-edge:hover .port-tab rect,.site-edge:focus-visible .port-tab rect,.site-edge.selected .port-tab rect{stroke:var(--accent);stroke-width:1.8;fill:var(--accent-soft,var(--paper))}
 .isolated-label{font-size:11px;fill:var(--muted);text-transform:uppercase;letter-spacing:.06em}
 .site-node{cursor:pointer;outline:none}
 .site-node rect:first-of-type{fill:var(--paper);stroke:var(--line);stroke-width:1.2}
@@ -985,7 +985,7 @@ body{font-size:14px}.brand-mark{background:linear-gradient(145deg,#287dc6,#15578
       <div id="page-heading"></div>
       <div id="workspace-tabs"></div><div id="workspace-notice"></div>
       <div id="content"></div>
-      <footer class="page-footer"><span id="version-label">Config Inspector 5.70.0</span></footer>
+      <footer class="page-footer"><span id="version-label">Config Inspector 5.71.0</span></footer>
     </main>
   </div>
   <input type="file" id="import-file" multiple accept=".exp,.txt,.json,.conf,.cfg,.xml,.tar,.set,.log,.backup,.rsc,.xlsx,.csv,.vssx,.vstx,.vsdx,.vss" hidden>
@@ -6158,6 +6158,62 @@ function pJ(L,pan){const d=E(),I={},R={},T={};
   var rows=new Map();placed.forEach(function(p,k){(rows.get(p.y)||rows.set(p.y,[]).get(p.y)).push(p);});
   rows.forEach(function(list){var right=Math.max.apply(null,list.map(function(p){return p.x+p.w;})),left=Math.min.apply(null,list.map(function(p){return p.x;})),shift=Math.max(0,(width-(right-left))/2-left);list.forEach(function(p){p.x+=shift;});});
   if(isolated.length){y+=8;var isoTop=y;isolated.sort(function(a,b){return ROLE_ORDER[a.role]-ROLE_ORDER[b.role]||a.name.localeCompare(b.name);}).forEach(function(n,i){var col=i%MAX_ROW,row=Math.floor(i/MAX_ROW);placed.set(n.key,{x:PAD+col*(NODE_W+GAP_X),y:isoTop+row*(NODE_H+26),w:NODE_W,h:NODE_H,isolated:true});width=Math.max(width,PAD*2+Math.min(isolated.length,MAX_ROW)*(NODE_W+GAP_X)-GAP_X);});y=isoTop+Math.ceil(isolated.length/MAX_ROW)*(NODE_H+26);}
+  // Links: every cable bundle between two devices ends in a port tag on each device's edge (the
+  // ports on that device), joined by a right-angled line. Tags sit side by side in the order of
+  // the far devices; horizontal runs between two rows each get their own level, so nothing
+  // overlaps a tag or another line. Rows move apart by what their levels need.
+  var TAB_H=20,LV=10,short=options.short||function(p){return String(p||'');};
+  function tabText(list){var seen=[];list.forEach(function(p){p=short(p)||'?';if(/^some\b/i.test(p))p='?';if(p.length>14)p=p.slice(0,13)+'…';if(seen.indexOf(p)<0)seen.push(p);});if(seen.length===1&&seen[0]==='?'&&list.length>1)return '? ×'+list.length;return seen.length>2?seen[0]+' +'+(seen.length-1):seen.join(', ');}
+  function tabW(t){return Math.max(28,Math.round(t.length*6.6)+10);}
+  var ys=[];placed.forEach(function(p){if(ys.indexOf(p.y)<0)ys.push(p.y);});ys.sort(function(a,b){return a-b;});
+  var rowOf=new Map();placed.forEach(function(p,k){rowOf.set(k,ys.indexOf(p.y));});
+  var elist=Array.from(edges.values()),tabsOf=new Map();
+  function addTab(k,side,e,end,far){var m=tabsOf.get(k)||tabsOf.set(k,{top:[],bottom:[]}).get(k);var t={key:k,side:side,e:e,end:end,far:far,text:tabText(e.ports.map(function(p){return p[end];}))};t.w=tabW(t.text);m[side].push(t);return t;}
+  function cx(k){var p=placed.get(k);return p.x+p.w/2;}
+  elist.forEach(function(e){var ra=rowOf.get(e.a),rb=rowOf.get(e.b);
+   if(ra===rb){e.same=true;e.up=cx(e.a)<=cx(e.b)?'a':'b';e.ta=addTab(e.a,'bottom',e,'a',e.b);e.tb=addTab(e.b,'bottom',e,'b',e.a);}
+   else{e.up=ra<rb?'a':'b';e.ta=addTab(e.a,ra<rb?'bottom':'top',e,'a',e.b);e.tb=addTab(e.b,ra<rb?'top':'bottom',e,'b',e.a);}});
+  function spread(list,p,want){var gap=6,room=p.w+8;function total(){return list.reduce(function(s,t){return s+t.w;},0)+gap*(list.length-1);}
+   // Too many tags for the device's edge: cable counts, then the end of each name (the part that tells
+   // ports apart), then narrow tags; the full names stay in each tag's tooltip.
+   if(total()>room)list.forEach(function(t){if(t.e.ports.length>1){t.text='×'+t.e.ports.length;t.w=tabW(t.text);}});
+   if(total()>room)list.forEach(function(t){if(t.text.length>6){t.text='…'+t.text.slice(-5);t.w=tabW(t.text);}});
+   if(total()>room){gap=3;var each=Math.max(8,Math.floor((room-gap*(list.length-1))/list.length));list.forEach(function(t){if(t.w>each){t.w=each;if(each<tabW(t.text))t.text=each>=22&&t.text.length>2?t.text.slice(-1):'';}});}
+   var lo=p.x+6,hi=p.x+p.w-6;if(total()>hi-lo){lo=p.x+p.w/2-total()/2;hi=lo+total();}
+   var x=lo;list.forEach(function(t,i){var w=want?want(t):null,left=w==null?null:w-t.w/2;t.x=Math.max(x,left==null?x:left);x=t.x+t.w+gap;});
+   // Pull back from the right edge, keeping the order.
+   var maxR=hi;for(var i=list.length-1;i>=0;i--){var t=list[i];if(t.x+t.w>maxR)t.x=maxR-t.w;maxR=t.x-gap;}
+   if(!want){var used=list.length?list[list.length-1].x+list[list.length-1].w-list[0].x:0,shift=(p.x+p.w/2)-(list.length?list[0].x+used/2:0);list.forEach(function(t){t.x+=shift;});}
+   list.forEach(function(t){t.cx=Math.round(t.x+t.w/2);t.x=t.cx-t.w/2;});}
+  // Bottom tags first (centred, in the order of the far devices), then top tags as near as they
+  // can get to straight under the tag they join.
+  tabsOf.forEach(function(m,k){m.bottom.sort(function(a,b){return cx(a.far)-cx(b.far)||a.far.localeCompare(b.far);});spread(m.bottom,placed.get(k),null);});
+  tabsOf.forEach(function(m,k){function other(t){return t.e.ta===t?t.e.tb:t.e.ta;}m.top.sort(function(a,b){return other(a).cx-other(b).cx||a.far.localeCompare(b.far);});var p=placed.get(k);spread(m.top,p,function(t){var x=other(t).cx;return x>=p.x+t.w/2+6&&x<=p.x+p.w-t.w/2-6?x:m.top.length===1?p.x+p.w/2:x;});});
+  // Horizontal runs by the gap under each row.
+  var segs=ys.map(function(){return [];}),usedX=[];
+  function clearX(want,r1,r2){var c=[want];for(var d=10;d<1600;d+=10){c.push(want-d);c.push(want+d);}
+   for(var i=0;i<c.length;i++){var x=c[i],ok=usedX.every(function(u){return Math.abs(u-x)>=8;});if(!ok)continue;placed.forEach(function(p,k){var r=rowOf.get(k);if(r>r1&&r<r2&&x>p.x-10&&x<p.x+p.w+10)ok=false;});if(ok){usedX.push(x);return x;}}return want;}
+  elist.forEach(function(e){var up=e.up==='a'?e.ta:e.tb,dn=e.up==='a'?e.tb:e.ta,r1=rowOf.get(up.key),r2=rowOf.get(dn.key);e.runs=[];
+   if(e.same){e.runs.push({g:r1,x1:up.cx,x2:dn.cx});}
+   else if(r2===r1+1){if(up.cx!==dn.cx)e.runs.push({g:r1,x1:up.cx,x2:dn.cx});}
+   else{var gx=clearX(Math.round((up.cx+dn.cx)/2),r1,r2);e.gx=gx;if(gx!==up.cx)e.runs.push({g:r1,x1:up.cx,x2:gx});if(gx!==dn.cx)e.runs.push({g:r2-1,x1:gx,x2:dn.cx});}
+   e.runs.forEach(function(s){s.e=e;segs[s.g].push(s);});});
+  var levels=segs.map(function(list){var rows=[];
+   list.sort(function(a,b){var la=a.x2<a.x1,lb=b.x2<b.x1;if(la!==lb)return la?-1:1;return la?a.x2-b.x2:b.x2-a.x2;});
+   list.forEach(function(s){var lo=Math.min(s.x1,s.x2)-8,hi=Math.max(s.x1,s.x2)+8;for(var i=0;;i++){var row=rows[i]||(rows[i]=[]);if(row.every(function(o){return hi<o[0]||lo>o[1];})){row.push([lo,hi]);s.level=i;break;}}});return rows.length;});
+  // Row positions: each gap as tall as its tags and levels need.
+  var top=ys.slice(),shiftY=0;
+  for(var gi=0;gi<ys.length;gi++){top[gi]=ys[gi]+shiftY;var orig=(gi+1<ys.length?ys[gi+1]:y)-ys[gi]-NODE_H,need=segs[gi].length||elist.some(function(e){var a=rowOf.get(e.a),b=rowOf.get(e.b);return Math.min(a,b)<=gi&&Math.max(a,b)>gi;})?TAB_H*2+28+Math.max(0,levels[gi]-1)*LV:36;
+   shiftY+=need+Math.max(0,orig-GAP_Y)-orig;}
+  placed.forEach(function(p,k){p.y=top[rowOf.get(k)]+(p.y-ys[rowOf.get(k)]);});y+=shiftY;
+  function levelY(g,level){return top[g]+NODE_H+TAB_H+14+level*LV;}
+  tabsOf.forEach(function(m,k){var p=placed.get(k);m.bottom.forEach(function(t){t.y=p.y+p.h;t.out=t.y+TAB_H;});m.top.forEach(function(t){t.y=p.y-TAB_H;t.out=t.y;});});
+  elist.forEach(function(e){var up=e.up==='a'?e.ta:e.tb,dn=e.up==='a'?e.tb:e.ta,pts=[[up.cx,up.out]];
+   e.runs.forEach(function(s){var ly=levelY(s.g,s.level);pts.push([s.x1,ly]);pts.push([s.x2,ly]);});pts.push([dn.cx,dn.out]);
+   e.route=pts.filter(function(q,i){return !i||q[0]!==pts[i-1][0]||q[1]!==pts[i-1][1];});
+   e.tabs={a:{x:e.ta.x,y:e.ta.y,w:e.ta.w,h:TAB_H,text:e.ta.text},b:{x:e.tb.x,y:e.tb.y,w:e.tb.w,h:TAB_H,text:e.tb.text}};
+   width=Math.max(width,PAD+Math.max.apply(null,pts.map(function(q){return q[0];})));
+   delete e.ta;delete e.tb;delete e.runs;});
   return {
    width:Math.max(width,320),height:y+PAD,isolatedTop:isolated.length?placed.get(isolated[0].key).y:null,
    nodes:shown.map(function(n){var p=placed.get(n.key);return Object.assign({},n,{x:p.x,y:p.y,w:p.w,h:p.h,isolated:!!p.isolated,degree:adj.get(n.key).length});}),
@@ -8724,7 +8780,7 @@ root.NDSFaceplates=api;if(typeof module==='object'&&module.exports)module.export
     return {compareText:compareText,compareMode:['records','text','fields'].includes(data.compareMode)?data.compareMode:'records',models:models.slice(0,data.count),model:data.selected<0?null:models[data.selected],comparison:data.comparison<0?null:models[data.comparison],view:typeof data.view==='string'?data.view:'overview',scope:typeof data.scope==='string'?data.scope:'',categoryTabs:data.categoryTabs&&typeof data.categoryTabs==='object'&&!Array.isArray(data.categoryTabs)?data.categoryTabs:{},showUnassigned:!!data.showUnassigned,showEmpty:!!data.showEmpty};
   }
   function create(options){
-    options=options||{};var bridge=options.bridge||root.chrome&&root.chrome.webview,native=!!(bridge&&typeof bridge.postMessage==='function'&&typeof bridge.addEventListener==='function'),state={current:'5.70.0',state:'idle',message:'',automatic:true,busy:false,ready:false,available:false},handlers={},restoring=false,installing=false;
+    options=options||{};var bridge=options.bridge||root.chrome&&root.chrome.webview,native=!!(bridge&&typeof bridge.postMessage==='function'&&typeof bridge.addEventListener==='function'),state={current:'5.71.0',state:'idle',message:'',automatic:true,busy:false,ready:false,available:false},handlers={},restoring=false,installing=false;
     var commands=['update-ui-ready','update-status','update-check','update-download','update-later','update-auto-on','update-auto-off','update-restored','update-restore-failed'];
     function request(command){if(!native)throw new Error('Built-in updates are available in the Windows desktop edition.');if(!commands.includes(command))throw new Error('Unknown update action.');bridge.postMessage(command);}
     if(native)bridge.addEventListener('message',async function(event){
@@ -10117,9 +10173,9 @@ root.NDSFaceplates=api;if(typeof module==='object'&&module.exports)module.export
   function removeEvidence(id){evidenceSets=evidenceSets.filter(function(s){return s.id!==id;});evidenceSeq++;liveCache=new Map();if(!evidenceSets.length&&(state.view==='evidence'||state.view==='sitemap'))state.view='overview';render();}
   // A site can be drawn from configurations alone; links come from imported neighbor data,
   // from what the configurations say about each other, or are added by hand.
-  // The Network diagram is turned off in releases (owner request, 5.70.0: not working as intended yet). Its code stays here
+  // The Network diagram is turned off in releases (owner request, 5.71.0: not working as intended yet). Its code stays here
   // whole and keeps its tests; ?labs=diagram in the page address (or "diagram" in localStorage config-inspector-labs)
-  // turns it on for development and the browser tests. Release 5.70.0 is the last release with it on.
+  // turns it on for development and the browser tests. Release 5.71.0 is the last release with it on.
   var DIAGRAM_ON=(function(){try{return /(?:^|[?&])labs=[^&]*diagram/.test(location.search)||/diagram/.test(localStorage.getItem('config-inspector-labs')||'');}catch(e){return false;}})();
   function siteMapAvailable(){return evidenceSets.some(function(s){return s.ev.links.length;})||workspace.length>0||siteEdits().devices.length>0;}
   function siteEditKey(){return diagramTitle();}
@@ -10233,11 +10289,32 @@ root.NDSFaceplates=api;if(typeof module==='object'&&module.exports)module.export
     // Monitoring tools also report neighbours on logical interfaces (a VLAN interface, loopback or tunnel):
     // those are routing neighbours, not cables, and would draw ports that do not exist (owner's site).
     var LOGICAL=/^(?:vlan|vlanif|irb|bvi|loopback|tunnel|null)[\s._-]*\d*(?:\s*\(.*\))?$/i;
-    evidenceSets.forEach(function(s){s.ev.links.forEach(function(l){var a=dev(l.a.device),b=dev(l.b.device);if(!a||!b)return;if(LOGICAL.test(String(l.a.port||'').trim())||LOGICAL.test(String(l.b.port||'').trim()))return;if(/\d/.test(l.a.port))a.hasPorts=true;if(/\d/.test(l.b.port))b.hasPorts=true;links.push({a:a.key,b:b.key,aPort:l.a.port,bPort:l.b.port,source:l.source});});});
+    // Named VLAN interfaces (DEFAULT_VLAN) and interfaces the export types as virtual are logical too.
+    function logical(device,port){port=String(port||'').trim();if(!port)return false;if(LOGICAL.test(port)||/^default[_ -]?vlan$/i.test(port)||/_vlan$/i.test(port))return true;var i=evidencePort(device,port);return !!(i&&/virtual|vlan|loopback|tunnel/i.test(i.type||''));}
+    var halves=[];
+    evidenceSets.forEach(function(s){s.ev.links.forEach(function(l){var a=dev(l.a.device),b=dev(l.b.device);if(!a||!b)return;var la=logical(l.a.device,l.a.port),lb=logical(l.b.device,l.b.port);if(la||lb){if(la!==lb&&a!==b)halves.push({a:a.key,b:b.key,aPort:la?'':l.a.port,bPort:lb?'':l.b.port,source:l.source,an:a.name,bn:b.name});return;}if(/\d/.test(l.a.port))a.hasPorts=true;if(/\d/.test(l.b.port))b.hasPorts=true;links.push({a:a.key,b:b.key,aPort:l.a.port,bPort:l.b.port,source:l.source});});});
+    // A pair joined only through a VLAN interface on one end (port 45 to the far switch's VLAN 1, and that
+    // switch's port g9 to this one's VLAN interface) is still cabled: one physical port named on each side
+    // makes one cable; otherwise each named port is drawn with the far port not reported.
+    (function(){var cabled=new Set(links.map(function(l){return [l.a,l.b].sort().join('~');})),pairs=new Map();
+      halves.forEach(function(x){var k=[x.a,x.b].sort().join('~');if(cabled.has(k))return;var first=x.a<x.b,g=pairs.get(k)||pairs.set(k,{a:first?x.a:x.b,b:first?x.b:x.a,an:first?x.an:x.bn,bn:first?x.bn:x.an,ap:[],bp:[],source:x.source}).get(k),pa=first?x.aPort:x.bPort,pb=first?x.bPort:x.aPort;
+        if(pa&&!g.ap.some(function(p){return X.interfaceKey(p)===X.interfaceKey(pa);}))g.ap.push(pa);if(pb&&!g.bp.some(function(p){return X.interfaceKey(p)===X.interfaceKey(pb);}))g.bp.push(pb);});
+      pairs.forEach(function(g){if(g.ap.length===1&&g.bp.length===1){links.push({a:g.a,b:g.b,aPort:g.ap[0],bPort:g.bp[0],source:g.source,why:'Each device reports the other on its VLAN interface: '+g.an+' on port '+g.ap[0]+', '+g.bn+' on port '+g.bp[0]});return;}
+        g.ap.forEach(function(p){links.push({a:g.a,b:g.b,aPort:p,bPort:'',source:g.source});});g.bp.forEach(function(p){links.push({a:g.a,b:g.b,aPort:'',bPort:p,source:g.source});});});
+      links.forEach(function(l){[[l.a,l.aPort],[l.b,l.bPort]].forEach(function(e){if(/\d/.test(e[1]||'')){var d=devices.get(e[0]);if(d)d.hasPorts=true;}});});})();
     // A switch port reported against two ports of one firewall (its data port and its HA heartbeat or
     // management port, which share an address) is cabled to the data port.
     (function(){var HA=/^(?:ha\d*|hasync|heartbeat|mgmt\d*)$/i,groups=new Map();links.forEach(function(l,i){[[l.a,l.aPort,l.b,l.bPort],[l.b,l.bPort,l.a,l.aPort]].forEach(function(e){var k=e[0]+'|'+X.interfaceKey(e[1]||'')+'>'+e[2];if(!e[1])return;(groups.get(k)||groups.set(k,[]).get(k)).push({i:i,far:String(e[3]||'').trim()});});});
      var drop=new Set();groups.forEach(function(list){if(list.length<2)return;var data=list.filter(function(x){return !HA.test(x.far);});if(data.length&&data.length<list.length)list.forEach(function(x){if(HA.test(x.far))drop.add(x.i);});});if(drop.size)links=links.filter(function(l,i){return !drop.has(i);});})();
+    // One port carries one cable. A port reported against several ports of the same device keeps the
+    // far ports that are up and that no other port of this device is also reported against (a firewall
+    // interface that is down, listed beside the real one on two switch ports).
+    (function(){var groups=new Map(),uses=new Map();function pk(d,p){return d+'|'+X.interfaceKey(p||'');}
+      links.forEach(function(l,i){if(!l.aPort||!l.bPort||l.source==='manual')return;[[l.a,l.aPort,l.b,l.bPort],[l.b,l.bPort,l.a,l.aPort]].forEach(function(e){var k=pk(e[0],e[1])+'>'+e[2];(groups.get(k)||groups.set(k,[]).get(k)).push({i:i,far:e[3],farDev:e[2]});var u=pk(e[2],e[3])+'<'+e[0],set=uses.get(u)||uses.set(u,new Set()).get(u);set.add(X.interfaceKey(e[1]));});});
+      var drop=new Set();groups.forEach(function(list,k){if(list.length<2)return;var near=k.split('>')[0].split('|')[0];
+        var bad=list.filter(function(x){var d=devices.get(x.farDev),ev=d&&evidencePort(d.name,x.far),down=ev&&/down/i.test(ev.oper||'')&&!/up/i.test(ev.oper||'');return down||uses.get(pk(x.farDev,x.far)+'<'+near).size>1;});
+        if(bad.length&&bad.length<list.length)bad.forEach(function(x){drop.add(x.i);});});
+      if(drop.size)links=links.filter(function(l,i){return !drop.has(i);});})();
     // A neighbour reported without its port (owner's site: a switch's B12 "Inside-FW" to the second firewall,
     // port unknown): the far device's interface whose alias or description the near port's description names
     // ("Inside" -> port2) when exactly one does and no other link uses it.
@@ -10265,6 +10342,10 @@ root.NDSFaceplates=api;if(typeof module==='object'&&module.exports)module.export
     links.forEach(function(l){correctLinkPort(l,devices.get(l.a),devices.get(l.b));});
     // Keep one link per port pair across files.
     var seen=new Set();links=links.filter(function(l){var a=l.a+'|'+X.interfaceKey(l.aPort),b=l.b+'|'+X.interfaceKey(l.bPort),k=a<b?a+'~'+b:b+'~'+a;if(seen.has(k))return false;seen.add(k);return true;});
+    // Monitoring tools list each member of a stack as its own device ("STACK-1 Member 2") joined by stack
+    // ports: that is the stack itself, not more switches.
+    (function(){var gone=new Set();devices.forEach(function(d,k){var m=/^(.+?)\s+member\s*\d+$/i.exec(d.name||'');if(m&&X.deviceKey(m[1])!==k&&devices.has(X.deviceKey(m[1]))&&d.open<0&&!d.manual)gone.add(k);});
+      if(gone.size){gone.forEach(function(k){devices.delete(k);});links=links.filter(function(l){return !gone.has(l.a)&&!gone.has(l.b);});}})();
     return {devices:Array.from(devices.values()),links:links};
   }
   // Neighbor tables sometimes name the wrong local port (an export reported a firewall's
@@ -10989,19 +11070,18 @@ root.NDSFaceplates=api;if(typeof module==='object'&&module.exports)module.export
     var html='<!doctype html><html><head><meta charset="utf-8"><title>'+h(page.title)+'</title><style>'+pageCss+'body{margin:0;font-family:Segoe UI,Arial,sans-serif;background:#eef1f5}section{margin:16px auto;background:#fff;box-shadow:0 1px 6px #0002;break-after:page}section svg{display:block;width:100%;height:100%}@media print{.bar{display:none}body{background:#fff}section{margin:0;box-shadow:none}}.bar{padding:10px 16px;border-bottom:1px solid #ddd;background:#fff}</style></head><body><div class="bar"><button onclick="print()">Print or save as PDF</button> '+all.length+' '+h(window.SWDiagram.paperInfo().name)+' page'+(all.length===1?'':'s')+'</div>'+sections+'</body></html>';
     download(html,file+'.html','text/html;charset=utf-8');
   }
+  // A right-angled line with rounded corners through the given points.
+  function roundPath(pts){if(pts.length<2)return '';var d='M'+pts[0][0]+' '+pts[0][1];for(var i=1;i<pts.length-1;i++){var p=pts[i],a=pts[i-1],b=pts[i+1],r=Math.min(7,(Math.abs(p[0]-a[0])+Math.abs(p[1]-a[1]))/2,(Math.abs(b[0]-p[0])+Math.abs(b[1]-p[1]))/2),ax=p[0]+Math.sign(a[0]-p[0])*r,ay=p[1]+Math.sign(a[1]-p[1])*r,bx=p[0]+Math.sign(b[0]-p[0])*r,by=p[1]+Math.sign(b[1]-p[1])*r;d+=' L'+ax+' '+ay+' Q'+p[0]+' '+p[1]+' '+bx+' '+by;}var z=pts[pts.length-1];return d+' L'+z[0]+' '+z[1];}
   function siteMapPage(){
-    if(!window.SWSiteMap)return '';var data=siteMapModel(),map=window.SWSiteMap.layout(data.devices,data.links,{showAccess:!!state.siteMapAccess}),q=String(state.siteMapQuery||'').trim().toLowerCase();
+    if(!window.SWSiteMap)return '';var data=siteMapModel(),map=window.SWSiteMap.layout(data.devices,data.links,{showAccess:!!state.siteMapAccess,short:shortPort}),q=String(state.siteMapQuery||'').trim().toLowerCase();
     var byKey=new Map(map.nodes.map(function(n){return [n.key,n];})),roleLabel={firewall:'Firewall',router:'Router',switch:'Switch',controller:'Controller',ap:'Access point',endpoint:'Device'};
     var counts={};map.nodes.forEach(function(n){counts[n.role]=(counts[n.role]||0)+1;});
     var edges=map.edges.map(function(e){var a=byKey.get(e.a),b=byKey.get(e.b);if(!a||!b)return '';var top=a.y<=b.y?a:b,bottom=top===a?b:a,ports=top===a?e.ports.map(function(p){return {top:p.a,bottom:p.b};}):e.ports.map(function(p){return {top:p.b,bottom:p.a};});
-      var x1=top.x+top.w/2,y1=top.y+top.h,x2=bottom.x+bottom.w/2,y2=bottom.y,same=Math.abs(top.y-bottom.y)<2,path;
-      if(same){var left=a.x<b.x?a:b,right=left===a?b:a;x1=left.x+left.w;y1=left.y+left.h/2;x2=right.x;y2=right.y+right.h/2;path='M'+x1+' '+y1+' C'+(x1+40)+' '+(y1+50)+' '+(x2-40)+' '+(y2+50)+' '+x2+' '+y2;}
-      else path='M'+x1+' '+y1+' C'+x1+' '+(y1+(y2-y1)*0.5)+' '+x2+' '+(y1+(y2-y1)*0.5)+' '+x2+' '+y2;
+      var path=roundPath(e.route||[]);
       var dim=q&&!(a.name.toLowerCase().includes(q)||b.name.toLowerCase().includes(q)),edgeKey='edge:'+e.a+'~'+e.b,selected=state.siteMapSelected&&(state.siteMapSelected===a.key||state.siteMapSelected===b.key||state.siteMapSelected===edgeKey);
       var title=e.ports.map(function(p,i){return (top===a?a.name:b.name)+' '+(ports[i].top||'?')+' ↔ '+(top===a?b.name:a.name)+' '+(ports[i].bottom||'?')+' ('+p.source+')';}).join('\n');
-      var pair=ports.map(function(p){return [shortPort(p.top),shortPort(p.bottom)];}).filter(function(x){return x[0]||x[1];}),text=pair.map(function(x){return (x[0]||'?')+' ↔ '+(x[1]||'?');}),label=text.slice(0,2).join(', ')+(text.length>2?' +'+(text.length-2):'');if(label.length>30)label=label.slice(0,29)+'…';
-      var lx=x2+(x1-x2)*0.14,ly=y2-9;
-      return '<g class="site-edge'+(dim?' dim':'')+(selected?' selected':'')+(e.ports.length>1?' multi':'')+'" data-sitemap-edge="'+h(edgeKey)+'" role="button" tabindex="0" aria-label="'+h('Connection '+a.name+' to '+b.name)+'"><title>'+h(title+'\nClick for connection details')+'</title><path class="edge-hit" d="'+path+'"/><path d="'+path+'"/>'+(!same&&label?'<text class="port-label" text-anchor="middle" x="'+lx+'" y="'+ly+'">'+h(label)+'</text>':'')+(e.ports.length>1&&!same?'<text class="link-count" x="'+((x1+x2)/2+6)+'" y="'+((y1+y2)/2)+'">×'+e.ports.length+'</text>':'')+'</g>';}).join('');
+      function tab(t,owner,list){return t?'<g class="port-tab"><title>'+h(owner.name+': '+list.map(function(p){return p||'port not reported';}).join(', '))+'</title><rect x="'+t.x+'" y="'+t.y+'" width="'+t.w+'" height="'+t.h+'" rx="4"/><text x="'+(t.x+t.w/2)+'" y="'+(t.y+t.h/2+4)+'" text-anchor="middle">'+h(t.text)+'</text></g>':'';}
+      return '<g class="site-edge'+(dim?' dim':'')+(selected?' selected':'')+(e.ports.length>1?' multi':'')+'" data-sitemap-edge="'+h(edgeKey)+'" role="button" tabindex="0" aria-label="'+h('Connection '+a.name+' to '+b.name)+'"><title>'+h(title+'\nClick for connection details')+'</title><path class="edge-hit" d="'+path+'"/><path d="'+path+'"/>'+(e.tabs?tab(e.tabs.a,a,e.ports.map(function(p){return p.a;}))+tab(e.tabs.b,b,e.ports.map(function(p){return p.b;})):'')+'</g>';}).join('');
     var nodes=map.nodes.map(function(n){var match=q&&(n.name.toLowerCase().includes(q)||(n.model||'').toLowerCase().includes(q)||n.ips.some(function(ip){return ip.includes(q);})),dim=q&&!match,aps=n.attached.filter(function(a){return a.role==='ap';}).length,others=n.attached.length-aps;
       var sub=[n.model||roleLabel[n.role],n.ips[0]||''].filter(Boolean).join(' · '),extra=[aps?aps+' AP'+(aps>1?'s':''):'',others?others+' device'+(others>1?'s':''):''].filter(Boolean).join(' · ');
       var small=n.role==='ap';
@@ -11011,7 +11091,7 @@ root.NDSFaceplates=api;if(typeof module==='object'&&module.exports)module.export
     var detail=siteMapDetail(map);
     var linked=map.nodes.filter(function(n){return !n.isolated;}).length;
     return '<div class="site-map-page'+(detail?' with-detail':'')+'"><section class="panel site-map-panel"><div class="panel-head"><h2 class="panel-title">Site map <span class="panel-count">'+linked+' linked devices · '+map.edges.length+' connections</span></h2><div class="site-map-tools"><label class="table-search">'+icon('search')+'<input id="sitemap-query" type="search" value="'+h(state.siteMapQuery||'')+'" placeholder="Find a device..." aria-label="Find a device on the site map" autocomplete="off"></label><label class="check-row inline"><input type="checkbox" id="sitemap-access"'+(state.siteMapAccess?' checked':'')+'><span>Show access points</span></label></div></div>'+legend+
-      '<p class="live-note">Built from LLDP / CDP neighbors and monitoring exports. Scroll to zoom and drag to move the map. Click a device for its connections; double-click a device marked Config to open its configuration.</p><div class="site-map-viewport"><div class="site-map-zoom" role="group" aria-label="Zoom"><button class="icon-button" data-sitemap-zoom="out" aria-label="Zoom out" title="Zoom out">−</button><span class="zoom-level" aria-live="polite">'+Math.round((state.siteMapZoom||1)*100)+'%</span><button class="icon-button" data-sitemap-zoom="in" aria-label="Zoom in" title="Zoom in">+</button><button class="button small" data-sitemap-zoom="fit" title="Fit the whole map">Fit</button><button class="button small" data-sitemap-zoom="reset" title="Actual size">100%</button></div><div class="site-map-scroll" title="Scroll to zoom, drag to move"><svg class="site-map" data-w="'+map.width+'" data-h="'+map.height+'" width="'+Math.round(map.width*(state.siteMapZoom||1))+'" height="'+Math.round(map.height*(state.siteMapZoom||1))+'" viewBox="0 0 '+map.width+' '+map.height+'" role="img" aria-label="Site map with '+map.nodes.length+' devices">'+(map.isolatedTop!=null?'<text class="isolated-label" x="24" y="'+(map.isolatedTop-10)+'">Not linked in the imported data</text>':'')+'<g class="edges">'+edges+'</g><g class="nodes">'+nodes+'</g></svg></div></div></section>'+detail+'</div>';
+      '<p class="live-note">Built from LLDP / CDP neighbors and monitoring exports. Each link ends in a tag with its port on that device; point at a link to light up both ends. Scroll to zoom and drag to move the map. Click a device for its connections; double-click a device marked Config to open its configuration.</p><div class="site-map-viewport"><div class="site-map-zoom" role="group" aria-label="Zoom"><button class="icon-button" data-sitemap-zoom="out" aria-label="Zoom out" title="Zoom out">−</button><span class="zoom-level" aria-live="polite">'+Math.round((state.siteMapZoom||1)*100)+'%</span><button class="icon-button" data-sitemap-zoom="in" aria-label="Zoom in" title="Zoom in">+</button><button class="button small" data-sitemap-zoom="fit" title="Fit the whole map">Fit</button><button class="button small" data-sitemap-zoom="reset" title="Actual size">100%</button></div><div class="site-map-scroll" title="Scroll to zoom, drag to move"><svg class="site-map" data-w="'+map.width+'" data-h="'+map.height+'" width="'+Math.round(map.width*(state.siteMapZoom||1))+'" height="'+Math.round(map.height*(state.siteMapZoom||1))+'" viewBox="0 0 '+map.width+' '+map.height+'" role="img" aria-label="Site map with '+map.nodes.length+' devices">'+(map.isolatedTop!=null?'<text class="isolated-label" x="24" y="'+(map.isolatedTop-10)+'">Not linked in the imported data</text>':'')+'<g class="edges">'+edges+'</g><g class="nodes">'+nodes+'</g></svg></div></div></section>'+detail+'</div>';
   }
   // Connection panel: both ends of every link between two devices, with what the
   // imported data says about each port.
@@ -11793,7 +11873,7 @@ root.NDSFaceplates=api;if(typeof module==='object'&&module.exports)module.export
     return '<div class="site-page">'+tabs+summary+panels[current]+'</div>';
   }
   // Kept current by scripts/version.py, which replaces the release string on each bump.
-  var APP_VERSION='5.70.0';
+  var APP_VERSION='5.71.0';
   // Client report: one section per open configuration. Port states use the same
   // classification as Interfaces at a glance, evaluated with each model active.
   function withModel(m,fn){var saved={model:state.model,usage:state.interfaceUsageCache,recordMap:state.recordMap};state.model=m;state.interfaceUsageCache=null;state.recordMap=new Map(m.records.map(function(r){return [r.id,r];}));try{return fn();}finally{state.model=saved.model;state.interfaceUsageCache=saved.usage;state.recordMap=saved.recordMap;}}
@@ -12446,7 +12526,7 @@ root.NDSFaceplates=api;if(typeof module==='object'&&module.exports)module.export
     }
   }
   function showHelp(){
-    openModal(modalHeader('About Config Inspector','Firewall and switch configuration explorer / version 5.70.0')+
+    openModal(modalHeader('About Config Inspector','Firewall and switch configuration explorer / version 5.71.0')+
       '<div class="modal-body"><div class="help-section"><h3>Open and explore</h3><p>Import SonicWall EXP, FortiGate FortiOS text, Palo Alto configuration XML, Sophos Firewall XML or export TAR, Aruba AOS or AOS-CX text, Cisco IOS or NX-OS text, Juniper Junos text or XML, Meraki API JSON, or a JSON snapshot exported by this application. The device type is detected automatically. You can also drop a file anywhere in the window. Select an interface or record for a plain-language explanation and key facts. Related objects show their IP addresses or service ports. Advanced details contains all original fields. Use Copy summary for readable facts and Back to return from a related item.</p></div>'+
       '<div class="help-section"><h3>Configuration sections</h3><p>Choose a root section in the sidebar, then select one of its indented subsections. Each subsection opens its own page. Routes, objects, members and other primary definitions appear before related settings. Security pages are grouped by function, including web, applications, files, intrusion prevention and SSL/TLS inspection. Certificate objects remain under Certificates. Empty subsections are hidden by default. Use View options to show empty sections, or Configuration sections and All original fields to inspect untranslated settings. Configuration context, search and table filters apply to the selected view.</p></div>'+
       '<div class="help-section"><h3>Choose access rule zones</h3><p>In Access Rules, choose From zone and To zone independently. All zones leaves that side unrestricted. Swap reverses the direction. Clear zone filters removes the pair while keeping the table filters. Search, configured state, and IP version filters combine with the pair, and CSV includes all matching rules. A matrix cell selects its zone pair. Interface and zone details offer outgoing and incoming rules.</p></div>'+
