@@ -1,5 +1,16 @@
 # Configuration Inspector development handoff
 
+## 5.72.0 — Network diagram preview on NetworkDiagramStudio's engine
+
+- New generated `webview/nds_engine.js` (`scripts/sync-nds-engine.py`, from NDS preview.70 `0996f50`), embedded as inert
+  text and run in a worker; new view `netdiagram` behind App settings > Preview features (`NDS_ON`). Pages, zoom, scope
+  (access points, every other device) and downloads (Visio, SVG, printable HTML, NDS project).
+- The engine is fed the raw files (`decodedText`, evidence `raw`); evidence restored without raw bytes is reported as
+  not drawn. Not yet: editing in the app, applying Site map hand edits, per-device scope choices.
+- Checked locally on the owner's firewall/core/two-stack site: 21 pages in about 2 seconds. index.html is now about
+  6.2 MB (3.6 MB of it the inert engine text).
+- Next steps for the diagram: owner feedback on the preview, then make it the default and retire `webview/diagram.js`.
+
 ## 5.71.0 — Site map port tags and right-angled links
 
 - `webview/site_map.js` `layout()` now routes the links: each edge carries `tabs` (port tag on each device edge) and

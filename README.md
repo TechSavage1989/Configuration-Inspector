@@ -286,6 +286,8 @@ During an update, loaded configurations and the comparison are encrypted using W
 
 Close additional copies of the same executable before installing and keep the application folder writable. A failed download leaves the current executable unchanged. Update checks do not send configuration contents or require GitHub credentials.
 
+**Preview features.** **App settings > Preview features > Network diagram (preview)** adds a **Network diagram** page to the sidebar. It draws a network page with real faceplates, a site map, port maps, port inventory, wireless and VLAN pages from the open configurations and monitoring exports, using the same engine as NetworkDiagramStudio, in the background. Download the pages as an editable Visio file, SVG or printable HTML, or as a project file to edit in NetworkDiagramStudio. By default it draws the devices you opened configurations for and their access points; **Every other device** adds the rest. It is a preview: pages cannot be edited inside Config Inspector yet. Details are in [docs/network-diagram.md](docs/network-diagram.md).
+
 See [UPDATING.md](docs/UPDATING.md) for installation, rollback, storage and trust details.
 
 ## Troubleshooting
