@@ -88,6 +88,17 @@ for script_id, filename in [('migration-engine', 'migration.js'), ('comparison-e
     start = source.index(marker)
     end = source.index('</script>', start)
     source = source[:start] + marker + '\n' + (root / filename).read_text() + '\n' + source[end:]
+# NetworkDiagramStudio's engine is large and only needed when a diagram is drawn: it is embedded as inert
+# text and started in a background worker on first use (see ndsRun in index.html).
+marker = '<script type="text/plain" id="nds-engine">'
+if marker not in source:
+    anchor = source.index('<script id="app-updates">')
+    source = source[:anchor] + marker + '\n</script>\n' + source[anchor:]
+start = source.index(marker)
+end = source.index('</script>', start)
+engine = (root / 'nds_engine.js').read_text(encoding='utf-8')
+assert '</script' not in engine.lower()
+source = source[:start] + marker + '\n' + engine + '\n' + source[end:]
 # One canonical icon for the browser favicon and rendered app identity.
 icon = base64.b64encode((root / 'icon.svg').read_text(encoding='utf-8').encode('utf-8')).decode('ascii')
 source = re.sub(r'<link\b[^>]*\brel=["\']icon["\'][^>]*>', '', source, flags=re.IGNORECASE)
