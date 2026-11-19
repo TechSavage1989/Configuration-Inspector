@@ -1,5 +1,11 @@
 # Configuration Inspector development handoff
 
+## 5.73.0 — Site map: one link per cable
+
+- `SWSiteMap.layout` makes one edge per cable unless `options.groupOf(link)` names a LAG (`siteLinkGroup` in
+  index.html: the aggregate of either end's port in an open configuration). Edges of one device pair share the
+  `data-sitemap-edge` key, so selection and the detail panel cover the whole pair.
+
 ## 5.72.0 — Network diagram preview on NetworkDiagramStudio's engine
 
 - New generated `webview/nds_engine.js` (`scripts/sync-nds-engine.py`, from NDS preview.70 `0996f50`), embedded as inert
