@@ -32,9 +32,11 @@
   nodes.forEach(function(n){n.shown=infra(n.role)||showAccess&&n.role==='ap'||n.open>=0;});
   // Attach hidden nodes to the shown device they connect to.
   links.forEach(function(l){var a=nodes.get(l.a),b=nodes.get(l.b);if(!a||!b)return;if(a.shown&&!b.shown)a.attached.push({key:b.key,name:b.name,role:b.role,type:b.type,port:l.aPort,remotePort:l.bPort});else if(b.shown&&!a.shown)b.attached.push({key:a.key,name:a.name,role:a.role,type:a.type,port:l.bPort,remotePort:l.aPort});});
-  links.forEach(function(l){var a=nodes.get(l.a),b=nodes.get(l.b);if(!a||!b||!a.shown||!b.shown||a===b)return;var key=[a.key,b.key].sort().join('\u0000');if(!edges.has(key))edges.set(key,{a:a.key<b.key?a.key:b.key,b:a.key<b.key?b.key:a.key,ports:[]});var e=edges.get(key);e.ports.push(a.key===e.a?{a:l.aPort,b:l.bPort,source:l.source}:{a:l.bPort,b:l.aPort,source:l.source});});
+  // Cables between two devices are one link only when they are aggregated (options.groupOf names the LAG);
+  // every other cable is its own link with its own port tags (owner request).
+  links.forEach(function(l,li){var a=nodes.get(l.a),b=nodes.get(l.b);if(!a||!b||!a.shown||!b.shown||a===b)return;var grp=options.groupOf?options.groupOf(l):'',key=[a.key,b.key].sort().join('\u0000')+'\u0000'+(grp||'#'+li);if(!edges.has(key))edges.set(key,{a:a.key<b.key?a.key:b.key,b:a.key<b.key?b.key:a.key,ports:[],group:grp||'',idx:edges.size});var e=edges.get(key);e.ports.push(a.key===e.a?{a:l.aPort,b:l.bPort,source:l.source}:{a:l.bPort,b:l.aPort,source:l.source});});
   var shown=Array.from(nodes.values()).filter(function(n){return n.shown;}),adj=new Map(shown.map(function(n){return [n.key,[]];}));
-  edges.forEach(function(e){adj.get(e.a).push(e.b);adj.get(e.b).push(e.a);});
+  edges.forEach(function(e){if(adj.get(e.a).indexOf(e.b)<0){adj.get(e.a).push(e.b);adj.get(e.b).push(e.a);}});
   // Tiers per connected component, breadth-first from the edge of the network.
   var depth=new Map(),component=new Map(),comps=[];
   shown.slice().sort(function(x,y){return ROLE_ORDER[x.role]-ROLE_ORDER[y.role]||adj.get(y.key).length-adj.get(x.key).length||x.name.localeCompare(y.name);}).forEach(function(start){
@@ -93,8 +95,8 @@
    list.forEach(function(t){t.cx=Math.round(t.x+t.w/2);t.x=t.cx-t.w/2;});}
   // Bottom tags first (centred, in the order of the far devices), then top tags as near as they
   // can get to straight under the tag they join.
-  tabsOf.forEach(function(m,k){m.bottom.sort(function(a,b){return cx(a.far)-cx(b.far)||a.far.localeCompare(b.far);});spread(m.bottom,placed.get(k),null);});
-  tabsOf.forEach(function(m,k){function other(t){return t.e.ta===t?t.e.tb:t.e.ta;}m.top.sort(function(a,b){return other(a).cx-other(b).cx||a.far.localeCompare(b.far);});var p=placed.get(k);spread(m.top,p,function(t){var x=other(t).cx;return x>=p.x+t.w/2+6&&x<=p.x+p.w-t.w/2-6?x:m.top.length===1?p.x+p.w/2:x;});});
+  tabsOf.forEach(function(m,k){m.bottom.sort(function(a,b){return cx(a.far)-cx(b.far)||a.far.localeCompare(b.far)||a.e.idx-b.e.idx;});spread(m.bottom,placed.get(k),null);});
+  tabsOf.forEach(function(m,k){function other(t){return t.e.ta===t?t.e.tb:t.e.ta;}m.top.sort(function(a,b){return other(a).cx-other(b).cx||a.far.localeCompare(b.far)||a.e.idx-b.e.idx;});var p=placed.get(k);spread(m.top,p,function(t){var x=other(t).cx;return x>=p.x+t.w/2+6&&x<=p.x+p.w-t.w/2-6?x:m.top.length===1?p.x+p.w/2:x;});});
   // Horizontal runs by the gap under each row.
   var segs=ys.map(function(){return [];}),usedX=[];
   function clearX(want,r1,r2){var c=[want];for(var d=10;d<1600;d+=10){c.push(want-d);c.push(want+d);}

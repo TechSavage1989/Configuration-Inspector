@@ -50,6 +50,8 @@ a decision or a test on the owner's own machine (for example opening an export i
   for two devices in one row) and `route` (right-angled points; index.html rounds the corners with `roundPath`).
   Horizontal runs get their own level per gap between rows and the rows move apart by what the levels need; a link
   that skips a row goes down a column clear of the devices between (`clearX`). Never draw port text on a line again.
+  One edge per cable (owner request): only cables whose port is in the same aggregate of an open configuration
+  (`siteLinkGroup` -> `options.groupOf`) share an edge; edges of one pair share `data-sitemap-edge`.
   `tests/site-map-links-browser.cjs` checks tags, overlaps and right angles.
 - Site map link clean-up (`siteMapModel`): a neighbour on a logical interface (`logical()`: VLAN/loopback/tunnel
   names, `DEFAULT_VLAN`, `*_VLAN`, or an interface the export types as virtual) is not a cable; when a pair has no

@@ -18,22 +18,24 @@ const interfaces=[['INTERFACES','','','','','','','',''],['Admin Status','Oper S
  row('Up','DEFAULT_VLAN','LAB-CORE-01','43  on LAB-EDGE-02, g9  on LAB-REMOTE-A','Virtual NIC'),
  row('Up','43','LAB-EDGE-02','DEFAULT_VLAN  on LAB-CORE-01, 43  on LAB-CORE-01'),row('Up','44','LAB-EDGE-02','44  on LAB-CORE-01'),
  row('Up','58','LAB-VOICE-01','48  on LAB-CORE-01'),row('Up','Some Stack Port','LAB-EDGE-02 Member 2','Some Stack Port  on LAB-EDGE-02'),row('Up','g9','LAB-REMOTE-A','DEFAULT_VLAN  on LAB-CORE-01')];
+// LAB-EDGE-02's configuration aggregates its ports 43 and 44: those two cables are one link.
+const edge02=['; J9729A Configuration Editor; Created on release #WB.16.10.0009','hostname "LAB-EDGE-02"','trunk 43-44 trk1 lacp','vlan 1','   name "DEFAULT_VLAN"','   untagged 1-42,45-48,Trk1','   ip address 192.0.2.3 255.255.255.0','   exit',''].join('\n');
 const book=xlsx([{name:'Devices',rows:devices},{name:'Interfaces',rows:interfaces}]);
 (async()=>{
  const browser=await playwright.chromium.launch({headless:true,args:['--no-sandbox'],...(process.env.CI_CHROME_PATH?{executablePath:process.env.CI_CHROME_PATH}:{})});
  try{
   const page=await browser.newPage({viewport:{width:1440,height:900}}),errors=[];page.on('pageerror',e=>errors.push(e.message));
   await page.goto('file://'+path.resolve('webview/index.html'));
-  await page.locator('#import-file').setInputFiles({name:'lab-site.xlsx',mimeType:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',buffer:book});
+  await page.locator('#import-file').setInputFiles([{name:'lab-edge-02.txt',mimeType:'text/plain',buffer:Buffer.from(edge02)},{name:'lab-site.xlsx',mimeType:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',buffer:book}]);await page.locator('.nav-scroll [data-view="sitemap"]').first().click();
   await page.locator('.site-map').waitFor({timeout:15000});
   const g=await page.evaluate(()=>{const box=e=>{const b=e.getBBox(),m=e.getCTM();return {x:b.x+m.e,y:b.y+m.f,w:b.width,h:b.height};};
    return {edges:[...document.querySelectorAll('.site-edge')].map(e=>({key:e.getAttribute('data-sitemap-edge'),d:e.querySelector('path:not(.edge-hit)').getAttribute('d'),tabs:[...e.querySelectorAll('.port-tab')].map(t=>({text:t.querySelector('text').textContent,...box(t.querySelector('rect'))}))})),
     nodes:[...document.querySelectorAll('.site-node')].map(n=>({key:n.getAttribute('data-sitemap-node'),...box(n.querySelector('rect'))})),floating:document.querySelectorAll('.site-edge > text').length};});
-  const edge=k=>g.edges.find(e=>e.key===k),texts=k=>edge(k).tabs.map(t=>t.text).sort().join(' | ');
-  ok(g.edges.length===5,'five connections: '+g.edges.map(e=>e.key).join(' '));
+  const of=k=>g.edges.filter(e=>e.key===k),texts=k=>of(k).map(e=>e.tabs.map(t=>t.text).sort().join(' | ')).sort().join(' ; ');
+  ok(g.edges.length===6&&new Set(g.edges.map(e=>e.key)).size===5,'six links between five pairs of devices: '+g.edges.map(e=>e.key).join(' '));
   ok(g.edges.every(e=>e.tabs.length===2)&&g.floating===0,'every link ends in a port tag on each device; no text floats on a line');
-  ok(texts('edge:labcore01~labfw')==='6, 41 | port1, port2','the firewall interface that is down is not a cable: '+texts('edge:labcore01~labfw'));
-  ok(texts('edge:labcore01~labedge02')==='43, 44 | 43, 44','a VLAN interface neighbour beside the real port is not a cable: '+texts('edge:labcore01~labedge02'));
+  ok(texts('edge:labcore01~labfw')==='41 | port2 ; 6 | port1','two cables that are not a LAG are two links, each with its own ports, and the firewall interface that is down is not a cable: '+texts('edge:labcore01~labfw'));
+  ok(texts('edge:labcore01~labedge02')==='43, 44 | 43, 44'&&of('edge:labcore01~labedge02').length===1,'the two cables of a LAG stay one link, and a VLAN interface neighbour beside the real port is not a cable: '+texts('edge:labcore01~labedge02'));
   ok(texts('edge:labcore01~labvoice01')==='48 | 58','one cable to the voice switch');
   ok(texts('edge:labcore01~labremotea')==='45 | g9','two VLAN interface reports join into one cable: '+texts('edge:labcore01~labremotea'));
   ok(texts('edge:labcore01~labremoteb')==='46 | ?','a port known on one side only shows ? on the other: '+texts('edge:labcore01~labremoteb'));
@@ -53,8 +55,8 @@ const book=xlsx([{name:'Devices',rows:devices},{name:'Interfaces',rows:interface
   ok(segs.every(s=>tabs.every(t=>t.edge===s.edge||!hit(box(s),t))),'no line passes over another link\'s port tag');
   ok(segs.every((a,i)=>segs.every((b,j)=>i>=j||a.edge===b.edge||!((a.y1===a.y2&&b.y1===b.y2&&Math.abs(a.y1-b.y1)<4&&a.x1<b.x2&&b.x1<a.x2)||(a.x1===a.x2&&b.x1===b.x2&&Math.abs(a.x1-b.x1)<4&&a.y1<b.y2&&b.y1<a.y2)))),'no two links run on top of each other');
   // Pointing at a link lights up both of its tags; clicking it lists its cables.
-  await page.locator('[data-sitemap-edge="edge:labcore01~labfw"] path.edge-hit').click({force:true});await page.locator('.site-map-detail').waitFor();
-  ok(await page.locator('.site-edge.selected .port-tab').count()===2&&await page.locator('.site-map-detail .site-link-row').count()===2,'a selected link highlights both tags and lists two cables');
+  await page.locator('[data-sitemap-edge="edge:labcore01~labfw"] path.edge-hit').first().click({force:true});await page.locator('.site-map-detail').waitFor();
+  ok(await page.locator('.site-edge.selected .port-tab').count()===4&&await page.locator('.site-map-detail .site-link-row').count()===2,'a selected link highlights both tags and lists two cables');
   ok(!errors.length,'no page errors: '+errors.join('; '));
   if(process.env.SHOT){await page.screenshot({path:process.env.SHOT});}
   console.log(checks+' site map link checks passed');

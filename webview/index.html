@@ -988,7 +988,7 @@ body{font-size:14px}.brand-mark{background:linear-gradient(145deg,#287dc6,#15578
       <div id="page-heading"></div>
       <div id="workspace-tabs"></div><div id="workspace-notice"></div>
       <div id="content"></div>
-      <footer class="page-footer"><span id="version-label">Config Inspector 5.72.0</span></footer>
+      <footer class="page-footer"><span id="version-label">Config Inspector 5.73.0</span></footer>
     </main>
   </div>
   <input type="file" id="import-file" multiple accept=".exp,.txt,.json,.conf,.cfg,.xml,.tar,.set,.log,.backup,.rsc,.xlsx,.csv,.vssx,.vstx,.vsdx,.vss" hidden>
@@ -6129,9 +6129,11 @@ function pJ(L,pan){const d=E(),I={},R={},T={};
   nodes.forEach(function(n){n.shown=infra(n.role)||showAccess&&n.role==='ap'||n.open>=0;});
   // Attach hidden nodes to the shown device they connect to.
   links.forEach(function(l){var a=nodes.get(l.a),b=nodes.get(l.b);if(!a||!b)return;if(a.shown&&!b.shown)a.attached.push({key:b.key,name:b.name,role:b.role,type:b.type,port:l.aPort,remotePort:l.bPort});else if(b.shown&&!a.shown)b.attached.push({key:a.key,name:a.name,role:a.role,type:a.type,port:l.bPort,remotePort:l.aPort});});
-  links.forEach(function(l){var a=nodes.get(l.a),b=nodes.get(l.b);if(!a||!b||!a.shown||!b.shown||a===b)return;var key=[a.key,b.key].sort().join('\u0000');if(!edges.has(key))edges.set(key,{a:a.key<b.key?a.key:b.key,b:a.key<b.key?b.key:a.key,ports:[]});var e=edges.get(key);e.ports.push(a.key===e.a?{a:l.aPort,b:l.bPort,source:l.source}:{a:l.bPort,b:l.aPort,source:l.source});});
+  // Cables between two devices are one link only when they are aggregated (options.groupOf names the LAG);
+  // every other cable is its own link with its own port tags (owner request).
+  links.forEach(function(l,li){var a=nodes.get(l.a),b=nodes.get(l.b);if(!a||!b||!a.shown||!b.shown||a===b)return;var grp=options.groupOf?options.groupOf(l):'',key=[a.key,b.key].sort().join('\u0000')+'\u0000'+(grp||'#'+li);if(!edges.has(key))edges.set(key,{a:a.key<b.key?a.key:b.key,b:a.key<b.key?b.key:a.key,ports:[],group:grp||'',idx:edges.size});var e=edges.get(key);e.ports.push(a.key===e.a?{a:l.aPort,b:l.bPort,source:l.source}:{a:l.bPort,b:l.aPort,source:l.source});});
   var shown=Array.from(nodes.values()).filter(function(n){return n.shown;}),adj=new Map(shown.map(function(n){return [n.key,[]];}));
-  edges.forEach(function(e){adj.get(e.a).push(e.b);adj.get(e.b).push(e.a);});
+  edges.forEach(function(e){if(adj.get(e.a).indexOf(e.b)<0){adj.get(e.a).push(e.b);adj.get(e.b).push(e.a);}});
   // Tiers per connected component, breadth-first from the edge of the network.
   var depth=new Map(),component=new Map(),comps=[];
   shown.slice().sort(function(x,y){return ROLE_ORDER[x.role]-ROLE_ORDER[y.role]||adj.get(y.key).length-adj.get(x.key).length||x.name.localeCompare(y.name);}).forEach(function(start){
@@ -6190,8 +6192,8 @@ function pJ(L,pan){const d=E(),I={},R={},T={};
    list.forEach(function(t){t.cx=Math.round(t.x+t.w/2);t.x=t.cx-t.w/2;});}
   // Bottom tags first (centred, in the order of the far devices), then top tags as near as they
   // can get to straight under the tag they join.
-  tabsOf.forEach(function(m,k){m.bottom.sort(function(a,b){return cx(a.far)-cx(b.far)||a.far.localeCompare(b.far);});spread(m.bottom,placed.get(k),null);});
-  tabsOf.forEach(function(m,k){function other(t){return t.e.ta===t?t.e.tb:t.e.ta;}m.top.sort(function(a,b){return other(a).cx-other(b).cx||a.far.localeCompare(b.far);});var p=placed.get(k);spread(m.top,p,function(t){var x=other(t).cx;return x>=p.x+t.w/2+6&&x<=p.x+p.w-t.w/2-6?x:m.top.length===1?p.x+p.w/2:x;});});
+  tabsOf.forEach(function(m,k){m.bottom.sort(function(a,b){return cx(a.far)-cx(b.far)||a.far.localeCompare(b.far)||a.e.idx-b.e.idx;});spread(m.bottom,placed.get(k),null);});
+  tabsOf.forEach(function(m,k){function other(t){return t.e.ta===t?t.e.tb:t.e.ta;}m.top.sort(function(a,b){return other(a).cx-other(b).cx||a.far.localeCompare(b.far)||a.e.idx-b.e.idx;});var p=placed.get(k);spread(m.top,p,function(t){var x=other(t).cx;return x>=p.x+t.w/2+6&&x<=p.x+p.w-t.w/2-6?x:m.top.length===1?p.x+p.w/2:x;});});
   // Horizontal runs by the gap under each row.
   var segs=ys.map(function(){return [];}),usedX=[];
   function clearX(want,r1,r2){var c=[want];for(var d=10;d<1600;d+=10){c.push(want-d);c.push(want+d);}
@@ -8952,7 +8954,7 @@ Observed: `+t.liveState}],a=fd(e,o,u,"Port inventory",i,r.ports,"inventory");r.l
     return {compareText:compareText,compareMode:['records','text','fields'].includes(data.compareMode)?data.compareMode:'records',models:models.slice(0,data.count),model:data.selected<0?null:models[data.selected],comparison:data.comparison<0?null:models[data.comparison],view:typeof data.view==='string'?data.view:'overview',scope:typeof data.scope==='string'?data.scope:'',categoryTabs:data.categoryTabs&&typeof data.categoryTabs==='object'&&!Array.isArray(data.categoryTabs)?data.categoryTabs:{},showUnassigned:!!data.showUnassigned,showEmpty:!!data.showEmpty};
   }
   function create(options){
-    options=options||{};var bridge=options.bridge||root.chrome&&root.chrome.webview,native=!!(bridge&&typeof bridge.postMessage==='function'&&typeof bridge.addEventListener==='function'),state={current:'5.72.0',state:'idle',message:'',automatic:true,busy:false,ready:false,available:false},handlers={},restoring=false,installing=false;
+    options=options||{};var bridge=options.bridge||root.chrome&&root.chrome.webview,native=!!(bridge&&typeof bridge.postMessage==='function'&&typeof bridge.addEventListener==='function'),state={current:'5.73.0',state:'idle',message:'',automatic:true,busy:false,ready:false,available:false},handlers={},restoring=false,installing=false;
     var commands=['update-ui-ready','update-status','update-check','update-download','update-later','update-auto-on','update-auto-off','update-restored','update-restore-failed'];
     function request(command){if(!native)throw new Error('Built-in updates are available in the Windows desktop edition.');if(!commands.includes(command))throw new Error('Unknown update action.');bridge.postMessage(command);}
     if(native)bridge.addEventListener('message',async function(event){
@@ -10348,9 +10350,9 @@ Observed: `+t.liveState}],a=fd(e,o,u,"Port inventory",i,r.ports,"inventory");r.l
   function removeEvidence(id){evidenceSets=evidenceSets.filter(function(s){return s.id!==id;});evidenceSeq++;liveCache=new Map();if(!evidenceSets.length&&(state.view==='evidence'||state.view==='sitemap'))state.view='overview';render();}
   // A site can be drawn from configurations alone; links come from imported neighbor data,
   // from what the configurations say about each other, or are added by hand.
-  // The Network diagram is turned off in releases (owner request, 5.72.0: not working as intended yet). Its code stays here
+  // The Network diagram is turned off in releases (owner request, 5.73.0: not working as intended yet). Its code stays here
   // whole and keeps its tests; ?labs=diagram in the page address (or "diagram" in localStorage config-inspector-labs)
-  // turns it on for development and the browser tests. Release 5.72.0 is the last release with it on.
+  // turns it on for development and the browser tests. Release 5.73.0 is the last release with it on.
   var DIAGRAM_ON=(function(){try{return /(?:^|[?&])labs=[^&]*diagram/.test(location.search)||/diagram/.test(localStorage.getItem('config-inspector-labs')||'');}catch(e){return false;}})();
   // Network diagram drawn by NetworkDiagramStudio's engine (webview/nds_engine.js, generated). Off in releases
   // by default until it is proven on the owner's sites: App settings > Preview features turns it on
@@ -11301,10 +11303,15 @@ Observed: `+t.liveState}],a=fd(e,o,u,"Port inventory",i,r.ports,"inventory");r.l
     var html='<!doctype html><html><head><meta charset="utf-8"><title>'+h(page.title)+'</title><style>'+pageCss+'body{margin:0;font-family:Segoe UI,Arial,sans-serif;background:#eef1f5}section{margin:16px auto;background:#fff;box-shadow:0 1px 6px #0002;break-after:page}section svg{display:block;width:100%;height:100%}@media print{.bar{display:none}body{background:#fff}section{margin:0;box-shadow:none}}.bar{padding:10px 16px;border-bottom:1px solid #ddd;background:#fff}</style></head><body><div class="bar"><button onclick="print()">Print or save as PDF</button> '+all.length+' '+h(window.SWDiagram.paperInfo().name)+' page'+(all.length===1?'':'s')+'</div>'+sections+'</body></html>';
     download(html,file+'.html','text/html;charset=utf-8');
   }
+  // The LAG a link's cable belongs to, from either end's open configuration (the aggregate its port is a member
+  // of); cables outside a LAG return '' and are drawn as their own links.
+  function siteLinkGroup(data){var X=SE(),byKey=new Map(data.devices.map(function(d){return [d.key,d];})),cache=new Map();
+    function agg(key,port){var d=byKey.get(key);if(!d||d.open<0||!port)return '';var m=workspace[d.open],map=cache.get(key);if(!map){map=new Map();(m.categories.interfaces||[]).forEach(function(r){var a=String(r.summary&&r.summary.aggregate||'').trim();if(a&&!/not specified|^none$/i.test(a))map.set(X.interfaceKey(r.name),a);});cache.set(key,map);}var a=map.get(X.interfaceKey(port));return a?key+':'+a.toLowerCase():'';}
+    return function(l){return agg(l.a,l.aPort)||agg(l.b,l.bPort);};}
   // A right-angled line with rounded corners through the given points.
   function roundPath(pts){if(pts.length<2)return '';var d='M'+pts[0][0]+' '+pts[0][1];for(var i=1;i<pts.length-1;i++){var p=pts[i],a=pts[i-1],b=pts[i+1],r=Math.min(7,(Math.abs(p[0]-a[0])+Math.abs(p[1]-a[1]))/2,(Math.abs(b[0]-p[0])+Math.abs(b[1]-p[1]))/2),ax=p[0]+Math.sign(a[0]-p[0])*r,ay=p[1]+Math.sign(a[1]-p[1])*r,bx=p[0]+Math.sign(b[0]-p[0])*r,by=p[1]+Math.sign(b[1]-p[1])*r;d+=' L'+ax+' '+ay+' Q'+p[0]+' '+p[1]+' '+bx+' '+by;}var z=pts[pts.length-1];return d+' L'+z[0]+' '+z[1];}
   function siteMapPage(){
-    if(!window.SWSiteMap)return '';var data=siteMapModel(),map=window.SWSiteMap.layout(data.devices,data.links,{showAccess:!!state.siteMapAccess,short:shortPort}),q=String(state.siteMapQuery||'').trim().toLowerCase();
+    if(!window.SWSiteMap)return '';var data=siteMapModel(),map=window.SWSiteMap.layout(data.devices,data.links,{showAccess:!!state.siteMapAccess,short:shortPort,groupOf:siteLinkGroup(data)}),q=String(state.siteMapQuery||'').trim().toLowerCase();
     var byKey=new Map(map.nodes.map(function(n){return [n.key,n];})),roleLabel={firewall:'Firewall',router:'Router',switch:'Switch',controller:'Controller',ap:'Access point',endpoint:'Device'};
     var counts={};map.nodes.forEach(function(n){counts[n.role]=(counts[n.role]||0)+1;});
     var edges=map.edges.map(function(e){var a=byKey.get(e.a),b=byKey.get(e.b);if(!a||!b)return '';var top=a.y<=b.y?a:b,bottom=top===a?b:a,ports=top===a?e.ports.map(function(p){return {top:p.a,bottom:p.b};}):e.ports.map(function(p){return {top:p.b,bottom:p.a};});
@@ -11321,7 +11328,7 @@ Observed: `+t.liveState}],a=fd(e,o,u,"Port inventory",i,r.ports,"inventory");r.l
     var legend='<div class="site-map-legend">'+['firewall','router','switch','controller','ap','endpoint'].filter(function(r){return counts[r];}).map(function(r){return '<span class="legend-item role-'+r+'"><i></i>'+(counts[r]>1?{firewall:'Firewalls',router:'Routers',switch:'Switches',controller:'Controllers',ap:'Access points',endpoint:'Devices'}[r]:roleLabel[r])+' '+counts[r]+'</span>';}).join('')+'<span class="legend-item open"><i></i>Configuration open</span></div>';
     var detail=siteMapDetail(map);
     var linked=map.nodes.filter(function(n){return !n.isolated;}).length;
-    return '<div class="site-map-page'+(detail?' with-detail':'')+'"><section class="panel site-map-panel"><div class="panel-head"><h2 class="panel-title">Site map <span class="panel-count">'+linked+' linked devices · '+map.edges.length+' connections</span></h2><div class="site-map-tools"><label class="table-search">'+icon('search')+'<input id="sitemap-query" type="search" value="'+h(state.siteMapQuery||'')+'" placeholder="Find a device..." aria-label="Find a device on the site map" autocomplete="off"></label><label class="check-row inline"><input type="checkbox" id="sitemap-access"'+(state.siteMapAccess?' checked':'')+'><span>Show access points</span></label></div></div>'+legend+
+    return '<div class="site-map-page'+(detail?' with-detail':'')+'"><section class="panel site-map-panel"><div class="panel-head"><h2 class="panel-title">Site map <span class="panel-count">'+linked+' linked devices · '+map.edges.length+' links</span></h2><div class="site-map-tools"><label class="table-search">'+icon('search')+'<input id="sitemap-query" type="search" value="'+h(state.siteMapQuery||'')+'" placeholder="Find a device..." aria-label="Find a device on the site map" autocomplete="off"></label><label class="check-row inline"><input type="checkbox" id="sitemap-access"'+(state.siteMapAccess?' checked':'')+'><span>Show access points</span></label></div></div>'+legend+
       '<p class="live-note">Built from LLDP / CDP neighbors and monitoring exports. Each link ends in a tag with its port on that device; point at a link to light up both ends. Scroll to zoom and drag to move the map. Click a device for its connections; double-click a device marked Config to open its configuration.</p><div class="site-map-viewport"><div class="site-map-zoom" role="group" aria-label="Zoom"><button class="icon-button" data-sitemap-zoom="out" aria-label="Zoom out" title="Zoom out">−</button><span class="zoom-level" aria-live="polite">'+Math.round((state.siteMapZoom||1)*100)+'%</span><button class="icon-button" data-sitemap-zoom="in" aria-label="Zoom in" title="Zoom in">+</button><button class="button small" data-sitemap-zoom="fit" title="Fit the whole map">Fit</button><button class="button small" data-sitemap-zoom="reset" title="Actual size">100%</button></div><div class="site-map-scroll" title="Scroll to zoom, drag to move"><svg class="site-map" data-w="'+map.width+'" data-h="'+map.height+'" width="'+Math.round(map.width*(state.siteMapZoom||1))+'" height="'+Math.round(map.height*(state.siteMapZoom||1))+'" viewBox="0 0 '+map.width+' '+map.height+'" role="img" aria-label="Site map with '+map.nodes.length+' devices">'+(map.isolatedTop!=null?'<text class="isolated-label" x="24" y="'+(map.isolatedTop-10)+'">Not linked in the imported data</text>':'')+'<g class="edges">'+edges+'</g><g class="nodes">'+nodes+'</g></svg></div></div></section>'+detail+'</div>';
   }
   // Connection panel: both ends of every link between two devices, with what the
@@ -12104,7 +12111,7 @@ Observed: `+t.liveState}],a=fd(e,o,u,"Port inventory",i,r.ports,"inventory");r.l
     return '<div class="site-page">'+tabs+summary+panels[current]+'</div>';
   }
   // Kept current by scripts/version.py, which replaces the release string on each bump.
-  var APP_VERSION='5.72.0';
+  var APP_VERSION='5.73.0';
   // Client report: one section per open configuration. Port states use the same
   // classification as Interfaces at a glance, evaluated with each model active.
   function withModel(m,fn){var saved={model:state.model,usage:state.interfaceUsageCache,recordMap:state.recordMap};state.model=m;state.interfaceUsageCache=null;state.recordMap=new Map(m.records.map(function(r){return [r.id,r];}));try{return fn();}finally{state.model=saved.model;state.interfaceUsageCache=saved.usage;state.recordMap=saved.recordMap;}}
@@ -12758,7 +12765,7 @@ Observed: `+t.liveState}],a=fd(e,o,u,"Port inventory",i,r.ports,"inventory");r.l
     }
   }
   function showHelp(){
-    openModal(modalHeader('About Config Inspector','Firewall and switch configuration explorer / version 5.72.0')+
+    openModal(modalHeader('About Config Inspector','Firewall and switch configuration explorer / version 5.73.0')+
       '<div class="modal-body"><div class="help-section"><h3>Open and explore</h3><p>Import SonicWall EXP, FortiGate FortiOS text, Palo Alto configuration XML, Sophos Firewall XML or export TAR, Aruba AOS or AOS-CX text, Cisco IOS or NX-OS text, Juniper Junos text or XML, Meraki API JSON, or a JSON snapshot exported by this application. The device type is detected automatically. You can also drop a file anywhere in the window. Select an interface or record for a plain-language explanation and key facts. Related objects show their IP addresses or service ports. Advanced details contains all original fields. Use Copy summary for readable facts and Back to return from a related item.</p></div>'+
       '<div class="help-section"><h3>Configuration sections</h3><p>Choose a root section in the sidebar, then select one of its indented subsections. Each subsection opens its own page. Routes, objects, members and other primary definitions appear before related settings. Security pages are grouped by function, including web, applications, files, intrusion prevention and SSL/TLS inspection. Certificate objects remain under Certificates. Empty subsections are hidden by default. Use View options to show empty sections, or Configuration sections and All original fields to inspect untranslated settings. Configuration context, search and table filters apply to the selected view.</p></div>'+
       '<div class="help-section"><h3>Choose access rule zones</h3><p>In Access Rules, choose From zone and To zone independently. All zones leaves that side unrestricted. Swap reverses the direction. Clear zone filters removes the pair while keeping the table filters. Search, configured state, and IP version filters combine with the pair, and CSV includes all matching rules. A matrix cell selects its zone pair. Interface and zone details offer outgoing and incoming rules.</p></div>'+
