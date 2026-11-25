@@ -44,6 +44,14 @@ jobs:
   windows:
     runs-on: windows-latest
     timeout-minutes: 15
+    permissions:
+      contents: read
+      id-token: write
+    env:
+      # Release builds from main are Authenticode signed with Azure Artifact Signing once the
+      # repository variables below are set (docs/CODE_SIGNING.md). GitHub signs in to Azure with
+      # OIDC, so no password or client secret is stored anywhere.
+      SIGN: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' && vars.ARTIFACT_SIGNING_PROFILE != '' }}
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
@@ -53,6 +61,37 @@ jobs:
       - run: npm ci --ignore-scripts
       - run: scripts\build-windows.cmd
         shell: cmd
+      - name: Sign in to Azure (OIDC)
+        if: env.SIGN == 'true'
+        uses: azure/login@a641126d1b8aa4d1fa005f4f92df94a3a4c4c906
+        with:
+          client-id: ${{ vars.AZURE_CLIENT_ID }}
+          tenant-id: ${{ vars.AZURE_TENANT_ID }}
+          subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+      - name: Sign the executable
+        if: env.SIGN == 'true'
+        uses: azure/artifact-signing-action@c7ab2a863ab5f9a846ddb8265964877ef296ee82
+        with:
+          endpoint: ${{ vars.ARTIFACT_SIGNING_ENDPOINT }}
+          signing-account-name: ${{ vars.ARTIFACT_SIGNING_ACCOUNT }}
+          certificate-profile-name: ${{ vars.ARTIFACT_SIGNING_PROFILE }}
+          files: ${{ github.workspace }}\dist\Config_Inspector.exe
+          file-digest: SHA256
+          timestamp-rfc3161: http://timestamp.acs.microsoft.com
+          timestamp-digest: SHA256
+          description: Config Inspector
+          description-url: https://github.com/${{ github.repository }}
+      - name: Verify the signature and repackage the signed executable
+        if: env.SIGN == 'true'
+        shell: pwsh
+        run: |
+          $sig = Get-AuthenticodeSignature dist\Config_Inspector.exe
+          if ($sig.Status -ne 'Valid' -or -not $sig.TimeStamperCertificate) { throw "Signature check failed: $($sig.Status) $($sig.StatusMessage)" }
+          Write-Host "Signed by: $($sig.SignerCertificate.Subject)"
+          python scripts\package_portable.py
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+          python scripts\checksums.py
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
           name: windows-release

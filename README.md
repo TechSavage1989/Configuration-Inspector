@@ -280,7 +280,7 @@ Open **App settings → App updates**, or use the update notice in the corner of
 
 Automatic checks start as soon as the interface is ready and run every six hours while the app is open, pausing for the delay GitHub reports if it limits requests. They can be disabled; **Later** hides that release’s notice for 24 hours without hiding a newer release. **Help → Check for updates** opens the update controls and checks immediately. Nothing downloads or restarts automatically.
 
-Updates come from this repository's stable GitHub Releases. The downloaded executable must match the release's SHA-256 digest, size, product identity, architecture and version. These builds are **not Authenticode signed**: hashes detect corruption and mismatched files, not a compromised publisher.
+Updates come from this repository's stable GitHub Releases. The downloaded executable must match the release's SHA-256 digest, size, product identity, architecture and version. From 5.74.0, `Config_Inspector.exe` is **Authenticode signed** with Azure Artifact Signing (check **Properties → Digital Signatures** in Explorer); the hashes add a check against corrupted or mismatched downloads.
 
 During an update, loaded configurations and the comparison are encrypted using Windows DPAPI for the current account and restored after restart. The temporary workspace handoff is removed after successful restoration; interrupted transactions may retain the encrypted file. A previous executable is kept for recovery.
 
@@ -295,7 +295,7 @@ See [UPDATING.md](docs/UPDATING.md) for installation, rollback, storage and trus
 | Problem | What to do |
 | --- | --- |
 | The app does not open or shows an empty window | Install the **Microsoft Edge WebView2 Evergreen Runtime**, then extract the ZIP to a local folder and run **`Config_Inspector.exe`** from there, not from inside the ZIP viewer. |
-| Windows warns about an unrecognized app | The builds are not Authenticode signed. Check the download against **`Config_Inspector_Portable.zip.sha256`** or **`SHA256SUMS`** from the same release before running it. |
+| Windows warns about an unrecognized app | Releases from 5.74.0 are signed, but SmartScreen can still warn about a new signed release until it has built up reputation. Check the publisher under **Properties → Digital Signatures**, and the download against **`Config_Inspector_Portable.zip.sha256`** or **`SHA256SUMS`** from the same release, before running it. |
 | A setting is missing from the structured views | Unsupported or ambiguous syntax is kept in original source rather than interpreted. Use **global search** with **Raw text**, or open the object's original source. |
 | *"The application folder is not writable"* | Move the executable to a folder your account can write to, then use **App settings → App updates** again. |
 | *"Close other copies of this app before installing the update"* | Close every other window running the same executable, then choose **Review and restart** again. |

@@ -1,5 +1,13 @@
 # Configuration Inspector development handoff
 
+## 5.74.0 — Signed release executable
+
+- The `windows` job of `build-release.yml` signs `dist/Config_Inspector.exe` on pushes to `main` with Azure Artifact
+  Signing (`azure/login` over OIDC, then `azure/artifact-signing-action`), checks `Get-AuthenticodeSignature` is
+  `Valid` with a timestamp, and re-runs `package_portable.py` and `checksums.py` so the ZIP and SHA256SUMS hold the
+  signed bytes. Configuration is in repository variables (`docs/CODE_SIGNING.md`); signing is skipped while
+  `ARTIFACT_SIGNING_PROFILE` is unset. No client secret is stored.
+
 ## 5.73.0 — Site map: one link per cable
 
 - `SWSiteMap.layout` makes one edge per cable unless `options.groupOf(link)` names a LAG (`siteLinkGroup` in

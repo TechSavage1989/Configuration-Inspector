@@ -20,13 +20,14 @@ No configurations, credentials or user settings are included in this package.
 Updates use the separate official Config_Inspector.exe release asset, not this
 ZIP. Keep the application folder writable. Installation requires your final
 Install and restart action; your chosen executable filename is preserved.
-These builds are not Authenticode signed. Do not bypass organizational policy.
+Config_Inspector.exe is Authenticode signed (Properties > Digital Signatures).
+Do not bypass organizational policy.
 
 SHA256SUMS inside the ZIP verifies its enclosed files. The release's
 Config_Inspector_Portable.zip.sha256 verifies the ZIP itself. For example:
   Get-FileHash .\Config_Inspector_Portable.zip -Algorithm SHA256
-Compare that value with the .sha256 download. Hashes detect corruption, not a
-compromised publisher. Prefer downloads from the official repository:
+Compare that value with the .sha256 download. Hashes detect corruption; the
+signature identifies the publisher. Prefer downloads from the official repository:
 https://github.com/TechSavage1989/Configuration-Inspector/releases/latest
 
 The browser-only HTML edition and editable source are separate downloads.
