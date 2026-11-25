@@ -6,7 +6,7 @@ App settings contains automatic checks, a manual check, download progress, relea
 
 The update feed is https://api.github.com/repos/TechSavage1989/Configuration-Inspector/releases/latest. Only stable vMAJOR.MINOR.PATCH releases with Config_Inspector.exe are accepted. Config_Inspector_Portable.zip and its checksum are manual-download conveniences and are never selected by the updater. Asset URLs must point to this repository and tag. Redirects are restricted to GitHub's HTTPS download hosts. Windows validates TLS certificates. GitHub credentials are never requested, stored or sent by the app.
 
-The executable's byte count and SHA-256 must match GitHub's release asset metadata. Its PE architecture must be Windows x64 and its product and file version must match Config Inspector and the advertised version. SHA-256 detects corruption and mismatched artifacts. It does not protect against a compromised GitHub publisher. These builds are not Authenticode signed. SHA256SUMS is supplied for independent download checks.
+The executable's byte count and SHA-256 must match GitHub's release asset metadata. Its PE architecture must be Windows x64 and its product and file version must match Config Inspector and the advertised version. SHA-256 detects corruption and mismatched artifacts. It does not protect against a compromised GitHub publisher. From 5.74.0 the executable is Authenticode signed with Azure Artifact Signing (docs/CODE_SIGNING.md); the updater's own checks are the hash checks above. SHA256SUMS is supplied for independent download checks.
 
 ## Installation and recovery
 

@@ -404,6 +404,9 @@ a decision or a test on the owner's own machine (for example opening an export i
 - Keep one design language: side panels use `.side-panel-body` with `.device-info-row`
   label/value rows, details drawers use `.detail-summary`/`.detail-cell`, and lists in
   narrow panels are rows (`.site-link-row`), never multi-column tables.
+- Release executables are signed in CI (Azure Artifact Signing, OIDC, `docs/CODE_SIGNING.md`). Signing changes
+  the EXE bytes, so the portable ZIP and SHA256SUMS are rebuilt after signing; keep that order if the packaging
+  steps move. Never add a client secret or certificate file to the repository or its secrets.
 - `index.html` embeds the `webview/*.js` modules; run
   `python3 webview/embed_features.py` after editing them (CI fails on drift).
 
