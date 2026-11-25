@@ -21,12 +21,12 @@ in the `windows` job of `.github/workflows/build-release.yml`.
 ## Repository variables
 
 Set under **Settings > Secrets and variables > Actions > Variables**. These are identifiers, not secrets.
+`azure/login` runs with `allow-no-subscriptions`, since the app only needs a token for the signing service.
 
 | Variable | Value |
 | --- | --- |
 | `AZURE_CLIENT_ID` | Application (client) ID of the app registration GitHub signs in as |
 | `AZURE_TENANT_ID` | Directory (tenant) ID |
-| `AZURE_SUBSCRIPTION_ID` | Subscription that holds the signing account |
 | `ARTIFACT_SIGNING_ENDPOINT` | Regional endpoint of the account, such as `https://eus.codesigning.azure.net/` |
 | `ARTIFACT_SIGNING_ACCOUNT` | Artifact Signing account name |
 | `ARTIFACT_SIGNING_PROFILE` | Public Trust certificate profile name |
@@ -37,9 +37,11 @@ Set under **Settings > Secrets and variables > Actions > Variables**. These are 
 2. Create an Artifact Signing account (Basic SKU) in a supported region.
 3. Complete Public Trust identity validation for the account (the owner's own ID check).
 4. Create a Public Trust certificate profile linked to that validation.
-5. Create an app registration (no secret) with a federated credential: issuer
-   `https://token.actions.githubusercontent.com`, subject
-   `repo:TechSavage1989/Configuration-Inspector:ref:refs/heads/main`, audience `api://AzureADTokenExchange`.
+5. Create an app registration (no secret) with a federated credential (scenario "GitHub Actions deploying Azure
+   resources", entity Branch `main`). Its subject uses GitHub's immutable-ID format:
+   `repo:TechSavage1989@44094233/Configuration-Inspector@1432648342:ref:refs/heads/main`, audience
+   `api://AzureADTokenExchange`. The owner's existing `github-codesign` app registration and
+   `networktoolkit-signing` account are shared with their other apps.
 6. Give that app registration the **Artifact Signing Certificate Profile Signer** role on the certificate
    profile (or the account).
 7. Set the repository variables above.
